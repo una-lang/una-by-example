@@ -1,0 +1,10 @@
+module share
+
+-- `requires` is a precondition. The verifier proves it at every call, and the body may
+-- assume it: here, that the division never divides by zero.
+share(total: Int, people: Int) -> Int = total / people
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{share(120, people: 4)}")

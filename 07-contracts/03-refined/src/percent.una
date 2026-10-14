@@ -1,0 +1,13 @@
+module percent
+
+-- A refined kind: an `Int` that the verifier proves is between 0 and 100 wherever one is
+-- made. A `Percent` can be used as an `Int` anywhere.
+kind Percent = Int in 0..100
+
+-- Returning a `Percent` is an obligation: the verifier proves each branch is in range.
+clamp_percent(n: Int) -> Percent = if n < 0 then 0 else if n > 100 then 100 else n
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{clamp_percent(150)}% {clamp_percent(-20)}% {clamp_percent(35)}%")
