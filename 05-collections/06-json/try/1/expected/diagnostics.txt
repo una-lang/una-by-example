@@ -1,0 +1,1 @@
+error U2001 at src/json.una:10:40: argument `value` of `set` must be `Json`, found `Int`

@@ -1,0 +1,17 @@
+module options
+
+-- `Option[T]` is `Some(value)` or `None`: a value that may be missing, which the type says.
+describe(found: Option[Int]) -> Text
+=
+  when found
+    is Some(value) -> "found {value}"
+    is None -> "nothing"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let xs = [10, 20, 30]
+  @console.print(describe(xs.at(index: 1)))
+  @console.print(describe(xs.at(index: 9)))
+  -- `or_else` gives a default for `None`.
+  @console.print("{xs.first().or_else(default: 0)}")

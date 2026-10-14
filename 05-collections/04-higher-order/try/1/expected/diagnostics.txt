@@ -1,0 +1,1 @@
+error U2001 at src/higher.una:9:39: expected `Bool`, found `Int`

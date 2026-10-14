@@ -1,0 +1,13 @@
+module maps
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- A `Map[K, V]` from keys to values, ordered by its keys.
+  let edit stock: Map[Text, Int] = empty_map()
+  edit stock.set(key: "pears", value: 4)
+  edit stock.set(key: "apples", value: 7)
+  -- `get` gives an `Option`: the key may be absent.
+  let apples = stock.get(key: "apples").or_else(default: 0)
+  @console.print("{stock.len} kinds, {apples} apples")
+  @console.print(stock.keys().join(separator: ", "))

@@ -1,0 +1,16 @@
+module loops
+
+-- `for` visits a list's elements in order, or a range's integers: `a..<b` leaves out `b`.
+-- It updates `let edit` bindings declared before it.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit total = 0
+  for x in [4, 5, 6]
+    total = total + x
+    x = 0
+  let edit squares: List[Int] = []
+  for i in 1..<5
+    squares = squares.append(item: i * i)
+  @console.print("{total}")
+  @console.print(squares.map(each: fn(n) -> "{n}").join(separator: " "))

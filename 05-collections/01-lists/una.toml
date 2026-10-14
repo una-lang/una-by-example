@@ -1,0 +1,8 @@
+[package]
+name = "lists"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "lists"
+grants = ["console"]
