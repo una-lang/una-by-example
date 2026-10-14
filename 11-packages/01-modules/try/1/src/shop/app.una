@@ -1,0 +1,9 @@
+module shop.app
+
+-- `import` names the module and the declarations it uses.
+import shop.prices (with_tax, tax)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{with_tax(1000)} cents")

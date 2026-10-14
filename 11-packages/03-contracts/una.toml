@@ -1,0 +1,12 @@
+[package]
+name = "billing"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "billing"
+grants = ["console"]
+
+# Edition 0.3: the uses of a public function, locked. A header weaker than its lock is an error.
+[contracts]
+"billing.charge" = ["@console: Console[print where not dry_run]"]
