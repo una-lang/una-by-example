@@ -1,0 +1,15 @@
+module discount
+
+-- This program is rejected on purpose. The verifier does not only say that a contract may
+-- fail: it gives the arguments that make it fail, a counterexample.
+discount(price: Int, off: Int) -> Int
+  requires price >= 0
+  requires off <= price
+  ensures result >= 0
+=
+  price - off
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{discount(200, off: 50)}")

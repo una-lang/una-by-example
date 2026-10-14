@@ -1,0 +1,2 @@
+error U5001 at src/average.una:5:33: division obligation `xs.len != 0` is refuted
+  counterexample: xs = "List#0", xs.len = 0

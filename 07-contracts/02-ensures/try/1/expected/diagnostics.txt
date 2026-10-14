@@ -1,0 +1,2 @@
+error U5001 at src/clamp.una:12:5: postcondition of `clamp` is refuted
+  counterexample: high = 0, low = 0, result = 1, x = 1

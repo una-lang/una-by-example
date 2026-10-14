@@ -1,0 +1,14 @@
+module evens
+
+-- A `reflect` predicate is a named condition the verifier can see inside, so it can prove it.
+predicate reflect even(n: Int) -> Bool = n mod 2 == 0
+
+kind Even = Int where even(it)
+
+-- The verifier proves that `2 * n` is even, so the result is an `Even`.
+double(n: Int) -> Even = 2 * n
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{double(21)}")
