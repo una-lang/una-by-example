@@ -1,0 +1,11 @@
+module loops
+
+-- `una.toml` names the package's edition. Edition 0.2 adds `for`, `let edit`, fixed-width
+-- integers, maps, JSON and `together`, among others; edition 0.1 programs keep their meaning.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit total = 0
+  for x in [1, 2, 3]
+    total = total + x
+  @console.print("{total}")
