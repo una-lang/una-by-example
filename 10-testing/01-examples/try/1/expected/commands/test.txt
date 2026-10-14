@@ -1,0 +1,7 @@
+$ una test .
+example grades "a score of fifty passes" ... FAILED
+  src/grades.una:11: expect result is Pass
+  it is false, with `result` = `Fail`
+example grades "a score below fifty fails" ... ok
+
+2 examples: 1 passed, 1 failed

@@ -1,0 +1,2 @@
+error U5001 at src/tickets.una:18:38: postcondition of `availability` is refuted
+  counterexample: remaining = 0, result = "Open"
