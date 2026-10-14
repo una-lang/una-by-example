@@ -1,0 +1,18 @@
+# The package: its name, its version and the edition of the language it is written in.
+[package]
+name = "settings"
+version = "0.2.0"
+edition = "0.2"
+
+# What `una run` starts, and the host capabilities it may have.
+[run]
+entry = "settings"
+grants = ["console"]
+
+# The categories that labels may name.
+[labels]
+categories = ["PII"]
+
+# How many `checked` each module may use.
+[escape_budget]
+checked_per_module = 0

@@ -1,0 +1,7 @@
+module shop.prices
+
+-- A module's path follows its file's: `src/shop/prices.una` is `shop.prices`. Only `pub`
+-- declarations can be imported by other modules.
+pub with_tax(cents: Int) -> Int = cents + tax(cents)
+
+tax(cents: Int) -> Int = cents * 20 / 100

@@ -1,0 +1,1 @@
+error U4007 at src/settings.una:5:19: label category `Finance` is not declared in `[labels] categories` of `una.toml`

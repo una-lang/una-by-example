@@ -1,0 +1,2 @@
+error U7001 at src/shop/app.una:4:1: line 4 is not in canonical form
+error U1004 at src/shop/app.una:4:31: function `tax` is private to module `shop.prices`
