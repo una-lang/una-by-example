@@ -1,0 +1,1 @@
+error U2001 at src/parity.una:4:59: `parity` returns `Text`, found `Int`

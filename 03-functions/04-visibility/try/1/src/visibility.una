@@ -1,0 +1,11 @@
+module visibility
+
+-- A private function may leave out `uses` and `fails`: the compiler infers them, and
+-- `una contract visibility.shout` prints the header it inferred.
+pub shout(text: Text) -> Unit = @console.print(text.to_upper)
+
+-- A `pub` function is a module's reviewed boundary: it declares everything it may do.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  shout("inferred")
