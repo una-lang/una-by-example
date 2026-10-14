@@ -1,0 +1,15 @@
+module salary
+
+-- A label says how sensitive a value is. A result carries the labels of what it was
+-- computed from, and a value only flows to a place labeled at least as high.
+raise_by(pay: secret Int, percent: Int) -> secret Int = pay + pay * percent / 100
+
+-- Counting is not secret: the number of people is public, whatever they earn.
+headcount(pays: List[secret Int]) -> Int = pays.sum()
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let pays: List[secret Int] = [3000, 4200, 5100]
+  let raised = pays.map(each: fn(p) -> raise_by(p, percent: 10))
+  @console.print("{headcount(raised)} people")

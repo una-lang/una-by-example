@@ -1,0 +1,9 @@
+module app
+
+import masks (masked_phone)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let phone: secret[PII] Text = "11911112222"
+  @console.print("receipt for {phone}")

@@ -1,0 +1,12 @@
+trusted module redact
+
+-- A trusted module is declared twice, here and in `una.toml`, so that adding one shows in
+-- the package's configuration, where it is reviewed. Policies may live only in one.
+pub policy length_only
+  from secret Text
+  to public Int
+  via length
+  purpose "report how long a secret note is"
+  owner audit
+
+length(note: secret Text) -> public Int = note.len

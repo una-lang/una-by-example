@@ -1,0 +1,18 @@
+trusted module masks
+
+-- A policy is the only way to lower a label. It names what it lowers, to what, through which
+-- function, and why. It lives in a trusted module, which `una.toml` lists too.
+pub policy masked_phone
+  from secret[PII] Text
+  to public Text
+  via mask
+  purpose "show the last two digits on a receipt"
+  owner support
+
+-- The `via` function is private: the policy is its only way in.
+mask(phone: secret[PII] Text) -> public Text
+=
+  if phone.len < 2
+    "**"
+  else
+    "*******{phone.slice(start: phone.len - 2, end: phone.len)}"
