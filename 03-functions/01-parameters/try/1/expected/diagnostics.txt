@@ -1,0 +1,1 @@
+error U2004 at src/area.una:10:24: argument 2 of `rectangle` needs a label; only the first argument may go without one

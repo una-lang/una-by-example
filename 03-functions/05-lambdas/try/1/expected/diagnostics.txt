@@ -1,0 +1,1 @@
+error U2010 at src/lambdas.una:15:17: cannot infer the type of lambda parameter `n`; annotate it, as in `n: Int`

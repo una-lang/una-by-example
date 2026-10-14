@@ -1,0 +1,23 @@
+module calculator
+
+-- Testcase: what this chapter showed, in one program. `apply` picks an operation by name
+-- and runs it on two numbers.
+apply(operation: Text, a: Int, b: Int) -> Int
+=
+  if operation == "add"
+    a + b
+  else if operation == "multiply"
+    a * b
+  else
+    a / b
+
+-- A function value lets `report` print any operation the same way.
+report(name: Text, f: fn(Int, Int) -> Int) -> Text = "{name}: {f(6, 7)}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let sum = apply("add", a: 2, b: 3)
+  let product = apply("multiply", a: 2, b: 3)
+  @console.print("{sum} {product}")
+  @console.print(report("max", f: fn(x, y) -> if x > y then x else y))

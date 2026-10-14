@@ -1,0 +1,1 @@
+error U2005 at src/area.una:10:24: `rectangle` has no parameter `depth`
