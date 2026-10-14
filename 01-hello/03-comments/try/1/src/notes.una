@@ -1,0 +1,14 @@
+module notes
+
+// Two dashes start a comment, which runs to the end of the line.
+
+--- Three dashes start a doc comment. It belongs to the declaration below it, and
+--- `una contract notes.days` prints it with the function's header.
+pub days() -> Int = 7
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- A comment may sit inside a body too.
+  let n = days()
+  @console.print("a week has {n} days")

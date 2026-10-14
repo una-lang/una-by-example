@@ -1,0 +1,8 @@
+module hello
+
+-- `main` is where `una run` starts. Its header says the one thing it may do: print on the
+-- console, through the capability `@console`.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Hello again, Una")

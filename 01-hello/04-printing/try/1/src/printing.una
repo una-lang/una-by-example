@@ -1,0 +1,10 @@
+module printing
+
+-- Each `print` writes one line. The text can hold values in braces.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("one line")
+  @console.print("and another")
+  let lines = 3
+  @console.print(lines)

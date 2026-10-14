@@ -1,0 +1,1 @@
+error U2001 at src/printing.una:10:18: argument `line` of operation `Console.print` must be `Text`, found `Int`

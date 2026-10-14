@@ -1,0 +1,4 @@
+# The una release that every example is checked against (scripts/check.py). A newer release
+# is adopted in a pull request of its own, once every example passes with it.
+version = "0.3.14"
+commit = "7393ba6d6b07e5b1e6294d914df6ea25fca3398d"
