@@ -1,0 +1,19 @@
+module generics
+
+-- A kind with a type parameter: a `Pair[T]` holds two values of one type `T`.
+kind Pair[T]
+  left: T
+  right: T
+
+-- Without a constraint, a function knows nothing about `T` but what its parameters give.
+swap[T](p: Pair[T]) -> Pair[T] = Pair(left: p.right, right: p.left)
+
+-- `Ord` lets the function compare values of `T`.
+larger[T: Eq](p: Pair[T]) -> T = if p.left > p.right then p.left else p.right
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let numbers = swap(Pair(left: 1, right: 2))
+  @console.print("{numbers.left} {numbers.right}")
+  @console.print(larger(Pair(left: "apple", right: "pear")))
