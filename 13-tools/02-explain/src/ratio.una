@@ -1,0 +1,10 @@
+module ratio
+
+-- Rejected on purpose: the division may divide by zero. Every code has an explanation:
+-- `una explain U5001` prints what it means and how to repair it.
+ratio(a: Int, b: Int) -> Int = a / b
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{ratio(10, b: 2)}")
