@@ -1,0 +1,1 @@
+error U3001 at src/greetings.una:24:16: `welcome` needs `@greeting: Greeting[greet]`, which is not in scope here

@@ -1,0 +1,1 @@
+error U3012 at src/notes.una:8:3: `main` uses `write` of `Files`, which `[run] grants` does not grant

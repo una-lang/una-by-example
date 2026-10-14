@@ -1,0 +1,8 @@
+module plugin
+
+-- A boundary module, such as code from someone else. `una.toml` lists it under
+-- `[boundaries]`, with a ceiling: the most the rest of the package may grant it.
+pub shout(text: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(text.to_upper)

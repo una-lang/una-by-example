@@ -1,0 +1,14 @@
+module report
+
+-- A capability is passed by name: `line` uses `@console`, so its caller must hold an
+-- `@console` with the operation `print`.
+line(label: Text, value: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{label}: {value}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  line("apples", value: 3)
+  line("pears", value: 5)
