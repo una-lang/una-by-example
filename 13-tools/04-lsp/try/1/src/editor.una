@@ -1,0 +1,10 @@
+module editor
+
+--- `una lsp` is a language server: an editor that speaks the Language Server Protocol shows
+--- this package's diagnostics as you type, and this doc comment when you hover `greeting`.
+greeting(name: Text) -> Text = "Hello, {name}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(greeting(42))

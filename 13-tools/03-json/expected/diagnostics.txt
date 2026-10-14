@@ -1,0 +1,1 @@
+error U2001 at src/labels.una:8:18: argument `line` of operation `Console.print` must be `Text`, found `Int`

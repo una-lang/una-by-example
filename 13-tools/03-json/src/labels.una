@@ -1,0 +1,8 @@
+module labels
+
+-- Rejected on purpose. Every command takes `--json`, and then prints one JSON document
+-- with a schema name, so an agent reads diagnostics without parsing text.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(42)
