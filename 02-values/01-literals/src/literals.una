@@ -1,0 +1,13 @@
+module literals
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- An `Int` has no fixed width: it never overflows.
+  let big = 9000000000 * 9000000000
+  let below = -7
+  -- `Bool` is `true` or `false`.
+  let ready = true
+  -- `Text` is UTF-8, written between double quotes.
+  let name = "Una"
+  @console.print("{big} {below} {ready} {name}")

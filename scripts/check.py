@@ -9,7 +9,10 @@ For each page directory `NN-chapter/MM-page/`:
 2. A fresh copy of the package (`una.toml`, `verification.lock`, `src/`) has the outcome in
    `expected/`: either it checks clean at tier 1 in canonical form and `una run` prints
    `expected/output.txt` byte for byte, or `una check` reports exactly the lines of
-   `expected/diagnostics.txt`, each `error <code> at <file>:<line>:<col>: <message>`.
+   `expected/diagnostics.txt`, each `error <code> at <file>:<line>:<col>: <message>`, followed
+   by `  counterexample: <name> = <value>, ...` when the diagnostic has one.
+   Each `expected/commands/*.txt` is a further command, `$ una <args>` on its first line, and
+   what it prints on stdout in the package, byte for byte.
 3. Each `try/N` holds files that replace the package's, and its own `expected/`, checked in the
    same way on a fresh copy. The page's "Try it" list has one item per `try/N`.
 
@@ -47,6 +50,7 @@ PACKAGE_FILES = ("README.md", "una.toml", "verification.lock")
 PARTS = ["## The program", "## What you should see", "## Try it", "## See also"]
 OPTIONAL_PARTS = ["## Notes"]
 DIAGNOSTIC = re.compile(r"^error (U\d{4}) at ([^:]+):(\d+):(\d+): (.+)$")
+COUNTEREXAMPLE = re.compile(r"^  counterexample: .+$")
 NOREPLY = re.compile(r"^(\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$")
 
 
@@ -148,6 +152,10 @@ def diagnostics_of(una, package):
         start = d["primary"]["start"]
         file = d["primary"]["file"]
         lines.append(f"{d['severity']} {d['code']} at {file}:{start['line']}:{start['col']}: {d['message']}")
+        bindings = (d.get("counterexample") or {}).get("bindings") or []
+        if bindings:
+            shown = ", ".join(f"{b['name']} = {json.dumps(b['value'])}" for b in bindings)
+            lines.append(f"  counterexample: {shown}")
     return lines, result
 
 
@@ -170,7 +178,7 @@ def outcome(una, package, expected, where, failures):
     if os.path.isfile(listed):
         wanted = [line for line in read(listed).splitlines() if line]
         for line in wanted:
-            if not DIAGNOSTIC.match(line):
+            if not DIAGNOSTIC.match(line) and not COUNTEREXAMPLE.match(line):
                 failures.add(where, f"diagnostics.txt: not `error <code> at <file>:<line>:<col>: <message>`: {line}")
         if lines != wanted:
             failures.add(where, "`una check` reports:\n  " + "\n  ".join(lines or ["(nothing)"]))
@@ -189,6 +197,26 @@ def outcome(una, package, expected, where, failures):
     if ran.stdout != printed:
         failures.add(where, f"`una run` prints {ran.stdout!r}, not output.txt")
     return set()
+
+
+def commands(una, package, expected, where, failures):
+    """Each `expected/commands/*.txt`: its first line is `$ una <args>`, and the rest is what
+    that command prints on stdout in the package, byte for byte."""
+    directory = os.path.join(expected, "commands")
+    if not os.path.isdir(directory):
+        return 0
+    count = 0
+    for name in sorted(os.listdir(directory)):
+        text = read(os.path.join(directory, name))
+        first, _, printed = text.partition("\n")
+        if not first.startswith("$ una "):
+            failures.add(f"{where}/commands/{name}", "the first line must be `$ una <args>`")
+            continue
+        ran = run(una, first[len("$ una "):].split(" "), package)
+        if ran.stdout.decode(errors="replace") != printed:
+            failures.add(f"{where}/commands/{name}", f"`{first[2:]}` prints:\n{ran.stdout.decode(errors='replace')}")
+        count += 1
+    return count
 
 
 def template(root, chapter, page, readme, tries, codes, failures):
@@ -224,7 +252,7 @@ def template(root, chapter, page, readme, tries, codes, failures):
 
 def check_pages(root, una, failures, scratch):
     """Steps 1 to 3 for every page; returns the number of pages and of changes."""
-    counted = [0, 0]
+    counted = [0, 0, 0]
     for chapter, page in pages(root):
         directory = os.path.join(root, chapter, page)
         where = f"{chapter}/{page}"
@@ -232,6 +260,7 @@ def check_pages(root, una, failures, scratch):
         package = os.path.join(scratch, chapter, page, "package")
         copy_package(directory, package)
         codes = outcome(una, package, os.path.join(directory, "expected"), where, failures)
+        counted[2] += commands(una, package, os.path.join(directory, "expected"), where, failures)
         try_root = os.path.join(directory, "try")
         tries = sorted(os.listdir(try_root), key=lambda n: (len(n), n)) if os.path.isdir(try_root) else []
         for index, name in enumerate(tries, start=1):
@@ -241,6 +270,7 @@ def check_pages(root, una, failures, scratch):
             changed = os.path.join(scratch, chapter, page, f"try-{name}")
             copy_package(directory, changed, os.path.join(try_root, name))
             codes |= outcome(una, changed, os.path.join(try_root, name, "expected"), f"{where}/try/{name}", failures)
+            counted[2] += commands(una, changed, os.path.join(try_root, name, "expected"), f"{where}/try/{name}", failures)
             counted[1] += 1
         readme = os.path.join(directory, "README.md")
         if not os.path.isfile(readme):
@@ -410,7 +440,7 @@ def check(root, una, from_binary, archive_dir):
         for item in failures.items:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print(f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, una {found})")
+    print(f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, {counted[2]} commands, una {found})")
     return 0
 
 
@@ -429,9 +459,17 @@ if args == ["--json", "check", "."]:
         start = {"line": 3, "col": 1}
         diagnostics.append({"code": "U1001", "severity": "error", "message": "unknown name `bad`",
                             "primary": {"file": "src/main.una", "start": start, "end": start}})
+    if "cex" in src:
+        start = {"line": 2, "col": 1}
+        diagnostics.append({"code": "U5001", "severity": "error", "message": "refuted",
+                            "primary": {"file": "src/main.una", "start": start, "end": start},
+                            "counterexample": {"bindings": [{"name": "n", "value": -1}, {"name": "ok", "value": True}]}})
     print(json.dumps({"schema": "una.diagnostics/1", "diagnostics": diagnostics, "fixable": 0}))
     sys.exit(1 if diagnostics else 0)
 if args == ["fmt", "--check", "."]:
+    sys.exit(0)
+if args == ["test", "."]:
+    print("1 example passed")
     sys.exit(0)
 if args == ["run", "."]:
     sys.stdout.write(src.split("print ", 1)[1] if "print " in src else "")
@@ -549,6 +587,16 @@ def self_test():
         case("a wrong diagnostic", False,
              lambda r, p: write(os.path.join(p, "try", "1", "expected", "diagnostics.txt"), "error U1002 at src/main.una:3:1: x\n"),
              "reports")
+        def counterexample(r, p, line):
+            write(os.path.join(p, "try", "1", "src", "main.una"), "cex\n")
+            write(os.path.join(p, "try", "1", "expected", "diagnostics.txt"), "error U5001 at src/main.una:2:1: refuted\n" + line)
+            write(os.path.join(p, "README.md"), README.format(codes="U5001"))
+
+        case("a counterexample", True, lambda r, p: counterexample(r, p, "  counterexample: n = -1, ok = true\n"))
+        case("a wrong counterexample", False, lambda r, p: counterexample(r, p, "  counterexample: n = 0, ok = true\n"), "reports")
+        case("a command", True, lambda r, p: write(os.path.join(p, "expected", "commands", "test.txt"), "$ una test .\n1 example passed\n"))
+        case("a wrong command output", False,
+             lambda r, p: write(os.path.join(p, "expected", "commands", "test.txt"), "$ una test .\n2 examples passed\n"), "prints")
         case("both outcomes", False, lambda r, p: write(os.path.join(p, "expected", "diagnostics.txt"), "x\n"), "exactly one")
         case("a missing part", False,
              lambda r, p: write(os.path.join(p, "README.md"), README.format(codes="U1001").replace("## See also", "## Also")),
@@ -590,7 +638,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (13 cases, archives reproducible)")
+    print("check.py: self-test PASS (17 cases, archives reproducible)")
     return 0
 
 
