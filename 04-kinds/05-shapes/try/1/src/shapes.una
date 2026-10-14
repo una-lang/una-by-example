@@ -1,0 +1,38 @@
+module shapes
+
+-- Testcase: records, variants, `when` and a generic function in one small library.
+kind Point
+  x: Int
+  y: Int
+
+kind Shape = Circle(center: Point, radius: Int) | Square(corner: Point, side: Int)
+
+-- Twice the perimeter keeps the circle's in whole numbers: 2 * 2 * pi * r, with pi as 314/100.
+perimeter_x200(s: Shape) -> Int
+=
+  when s
+    is Circle(radius) -> 4 * 314 * radius
+    is Square(side) -> 200 * 4 * side
+
+move(p: Point, dx: Int, dy: Int) -> Point = Point(x: p.x + dx, y: p.y + dy)
+
+shift(s: Shape, dx: Int) -> Shape
+=
+  when s
+    is Circle(center, radius) -> Circle(center: move(center, dx, dy: 0), radius)
+    is Square(corner, side) -> Square(corner: move(corner, dx), side)
+
+origin_x(s: Shape) -> Int
+=
+  when s
+    is Circle(center) -> center.x
+    is Square(corner) -> corner.x
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let shapes = [Circle(center: Point(x: 0, y: 0), radius: 1), Square(corner: Point(x: 2, y: 2), side: 3)]
+  let moved = shapes.map(each: fn(s) -> shift(s, dx: 10))
+  let xs = moved.map(each: fn(s) -> "{origin_x(s)}")
+  @console.print(xs.join(separator: ", "))
+  @console.print("{perimeter_x200(Square(corner: Point(x: 0, y: 0), side: 1))}")

@@ -1,0 +1,15 @@
+module variants
+
+-- A sum kind: a value is exactly one of its variants. A variant may carry fields.
+kind Shape = Circle(radius: Int) | Rectangle(width: Int, height: Int) | Dot
+
+-- A predicate on a variant: `s is Dot` is true for that variant only.
+is_point(s: Shape) -> Bool = s is Dot
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let shapes = [Circle(radius: 2), Rectangle(width: 3, height: 4), Dot]
+  let wrong = Dot == Circle
+  let points = shapes.filter(keep: fn(s) -> is_point(s))
+  @console.print("{shapes.len} shapes, {points.len} of them a point")

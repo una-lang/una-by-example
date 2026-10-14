@@ -1,0 +1,16 @@
+module records
+
+-- A record kind: named fields, each with its type.
+kind Book
+  title: Text
+  pages: Int
+
+-- A function of a record reads its fields with a dot.
+summary(b: Book) -> Text = "{b.title}, {b.pages} pages"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- A record with two or more fields is built with every field labeled.
+  let book = Book(title: "Una by Example", pages: 79)
+  @console.print(summary(book))

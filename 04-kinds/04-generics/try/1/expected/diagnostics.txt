@@ -1,0 +1,1 @@
+error U2026 at src/generics.una:12:37: ordering on values of the type parameter `T` needs the constraint `Ord`; write `[T: Ord]`

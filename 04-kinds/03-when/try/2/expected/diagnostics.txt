@@ -1,0 +1,2 @@
+error U5001 at src/areas.una:17:3: exhaustiveness of this `when`, `code == 1 or code == 2`, is refuted
+  counterexample: code = 0
