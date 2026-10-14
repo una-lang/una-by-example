@@ -1,0 +1,28 @@
+module phones
+
+-- An opaque predicate: the verifier cannot see inside it, so no proof can establish it.
+predicate opaque valid_phone(t: Text) -> Bool = t.len == 11 and is_digits(t)
+
+kind Phone = Text where valid_phone(it)
+
+kind PhoneError = | Malformed
+
+-- `checked` tests the predicate when the program runs, and fails with `Malformed` if it is
+-- false. It replaces a proof with a test, so `una.toml` budgets it: `checked_per_module`.
+parse_phone(raw: Text) -> Phone
+  fails PhoneError
+=
+  checked(raw, valid_phone(it)) else fail Malformed
+
+show(raw: Text) -> Text
+=
+  let outcome = attempt parse_phone(raw)
+  when outcome
+    is Ok(value) -> "valid: {value}"
+    is Err(failure) -> "malformed: {raw}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(show("12345678901"))
+  @console.print(show("12-34"))

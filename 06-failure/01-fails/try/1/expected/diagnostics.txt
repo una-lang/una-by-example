@@ -1,0 +1,1 @@
+error U3007 at src/withdraw.una:20:14: `withdraw` can fail with `BankError`; handle the failure with an `if error` clause, or wrap the call in `attempt`

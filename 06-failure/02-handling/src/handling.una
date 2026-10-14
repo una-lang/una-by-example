@@ -1,0 +1,36 @@
+module handling
+
+kind InputError = NotANumber(text: Text) | TooLarge
+
+-- `to_int` gives an `Option`: `if none fail` turns `None` into a failure of this function.
+parse(text: Text) -> Int
+  fails InputError
+=
+  let n = text.to_int()
+    if none fail NotANumber(text)
+  if n > 1000
+    fail TooLarge
+  else
+    n
+
+-- `if error pass` hands the failure on, unchanged: the kinds must be the same.
+double(text: Text) -> Int
+  fails InputError
+=
+  let n = parse(text)
+    if error pass
+  n * 2
+
+-- `if error use` recovers with a value. Inside the clause, `error` is the failure.
+describe(text: Text) -> Text
+=
+  let doubled = double(text)
+    if error use -1
+  "{text} -> {doubled}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(describe("21"))
+  @console.print(describe("abc"))
+  @console.print(describe("5000"))

@@ -1,0 +1,22 @@
+module withdraw
+
+-- An error kind is a sum kind. A function that may fail says so with `fails`.
+kind BankError = NotEnough(short: Int) | Negative
+
+withdraw(balance: Int, amount: Int) -> Int
+  fails BankError
+=
+  if amount < 0
+    fail Negative
+  else if amount > balance
+    fail NotEnough(short: amount - balance)
+  else
+    balance - amount
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- A call that may fail is followed by a clause that says what to do if it does.
+  let left = withdraw(100, amount: 30)
+    if error use 0
+  @console.print("{left} left")
