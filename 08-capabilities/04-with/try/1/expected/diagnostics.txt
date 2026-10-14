@@ -1,0 +1,1 @@
+error U3001 at src/rebinding.una:14:3: `banner` needs `@out: Console[print]`, which is not in scope here

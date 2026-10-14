@@ -1,0 +1,11 @@
+[package]
+name = "plugins"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "app"
+grants = ["console"]
+
+[boundaries]
+"plugin" = ["Console[print]"]

@@ -1,0 +1,10 @@
+module app
+
+import plugin (shout)
+
+-- A call into a boundary takes nothing by name: the caller grants each capability with
+-- `with`, so every call shows what the boundary receives.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  shout("granted on purpose")
