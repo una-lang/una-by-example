@@ -1,0 +1,9 @@
+module native
+
+-- `una build .` compiles `main` into a native executable, `target/una/native`, which
+-- prints what `una run .` prints. It needs a C compiler as `cc`, to link.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let total = [1, 2, 3, 4, "5"].sum()
+  @console.print("built natively: {total}")
