@@ -1,0 +1,14 @@
+[package]
+name = "book"
+version = "0.1.0"
+edition = "0.2"
+
+[labels]
+categories = ["PII"]
+
+[trusted]
+modules = ["privacy"]
+
+[run]
+entry = "book"
+grants = ["console"]

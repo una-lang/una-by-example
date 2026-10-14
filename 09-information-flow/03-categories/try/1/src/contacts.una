@@ -1,0 +1,17 @@
+module contacts
+
+-- A category names a kind of sensitive data. `una.toml` declares the categories a package
+-- uses, and a label lists them in brackets: `secret[PII] Text`.
+kind Contact
+  name: Text
+  phone: secret[PII] Text
+
+phones(cs: List[Contact]) -> List[secret Text] = cs.map(each: fn(c) -> c.phone)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let book = [Contact(name: "Ana", phone: "11911112222"), Contact(name: "Rui", phone: "21933334444")]
+  let names = book.map(each: fn(c) -> c.name)
+  @console.print(names.join(separator: ", "))
+  @console.print("{phones(book).len} phone numbers kept secret")
