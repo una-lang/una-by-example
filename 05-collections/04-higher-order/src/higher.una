@@ -1,0 +1,13 @@
+module higher
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let xs = [1, 2, 3, 4, 5, 6]
+  -- `map` makes a new list from each element; `filter` keeps the ones a test accepts.
+  let doubled = xs.map(each: fn(x) -> x * 2)
+  let even = xs.filter(keep: fn(x) -> x mod 2 == 0)
+  -- `fold` carries a value through the list, from the first element to the last.
+  let product = xs.fold(initial: 1, step: fn(acc, x) -> acc * x)
+  @console.print(doubled.map(each: fn(n) -> "{n}").join(separator: ","))
+  @console.print("{even.len} even, product {product}")
