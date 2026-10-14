@@ -1,0 +1,5 @@
+$ una test .
+example orders "an item in stock is mailed" ... ok
+example orders "an item out of stock fails, and nothing is mailed" ... ok
+
+2 examples: 2 passed, 0 failed

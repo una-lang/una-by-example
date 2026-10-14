@@ -1,0 +1,5 @@
+$ una test .
+example grades "a score of fifty passes" ... ok
+example grades "a score below fifty fails" ... ok
+
+2 examples: 2 passed, 0 failed

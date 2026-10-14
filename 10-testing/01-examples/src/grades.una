@@ -1,0 +1,20 @@
+module grades
+
+kind Grade = Pass | Fail
+
+grade(score: Int) -> Grade = if score >= 50 then Pass else Fail
+
+-- An example is a test that lives next to the code. `do` runs an expression, and each
+-- `expect` line must hold of its `result`. `una test` runs every example.
+example "a score of fifty passes"
+  do grade(50)
+  expect result is Pass
+
+example "a score below fifty fails"
+  do grade(49)
+  expect result is Fail
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("try `una test .`")
