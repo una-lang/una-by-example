@@ -1,0 +1,12 @@
+module counter
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- `let` binds a name to a value, once.
+  let start = 5
+  -- `let edit` binds a name that later lines may rebind.
+  let edit total = start
+  total = total + 10
+  total = total * 2
+  @console.print("total is {total}")

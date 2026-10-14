@@ -1,0 +1,14 @@
+module words
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let line = "values, types and text"
+  -- `len` counts the characters of a text.
+  let size = line.len
+  -- Functions of one argument read as fields: `line.to_upper` is `to_upper(line)`.
+  let loud = line.to_upper
+  let parts = line.split(on: "")
+  @console.print("{size} characters, {parts.len} words")
+  @console.print(loud)
+  @console.print(parts.join(separator: "/"))

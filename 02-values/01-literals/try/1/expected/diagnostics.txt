@@ -1,0 +1,1 @@
+error U2001 at src/literals.una:13:14: an operand of `and` must be `Bool`, found `Int`
