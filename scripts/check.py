@@ -27,8 +27,9 @@ For each page directory `NN-chapter/MM-page/`:
    English README's digest fails: it was approved for a text that has changed. A `draft` one
    is reported as out of date, and the website shows the English page for both.
 
-With UNA_NEUTRALITY_PATTERN set in the environment, no README, English or translated, may
-match it; the pattern is never stored or printed. With `--require-neutrality`, as the una
+With UNA_NEUTRALITY_PATTERN set in the environment, an extended regular expression (grep -E),
+no tracked text file, English or translated, may match it; the pattern is never stored or
+printed. The una release gate runs its own check, with the same dialect. With `--require-neutrality`, as the una
 release gate runs it, an unset or empty pattern is a failure; without it, the check is skipped
 and the report says so.
 
@@ -396,29 +397,41 @@ def check_translations(root, failures):
 
 
 def neutrality(root, failures):
-    """The neutrality check of the published text, when UNA_NEUTRALITY_PATTERN is set: no README,
-    English or translated, matches the pattern (case-insensitive). The pattern is read from the
-    environment only, never stored, and never printed; a match reports the file only. Returns
+    """The neutrality check of the published text, when UNA_NEUTRALITY_PATTERN is set: no tracked
+    text file, English or translated, a page, a package, an outcome or a change, matches the
+    pattern, an extended regular expression read case-insensitively by `grep -E`, the dialect of
+    the una release gate's own check. The pattern is read from the environment only, never
+    stored or printed, and goes to grep on a pipe, never as an argument; a match reports the file
+    only, never the text, and a pattern grep cannot apply fails with a fixed message. Returns
     the number of files checked, or None when the pattern is unset."""
     pattern = os.environ.get("UNA_NEUTRALITY_PATTERN")
     if not pattern:
         return None
-    try:
-        expression = re.compile(pattern, re.IGNORECASE)
-    except re.error:
-        failures.add("neutrality", "UNA_NEUTRALITY_PATTERN is not a valid regular expression")
+    if len(pattern) > 60000:
+        # More than a pipe holds at once: the write below would wait for a reader forever.
+        failures.add("neutrality", "the pattern is longer than 60,000 characters")
         return 0
-    files = []
-    for base, dirs, names in os.walk(root):
-        dirs[:] = sorted(d for d in dirs if not d.startswith("."))
-        rel = os.path.relpath(base, root)
-        top = rel.split(os.sep)[0]
-        if rel != "." and not (CHAPTER.match(top) or top == "translations"):
-            continue
-        files += [os.path.join(base, n) for n in sorted(names) if n == "README.md"]
-    for path in files:
-        if expression.search(read(path)):
-            failures.add(os.path.relpath(path, root), "matches the neutrality pattern")
+    listed = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False)
+    if listed.returncode != 0:
+        failures.add("neutrality", "the tracked files cannot be listed")
+        return 0
+    files = [name for name in listed.stdout.decode("utf-8", "replace").split("\0") if name]
+    if not files:
+        return 0
+    read_end, write_end = os.pipe()
+    os.write(write_end, pattern.encode("utf-8") + b"\n")
+    os.close(write_end)
+    env = {k: v for k, v in os.environ.items() if k != "UNA_NEUTRALITY_PATTERN"}
+    found = subprocess.run(
+        ["grep", "-E", "-i", "-I", "-l", "-f", f"/dev/fd/{read_end}", "--", *files],
+        cwd=root, capture_output=True, pass_fds=(read_end,), env=env, check=False,
+    )
+    os.close(read_end)
+    if found.returncode == 0:
+        for name in found.stdout.decode("utf-8", "replace").splitlines():
+            failures.add(name, "matches the neutrality pattern")
+    elif found.returncode != 1:
+        failures.add("neutrality", "the pattern could not be applied: it is not a valid extended regular expression (grep -E)")
     return len(files)
 
 
@@ -844,10 +857,15 @@ def self_test():
         case("an HTML tag", False, added('<img src="x" onerror="alert(1)">'), "HTML tags")
         case("an HTML closing tag", False, added("</details>"), "HTML tags")
         # A synthetic pattern stands for the real one, which is never written down.
-        case("a neutral page", True, lambda r, p: translate(r), "neutrality: PASS (3 files)", pattern="zebra-canary")
+        case("a neutral page", True, lambda r, p: translate(r), "neutrality: PASS (", pattern="zebra-canary")
         case("a match in a translation", False,
              lambda r, p: translate(r, text=TRANSLATION.replace("Uma introdução.", "Uma introdução, ZEBRA-CANARY.")),
              "translations/pt-br/01-hello/01-first/README.md: matches the neutrality pattern", pattern="zebra-canary")
+        case("a match in a package", False,
+             lambda r, p: write(os.path.join(p, "src", "main.una"), "module main\n-- zebra-canary\nprint hi\n"),
+             "01-hello/01-first/src/main.una: matches the neutrality pattern", pattern="zebra-canary")
+        case("a pattern grep cannot apply", False, None,
+             "the pattern could not be applied: it is not a valid extended regular expression", pattern="(zebra-canary")
         case("a required pattern, unset", False, None, "UNA_NEUTRALITY_PATTERN is unset or empty", require=True)
         case("a required pattern, empty", False, None, "UNA_NEUTRALITY_PATTERN is unset or empty", pattern="", require=True)
         case("a required pattern, set", True, None, "neutrality: PASS", pattern="zebra-canary", require=True)
@@ -879,7 +897,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (40 cases, archives reproducible)")
+    print("check.py: self-test PASS (42 cases, archives reproducible)")
     return 0
 
 
