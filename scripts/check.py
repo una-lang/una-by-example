@@ -28,14 +28,16 @@ For each page directory `NN-chapter/MM-page/`:
    is reported as out of date, and the website shows the English page for both.
 
 With UNA_NEUTRALITY_PATTERN set in the environment, no README, English or translated, may
-match it; the pattern is never stored or printed.
+match it; the pattern is never stored or printed. With `--require-neutrality`, as the una
+release gate runs it, an unset or empty pattern is a failure; without it, the check is skipped
+and the report says so.
 
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
 pass step 2 as unpacked.
 
 Usage:
-  check.py --una PATH [--una-version-from-binary] [--archives DIR]
+  check.py --una PATH [--una-version-from-binary] [--archives DIR] [--require-neutrality]
   check.py --self-test
 
 `una.lock` names the release the examples are checked against; `--una-version-from-binary`
@@ -534,6 +536,7 @@ def main(argv):
     una = None
     from_binary = False
     archive_dir = None
+    require_neutrality = False
     args = list(argv)
     while args:
         arg = args.pop(0)
@@ -543,16 +546,18 @@ def main(argv):
             from_binary = True
         elif arg == "--archives" and args:
             archive_dir = args.pop(0)
+        elif arg == "--require-neutrality":
+            require_neutrality = True
         else:
             print(__doc__, file=sys.stderr)
             return 2
     if not una:
         print(__doc__, file=sys.stderr)
         return 2
-    return check(ROOT, una, from_binary, archive_dir)
+    return check(ROOT, una, from_binary, archive_dir, require_neutrality)
 
 
-def check(root, una, from_binary, archive_dir):
+def check(root, una, from_binary, archive_dir, require_neutrality=False):
     failures = Failures()
     version = run(una, ["--json", "--version"], root)
     try:
@@ -568,6 +573,8 @@ def check(root, una, from_binary, archive_dir):
         counted = check_pages(root, una, failures, scratch)
         translated, stale = check_translations(root, failures)
         neutral = neutrality(root, failures)
+        if neutral is None and require_neutrality:
+            failures.add("neutrality", "--require-neutrality, but UNA_NEUTRALITY_PATTERN is unset or empty")
         commits(root, failures)
         tracked(root, failures)
         if archive_dir:
@@ -723,14 +730,14 @@ def git(root, *args, email="1+someone@users.noreply.github.com"):
     subprocess.run(["git", *args], cwd=root, env=env, capture_output=True, check=True)
 
 
-def quiet_check(root, una, archive_dir=None):
+def quiet_check(root, una, archive_dir=None, require_neutrality=False):
     """`check` with its report captured: (exit code, report)."""
     saved = sys.stdout, sys.stderr
     from io import StringIO
 
     sys.stdout = sys.stderr = StringIO()
     try:
-        code = check(root, una, False, archive_dir)
+        code = check(root, una, False, archive_dir, require_neutrality)
         report = sys.stdout.getvalue()
     finally:
         sys.stdout, sys.stderr = saved
@@ -747,7 +754,7 @@ def self_test():
         write(una, STUB)
         os.chmod(una, 0o755)
 
-        def case(name, expect_pass, mutate=None, wants=None, archive=False, pattern=None):
+        def case(name, expect_pass, mutate=None, wants=None, archive=False, pattern=None, require=False):
             root = os.path.join(base, name)
             page = fixture(root)
             if mutate:
@@ -763,10 +770,10 @@ def self_test():
                 if callable(archive):
                     archive(archive_dir)
             saved = os.environ.pop("UNA_NEUTRALITY_PATTERN", None)
-            if pattern:
+            if pattern is not None:
                 os.environ["UNA_NEUTRALITY_PATTERN"] = pattern
             try:
-                code, report = quiet_check(root, una, archive_dir)
+                code, report = quiet_check(root, una, archive_dir, require)
             finally:
                 os.environ.pop("UNA_NEUTRALITY_PATTERN", None)
                 if saved is not None:
@@ -841,6 +848,9 @@ def self_test():
         case("a match in a translation", False,
              lambda r, p: translate(r, text=TRANSLATION.replace("Uma introdução.", "Uma introdução, ZEBRA-CANARY.")),
              "translations/pt-br/01-hello/01-first/README.md: matches the neutrality pattern", pattern="zebra-canary")
+        case("a required pattern, unset", False, None, "UNA_NEUTRALITY_PATTERN is unset or empty", require=True)
+        case("a required pattern, empty", False, None, "UNA_NEUTRALITY_PATTERN is unset or empty", pattern="", require=True)
+        case("a required pattern, set", True, None, "neutrality: PASS", pattern="zebra-canary", require=True)
         case("a match in a page", False,
              lambda r, p: write(os.path.join(p, "README.md"), README.format(codes="U1001").replace("A lead.", "A zebra-canary lead.")),
              "matches the neutrality pattern", pattern="zebra-canary")
@@ -869,7 +879,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (37 cases, archives reproducible)")
+    print("check.py: self-test PASS (40 cases, archives reproducible)")
     return 0
 
 
