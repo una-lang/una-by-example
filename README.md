@@ -35,7 +35,7 @@ A translation's front matter keeps the English page's `learn`, `editions` and `c
 `scripts/check.py` checks each translation against its English page:
 
 - The same headings, with as many numbered items under each.
-- The same code and link targets: every inline code span, every fenced block and every link target of the English page, no more and no fewer. Code stays in English, the comments inside fenced blocks included, and so do commands, identifiers, diagnostic codes and what a program prints. Only the prose around them is translated.
+- The same code and links: every inline code span, every fenced block, every link target, reference definition and URL of the English page, no more and no fewer, and no HTML tag it does not have. Code stays in English, the comments inside fenced blocks included, and so do commands, identifiers, diagnostic codes and what a program prints. Only the prose around them is translated.
 - An `approved` translation whose `source` is not the digest of the current English page fails the check: the English page changed after the review. Set it back to `draft` with the change, or review it again. A `draft` one is reported as out of date.
 
 The website shows a translated page only when it is `approved` and its `source` matches; otherwise it shows the English page. A draft never appears on the website. The terms follow the glossaries of the website, one per language.

@@ -21,10 +21,14 @@ For each page directory `NN-chapter/MM-page/`:
    page's `learn`, `editions` and `codes`, gives the translated `title`, and adds `source`, the
    SHA-256 of the English README it translates, and `status`, `draft` or `approved`. It has the
    English README's headings, the same number of them, with as many numbered items under each;
-   and its code (inline spans and fenced blocks, comments included) and link targets are the
-   English README's, the same multiset. An `approved` translation whose `source` is not the
+   its code (inline spans and fenced blocks, comments included) and its links (link targets,
+   reference definitions and every URL, autolinks and bare ones included) are the English
+   README's, the same multiset; and so are its HTML tags outside code. An `approved` translation whose `source` is not the
    English README's digest fails: it was approved for a text that has changed. A `draft` one
    is reported as out of date, and the website shows the English page for both.
+
+With UNA_NEUTRALITY_PATTERN set in the environment, no README, English or translated, may
+match it; the pattern is never stored or printed.
 
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
@@ -66,6 +70,9 @@ STATUSES = ("draft", "approved")
 FENCE = re.compile(r"^```[^\n]*\n.*?^```$", re.MULTILINE | re.DOTALL)
 SPAN = re.compile(r"`[^`\n]+`")
 LINK = re.compile(r"\]\(([^)\s]+)\)")
+URL = re.compile(r"https?://[^\s)>\]]+")
+REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
+TAG = re.compile(r"<[A-Za-z/][^>\n]*>?")
 NOREPLY = re.compile(r"^(\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$")
 
 
@@ -299,8 +306,10 @@ def check_pages(root, una, failures, scratch):
 
 
 def skeleton(body):
-    """The headings of a README's `body`, each with the number of numbered items under it, and
-    its code and link targets, as a sorted list: what a translation keeps."""
+    """What a translation keeps of a README's `body`: its headings, each with the number of
+    numbered items under it; its code and link targets, as a sorted list (fenced blocks whole,
+    then outside them: code spans, link targets, reference definitions and every URL); and its
+    HTML tags outside code, as a sorted list."""
     parts = []
     for line in body.splitlines():
         if line.startswith("#"):
@@ -309,8 +318,10 @@ def skeleton(body):
             parts[-1][1] += 1
     fences = FENCE.findall(body)
     rest = FENCE.sub("", body)
-    kept = sorted(fences + SPAN.findall(rest) + LINK.findall(rest))
-    return [tuple(p) for p in parts], kept
+    spans = SPAN.findall(rest)
+    kept = sorted(fences + spans + LINK.findall(rest) + REFERENCE.findall(rest) + URL.findall(rest))
+    tags = sorted(TAG.findall(SPAN.sub("", rest)))
+    return [tuple(p) for p in parts], kept, tags
 
 
 def check_translations(root, failures):
@@ -369,15 +380,44 @@ def check_translations(root, failures):
                     stale.append(where)
             if status == "approved":
                 counted[1] += 1
-            headings, kept = skeleton(body)
-            english_headings, english_kept = skeleton(english_body)
+            headings, kept, tags = skeleton(body)
+            english_headings, english_kept, english_tags = skeleton(english_body)
             if headings != english_headings:
                 failures.add(where, f"its headings and numbered items {headings} are not the English page's {english_headings}")
             if kept != english_kept:
                 missing = sorted(set(english_kept) - set(kept))
                 extra = sorted(set(kept) - set(english_kept))
                 failures.add(where, f"its code and links differ from the English page's: missing {missing}, added {extra} (or counts differ)")
+            if tags != english_tags:
+                failures.add(where, f"its HTML tags {tags} are not the English page's {english_tags}")
     return counted, stale
+
+
+def neutrality(root, failures):
+    """The neutrality check of the published text, when UNA_NEUTRALITY_PATTERN is set: no README,
+    English or translated, matches the pattern (case-insensitive). The pattern is read from the
+    environment only, never stored, and never printed; a match reports the file only. Returns
+    the number of files checked, or None when the pattern is unset."""
+    pattern = os.environ.get("UNA_NEUTRALITY_PATTERN")
+    if not pattern:
+        return None
+    try:
+        expression = re.compile(pattern, re.IGNORECASE)
+    except re.error:
+        failures.add("neutrality", "UNA_NEUTRALITY_PATTERN is not a valid regular expression")
+        return 0
+    files = []
+    for base, dirs, names in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+        rel = os.path.relpath(base, root)
+        top = rel.split(os.sep)[0]
+        if rel != "." and not (CHAPTER.match(top) or top == "translations"):
+            continue
+        files += [os.path.join(base, n) for n in sorted(names) if n == "README.md"]
+    for path in files:
+        if expression.search(read(path)):
+            failures.add(os.path.relpath(path, root), "matches the neutrality pattern")
+    return len(files)
 
 
 def commits(root, failures):
@@ -527,6 +567,7 @@ def check(root, una, from_binary, archive_dir):
     try:
         counted = check_pages(root, una, failures, scratch)
         translated, stale = check_translations(root, failures)
+        neutral = neutrality(root, failures)
         commits(root, failures)
         tracked(root, failures)
         if archive_dir:
@@ -542,6 +583,7 @@ def check(root, una, from_binary, archive_dir):
         f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, {counted[2]} commands, "
         f"{translated[0]} translations ({translated[1]} approved), una {found})"
     )
+    print(f"  neutrality: {'skipped (UNA_NEUTRALITY_PATTERN unset)' if neutral is None else f'PASS ({neutral} files)'}")
     for where in stale:
         print(f"  out of date, a draft: {where}")
     return 0
@@ -705,7 +747,7 @@ def self_test():
         write(una, STUB)
         os.chmod(una, 0o755)
 
-        def case(name, expect_pass, mutate=None, wants=None, archive=False):
+        def case(name, expect_pass, mutate=None, wants=None, archive=False, pattern=None):
             root = os.path.join(base, name)
             page = fixture(root)
             if mutate:
@@ -720,7 +762,15 @@ def self_test():
                 builder.build(root, archive_dir, 0)
                 if callable(archive):
                     archive(archive_dir)
-            code, report = quiet_check(root, una, archive_dir)
+            saved = os.environ.pop("UNA_NEUTRALITY_PATTERN", None)
+            if pattern:
+                os.environ["UNA_NEUTRALITY_PATTERN"] = pattern
+            try:
+                code, report = quiet_check(root, una, archive_dir)
+            finally:
+                os.environ.pop("UNA_NEUTRALITY_PATTERN", None)
+                if saved is not None:
+                    os.environ["UNA_NEUTRALITY_PATTERN"] = saved
             ok = (code == 0) == expect_pass and (wants is None or wants in report)
             if not ok:
                 failed.append(f"{name}: exit {code}\n{report}")
@@ -779,6 +829,21 @@ def self_test():
         case("other codes", False, lambda r, p: translate(r, text=TRANSLATION.replace("codes: [U1001]", "codes: []")), "`codes`")
         case("a translation of no page", False, lambda r, p: translate(r, path=("01-hello", "02-none")), "does not exist")
         case("an unknown locale", False, lambda r, p: translate(r, locale="fr"), "no locale")
+        added = lambda extra: lambda r, p: translate(r, text=TRANSLATION.replace("O programa.", "O programa. " + extra))
+        case("a bare URL", False, added("Veja https://example.org/x."), "code and links differ")
+        case("an autolink", False, added("<https://example.org/>"), "code and links differ")
+        case("a reference definition", False,
+             lambda r, p: translate(r, text=TRANSLATION + "\n[x]: https://example.org/\n"), "code and links differ")
+        case("an HTML tag", False, added('<img src="x" onerror="alert(1)">'), "HTML tags")
+        case("an HTML closing tag", False, added("</details>"), "HTML tags")
+        # A synthetic pattern stands for the real one, which is never written down.
+        case("a neutral page", True, lambda r, p: translate(r), "neutrality: PASS (3 files)", pattern="zebra-canary")
+        case("a match in a translation", False,
+             lambda r, p: translate(r, text=TRANSLATION.replace("Uma introdução.", "Uma introdução, ZEBRA-CANARY.")),
+             "translations/pt-br/01-hello/01-first/README.md: matches the neutrality pattern", pattern="zebra-canary")
+        case("a match in a page", False,
+             lambda r, p: write(os.path.join(p, "README.md"), README.format(codes="U1001").replace("A lead.", "A zebra-canary lead.")),
+             "matches the neutrality pattern", pattern="zebra-canary")
 
         def tamper(directory):
             path = os.path.join(directory, "01-01-first.tar.gz")
@@ -804,7 +869,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (29 cases, archives reproducible)")
+    print("check.py: self-test PASS (37 cases, archives reproducible)")
     return 0
 
 
