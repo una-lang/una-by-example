@@ -16,6 +16,16 @@ For each page directory `NN-chapter/MM-page/`:
 3. Each `try/N` holds files that replace the package's, and its own `expected/`, checked in the
    same way on a fresh copy. The page's "Try it" list has one item per `try/N`.
 
+4. Each translation `translations/<locale>/NN-chapter[/MM-page]/README.md`, for a locale of
+   LOCALES, translates an English README of the same path. Its front matter keeps the English
+   page's `learn`, `editions` and `codes`, gives the translated `title`, and adds `source`, the
+   SHA-256 of the English README it translates, and `status`, `draft` or `approved`. It has the
+   English README's headings, the same number of them, with as many numbered items under each;
+   and its code (inline spans and fenced blocks, comments included) and link targets are the
+   English README's, the same multiset. An `approved` translation whose `source` is not the
+   English README's digest fails: it was approved for a text that has changed. A `draft` one
+   is reported as out of date, and the website shows the English page for both.
+
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
 pass step 2 as unpacked.
@@ -51,6 +61,11 @@ PARTS = ["## The program", "## What you should see", "## Try it", "## See also"]
 OPTIONAL_PARTS = ["## Notes"]
 DIAGNOSTIC = re.compile(r"^error (U\d{4}) at ([^:]+):(\d+):(\d+): (.+)$")
 COUNTEREXAMPLE = re.compile(r"^  counterexample: .+$")
+LOCALES = ("pt-br", "es")
+STATUSES = ("draft", "approved")
+FENCE = re.compile(r"^```[^\n]*\n.*?^```$", re.MULTILINE | re.DOTALL)
+SPAN = re.compile(r"`[^`\n]+`")
+LINK = re.compile(r"\]\(([^)\s]+)\)")
 NOREPLY = re.compile(r"^(\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$")
 
 
@@ -283,6 +298,88 @@ def check_pages(root, una, failures, scratch):
     return counted
 
 
+def skeleton(body):
+    """The headings of a README's `body`, each with the number of numbered items under it, and
+    its code and link targets, as a sorted list: what a translation keeps."""
+    parts = []
+    for line in body.splitlines():
+        if line.startswith("#"):
+            parts.append([line.split(" ", 1)[0], 0])
+        elif re.match(r"^\d+\. ", line) and parts:
+            parts[-1][1] += 1
+    fences = FENCE.findall(body)
+    rest = FENCE.sub("", body)
+    kept = sorted(fences + SPAN.findall(rest) + LINK.findall(rest))
+    return [tuple(p) for p in parts], kept
+
+
+def check_translations(root, failures):
+    """Step 4: every translation against its English README. Returns the number of
+    translations, of approved ones, and the drafts whose English README has changed."""
+    import hashlib
+
+    counted = [0, 0]
+    stale = []
+    base = os.path.join(root, "translations")
+    if not os.path.isdir(base):
+        return counted, stale
+    for directory, dirs, files in os.walk(base):
+        dirs.sort()
+        relative = os.path.relpath(directory, base)
+        parts = [] if relative == "." else relative.split(os.sep)
+        for name in sorted(files):
+            where = "/".join(["translations", *parts, name])
+            if name != "README.md" or not 2 <= len(parts) <= 3:
+                failures.add(where, "a translation is `translations/<locale>/NN-chapter[/MM-page]/README.md`")
+                continue
+            locale, *path = parts
+            if locale not in LOCALES:
+                failures.add(where, f"no locale {locale!r}; the locales are {list(LOCALES)}")
+                continue
+            english = os.path.join(root, *path, "README.md")
+            if not (CHAPTER.match(path[0]) and (len(path) == 1 or PAGE.match(path[1]))) or not os.path.isfile(english):
+                failures.add(where, f"translates {'/'.join(path)}/README.md, which does not exist")
+                continue
+            counted[0] += 1
+            text = read(os.path.join(directory, name))
+            fields, body = front_matter(text)
+            if fields is None:
+                failures.add(where, "no front matter")
+                continue
+            english_text = read(english)
+            english_fields, english_body = front_matter(english_text)
+            if english_fields is None:
+                english_fields, english_body = {}, english_text
+            for key in ("learn", "editions", "codes"):
+                if fields.get(key) != english_fields.get(key):
+                    failures.add(where, f"`{key}` is {fields.get(key)!r}, but the English page's is {english_fields.get(key)!r}")
+            if len(path) == 2:
+                number = english_fields.get("learn", "")
+                first = body.lstrip("\n").split("\n", 1)[0]
+                if not fields.get("title") or first != f"# {number} {fields.get('title')}":
+                    failures.add(where, f"the title line must be `# {number} <title>`, with the translated `title`")
+            status = fields.get("status")
+            if status not in STATUSES:
+                failures.add(where, f"`status` is {status!r}, not one of {list(STATUSES)}")
+            digest = hashlib.sha256(english_text.encode("utf-8")).hexdigest()
+            if fields.get("source") != digest:
+                if status == "approved":
+                    failures.add(where, f"approved for another text: `source` is not the SHA-256 of {'/'.join(path)}/README.md ({digest})")
+                else:
+                    stale.append(where)
+            if status == "approved":
+                counted[1] += 1
+            headings, kept = skeleton(body)
+            english_headings, english_kept = skeleton(english_body)
+            if headings != english_headings:
+                failures.add(where, f"its headings and numbered items {headings} are not the English page's {english_headings}")
+            if kept != english_kept:
+                missing = sorted(set(english_kept) - set(kept))
+                extra = sorted(set(kept) - set(english_kept))
+                failures.add(where, f"its code and links differ from the English page's: missing {missing}, added {extra} (or counts differ)")
+    return counted, stale
+
+
 def commits(root, failures):
     """Step 4: every commit's author and committer are GitHub noreply addresses."""
     result = subprocess.run(
@@ -429,6 +526,7 @@ def check(root, una, from_binary, archive_dir):
     scratch = tempfile.mkdtemp(prefix="una-by-example-")
     try:
         counted = check_pages(root, una, failures, scratch)
+        translated, stale = check_translations(root, failures)
         commits(root, failures)
         tracked(root, failures)
         if archive_dir:
@@ -440,7 +538,12 @@ def check(root, una, from_binary, archive_dir):
         for item in failures.items:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print(f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, {counted[2]} commands, una {found})")
+    print(
+        f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, {counted[2]} commands, "
+        f"{translated[0]} translations ({translated[1]} approved), una {found})"
+    )
+    for where in stale:
+        print(f"  out of date, a draft: {where}")
     return 0
 
 
@@ -504,6 +607,47 @@ What it prints.
 
 - Nothing.
 """
+
+
+TRANSLATION = """---
+learn: "1.1"
+title: Uma primeira página
+editions: ["0.2"]
+codes: [U1001]
+source: {source}
+status: {status}
+---
+
+# 1.1 Uma primeira página
+
+Uma introdução.
+
+## O programa
+
+O programa.
+
+## O que você deve ver
+
+O que ele imprime.
+
+## Experimente
+
+1. Escreva `bad`.
+
+## Veja também
+
+- Nada.
+"""
+
+
+def translate(root, status="approved", source=None, text=None, locale="pt-br", path=("01-hello", "01-first")):
+    """Writes a translation of the fixture's page, by default approved for its current text."""
+    import hashlib
+
+    english = read(os.path.join(root, "01-hello", "01-first", "README.md"))
+    digest = source if source is not None else hashlib.sha256(english.encode("utf-8")).hexdigest()
+    text = text if text is not None else TRANSLATION
+    write(os.path.join(root, "translations", locale, *path, "README.md"), text.format(source=digest, status=status))
 
 
 def write(path, text):
@@ -614,6 +758,28 @@ def self_test():
              "bytecode is tracked")
         case("a wrong version", False, lambda r, p: write(os.path.join(r, "una.lock"), 'version = "1.0.0"\n'), "pins una")
 
+        case("a translation", True, lambda r, p: translate(r), "1 translations (1 approved)")
+        case("an out-of-date draft", True, lambda r, p: translate(r, "draft", "0" * 64), "out of date, a draft")
+        case("an out-of-date approval", False, lambda r, p: translate(r, "approved", "0" * 64), "approved for another text")
+        case("no status", False, lambda r, p: translate(r, "done"), "`status`")
+        case("a changed code span", False,
+             lambda r, p: translate(r, text=TRANSLATION.replace("`bad`", "`ruim`")), "code and links differ")
+
+        def fenced(r, p, comment):
+            english = README.format(codes="U1001").replace("The program.", "The program.\n\n```una\n-- a comment\nmain()\n```")
+            write(os.path.join(p, "README.md"), english)
+            translate(r, text=TRANSLATION.replace("O programa.", "O programa.\n\n```una\n" + comment + "\nmain()\n```"))
+
+        case("a fenced block", True, lambda r, p: fenced(r, p, "-- a comment"))
+        case("a translated comment", False, lambda r, p: fenced(r, p, "-- um comentário"), "code and links differ")
+        case("a missing item", False,
+             lambda r, p: translate(r, text=TRANSLATION.replace("1. Escreva `bad`.", "Escreva `bad`.")), "headings and numbered items")
+        case("a changed link", False,
+             lambda r, p: translate(r, text=TRANSLATION.replace("- Nada.", "- [Nada](https://example.org/)")), "code and links differ")
+        case("other codes", False, lambda r, p: translate(r, text=TRANSLATION.replace("codes: [U1001]", "codes: []")), "`codes`")
+        case("a translation of no page", False, lambda r, p: translate(r, path=("01-hello", "02-none")), "does not exist")
+        case("an unknown locale", False, lambda r, p: translate(r, locale="fr"), "no locale")
+
         def tamper(directory):
             path = os.path.join(directory, "01-01-first.tar.gz")
             with tarfile.open(path, "w:gz") as archive:
@@ -638,7 +804,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (17 cases, archives reproducible)")
+    print("check.py: self-test PASS (29 cases, archives reproducible)")
     return 0
 
 
