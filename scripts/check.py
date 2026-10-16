@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """Checks every example of Una by Example against a `una` binary.
 
-For each page directory `NN-chapter/MM-page/`:
+A chapter whose README.md has `template: 2` in its front matter is one page, checked by the
+rules of template 2 (scripts/template2.py, TEMPLATE.md): its parts in order, its packages under
+steps/, day-to-day/, mistakes/ and exercises/ checked as in step 2 below, with their rendered
+diagnostics, every fenced block an include whose text is the included file's, the exercises'
+examples failing on start/ and passing on the answer, and links to the site's own pages. A
+chapter is on template 1 only when its README.md has no front matter and no code, and it has
+page directories and no template 2 directory; anything else that is not exactly template 2
+fails. For each page directory `NN-chapter/MM-page/` of a template 1 chapter:
 
 1. Its README.md has the front matter (`learn`, `title`, `editions`, `codes`) and the parts of
-   the template in order, its `learn` number matches its path, and its `codes` are the codes its
+   the template in order, no hidden code (template2.hidden_code: a `$$` line, indented code, a
+   fence in a quote or a list, invisible or control characters), its `learn` number matches its path, and its `codes` are the codes its
    outcomes show.
 2. A fresh copy of the package (`una.toml`, `verification.lock`, `src/`) has the outcome in
    `expected/`: either it checks clean at tier 1 in canonical form and `una run` prints
@@ -33,13 +41,23 @@ printed. The una release gate runs its own check, with the same dialect. With `-
 release gate runs it, an unset or empty pattern is a failure; without it, the check is skipped
 and the report says so.
 
+`una` always runs with a minimal environment (`una_env`: PATH, a HOME and TMPDIR of its own, a
+fixed locale, no colors, nothing else), on a package whose una.toml stays within MANIFEST_TABLES
+and GRANT, with the commands of COMMAND only. No symbolic link in a page or package is copied
+or followed; each is a failure, and so is a tracked one anywhere. una.toml is read with tomllib,
+or on a Python before 3.11 with the stricter `plain_toml`.
+
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
 pass step 2 as unpacked.
 
 Usage:
   check.py --una PATH [--una-version-from-binary] [--archives DIR] [--require-neutrality]
+  check.py --fill
   check.py --self-test
+
+`--fill` rewrites the body of every include block of the template 2 pages, English and
+translated, from the packages, and needs no `una`.
 
 `una.lock` names the release the examples are checked against; `--una-version-from-binary`
 checks against the given binary's version instead, as the una release gate does for a release
@@ -76,6 +94,7 @@ LINK = re.compile(r"\]\(([^)\s]+)\)")
 URL = re.compile(r"https?://[^\s)>\]]+")
 REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
 TAG = re.compile(r"<[A-Za-z/][^>\n]*>?")
+CAPTION = re.compile(r'\scaption=("[^"]*"|\S+)')
 NOREPLY = re.compile(r"^(\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$")
 
 
@@ -142,27 +161,193 @@ def package_files(directory):
 
 
 def copy_package(directory, to, overlay=None):
-    """Copies the package in `directory` to `to`, then the files of `overlay` over it."""
+    """Copies the package in `directory` to `to`, then the files of `overlay` over it. A
+    symbolic link is never copied or followed; `symlinks` reports it as a failure."""
     for name in package_files(directory):
-        if name == "README.md":
+        if name == "README.md" or os.path.islink(os.path.join(directory, name)):
             continue
         os.makedirs(os.path.dirname(os.path.join(to, name)) or to, exist_ok=True)
-        shutil.copyfile(os.path.join(directory, name), os.path.join(to, name))
+        shutil.copyfile(os.path.join(directory, name), os.path.join(to, name), follow_symlinks=False)
     if overlay:
         for base, dirs, files in os.walk(overlay):
             dirs[:] = sorted(d for d in dirs if not (base == overlay and d == "expected"))
             for name in sorted(files):
                 source = os.path.join(base, name)
+                if os.path.islink(source):
+                    continue
                 target = os.path.join(to, os.path.relpath(source, overlay))
                 os.makedirs(os.path.dirname(target), exist_ok=True)
-                shutil.copyfile(source, target)
+                shutil.copyfile(source, target, follow_symlinks=False)
+
+
+def symlinks(directory, where, failures):
+    """Every symbolic link under `directory`, file or directory, is a failure: una-by-example
+    holds none, and the website refuses them too."""
+    if os.path.islink(directory):
+        failures.add(where, "a symbolic link; una-by-example holds none")
+        return
+    for base, dirs, files in os.walk(directory):
+        dirs.sort()
+        for name in sorted(dirs + files):
+            if os.path.islink(os.path.join(base, name)):
+                relative = os.path.relpath(os.path.join(base, name), directory).replace(os.sep, "/")
+                failures.add(f"{where}/{relative}", "a symbolic link; una-by-example holds none")
+
+
+# The home directory `una` runs with: a directory of its own, never the user's.
+HOME = None
+
+
+def una_home():
+    global HOME
+    if HOME is None:
+        import atexit
+
+        HOME = tempfile.mkdtemp(prefix="una-by-example-home-")
+        atexit.register(shutil.rmtree, HOME, True)
+    return HOME
+
+
+def una_env():
+    """The environment of one `una` run: PATH (to find Z3 and a C toolchain), a fresh HOME and
+    TMPDIR of its own, which no other run sees, a fixed locale and no colors. Nothing else of
+    the caller's environment reaches it, UNA_NEUTRALITY_PATTERN and every other variable
+    included."""
+    home = tempfile.mkdtemp(prefix="home-", dir=una_home())
+    return {"PATH": os.environ.get("PATH", os.defpath), "HOME": home, "TMPDIR": home,
+            "LANG": "C.UTF-8", "NO_COLOR": "1"}
 
 
 def run(una, args, cwd):
-    """Runs `una` with `args` in `cwd`."""
+    """Runs `una` with `args` in `cwd`, in the environment of `una_env`."""
     return subprocess.run(
-        [una, *args], cwd=cwd, capture_output=True, stdin=subprocess.DEVNULL, check=False
+        [una, *args], cwd=cwd, capture_output=True, stdin=subprocess.DEVNULL, env=una_env(), check=False
     )
+
+
+# What a package's una.toml may hold: these tables, and in [run] only `entry` and `grants`,
+# with these grants. No env, no network, no files outside the package's src/.
+MANIFEST_TABLES = {"package", "run", "escape_budget", "labels", "trusted", "boundaries", "contracts"}
+PACKAGE_KEYS = {"name", "version", "edition"}
+GRANT = re.compile(r"^(console|clock|files:src(/[A-Za-z0-9_-]+)*:(read|write|read,write))$")
+# The commands an `expected/commands/*.txt` may run, all in the package and nowhere else.
+COMMAND = re.compile(
+    r"^(--json )?(check|test|run|build|report|obligations) \.$|^fmt --check \.$|^fix --dry-run \.$"
+    r"|^(--json )?explain U\d{4}$|^(--json )?(trace|contract) [A-Za-z0-9_.]+$"
+)
+
+
+TOML_KEY = re.compile(r'[A-Za-z0-9_-]+|"[^"\\\n]*"')
+TOML_STRING = re.compile(r'"([^"\\\n]*)"')
+
+
+def plain_toml(text):
+    """A strict reading of the TOML a una-by-example manifest uses, for a Python without
+    tomllib (before 3.11): `[table]` headers, and `key = value` lines whose value is a string
+    without escapes, an integer, true or false, or a one-line array of such strings; comments
+    and blank lines. Only spaces and tabs separate tokens; a control character other than the
+    tab (a carriage return and DEL included) anywhere, and a character outside ASCII anywhere
+    but inside a string or a comment, raise ValueError, and so does anything else outside
+    that subset, so the manifest fails: the reading is never looser than tomllib's."""
+    bad = re.search(r"[\x00-\x08\x0a-\x1f\x7f]", text.replace("\n", " "))
+    if bad:
+        raise ValueError(f"the control character U+{ord(bad.group(0)):04X}")
+    document, table = {}, None
+    for number, raw in enumerate(text.split("\n"), start=1):
+        line = raw.strip(" \t")
+        code = re.sub(r'"[^"\\\n]*"', '""', line).split("#", 1)[0]
+        if not code.isascii():
+            raise ValueError(f"line {number}: a character outside ASCII outside a string or a comment")
+        if not line or line.startswith("#"):
+            continue
+        header = re.fullmatch(r"\[([A-Za-z0-9_-]+)\]", line)
+        if header:
+            if header.group(1) in document:
+                raise ValueError(f"line {number}: [{header.group(1)}] twice")
+            table = document[header.group(1)] = {}
+            continue
+        key = TOML_KEY.match(line)
+        if not key or table is None:
+            raise ValueError(f"line {number}: not a key in a table")
+        rest = line[key.end():].lstrip(" \t")
+        if not rest.startswith("="):
+            raise ValueError(f"line {number}: no `=` after the key")
+        rest = rest[1:].strip(" \t")
+        name = key.group(0)[1:-1] if key.group(0).startswith('"') else key.group(0)
+        if rest.startswith("["):
+            items, rest = [], rest[1:].strip(" \t")
+            while not rest.startswith("]"):
+                found = TOML_STRING.match(rest)
+                if not found:
+                    raise ValueError(f"line {number}: an array holds strings only")
+                items.append(found.group(1))
+                rest = rest[found.end():].strip(" \t")
+                if rest.startswith(","):
+                    rest = rest[1:].strip(" \t")
+                elif not rest.startswith("]"):
+                    raise ValueError(f"line {number}: an array's items are separated by commas")
+            value, rest = items, rest[1:].strip(" \t")
+        elif TOML_STRING.match(rest):
+            found = TOML_STRING.match(rest)
+            value, rest = found.group(1), rest[found.end():].strip(" \t")
+        else:
+            found = re.match(r"(-?(?:0|[1-9][0-9]*)|true|false)\b", rest)
+            if not found:
+                raise ValueError(f"line {number}: a value is a string, a whole number, true, false or an array of strings")
+            value = int(found.group(1)) if found.group(1) not in ("true", "false") else found.group(1) == "true"
+            rest = rest[found.end():].strip(" \t")
+        if rest and not rest.startswith("#"):
+            raise ValueError(f"line {number}: text after the value")
+        if name in table:
+            raise ValueError(f"line {number}: `{name}` twice")
+        table[name] = value
+    return document
+
+
+def manifest(package, where, failures):
+    """Whether the una.toml of the copy at `package` is within MANIFEST_TABLES and GRANT. It is
+    read with tomllib, or where Python has none, with the stricter `plain_toml`."""
+    path = os.path.join(package, "una.toml")
+    try:
+        with open(path, "rb") as handle:
+            data = handle.read()
+        try:
+            import tomllib
+
+            document = tomllib.loads(data.decode("utf-8"))
+        except ImportError:
+            document = plain_toml(data.decode("utf-8"))
+    except (OSError, ValueError) as error:
+        failures.add(where, f"una.toml cannot be read: {error}")
+        return False
+    good = True
+    for table, value in document.items():
+        if table not in MANIFEST_TABLES:
+            failures.add(where, f"una.toml: no [{table}] in una-by-example; the tables are {sorted(MANIFEST_TABLES)}")
+            good = False
+        elif not isinstance(value, dict):
+            failures.add(where, f"una.toml: `{table}` is a table, [{table}]")
+            good = False
+    if not good:
+        return False
+    for key in document.get("package", {}):
+        if key not in PACKAGE_KEYS:
+            failures.add(where, f"una.toml: [package] holds only {sorted(PACKAGE_KEYS)}, not `{key}`")
+            good = False
+    section = document.get("run", {})
+    for key in section:
+        if key not in ("entry", "grants"):
+            failures.add(where, f"una.toml: [run] holds only `entry` and `grants`, not `{key}`")
+            good = False
+    grants = section.get("grants", [])
+    if not isinstance(grants, list):
+        failures.add(where, "una.toml: [run] grants is a list of strings")
+        return False
+    for grant in grants:
+        if not isinstance(grant, str) or not GRANT.fullmatch(grant) or ".." in grant:
+            failures.add(where, f"una.toml: the grant {grant!r} is not allowed; grants are console, clock and files:src[/dir]:read|write|read,write")
+            good = False
+    return good
 
 
 def diagnostics_of(una, package):
@@ -196,6 +381,8 @@ def outcome(una, package, expected, where, failures):
     if os.path.isfile(output) == os.path.isfile(listed):
         failures.add(where, "expected/ must hold exactly one of output.txt and diagnostics.txt")
         return set()
+    if not manifest(package, where, failures):
+        return set()
     lines, result = diagnostics_of(una, package)
     if lines is None:
         failures.add(where, f"`una check` printed no JSON: {result.stderr.decode(errors='replace')[:200]}")
@@ -224,9 +411,10 @@ def outcome(una, package, expected, where, failures):
     return set()
 
 
-def commands(una, package, expected, where, failures):
-    """Each `expected/commands/*.txt`: its first line is `$ una <args>`, and the rest is what
-    that command prints on stdout in the package, byte for byte."""
+def commands(una, package, expected, where, failures, fresh=None):
+    """Each `expected/commands/*.txt`: its first line is `$ una <args>`, with args one of
+    COMMAND, and the rest is what that command prints on stdout in the package, byte for byte.
+    With `fresh`, each command runs in the copy `fresh()` makes, not in `package`."""
     directory = os.path.join(expected, "commands")
     if not os.path.isdir(directory):
         return 0
@@ -237,7 +425,14 @@ def commands(una, package, expected, where, failures):
         if not first.startswith("$ una "):
             failures.add(f"{where}/commands/{name}", "the first line must be `$ una <args>`")
             continue
-        ran = run(una, first[len("$ una "):].split(" "), package)
+        if not COMMAND.fullmatch(first[len("$ una "):]):
+            failures.add(f"{where}/commands/{name}", f"`{first[2:]}` is not one of the commands una-by-example runs")
+            continue
+        cwd = fresh() if fresh else package
+        if not manifest(cwd, where, Failures()):
+            failures.add(f"{where}/commands/{name}", "not run: the package's una.toml is not allowed")
+            continue
+        ran = run(una, first[len("$ una "):].split(" "), cwd)
         if ran.stdout.decode(errors="replace") != printed:
             failures.add(f"{where}/commands/{name}", f"`{first[2:]}` prints:\n{ran.stdout.decode(errors='replace')}")
         count += 1
@@ -282,6 +477,7 @@ def check_pages(root, una, failures, scratch):
         directory = os.path.join(root, chapter, page)
         where = f"{chapter}/{page}"
         counted[0] += 1
+        symlinks(directory, where, failures)
         package = os.path.join(scratch, chapter, page, "package")
         copy_package(directory, package)
         codes = outcome(una, package, os.path.join(directory, "expected"), where, failures)
@@ -302,6 +498,12 @@ def check_pages(root, una, failures, scratch):
             failures.add(where, "no README.md")
             continue
         template(root, chapter, page, read(readme), len(tries), codes, failures)
+        import template2
+
+        # The site renders these as code that no package backs: a `$$` line, indented code, a
+        # fence inside a quote or a list, and invisible or control characters.
+        for line, why in template2.hidden_code(template2.padded(read(readme))[1]):
+            failures.add(f"{where}/README.md:{line}", why)
     for chapter in chapters(root):
         if not os.path.isfile(os.path.join(root, chapter, "README.md")):
             failures.add(chapter, "no README.md (the chapter page)")
@@ -319,7 +521,11 @@ def skeleton(body):
             parts.append([line.split(" ", 1)[0], 0])
         elif re.match(r"^\d+\. ", line) and parts:
             parts[-1][1] += 1
-    fences = FENCE.findall(body)
+    # A fence's caption= is prose, which a translation translates; the rest of the fence is kept.
+    fences = []
+    for fence in FENCE.findall(body):
+        opener, newline, rest = fence.partition("\n")
+        fences.append(CAPTION.sub(" caption=", opener, count=1) + newline + rest)
     rest = FENCE.sub("", body)
     spans = SPAN.findall(rest)
     kept = sorted(fences + spans + LINK.findall(rest) + REFERENCE.findall(rest) + URL.findall(rest))
@@ -383,6 +589,10 @@ def check_translations(root, failures):
                     stale.append(where)
             if status == "approved":
                 counted[1] += 1
+            import template2
+
+            template2.check_translation(root, path, fields, template2.padded(text)[1], english_fields,
+                                        template2.padded(english_text)[1] if english_fields else english_body, where, failures)
             headings, kept, tags = skeleton(body)
             english_headings, english_kept, english_tags = skeleton(english_body)
             if headings != english_headings:
@@ -449,6 +659,15 @@ def commits(root, failures):
             failures.add(f"commit {sha}", "the author email is not a GitHub noreply address")
         if not (NOREPLY.match(committer) or committer == "noreply@github.com"):
             failures.add(f"commit {sha}", "the committer email is not a GitHub noreply address")
+
+
+def tracked_links(root, failures):
+    """No tracked file is a symbolic link, anywhere in the repository."""
+    result = subprocess.run(["git", "ls-files", "-s", "-z"], cwd=root, capture_output=True, check=False)
+    for entry in result.stdout.decode("utf-8", "replace").split("\0"):
+        mode, _, rest = entry.partition(" ")
+        if mode == "120000":
+            failures.add(rest.split("\t", 1)[-1], "a symbolic link; una-by-example holds none")
 
 
 def tracked(root, failures):
@@ -546,6 +765,15 @@ def lock_version(root):
 def main(argv):
     if argv == ["--self-test"]:
         return self_test()
+    if argv == ["--fill"]:
+        import template2
+
+        changed, problems = template2.fill(ROOT)
+        for path in changed:
+            print(f"check.py: filled {path}")
+        for problem in problems:
+            print(f"check.py: {problem}", file=sys.stderr)
+        return 1 if problems else 0
     una = None
     from_binary = False
     archive_dir = None
@@ -572,6 +800,18 @@ def main(argv):
 
 def check(root, una, from_binary, archive_dir, require_neutrality=False):
     failures = Failures()
+    global HOME
+    scratch = tempfile.mkdtemp(prefix="una-by-example-")
+    HOME = os.path.join(scratch, "home")
+    os.makedirs(HOME)
+    try:
+        return checked(root, una, from_binary, archive_dir, require_neutrality, failures, scratch)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+        HOME = None
+
+
+def checked(root, una, from_binary, archive_dir, require_neutrality, failures, scratch):
     version = run(una, ["--json", "--version"], root)
     try:
         found = json.loads(version.stdout)["version"]
@@ -581,19 +821,22 @@ def check(root, una, from_binary, archive_dir, require_neutrality=False):
     wanted = lock_version(root)
     if not from_binary and found != wanted:
         failures.add("una.lock", f"pins una {wanted}, but {una} is {found}")
-    scratch = tempfile.mkdtemp(prefix="una-by-example-")
-    try:
-        counted = check_pages(root, una, failures, scratch)
-        translated, stale = check_translations(root, failures)
-        neutral = neutrality(root, failures)
-        if neutral is None and require_neutrality:
-            failures.add("neutrality", "--require-neutrality, but UNA_NEUTRALITY_PATTERN is unset or empty")
-        commits(root, failures)
-        tracked(root, failures)
-        if archive_dir:
-            archives(root, una, archive_dir, failures, scratch)
-    finally:
-        shutil.rmtree(scratch, ignore_errors=True)
+    counted = check_pages(root, una, failures, scratch)
+    tracked_links(root, failures)
+    if os.path.isdir(os.path.join(root, "translations")):
+        symlinks(os.path.join(root, "translations"), "translations", failures)
+    import template2
+
+    warnings = []
+    second = template2.check_chapters(root, una, failures, scratch, warnings)
+    translated, stale = check_translations(root, failures)
+    neutral = neutrality(root, failures)
+    if neutral is None and require_neutrality:
+        failures.add("neutrality", "--require-neutrality, but UNA_NEUTRALITY_PATTERN is unset or empty")
+    commits(root, failures)
+    tracked(root, failures)
+    if archive_dir:
+        archives(root, una, archive_dir, failures, scratch)
     if failures.items:
         print("check.py: FAIL", file=sys.stderr)
         for item in failures.items:
@@ -603,7 +846,10 @@ def check(root, una, from_binary, archive_dir, require_neutrality=False):
         f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, {counted[2]} commands, "
         f"{translated[0]} translations ({translated[1]} approved), una {found})"
     )
+    print(f"  template 2: {second[0]} chapters, {second[1]} packages, {second[2]} commands")
     print(f"  neutrality: {'skipped (UNA_NEUTRALITY_PATTERN unset)' if neutral is None else f'PASS ({neutral} files)'}")
+    for warning in warnings:
+        print(f"  warning: {warning}")
     for where in stale:
         print(f"  out of date, a draft: {where}")
     return 0
@@ -892,12 +1138,17 @@ def self_test():
                 failed.append(f"two builds of {name} differ")
     finally:
         shutil.rmtree(base, ignore_errors=True)
+    # The rules of template 2 have their own tests, with their own stub.
+    import test_template2
+
+    if test_template2.main() != 0:
+        failed.append("template 2: scripts/test_template2.py failed")
     if failed:
         print("check.py: self-test FAIL", file=sys.stderr)
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (42 cases, archives reproducible)")
+    print("check.py: self-test PASS (42 cases, archives reproducible, and the template 2 tests)")
     return 0
 
 
@@ -907,4 +1158,7 @@ def read_bytes(path):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    # One instance of this module: template2.py imports it as `check`, so run that one.
+    import check
+
+    sys.exit(check.main(sys.argv[1:]))
