@@ -55,7 +55,11 @@ What the checker guarantees has a precise scope. An observer who sees only what 
 
 ## 9.1 Labels and how they follow data
 
+### Levels of sensitivity
+
 A label is a level, optionally with categories. The levels, from least to most sensitive, are `public`, `internal`, `confidential`, `secret` and `restricted`. You write a label in front of a type: `confidential Int`, `secret Text`. A type with no label is `public`.
+
+### Each step is a package
 
 Each step is a package, set up as in [chapter 8](/learn/capabilities/#s8-1): `una.toml`, `verification.lock` and the module under `src/`. Then, in the package's directory:
 
@@ -63,6 +67,8 @@ Each step is a package, set up as in [chapter 8](/learn/capabilities/#s8-1): `un
 una check .
 una run .
 ```
+
+### A catalog with a confidential cost
 
 Start with a catalog. The price of a product is public. What the store pays its supplier is confidential, and so is anything computed from it:
 
@@ -108,6 +114,8 @@ DESK-02: 18900 cents
 2 margins computed
 ```
 
+### Printing a confidential value
+
 Now print the margins themselves:
 
 ```diff include="steps/01-labels..steps/02-leak:src/pricing.una" context="1" title="src/pricing.una"
@@ -130,6 +138,8 @@ Now print the margins themselves:
 
 The interpolation `"margins: {margins}"` carries the labels of what it interpolates, so the text is `confidential`, and `Console.print` accepts `public`. The repairs una lists come in order: first send only public data, or send the value to a place that accepts its label; last, release it through a policy, which it marks as an escape. [Section 9.5](#s9-5) shows when that is right.
 
+### Choosing a level
+
 :::decide
 **Which to use:**
 
@@ -146,9 +156,17 @@ These are conventions, not rules of the language. The checker knows only the ord
 
 ## 9.2 Sinks: where labeled data may go
 
+### Sinks and their ceilings
+
 A sink is a place where data leaves the program: an argument of a capability operation. Each sink has a ceiling, its `accepts` label, and every argument must be at or below it. The ceilings of the host's operations are fixed: `Console.print` accepts `public`, `Files.write` accepts `internal`. An operation you declare accepts `public`, unless its `accepts` clause says more.
 
-Data read from files, the environment or the network is labeled `internal`. `Files.read` returns `internal Text`, and `Env.get` returns `internal` values: a file or an environment variable may hold anything, so the program may pass what it read to the store's own systems, but may not print it. This step passes a reorder list from a file to the supplier, whose service accepts `internal` data:
+### Data from outside is `internal`
+
+Data read from files, the environment or the network is labeled `internal`. `Files.read` returns `internal Text`, and `Env.get` returns `internal` values: a file or an environment variable may hold anything, so the program may pass what it read to the store's own systems, but may not print it.
+
+### Sending a reorder list to the supplier
+
+This step passes a reorder list from a file to the supplier, whose service accepts `internal` data:
 
 :::steps
 ```una include="steps/03-sinks/src/reorder.una" title="steps/03-sinks/src/reorder.una" verified="check, run"
@@ -196,14 +214,22 @@ Walkthrough:
 reorder list sent to the supplier
 ```
 
+### How a handler is checked
+
 A handler of an operation is checked for the most sensitive caller its `accepts` allows. So `accepting` may not print what it receives, or print anything at all: a handler of an operation that accepts `internal` data cannot signal that data to a `public` place, even by whether it prints. A fake that does nothing, fails, or returns fixed values stays valid.
+
+### Examples are not sinks
 
 > [!NOTE]
 > `expect` lines of examples are not sinks. An example may compare a `secret` result with a value, and `una test .` may print it when the example fails, since a test is the author looking at their own data.
 
 ## 9.3 Branches and failures: implicit flows
 
+### Leaking without copying
+
 A value can leak without being copied. If a function returns `0` when a secret is above a threshold and `790` otherwise, the result reveals something about the secret, although `0` and `790` are constants. The checker tracks this with the label of the program counter: inside a branch on labeled data, everything the branch decides carries the condition's label.
+
+### A fee decided by a branch
 
 This step charges a shipping fee. Loyal customers, those who spent at least 50000 cents, ship for free, and what a customer spent is confidential:
 
@@ -240,7 +266,7 @@ pub main() -> Unit
 
 Walkthrough:
 
-1. **`shipping_fee(spent: confidential Int) -> confidential Int`.** The branch is on `spent`, so the fee is `confidential`. Declaring `-> Int` is U4001, at the condition ([Common mistakes](#s9-8) shows it).
+1. **`shipping_fee(spent: confidential Int) -> confidential Int`.** The branch is on `spent`, so the fee is `confidential`. Declaring `-> Int` is U4001, at the condition ([a branch that decides a public result](#a-branch-that-decides-a-public-result-u4001) shows it).
 2. **`accepts confidential` on `charge`.** The payment provider must receive the fee, so its operation accepts `confidential` data.
 3. **`@console.print("shipping charged for 2 orders")`.** `main` prints a constant. It knows how many orders it charged, which depends on nothing confidential.
 :::
@@ -289,9 +315,13 @@ Whether a function fails is something its caller observes. A `fail` inside a bra
 
 The related location, "the labeled condition", is the branch that raised the program counter. The repair is in the message: return a labeled value instead of failing, such as a `confidential Option[Text]` that is `None` for a customer without the code. The caller then receives the answer with its label, and decides what to do under the same rules.
 
+### Calls under a labeled branch
+
 The same rule covers calls. Under a labeled program counter, a function may call another only if the callee cannot fail and every effect it performs accepts that label. A call to `@console.print` inside `if spent >= 50000` is U4003, since printing at all would reveal the branch.
 
 ## 9.4 Categories
+
+### Declaring categories
 
 A level says how sensitive data is. A category says what kind of data it is: `secret[PII] Text` is secret, and it is personal data. A package declares its categories in `una.toml`, under `[labels]`:
 
@@ -309,9 +339,15 @@ entry = "courier"
 grants = ["console"]
 ```
 
+### How categories flow and combine
+
 A label flows into another only if its level is at or below the other's, and its categories are among the other's. So `secret[PII]` flows into `secret[PII]` and `restricted[PII]`, but not into `secret`: personal data never loses its category by accident.
 
 When values combine, their labels combine too: the result takes the higher level and every category of either. A text built from a `secret[PII]` phone and a `confidential` total is `secret[PII]`. A label may name several categories, such as `confidential[Location, PII]`, and each must be declared. Categories let a package say which places may receive which kinds of data. A courier may receive personal data and an analytics service may not, even when both accept `secret` data.
+
+### A courier that may receive a phone number
+
+The step books a courier, whose service may receive personal data:
 
 :::steps
 ```una include="steps/06-categories/src/courier.una" title="steps/06-categories/src/courier.una" verified="check, run"
@@ -366,9 +402,13 @@ Walkthrough:
 route booked: Recife, Olinda
 ```
 
+### Undeclared and dropped categories
+
 A category that `[labels] categories` does not declare is U4007, so a misspelt category, such as `PIl`, cannot create a new, unchecked kind of data. Dropping a category is a release like lowering a level: only a policy can do it, and its `to` type shows the label it gives.
 
 ## 9.5 Releasing data: policies and trusted modules
+
+### Lowering a label on purpose
 
 Some flows to a lower label are the point of the program. A report must say how many lines a file has. A log should say which customer a notice went to, without the address. A label is lowered only through a `policy`:
 
@@ -386,6 +426,8 @@ pub policy line_count
 count_lines(list: internal Text) -> Int = list.split(on: "\n").filter(keep: fn(line) -> line.len > 0).len
 ```
 
+### The five lines of a policy
+
 A policy has five lines, all required:
 
 | Line | Says |
@@ -396,9 +438,13 @@ A policy has five lines, all required:
 | `purpose "…"` | Why the release is needed, in words a reviewer reads |
 | `owner purchasing` | Who answers for it |
 
+### `via` functions are trusted code
+
 The `via` function is private to the module, so the policy is the only way to call it. Inside a `via` function the checker does not check labels, since lowering one is its job. Types, refinements and proofs are still checked.
 
-That makes a `via` function trusted code, and it covers what the function does and how it fails, as well as what it returns. A `via` function may declare `uses`, and the policy then has the same `uses`. Its operations stay within those `uses`, but nothing checks the labels of what it sends through them: a `via` function that holds a console could print the raw value it receives, and `una check` would pass. So keep every function of a trusted module small, keep each `via` function pure, with no `uses`, unless the release needs one, such as a keyed hash, and review it line by line. The Reference part links the rules of the specification that say so.
+That makes a `via` function trusted code, and it covers what the function does and how it fails, as well as what it returns. A `via` function may declare `uses`, and the policy then has the same `uses`. Its operations stay within those `uses`, but nothing checks the labels of what it sends through them: a `via` function that holds a console could print the raw value it receives, and `una check` would pass. So keep every function of a trusted module small, keep each `via` function pure, with no `uses`, unless the release needs one, such as a keyed hash, and review it line by line. [Reference](#reference) links the rules of the specification that say so.
+
+### Trusted modules
 
 A policy may live only in a trusted module, and a module is trusted only when it says so twice: `trusted module` in its header, and its name under `[trusted] modules` in `una.toml`:
 
@@ -417,6 +463,8 @@ grants = ["console", "files:src:read,write"]
 ```
 
 Adding a trusted module is a change to the manifest, which a reviewer sees. `una report .` lists every trusted module with its line count, and every call of a policy, with its place, purpose and owner.
+
+### Releasing a count
 
 The program reads the list, which is `internal`, and prints only what the policy releases:
 
@@ -458,9 +506,13 @@ pub main() -> Unit
 
 ## 9.6 Day-to-day: shipping notices with labels
 
+### What changes from chapter 8
+
 Now the service from chapter 8, with the customers' data labeled. Four changes make it safe: labels on the fields of `Customer`, an `accepts` clause on `Mailer`, a label on the result of `notice`, and a policy in a new trusted module, `privacy`, which `notify` calls. The rest of the program stays as it was.
 
-**Labels on the data.** A customer's name and address are personal data:
+### Labels on the data
+
+A customer's name and address are personal data:
 
 ```una include="day-to-day/src/notices.una#Customer" title="day-to-day/src/notices.una"
 --- A customer, as the customer directory knows them. Name and address are personal data.
@@ -471,7 +523,9 @@ pub kind Customer
   wants_notices: Bool
 ```
 
-**A mail service that may receive them.** Without `accepts secret[PII]`, the call that sends the notice would be U4003 twice, once for the address and once for the body ([Common mistakes](#s9-8) shows it).
+### A mail service that may receive them
+
+Without `accepts secret[PII]`, the call that sends the notice would be U4003 twice, once for the address and once for the body ([a sink without `accepts`](#a-sink-without-accepts-u4003) shows it).
 
 ```una include="day-to-day/src/notices.una#Mailer" title="day-to-day/src/notices.una"
 --- The mail service, a service on the network. It may receive personal data.
@@ -481,7 +535,9 @@ pub capability Mailer
     accepts secret[PII]
 ```
 
-**A notice that carries the label.** The text of the notice holds the customer's name, so its result is `secret[PII] Text`. Only the mail service, which accepts that label, receives it.
+### A notice that carries the label
+
+The text of the notice holds the customer's name, so its result is `secret[PII] Text`. Only the mail service, which accepts that label, receives it.
 
 ```una include="day-to-day/src/notices.una#notice" title="day-to-day/src/notices.una"
 --- The text of a shipping notice. It holds the customer's name, so it carries the name's label.
@@ -573,9 +629,11 @@ pub notify(shipment: Shipment) -> Text
     masked_email(customer.email)
 ```
 
-Look at what did not change in `notify`. It still fails with `OptedOut` and `UnknownCustomer`, because the conditions it branches on, the `Option` from the directory and the field `wants_notices`, are public. Reading `customer.email` gives a `secret[PII] Text`, while `customer.wants_notices` stays a public `Bool`: a field keeps its own label. A branch on the address itself, followed by a `fail`, would be U4002, as exercise 3 shows.
+Look at what did not change in `notify`. It still fails with `OptedOut` and `UnknownCustomer`, because the conditions it branches on, the `Option` from the directory and the field `wants_notices`, are public. Reading `customer.email` gives a `secret[PII] Text`, while `customer.wants_notices` stays a public `Bool`: a field keeps its own label. A branch on the address itself, followed by a `fail`, would be U4002, as [exercise 3](#exercise-3-a-blocked-domain) shows.
 
 The call of the policy obeys the same rule as a `fail`. It runs where the program counter is `public`: after the checks of the directory and of `wants_notices`, which are public. A call of `masked_email` inside a branch on labeled data would be U4002 too, since its public result would reveal the condition. Put each release on a path that public data alone decides.
+
+### The manifest
 
 The manifest declares the category and the trusted module:
 
@@ -596,9 +654,13 @@ entry = "notices"
 grants = ["console"]
 ```
 
-`una run .` prints the log shown under "What you'll build". `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 9.7](#s9-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
+### Running it
+
+`una run .` prints the log shown in [What you'll build](#what-youll-build). `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 9.7](#s9-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
 
 So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change outside the trusted module that prints a name or an address fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 9.5](#s9-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -772,6 +834,8 @@ example "an address the mask cannot read is hidden"
 
 ## 9.7 Testing it
 
+### Examples of the policy
+
 The examples of chapter 8 still pass, with one change: the first one now expects the masked address, `r***@example.invalid`, which is what `notify` returns. Two new examples test the policy itself:
 
 ```una include="day-to-day/src/notices.una#L159-L165" title="day-to-day/src/notices.una" caption="the policy's examples"
@@ -786,7 +850,15 @@ example "an address the mask cannot read is hidden"
 
 A policy can be called like a function, so its examples need no fakes. Test the release the way a reviewer would read it: what an ordinary value becomes, and what an unexpected one becomes. A mask that showed a whole malformed address would pass the type checker, since labels are not checked inside `via`, so this example is the check that it does not.
 
+### Examples can observe a secret
+
 An `expect` line compares a value whatever its label, and a `do` line is checked like ordinary code: an example can observe a secret, but cannot send it anywhere the program itself could not.
+
+### The failure paths and their fakes
+
+The examples of the failure paths are those of chapter 8, unchanged: labels do not alter which paths exist or how a fake reaches them. The fakes `outbox` and `mail_down` are handlers of `Mailer`, which now accepts `secret[PII]`. They pass the check because they do nothing with what they receive. A fake mail service that printed each message, as `printed` in chapter 8 did, would be U4003: what it prints could reveal the notice.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -803,14 +875,14 @@ example notices "an address the mask cannot read is hidden" ... ok
 8 examples: 8 passed, 0 failed
 ```
 
-The examples of the failure paths are those of chapter 8, unchanged: labels do not alter which paths exist or how a fake reaches them. The fakes `outbox` and `mail_down` are handlers of `Mailer`, which now accepts `secret[PII]`. They pass the check because they do nothing with what they receive. A fake mail service that printed each message, as `printed` in chapter 8 did, would be U4003: what it prints could reveal the notice.
-
 ## 9.8 Common mistakes
 
 Each mistake below is a small change to the day-to-day program or to a step of this chapter, as it says.
 
+### Dropping a label in a return type (U4001)
+
 :::mistake
-**1. Dropping a label in a return type (U4001).** In step 01, declare the margin as a plain `Int`:
+In [step 01](#a-catalog-with-a-confidential-cost), declare the margin as a plain `Int`:
 
 ```diff include="steps/01-labels..mistakes/1:src/pricing.una" context="1" title="src/pricing.una"
 --- a/src/pricing.una
@@ -831,8 +903,10 @@ Each mistake below is a small change to the day-to-day program or to a step of t
 *Fix:* declare `confidential Int`. A header is where callers learn what they receive.
 :::
 
+### A sink without `accepts` (U4003)
+
 :::mistake
-**2. A sink without `accepts` (U4003).** Remove `accepts secret[PII]` from `Mailer`:
+Remove `accepts secret[PII]` from `Mailer`:
 
 ```diff include="day-to-day..mistakes/2:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -852,8 +926,10 @@ Each mistake below is a small change to the day-to-day program or to a step of t
 *Fix:* give the operation the ceiling of the service it stands for. Do not lower the data to fit: the mail service needs the real address.
 :::
 
+### A branch that decides a public result (U4001)
+
 :::mistake
-**3. A branch that decides a public result (U4001).** In step 04, declare the fee as a plain `Int`:
+In [step 04](#a-fee-decided-by-a-branch), declare the fee as a plain `Int`:
 
 ```diff include="steps/04-branches..mistakes/3:src/shipping.una" context="1" title="src/shipping.una"
 --- a/src/shipping.una
@@ -874,8 +950,10 @@ Each mistake below is a small change to the day-to-day program or to a step of t
 *Fix:* declare `confidential Int`. The diagnostic points at the condition, since that is where the information enters.
 :::
 
+### A category that is not declared (U4007)
+
 :::mistake
-**4. A category that is not declared (U4007).** In step 06, remove the `[labels]` table from `una.toml`:
+In [step 06](#declaring-categories), remove the `[labels]` table from `una.toml`:
 
 ```diff include="steps/06-categories..mistakes/4:una.toml" context="1" title="una.toml"
 --- a/una.toml
@@ -897,8 +975,10 @@ Each mistake below is a small change to the day-to-day program or to a step of t
 *Fix:* declare `categories = ["PII"]` under `[labels]`.
 :::
 
+### A trusted module that `una.toml` does not list (U7005)
+
 :::mistake
-**5. A trusted module that `una.toml` does not list (U7005).** Remove the `[trusted]` table of the day-to-day program:
+Remove the `[trusted]` table of the day-to-day program:
 
 ```diff include="day-to-day..mistakes/5:una.toml" context="1" title="una.toml"
 --- a/una.toml
@@ -920,8 +1000,10 @@ Each mistake below is a small change to the day-to-day program or to a step of t
 *Fix:* list the module under `[trusted] modules`, after a review of what it releases.
 :::
 
+### A public `via` function (U4005)
+
 :::mistake
-**6. A public `via` function (U4005).** Make `mask_email` public:
+Make `mask_email` public:
 
 ```diff include="day-to-day..mistakes/6:src/privacy.una" context="1" title="src/privacy.una"
 --- a/src/privacy.una
@@ -942,24 +1024,14 @@ Each mistake below is a small change to the day-to-day program or to a step of t
 *Fix:* keep `via` private, and call the policy, `masked_email`.
 :::
 
-## 9.9 For agents
-
-:::agents
-`una --json check .` reports the U4xxx codes in the domain `security`. For the leak of [section 9.6](#s9-6):
-
-```json include="steps/08-leak/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U4003","severity":"error","domain":"security","message":"`@log.print` accepts `public` data, and this argument is `secret[PII]`","primary":{"file":"src/notices.una","start":{"line":78,"col":16},"end":{"line":78,"col":52}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"send `@log.print` only data labeled `public` or lower, or send this value to an operation that accepts `secret[PII]`","edit":null},{"rank":2,"escape_cost":1,"escape":{"kind":"trusted","cost":"the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review"},"description":"declassify the value through a policy of a trusted module","edit":null}],"explain":"una explain U4003"}],"fixable":0}
-```
-
-Neither repair has an `edit`, so `una fix` changes nothing: each needs a decision about the data. The first keeps the label. The second, a policy, has `escape_cost` 1 and an `escape` of kind `trusted`: it moves the guarantee onto trusted code. Prefer the repairs with `escape_cost` 0. The compact rule: *a value flows only to a place labeled at or above it, branches label what they decide, `fail` needs a `public` program counter, and only a `policy` of a module trusted in its header and in `una.toml` lowers a label.*
-:::
-
-## 9.10 Exercises
+## 9.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added, and a stub when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`.
 
+### Exercise 1: release the domain
+
 ::::exercise
-**Exercise 1: release the domain.** The operations team counts notices by mail provider, so it needs the domain of each address, and nothing else. Add a policy `email_domain` to `privacy.una`, from `secret[PII] Text` to `public Text`, that gives the part after the `@`, or `(none)` when there is no single `@`. The start package already imports it, so `una check .` reports U1001 until it exists, and it ends with:
+The operations team counts notices by mail provider, so it needs the domain of each address, and nothing else. Add a policy `email_domain` to `privacy.una`, from `secret[PII] Text` to `public Text`, that gives the part after the `@`, or `(none)` when there is no single `@`. The start package already imports it, so `una check .` reports U1001 until it exists, and it ends with:
 
 ```una include="exercises/1/start/src/notices.una#L167-L173" title="exercises/1/start/src/notices.una"
 example "the domain of an address"
@@ -1008,8 +1080,10 @@ Add the policy and its `via` function to `privacy.una`:
 :::
 ::::
 
+### Exercise 2: priority notices
+
 ::::exercise
-**Exercise 2: priority notices.** Some customers have a priority flag, which the store keeps `confidential`. Their notice's subject is `Priority: order A-1001 has shipped` instead of `Order A-1001 has shipped`. The start package adds the field `vip: confidential Bool` to `Customer`, uses `subject` in `notify`, and has a stub of it that ignores the flag:
+Some customers have a priority flag, which the store keeps `confidential`. Their notice's subject is `Priority: order A-1001 has shipped` instead of `Order A-1001 has shipped`. The start package adds the field `vip: confidential Bool` to `Customer`, uses `subject` in `notify`, and has a stub of it that ignores the flag:
 
 ```una include="exercises/2/start/src/notices.una#subject" title="exercises/2/start/src/notices.una"
 --- The subject of a notice. Exercise 2: mark it `Priority:` for a priority customer.
@@ -1060,8 +1134,10 @@ The subject is `confidential` because a confidential flag chose it. The mail ser
 :::
 ::::
 
+### Exercise 3: a blocked domain
+
 ::::exercise
-**Exercise 3: a blocked domain.** A partner sends its own notices to the addresses at `blocked.example.invalid`, so the store must not mail them. The start package adds the variant `Blocked(id: Text)`, a customer at that domain, and this example:
+A partner sends its own notices to the addresses at `blocked.example.invalid`, so the store must not mail them. The start package adds the variant `Blocked(id: Text)`, a customer at that domain, and this example:
 
 ```una include="exercises/3/start/src/notices.una#L169-L174" title="exercises/3/start/src/notices.una"
 example "an address at a blocked domain gets no mail"
@@ -1125,7 +1201,21 @@ The policy releases one bit of personal data, on purpose, and the report lists t
 :::
 ::::
 
-## 9.11 Recap
+## 9.10 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` reports the U4xxx codes in the domain `security`. For [the leak the checker stops](#the-leak-the-checker-stops):
+
+```json include="steps/08-leak/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U4003","severity":"error","domain":"security","message":"`@log.print` accepts `public` data, and this argument is `secret[PII]`","primary":{"file":"src/notices.una","start":{"line":78,"col":16},"end":{"line":78,"col":52}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"send `@log.print` only data labeled `public` or lower, or send this value to an operation that accepts `secret[PII]`","edit":null},{"rank":2,"escape_cost":1,"escape":{"kind":"trusted","cost":"the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review"},"description":"declassify the value through a policy of a trusted module","edit":null}],"explain":"una explain U4003"}],"fixable":0}
+```
+
+Neither repair has an `edit`, so `una fix` changes nothing: each needs a decision about the data. The first keeps the label. The second, a policy, has `escape_cost` 1 and an `escape` of kind `trusted`: it moves the guarantee onto trusted code. Prefer the repairs with `escape_cost` 0. The compact rule: *a value flows only to a place labeled at or above it, branches label what they decide, `fail` needs a `public` program counter, and only a `policy` of a module trusted in its header and in `una.toml` lowers a label.*
+:::
+
+### Recap
 
 :::recap
 - A label is a level and categories: `public`, `internal`, `confidential`, `secret`, `restricted`, and categories such as `[PII]` that `una.toml` declares.
@@ -1137,7 +1227,7 @@ The policy releases one bit of personal data, on purpose, and the report lists t
 - Release the least you can, test each policy with examples, and read the release list in `una report .`.
 :::
 
-## 9.12 Reference
+### Reference
 
 :::reference
 - Construct pages: [labels](/docs/language/information-flow/labels/), [`policy`](/docs/language/information-flow/policy/), [trusted modules](/docs/language/information-flow/trusted/), [host capabilities](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)

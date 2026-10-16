@@ -54,7 +54,11 @@ The cost is a line in the header for each capability. In return, a reviewer read
 
 ## 8.1 Declaring what a function may do: `uses`
 
+### Printing is an effect
+
 Start with the smallest effect: printing. A packing slip has a title and one line per item. Building a line is pure computation. Printing it is an effect, and the header says so.
+
+### Each step is a package
 
 The step is a package, as in [chapter 1](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1, or take the step, whole, from the chapter's download, `08-capabilities.tar.gz`) and the module under `src/`. The manifest grants the console, which is what lets `main` print:
 
@@ -68,6 +72,10 @@ edition = "0.2"
 entry = "slips"
 grants = ["console"]
 ```
+
+### A packing slip
+
+The module builds the lines of a packing slip and prints them:
 
 :::steps
 ```una include="steps/01-uses/src/slips.una" title="steps/01-uses/src/slips.una" verified="check, run"
@@ -106,6 +114,8 @@ Packing slip for order A-1001
 1 x DESK-02
 ```
 
+### Bindings are found by name
+
 A binding is found by its name, never by its type. If `print_line` asked for `@out: Console[print]`, the call in `main` would not check: `main` holds a `@console`, not an `@out`. [Section 8.4](#s8-4) shows how to hand one over under another name.
 
 ### Private functions infer their `uses`
@@ -132,7 +142,9 @@ print_line(sku: Text, quantity: Int) -> Unit
   uses @console: Console[print] -- inferred
 ```
 
-A `pub` function is the module's reviewed boundary, so it must declare every `uses` itself. A `pub` function with no `uses` is pure, and an operation in its body is U3004 ([Common mistakes](#s8-8) shows it). Write `uses` on a private function too whenever its effects are part of what a reader should know.
+A `pub` function is the module's reviewed boundary, so it must declare every `uses` itself. A `pub` function with no `uses` is pure, and an operation in its body is U3004 ([an effect in a pure `pub` function](#an-effect-in-a-pure-pub-function-u3004) shows it). Write `uses` on a private function too whenever its effects are part of what a reader should know.
+
+### How many operations to allow
 
 :::decide
 **Which to use:**
@@ -149,7 +161,11 @@ List the operations you need. A header with brackets also tells the reader what 
 
 ## 8.2 The host's capabilities and grants
 
+### The host capabilities
+
 The runtime provides the host capabilities: `Console` to print, `Clock` to read the time, `Env` to read environment variables, `Files` to read and write files, and `Keys` for keyed hashes. Edition `0.2` adds `Http`. They are in scope in every module, and they enter a program only one way: through the `uses` of `main`, from `una run`.
+
+### Grants in `una.toml`
 
 `una run` gives `main` only what the package grants. The grants are listed in `[run] grants` of `una.toml`, or passed as `--grant` flags. This step writes an end-of-day stock export, stamped with the time, so it needs three grants:
 
@@ -163,6 +179,10 @@ edition = "0.2"
 entry = "export"
 grants = ["console", "clock", "files:src:write"]
 ```
+
+### An end-of-day stock export
+
+The module reads the clock, writes the export, and reports the outcome:
 
 :::steps
 ```una include="steps/03-host/src/export.una" title="steps/03-host/src/export.una" verified="check, run"
@@ -202,16 +222,24 @@ export written: 3 lines
 
 and leaves the export in `src/stock-export.csv`. The time in it changes on every run, so the program does not print it.
 
+### What `una check` and `una run` compare
+
 When `una.toml` lists `[run] grants`, `una check` compares them with the `uses` of `main`. Remove `"clock"` from the list, and the check fails with U3012. A grant in the manifest is a line that shows in review.
 
 `una run` takes `--grant` flags as a second source, such as `una run . --grant clock`. It grants the union of `[run] grants` and its flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest lacks `"clock"` therefore fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
+
+### What a program reads is labeled
 
 > [!NOTE] What a program reads from files and the environment is labeled.
 > `Files.read` returns `internal Text`, and `Env.get` returns `internal` values too. `Clock.now` returns a public `Int`. A label says how sensitive data is, and the console accepts only `public` data. So the program can write what it read to a file, but cannot print it without a declared policy. [Chapter 9, Information flow](/learn/information-flow/), explains labels and how to release data legitimately.
 
 ## 8.3 Your own capabilities and handlers
 
+### Capabilities you declare
+
 The host capabilities cover the machine. A program's own services, such as a mail service, a payment provider or a customer directory, are capabilities you declare. A `capability` lists operations, each with `op`, and no code. A `handler` gives the operations their code. Several handlers can implement one capability, and the caller picks one with `with`.
+
+### Receipts by email
 
 This step sends receipts by email. On a developer's machine the mail service prints each message instead of sending it, and a second handler stands for a service that refuses every address:
 
@@ -272,12 +300,18 @@ second receipt: Err(Bounced("tomas@example.invalid"))
 
 The second line comes from `attempt` with the `bouncing` handler: the receipt was not sent, and the outcome says why.
 
+### More clauses on an operation
+
 An operation can carry more clauses than `fails`. `requires` states what callers must establish, `ensures` what callers may rely on, and `accepts` the most sensitive data the operation may receive ([chapter 9](/learn/information-flow/)). An `ensures` on an operation is an assumption about the outside service: callers may rely on it, the verifier checks every handler written in Una against it, and the service itself is trusted to keep it. `una report .` lists every capability declaration as an assumption.
+
+### A handler is not a value
 
 > [!TIP]
 > A handler is not a value. It cannot be stored in a variable or returned. It exists only where `with` or an example's `given` line installs it, and its parameters are fixed there.
 
 ## 8.4 Passing authority: `with`, rebinding and narrowing
+
+### What a callee receives
 
 A call passes a binding when the callee's name for it matches the caller's. `with` changes what a callee receives, for one statement:
 
@@ -288,6 +322,8 @@ A call passes a binding when the callee's name for it matches the caller's. `wit
 | `with @x = handler(args)` | a new instance of that handler |
 
 Several bindings go in one `with`, separated by commas. The binding lasts only for the statement it ends.
+
+### Narrowing: a greeting that may only look up
 
 A callee may also receive a binding with more operations than it needs. It then holds only the operations its own header lists. This is how authority narrows on its way down. In this step, the customer directory has two operations, looking a customer up and erasing one. The page greeting may look up, and only the erase request may erase:
 
@@ -353,7 +389,11 @@ Welcome back, guest
 audit: erased customer C-20
 ```
 
+### Each installation is a new instance
+
 Each `with @customers = directory(customers)` installs a new instance. A handler holds no state between calls, and `directory` takes its map as a parameter, so `forget` has nothing to change here. A handler for a real directory would call the service.
+
+### Narrowing is a promise you can check
 
 > [!IMPORTANT]
 > Narrowing is a promise you can check. Because `greeting` holds `Customers[find]`, no change to its body can make it erase a customer without a change to its header, which a reviewer sees.
@@ -367,6 +407,10 @@ Edition `0.3` is a preview: a package opts in with `edition = "0.3"` in `una.tom
 An operation in `uses` may carry a condition over the function's parameters, written after `where`. The header then says not only what a function may do, but when. A dry run is the common case: the function may place orders only when `dry_run` is false. The verifier proves, at every place where the operation can run, that the condition holds. A call of a function that performs the operation counts as such a place too, so the condition holds through every layer of calls.
 
 A condition is never inferred: a private function without `uses` has no condition on any operation. A function with a condition cannot be passed as a value, since the function that receives it could not prove the condition.
+
+### A restock with a dry run
+
+The step's `reorder` may place an order only when `dry_run` is false:
 
 ```una include="steps/06-conditions/src/restock.una" title="steps/06-conditions/src/restock.una" verified="check, run"
 module restock
@@ -407,7 +451,7 @@ would order 20 x LAMP-01
 ordered 20 x LAMP-01
 ```
 
-The first call is a dry run, so it only prints. The third finds enough stock and does nothing. If `reorder` placed the order without the `dry_run` branch, `una check` would report U5001, with a counterexample in which `dry_run` is true ([Common mistakes](#s8-8) shows it).
+The first call is a dry run, so it only prints. The third finds enough stock and does nothing. If `reorder` placed the order without the `dry_run` branch, `una check` would report U5001, with a counterexample in which `dry_run` is true ([an operation where its condition does not hold](#an-operation-where-its-condition-does-not-hold-edition-03-u5001) shows it).
 
 ### Boundaries
 
@@ -426,6 +470,8 @@ grants = ["console"]
 [boundaries]
 "barcode" = ["Console[print]"]
 ```
+
+### Calling into a boundary
 
 This is the vendored module. Its function needs `@console`, which the store's code must grant it:
 
@@ -465,9 +511,13 @@ A call to `print_label` without `with @console = @console` is U3020. If `print_l
 
 ## 8.6 Day-to-day: shipping notices
 
+### What the dispatch step must do
+
 Now the program from the start of the chapter. When orders leave the warehouse, the store emails each customer a notice. The customer directory and the mail service are services on the network, which can time out. The operator reads a log with one line per order.
 
-**The kinds and the services.** `Customer` and `Shipment` are records. `NoticeError` has one variant for each reason a notice is not sent. `Customers` and `Mailer` are capabilities: what the services can do, with no code.
+### The kinds and the services
+
+`Customer` and `Shipment` are records. `NoticeError` has one variant for each reason a notice is not sent. `Customers` and `Mailer` are capabilities: what the services can do, with no code.
 
 ```una include="day-to-day/src/notices.una#L1-L30" title="day-to-day/src/notices.una" caption="the kinds and the services"
 module notices
@@ -502,14 +552,18 @@ pub capability Mailer
     fails ServiceError
 ```
 
-**The notice text, pure.** `notice` has no `uses`, and it is `pub`, so it cannot reach any service. Its tests need no fakes.
+### The notice text, pure
+
+`notice` has no `uses`, and it is `pub`, so it cannot reach any service. Its tests need no fakes.
 
 ```una include="day-to-day/src/notices.una#notice" title="day-to-day/src/notices.una"
 --- The text of a shipping notice. Pure: it has no `uses`, so it cannot reach any service.
 pub notice(customer: Customer, shipment: Shipment) -> Text = "Hello {customer.name}, your order {shipment.order} is on its way with {shipment.carrier}."
 ```
 
-**One notice.** `notify` holds two bindings, with one operation each. Its header says, completely, that it may look customers up and send mail. It cannot print, read files or erase anyone.
+### One notice
+
+`notify` holds two bindings, with one operation each. Its header says, completely, that it may look customers up and send mail. It cannot print, read files or erase anyone.
 
 ```una include="day-to-day/src/notices.una#notify" title="day-to-day/src/notices.una"
 --- Finds the customer of a shipment and emails them the notice. Returns the address it wrote to.
@@ -531,7 +585,9 @@ pub notify(shipment: Shipment) -> Text
 
 `notify` returns the address rather than printing it, because printing is not its job: it has no binding for a log, and the header shows that. The order of the statements is the order of the work. The directory is asked first. A failure of the directory becomes `DirectoryDown`, and an unknown customer becomes `UnknownCustomer`. A customer who asked for no notices fails with `OptedOut` before any mail is sent, and a failure of the mail service becomes `MailDown`. When everything works, `notify` returns the address it wrote to.
 
-**The log.** `reason` and `log_line` turn an outcome into the text an operator reads. Both are pure.
+### The log
+
+`reason` and `log_line` turn an outcome into the text an operator reads. Both are pure.
 
 ```una include="day-to-day/src/notices.una#reason..log_line" title="day-to-day/src/notices.una"
 --- What an operator reads in the dispatch log.
@@ -551,7 +607,9 @@ pub log_line(shipment: Shipment, outcome: Result[Text, NoticeError]) -> Text
     is Err(failure) -> "skipped  {shipment.order}: {reason(failure)}"
 ```
 
-**The batch.** `dispatch` holds the two services and a log. `attempt` keeps each outcome, so one failure does not stop the batch, and each outcome becomes one line on `@log`.
+### The batch
+
+`dispatch` holds the two services and a log. `attempt` keeps each outcome, so one failure does not stop the batch, and each outcome becomes one line on `@log`.
 
 ```una include="day-to-day/src/notices.una#dispatch" title="day-to-day/src/notices.una"
 --- Sends a notice for every shipment and logs each outcome. One failure does not stop the batch.
@@ -567,7 +625,9 @@ pub dispatch(shipments: List[Shipment]) -> Unit
 
 `dispatch` calls the log `@log`, not `@console`. The name says what the binding is for, and the caller decides what it is: the console in `main`, a fake in a test, or one day a log service with a handler of its own. `dispatch` holds the union of what it does itself and what `notify` needs, and nothing more. `una report .` lists, under `authority`, the bindings of every public function, so a reviewer can read the service's whole reach in one place.
 
-**The handlers.** In production, `Customers` and `Mailer` would have handlers that call the real services over the network. Such a handler declares its own `uses`, such as the host's `Http`, and the code that installs it must hold them. The network would then appear in the header of `main` and in the grants of `una.toml`, and nowhere in `notify` or `dispatch`, which do not change. Here, `directory` holds the customers in a map, `outbox` accepts every message and delivers none, and `mail_down` and `directory_down` never answer. `quiet` is a fake console for the tests.
+### The handlers
+
+In production, `Customers` and `Mailer` would have handlers that call the real services over the network. Such a handler declares its own `uses`, such as the host's `Http`, and the code that installs it must hold them. The network would then appear in the header of `main` and in the grants of `una.toml`, and nowhere in `notify` or `dispatch`, which do not change. Here, `directory` holds the customers in a map, `outbox` accepts every message and delivers none, and `mail_down` and `directory_down` never answer. `quiet` is a fake console for the tests.
 
 ```una include="day-to-day/src/notices.una#directory..quiet" title="day-to-day/src/notices.una"
 --- A directory held in memory, for this run and for tests.
@@ -591,7 +651,9 @@ handler quiet() for Console
   op print(line) = unit
 ```
 
-**Running it.** `main` holds only `@console`, which `una.toml` grants. It installs the handlers with `with`, and hands its console to `dispatch` as `@log`. The second batch runs with `mail_down`, to show the last line of the log.
+### Running it
+
+`main` holds only `@console`, which `una.toml` grants. It installs the handlers with `with`, and hands its console to `dispatch` as `@log`. The second batch runs with `mail_down`, to show the last line of the log.
 
 ```una include="day-to-day/src/notices.una#sample_customers..main" title="day-to-day/src/notices.una"
 --- The customers of this run and of the examples. Every address is fictional.
@@ -612,12 +674,14 @@ pub main() -> Unit
   dispatch(late) with @customers = directory(customers), @mailer = mail_down(), @log = @console
 ```
 
-`una run .` prints the log shown under "What you'll build". The addresses use the reserved domain `example.invalid`, so no real mailbox could receive them.
+`una run .` prints the log shown in [What you'll build](#what-youll-build). The addresses use the reserved domain `example.invalid`, so no real mailbox could receive them.
 
 Compare the two calls of `dispatch` in `main`: they differ in one handler, `outbox()` or `mail_down()`. Running the same code against another service, in a program or in a test, costs exactly that change, and `dispatch` and `notify` never learn which service they talk to.
 
 > [!SECURITY]
 > The log prints customers' email addresses. In a real store that is personal data, and a log is a place it should not go. [Chapter 9](/learn/information-flow/) labels the addresses `secret[PII]`, lets the checker find this line, and releases a masked form through a policy.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -779,6 +843,8 @@ example "the batch logs every shipment, even when the mail service is down"
 
 ## 8.7 Testing it
 
+### Fakes for every path
+
 Examples never reach the host or a real service. Each one installs fakes with `given`, one line per binding the `do` line needs, so every path of the service can be tested on demand: a directory that does not answer, a mail service that does not answer, a customer who opted out.
 
 ```una include="day-to-day/src/notices.una#L114-L153" title="day-to-day/src/notices.una" caption="the examples"
@@ -824,12 +890,22 @@ example "the batch logs every shipment, even when the mail service is down"
   expect performed @log.print
 ```
 
+### Checking effects: `expect performed`
+
 Two kinds of `expect` line check effects:
 
 - `expect performed @mailer.send` holds when the `do` call performed that operation at least once.
 - `expect not performed @mailer.send` holds when it never did. Here it proves that an unknown customer, an opted-out customer and a directory that does not answer never cause a mail to be sent.
 
+### A fake console
+
 The last example needs a `given` line for `@log` too, because `dispatch` uses it. An example cannot use the real console: every capability comes from a `given` line, so a test run is deterministic. `quiet` is a handler for the host capability `Console`, which user code may write like any other.
+
+### What an example cannot check
+
+A handler holds no state, so an example cannot count how many mails were sent, or read their text back. It checks what a `do` call returns, how it fails, and which operations it performed. To check the text of a notice, test the pure function that builds it, `notice`, with no fakes at all.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -844,14 +920,14 @@ example notices "the batch logs every shipment, even when the mail service is do
 6 examples: 6 passed, 0 failed
 ```
 
-A handler holds no state, so an example cannot count how many mails were sent, or read their text back. It checks what a `do` call returns, how it fails, and which operations it performed. To check the text of a notice, test the pure function that builds it, `notice`, with no fakes at all.
-
 ## 8.8 Common mistakes
 
 Most of the mistakes below are a small change to `day-to-day/src/notices.una`. The others change a step of this chapter, as each one says.
 
+### Forgetting to hand over a binding (U3001)
+
 :::mistake
-**1. Forgetting to hand over a binding (U3001).** Leave `@log = @console` out of the first `with` in `main`:
+Leave `@log = @console` out of the first `with` in `main`:
 
 ```diff include="day-to-day..mistakes/1:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -869,11 +945,13 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 
 *Why:* `dispatch` needs `@log`, and `main` holds only `@console`. Bindings are found by name, never by type.
 
-*Fix:* add `@log = @console` to the `with`. The repair una offers, a `uses @log` line on `main`, would widen `main`'s header instead, so `una fix` skips it, and `una fix --dry-run .` says so ([section 8.9](#s8-9)).
+*Fix:* add `@log = @console` to the `with`. The repair una offers, a `uses @log` line on `main`, would widen `main`'s header instead, so `una fix` skips it, and `una fix --dry-run .` says so ([For agents](#for-agents)).
 :::
 
+### Using an operation the header does not list (U3002)
+
 :::mistake
-**2. Using an operation the header does not list (U3002).** In step 05, give `erase` the header of `greeting`, `uses @customers: Customers[find]`:
+In [step 05](#narrowing-a-greeting-that-may-only-look-up), give `erase` the header of `greeting`, `uses @customers: Customers[find]`:
 
 ```diff include="steps/05-with..mistakes/2:src/accounts.una" context="1" title="src/accounts.una"
 --- a/src/accounts.una
@@ -894,8 +972,10 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 *Fix:* write `Customers[forget]`. Add an operation to a header only when it belongs to the function's job: every caller must then hold it too.
 :::
 
+### An effect in a pure `pub` function (U3004)
+
 :::mistake
-**3. An effect in a pure `pub` function (U3004).** Add a log line to `notice`:
+Add a log line to `notice`:
 
 ```diff include="day-to-day..mistakes/3:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -919,8 +999,10 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 *Fix:* log in the caller, which already holds `@log`. A message text should stay a pure function, which tests can call without fakes.
 :::
 
+### Installing a handler of another capability (U3010)
+
 :::mistake
-**4. Installing a handler of another capability (U3010).** Write `@mailer = directory_down()`:
+Write `@mailer = directory_down()`:
 
 ```diff include="day-to-day..mistakes/4:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -941,8 +1023,10 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 *Fix:* install `mail_down()`, the handler of `Mailer` that never answers.
 :::
 
+### Using a host capability that is not granted (U3012)
+
 :::mistake
-**5. Using a host capability that is not granted (U3012).** In step 03, remove `"clock"` from `[run] grants`:
+In [step 03](#grants-in-unatoml), remove `"clock"` from `[run] grants`:
 
 ```diff include="steps/03-host..mistakes/5:una.toml" context="1" title="una.toml"
 --- a/una.toml
@@ -963,8 +1047,10 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 *Fix:* grant `"clock"` if the program needs the time. Otherwise remove the `uses` line and the call.
 :::
 
+### An example without a fake (U3014)
+
 :::mistake
-**6. An example without a fake (U3014).** Remove `given @log = quiet()` from the last example:
+Remove `given @log = quiet()` from the last example:
 
 ```diff include="day-to-day..mistakes/6:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -984,8 +1070,10 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 *Fix:* install a handler for every binding the `do` line needs, such as `quiet()` for a console.
 :::
 
+### An operation where its condition does not hold, edition 0.3 (U5001)
+
 :::mistake
-**7. An operation where its condition does not hold (U5001, edition 0.3).** In step 06, place the order without the dry-run branch:
+In [step 06](#a-restock-with-a-dry-run), place the order without the dry-run branch:
 
 ```diff include="steps/06-conditions..mistakes/7:src/restock.una" context="1" title="src/restock.una"
 --- a/src/restock.una
@@ -1008,31 +1096,14 @@ Most of the mistakes below are a small change to `day-to-day/src/notices.una`. T
 *Fix:* the repair una lists first, a guard, which the step has as its `else if dry_run` branch.
 :::
 
-## 8.9 For agents
-
-:::agents
-`una --json check .` reports the capability diagnostics of this chapter, the U3xxx codes, in the domain `authority`. For mistake 1:
-
-```json include="mistakes/1/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U3001","severity":"error","domain":"authority","message":"`dispatch` needs `@log: Console[print]`, which is not in scope here","primary":{"file":"src/notices.una","start":{"line":110,"col":3},"end":{"line":110,"col":20}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"widens":{"kind":"authority","cost":"the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job"},"description":"declare `uses @log: Console[print]` in the header","edit":{"file":"src/notices.una","start":{"line":106,"col":32},"end":{"line":106,"col":32},"replacement":"\n  uses @log: Console[print]"}}],"explain":"una explain U3001"}],"fixable":0}
-```
-
-A repair that gives a function more authority carries `widens`, with its kind (`authority`, or `grant` for U3012) and its cost, and ranks after the repairs that keep authority. `una fix` skips the repairs that widen:
-
-```text include="mistakes/1/expected/commands/fix.txt"
-$ una fix --dry-run .
-skipped src/notices.una:106:32 U3001 declare `uses @log: Console[print]` in the header: widens authority
-```
-
-The compact rule: *every effect is `@binding.op(...)` on a binding of the header's `uses`; bindings pass by name or through `with`; `main` gets only the granted host capabilities; examples install every binding with `given`.*
-:::
-
-## 8.10 Exercises
+## 8.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added, and a stub of what to write when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`, since canonical form decides, for example, where a short body goes.
 
+### Exercise 1: a directory of one customer
+
 ::::exercise
-**Exercise 1: a directory of one customer.** Small tests often need a directory with exactly one customer. Write a handler `only(customer: Customer)` for `Customers` whose `find` gives that customer for their id and `None` for any other. The start package ends with these examples, and `una check .` reports U1001 until the handler exists:
+Small tests often need a directory with exactly one customer. Write a handler `only(customer: Customer)` for `Customers` whose `find` gives that customer for their id and `None` for any other. The start package ends with these examples, and `una check .` reports U1001 until the handler exists:
 
 ```una include="exercises/1/start/src/notices.una#L155-L165" title="exercises/1/start/src/notices.una"
 example "a directory of one customer finds that customer"
@@ -1073,8 +1144,10 @@ Add the handler next to the others:
 :::
 ::::
 
+### Exercise 2: archive every notice
+
 ::::exercise
-**Exercise 2: archive every notice.** The store keeps a copy of every notice it sends in an archive mailbox, `archive@example.invalid`, through a second mail service. The start package has `notify_and_archive`, which holds a second binding of `Mailer`, `@archive`, and does not use it yet:
+The store keeps a copy of every notice it sends in an archive mailbox, `archive@example.invalid`, through a second mail service. The start package has `notify_and_archive`, which holds a second binding of `Mailer`, `@archive`, and does not use it yet:
 
 ```una include="exercises/2/start/src/notices.una#notify_and_archive" title="exercises/2/start/src/notices.una"
 --- Sends the notice, then a copy of it to the store's archive mailbox. Exercise 2: send the copy.
@@ -1147,8 +1220,10 @@ The two bindings have the same capability and different names, so an example ins
 :::
 ::::
 
+### Exercise 3: a dry run (edition 0.3)
+
 ::::exercise
-**Exercise 3: a dry run (edition 0.3).** Before a big batch, the operator wants a rehearsal that sends nothing. The start package switches to edition `0.3` and adds `rehearse`, whose header allows `send` only where `not dry_run` holds:
+Before a big batch, the operator wants a rehearsal that sends nothing. The start package switches to edition `0.3` and adds `rehearse`, whose header allows `send` only where `not dry_run` holds:
 
 ```una include="exercises/3/start/src/notices.una#rehearse" title="exercises/3/start/src/notices.una"
 --- Like `dispatch`, but a dry run only logs what it would send. Exercise 3: make the dry run
@@ -1202,7 +1277,28 @@ In the `else` branch, `dry_run` is false, so the verifier proves the condition a
 :::
 ::::
 
-## 8.11 Recap
+## 8.10 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` reports the capability diagnostics of this chapter, the U3xxx codes, in the domain `authority`. For [forgetting to hand over a binding](#forgetting-to-hand-over-a-binding-u3001):
+
+```json include="mistakes/1/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U3001","severity":"error","domain":"authority","message":"`dispatch` needs `@log: Console[print]`, which is not in scope here","primary":{"file":"src/notices.una","start":{"line":110,"col":3},"end":{"line":110,"col":20}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"widens":{"kind":"authority","cost":"the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job"},"description":"declare `uses @log: Console[print]` in the header","edit":{"file":"src/notices.una","start":{"line":106,"col":32},"end":{"line":106,"col":32},"replacement":"\n  uses @log: Console[print]"}}],"explain":"una explain U3001"}],"fixable":0}
+```
+
+A repair that gives a function more authority carries `widens`, with its kind (`authority`, or `grant` for U3012) and its cost, and ranks after the repairs that keep authority. `una fix` skips the repairs that widen:
+
+```text include="mistakes/1/expected/commands/fix.txt"
+$ una fix --dry-run .
+skipped src/notices.una:106:32 U3001 declare `uses @log: Console[print]` in the header: widens authority
+```
+
+The compact rule: *every effect is `@binding.op(...)` on a binding of the header's `uses`; bindings pass by name or through `with`; `main` gets only the granted host capabilities; examples install every binding with `given`.*
+:::
+
+### Recap
 
 :::recap
 - A function's `uses` list everything it may do outside the program. A `pub` function without `uses` is pure.
@@ -1214,7 +1310,7 @@ In the `else` branch, `dry_run` is false, so the verifier proves the condition a
 - In edition `0.3`, `where` puts a condition on an operation, and `[boundaries]` limits what outside code receives.
 :::
 
-## 8.12 Reference
+### Reference
 
 :::reference
 - Construct pages: [`capability` and `op`](/docs/language/capabilities/capability/), [`uses`](/docs/language/capabilities/uses/), [`with`](/docs/language/capabilities/with/), [`handler`](/docs/language/capabilities/handler/), [host capabilities and grants](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)

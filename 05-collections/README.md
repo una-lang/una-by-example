@@ -55,7 +55,11 @@ Una makes each of these visible:
 
 ## 5.1 Lists
 
+### Values of one type, in order
+
 A list holds values of one type, in order. You write it between brackets, and `List[Int]` is its type. The prelude, the functions every module has without an import, gives lists most of what a program needs. You call them with method syntax: `more.sum()` is the call `sum(more)`.
+
+### Each step is a package
 
 Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
@@ -76,6 +80,8 @@ grants = ["console"]
 una check .
 una run .
 ```
+
+### A cart and its receipt
 
 Start with the quantities of a cart, then the SKUs on its receipt:
 
@@ -114,16 +120,26 @@ a line of 3 units: true
 DESK-02, LAMP-01, RUG-07
 ```
 
-`sort` works on any type with an order: `Int`, `Text`, the fixed-width integers, and kinds whose variants carry no data, in the order the variants are declared. It is stable, so equal elements keep the order they had. A record such as an order line has no order of its own, and Common mistakes shows what the checker says when you try.
+### Sorting and reading positions
+
+`sort` works on any type with an order: `Int`, `Text`, the fixed-width integers, and kinds whose variants carry no data, in the order the variants are declared. It is stable, so equal elements keep the order they had. A record such as an order line has no order of its own, and [Sorting records](#sorting-records-u2025) shows what the checker says when you try.
 
 Positions in a list count from 0. There is no `xs[0]` syntax. `xs.at(index: 0)` and `xs.first()` read an element, and they return an `Option`, because the list may be shorter than you think. [Section 5.3](#s5-3) shows how to use what they return.
+
+### Appending without copying
 
 > [!NOTE]
 > A list is a value, but `append` does not copy the whole list each time. When nothing else holds the list, it is updated in place, so a loop that appends one element at a time takes time in proportion to the number of elements.
 
 ## 5.2 Loops: `for` and `let edit`
 
+### Updating a binding in a loop
+
 `for` visits the elements of a list in order, or the integers of a range. A loop computes something by updating a binding declared before it, and that binding must be declared `let edit`. A plain `let` names one value for good.
+
+### Totals, bulk lines and weeks
+
+The step totals a cart, lists its bulk lines, and walks a range of weeks:
 
 :::steps
 ```una include="steps/02-for/src/totals.una" title="steps/02-for/src/totals.una" verified="check, run"
@@ -183,14 +199,24 @@ week 3: 79440 cents so far
 
 The output of `bulk` is a list of texts, and interpolation writes it in the form you would type in Una, with brackets and quotes.
 
+### What lives from one turn to the next
+
 A binding declared inside the body, with `let`, is new at each turn of the loop and is gone after it. To carry a value from one turn to the next, or out of the loop, declare it before the loop with `let edit`, as `sum` and `found` are. The loop variable, `line` or `week`, is a plain binding: you read it, and the next turn gives it the next element.
+
+### No `while`
 
 > [!TIP]
 > Una has no `while`. A loop over a list or a range covers almost every case in day-to-day code, and recursion covers the rest. Because every loop walks a finite list or range, a reader can see where it ends.
 
 ## 5.3 A value that may be missing: `Option`
 
+### A search can find nothing
+
 A search can find nothing. A product may not be in the catalog, a list may be empty, and a text may not hold a number. In Una such a result has the type `Option[T]`, which is either `Some(value)` or `None`. You cannot use it as a `T` until you have said what happens in each case.
+
+### Looking up a price
+
+The step looks products up in a catalog, and reads a number and a position:
 
 :::steps
 ```una include="steps/03-option/src/lookup.una" title="steps/03-option/src/lookup.una" verified="check, run"
@@ -249,6 +275,8 @@ Some(3) and None
 
 An `Option` interpolates as `Some(3)` or `None`, which helps when you debug, but a report should say what the absence means, as `label` does.
 
+### Choosing how to use an `Option`
+
 :::decide
 **Which to use:**
 
@@ -260,10 +288,14 @@ An `Option` interpolates as `Some(3)` or `None`, which helps when you debug, but
 | Make a missing value a failure of your function | `if none fail V`, in [chapter 6](/learn/failure/) |
 :::
 
+### The default of `or_else` is computed first
+
 > [!NOTE]
 > The default of `or_else` is computed before the call, whether it is used or not. Keep it a plain value, such as `0` or `"other"`.
 
 ## 5.4 Functions over lists: `map`, `filter` and `fold`
+
+### Saying what to do with each element
 
 A loop says how to walk a list. Often you only need to say what to do with each element, and the prelude walks the list for you. These functions take a function as an argument:
 
@@ -273,6 +305,10 @@ A loop says how to walk a list. Often you only need to say what to do with each 
 - `first_where(keep: f)` gives the first element for which `f(x)` is `true`, and stops there.
 
 Each calls its function on the elements from first to last, at most once per element.
+
+### Pricing a cart without a loop
+
+The step prices a cart, counts its units, and decides whether it ships free:
 
 :::steps
 ```una include="steps/04-higher-order/src/pricing.una" title="steps/04-higher-order/src/pricing.una" verified="check, run"
@@ -323,7 +359,11 @@ pub main() -> Unit
 free shipping: false
 ```
 
+### What a lambda can see
+
 A lambda sees the values of the bindings around it as they were when it was made, and it cannot assign to a `let edit` binding outside it. To accumulate, use `fold`, or a `for` loop.
+
+### A function over the list, or a loop
 
 :::decide
 **Which to use:**
@@ -342,7 +382,13 @@ The last rows have two right answers. Choose the one a reader follows faster: a 
 
 ## 5.5 Maps
 
-A `Map[K, V]` maps keys to values: the stock of each SKU, the units of each category. Each key appears once. You make an empty map with `empty_map()`, and you read and change it with the operations below.
+### Keys and their values
+
+A `Map[K, V]` maps keys to values: the stock of each SKU, the units of each category. Each key appears once. You make an empty map with `empty_map()`, and you read and change it with [the operations of a map](#the-operations-of-a-map).
+
+### Stock by SKU
+
+The step keeps the stock of each SKU, and groups sales by category:
 
 :::steps
 ```una include="steps/05-maps/src/stock.una" title="steps/05-maps/src/stock.una" verified="check, run"
@@ -399,9 +445,15 @@ lighting: 5
 textiles: 1
 ```
 
+### Entries in key order
+
 A map keeps its entries ordered by key, not in the order you added them. `keys()`, `values()` and `entries()` all list them in that order, and `for entry in m.entries()` gives each `entry.key` with its `entry.value`. So a report built from a map comes out sorted by key, with no `sort` call, and the same input always gives the same output.
 
+### Lookup cost and key types
+
 The order has a cost and a rule. Each lookup, insertion and removal takes O(log n) time for a map of n entries. A key type must have an order: `Text`, `Int`, the fixed-width integers, or a kind whose variants carry no data. A record cannot be a key.
+
+### The operations of a map
 
 | Operation | Gives | Notes |
 | --- | --- | --- |
@@ -416,7 +468,13 @@ The order has a cost and a rule. Each lookup, insertion and removal takes O(log 
 
 ## 5.6 JSON
 
+### JSON values are a sum kind
+
 JSON is how stores, services and exports exchange records. The prelude reads it into a value of the kind `Json`, with one variant for each kind of JSON value: `Null`, `Boolean(value)`, `Number(value)` for a whole number, `Decimal(text)` for a number with a fraction or an exponent, `Str(value)`, `Array(items)` and `Object(fields)`. The fields of an object are a `Map[Text, Json]`, so everything from [section 5.5](#s5-5) applies.
+
+### Reading and writing a product feed
+
+The step parses two records of a product feed, reads a price, and writes JSON back:
 
 :::steps
 ```una include="steps/06-json/src/feed.una" title="steps/06-json/src/feed.una" verified="check, run"
@@ -468,12 +526,18 @@ None
 
 The first line is the interpolation of a `Json`, which shows the Una value, not JSON text. Note that the keys come out sorted: a JSON object is a map, so the order of the input is not kept. The second record has a trailing comma, which JSON does not allow, so it parses as `Null` and has no price.
 
+### When parsing fails: `JsonError`
+
 When parsing fails, the failure is a `JsonError`. `Syntax(at)` gives the position of the first character where no valid JSON can continue, and `TooDeep`, `DuplicateKey` and `NumberTooLong` name the other cases. Each variant carries the position `at`, counted in characters from 0. [Chapter 6](/learn/failure/) shows how to keep the failure and report it.
+
+### Numbers with a fraction
 
 > [!WARNING]
 > A JSON number with a fraction, such as `19.90`, is a `Decimal`, not a `Number`, so `is Number(value)` does not match it. Keep money in whole cents, in JSON as in Una.
 
 ## 5.7 Day-to-day: a daily sales report
+
+### What the report must do
 
 At the end of each day the shop exports its order lines, one JSON object per line. Some lines are incomplete. The report must read every line it can, say how many it skipped, total the units and the revenue of each category, name the best seller, and hand the totals to the accounting service as JSON.
 
@@ -481,7 +545,9 @@ The design follows from the data. The export is text, so each line is parsed on 
 
 The program is one module. Here it is in parts.
 
-**The records.** Two kinds: one for a line of the export, and one for what a category sold.
+### The records
+
+Two kinds: one for a line of the export, and one for what a category sold.
 
 ```una include="day-to-day/src/report.una#Line..Summary" title="day-to-day/src/report.una" caption="the records"
 --- One line of an order: a SKU, its category, how many units, and the price of one unit in cents.
@@ -498,7 +564,9 @@ pub kind Summary
   cents: Int
 ```
 
-**Reading a line.** Two private helpers read one field each, as an `Option`. `read_line` parses the text, checks that it is an object, and builds a `Line` when the fields it needs are there.
+### Reading a line
+
+Two private helpers read one field each, as an `Option`. `read_line` parses the text, checks that it is an object, and builds a `Line` when the fields it needs are there.
 
 ```una include="day-to-day/src/report.una#text_field..read_line" title="day-to-day/src/report.una" caption="reading JSON"
 --- The text in the field `name` of a JSON object, or `None` when it is missing or not a string.
@@ -543,7 +611,9 @@ pub read_line(text: Text) -> Option[Line]
 
 A missing category has a sensible default, so `or_else` gives "other". A missing SKU, quantity or price has none: the line cannot be used, so the result is `None`. Each `when` handles one of these fields, and the three nest. [Chapter 6](/learn/failure/) shows `if none`, which says the same thing in one line per field.
 
-**Keeping the lines that could be read.** A `for` loop over the export, with a `when` that appends the `Some` values. The `None` arm gives `unit`, the only value of the type `Unit`, and so does nothing: the line is skipped.
+### Keeping the lines that could be read
+
+A `for` loop over the export, with a `when` that appends the `Some` values. The `None` arm gives `unit`, the only value of the type `Unit`, and so does nothing: the line is skipped.
 
 ```una include="day-to-day/src/report.una#read_all" title="day-to-day/src/report.una"
 --- The lines that could be read, in the order of the export.
@@ -559,7 +629,9 @@ pub read_all(export: List[Text]) -> List[Line]
   lines
 ```
 
-**Grouping.** The pattern of [section 5.5](#s5-5), twice. `by_category` keeps a `Summary` per category, and `units_by_sku` an `Int` per SKU.
+### Grouping
+
+The pattern of [section 5.5](#s5-5), twice. `by_category` keeps a `Summary` per category, and `units_by_sku` an `Int` per SKU.
 
 ```una include="day-to-day/src/report.una#by_category..units_by_sku" title="day-to-day/src/report.una" caption="grouping with maps"
 --- The units and revenue of each category, ordered by category.
@@ -586,7 +658,9 @@ pub units_by_sku(lines: List[Line]) -> Map[Text, Int]
 
 The default for a new category is a `Summary` with zeros, so the same lines handle the first line of a category and every later one.
 
-**The best seller.** `fold` finds the largest number of units. `max` names its second parameter `b`, so the call labels it, as every argument after the first is labeled. Then `first_where` finds the first entry with that number. Entries come in SKU order, so on a tie the first SKU in order wins, and the result does not depend on the order of the export. An empty map gives `None`, and `headline` says so. An `Entry` is the prelude's record of one key and its value, so in `headline`, `entry.key` is the SKU and `entry.value` its units.
+### The best seller
+
+`fold` finds the largest number of units. `max` names its second parameter `b`, so the call labels it, as every argument after the first is labeled. Then `first_where` finds the first entry with that number. Entries come in SKU order, so on a tie the first SKU in order wins, and the result does not depend on the order of the export. An empty map gives `None`, and `headline` says so. An `Entry` is the prelude's record of one key and its value, so in `headline`, `entry.key` is the SKU and `entry.value` its units.
 
 ```una include="day-to-day/src/report.una#best_seller..headline" title="day-to-day/src/report.una"
 --- The SKU that sold the most units, the first in SKU order on a tie; `None` for no sales.
@@ -603,7 +677,9 @@ pub headline(best: Option[Entry[Text, Int]]) -> Text
     is None -> "no sales"
 ```
 
-**Money and the JSON summary.** `money` writes cents as an amount with two decimals. `totals_json` adds up the categories with `map` and `sum`, and builds a JSON object field by field.
+### Money and the JSON summary
+
+`money` writes cents as an amount with two decimals. `totals_json` adds up the categories with `map` and `sum`, and builds a JSON object field by field.
 
 ```una include="day-to-day/src/report.una#money..totals_json" title="day-to-day/src/report.una" caption="output"
 --- Cents as a decimal amount: 13930 is "139.30".
@@ -627,7 +703,9 @@ pub totals_json(summaries: List[Summary], skipped: Int) -> Text
 
 For an amount that is not negative, `cents / 100` is the whole part and `cents mod 100` the cents left over. The `if … then … else` on one line chooses the form with a leading zero.
 
-**Running it.** `sample_export` holds the day's export as literals. Each line is appended on its own, since canonical form keeps a list literal on one line. `main` reads it, groups it, and prints the report.
+### Running it
+
+`sample_export` holds the day's export as literals. Each line is appended on its own, since canonical form keeps a list literal on one line. `main` reads it, groups it, and prints the report.
 
 ```una include="day-to-day/src/report.una#sample_export..main" title="day-to-day/src/report.una"
 --- The day's export: one JSON object per order line.
@@ -658,10 +736,12 @@ pub main() -> Unit
   @console.print(totals_json(summaries, skipped: skipped))
 ```
 
-`una run .` prints the report shown under "What you'll build": eight lines, the `CHAIR-09` line skipped for its missing quantity, and the `VASE-03` line counted under "other". `summaries` comes from `values()`, so the categories print in name order. `skipped` is the difference of two lengths, since every line of the export either became a `Line` or was left out.
+`una run .` prints the report shown in [What you'll build](#what-youll-build): eight lines, the `CHAIR-09` line skipped for its missing quantity, and the `VASE-03` line counted under "other". `summaries` comes from `values()`, so the categories print in name order. `skipped` is the difference of two lengths, since every line of the export either became a `Line` or was left out.
 
 > [!SECURITY]
 > The export here is a literal. A program that reads it from a file gets text labeled `internal`, a label that may not reach the console without a declared policy. Printing a report built from it is a question of information flow, which [chapter 9, Information flow](/learn/information-flow/), answers with a policy.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -846,6 +926,8 @@ example "amounts keep two digits of cents"
 
 ## 5.8 Testing it
 
+### One example per path
+
 Each path through the program gets an example: a complete line, a line that uses the default category, a line without a quantity, a line that is not JSON, two lines of one category, a tie for the best seller, a day without sales, and an amount with a leading zero in its cents. An example calls one function with a `do` line and checks the result with an `expect` line, so each one names the case it covers.
 
 > [!TIP]
@@ -885,6 +967,16 @@ example "amounts keep two digits of cents"
   expect result == "12.05"
 ```
 
+### Ties and empty days
+
+Two of them pin down what the output alone would hide. "on a tie, the first SKU in order is the best seller" builds the map with `RUG-07` first and expects `LAMP-01`, so it proves that the result follows the key order and not the order of insertion. "a day without sales has no best seller" checks the `None` arm of `headline`, a path the sample export never reaches.
+
+### Pure functions, whole values
+
+The examples need no fakes. Every function they call is pure, with no `uses` line, so an example only gives it values and checks what comes back. The examples compare whole values with `==`: an `Option` of a record, a list, a map lookup. Lists, maps, records and `Option`s are values, so `==` compares what they hold, element by element and field by field.
+
+### Running the examples
+
 `una test .` prints:
 
 ```text include="day-to-day/expected/commands/test.txt#L2-L11"
@@ -900,16 +992,14 @@ example report "amounts keep two digits of cents" ... ok
 8 examples: 8 passed, 0 failed
 ```
 
-Two of them pin down what the output alone would hide. "on a tie, the first SKU in order is the best seller" builds the map with `RUG-07` first and expects `LAMP-01`, so it proves that the result follows the key order and not the order of insertion. "a day without sales has no best seller" checks the `None` arm of `headline`, a path the sample export never reaches.
-
-The examples need no fakes. Every function they call is pure, with no `uses` line, so an example only gives it values and checks what comes back. The examples compare whole values with `==`: an `Option` of a record, a list, a map lookup. Lists, maps, records and `Option`s are values, so `==` compares what they hold, element by element and field by field.
-
 ## 5.9 Common mistakes
 
 Each mistake below is a small change to `day-to-day/src/report.una`, followed by what `una check .` reports.
 
+### Indexing with brackets (U0101)
+
 :::mistake
-**1. Indexing with brackets (U0101).** Reading the first line of the export as `export[0]`:
+Read the first line of the export as `export[0]`:
 
 ```diff include="day-to-day..mistakes/1:src/report.una" context="1"
 --- a/src/report.una
@@ -929,8 +1019,10 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* `export.at(index: 0)` or `export.first()`, then `when` or `or_else`.
 :::
 
+### Updating a plain `let` (U2019)
+
 :::mistake
-**2. Updating a plain `let` (U2019).** Declaring the result of `read_all` with `let` instead of `let edit`:
+Declare the result of `read_all` with `let` instead of `let edit`:
 
 ```diff include="day-to-day..mistakes/2:src/report.una" context="1"
 --- a/src/report.una
@@ -951,8 +1043,10 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* `let edit lines: List[Line] = []`, as the message says.
 :::
 
+### Using an `Option` as its value (U2001)
+
 :::mistake
-**3. Using an `Option` as its value (U2001).** Leaving out the default when reading the units so far:
+Leave out the default when reading the units so far:
 
 ```diff include="day-to-day..mistakes/3:src/report.una" context="1"
 --- a/src/report.una
@@ -973,8 +1067,10 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* `or_else(default: 0)`, or a `when` when the absence needs its own handling.
 :::
 
+### A `when` that forgets `None` (U2007)
+
 :::mistake
-**4. A `when` that forgets `None` (U2007).** Removing the `is None` arm of `headline`:
+Remove the `is None` arm of `headline`:
 
 ```diff include="day-to-day..mistakes/4:src/report.una" context="1"
 --- a/src/report.una
@@ -995,8 +1091,10 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* add the arm, `is None -> "no sales"`.
 :::
 
+### Sorting records (U2025)
+
 :::mistake
-**5. Sorting records (U2025).** Sorting the lines as they are read:
+Sort the lines as they are read:
 
 ```diff include="day-to-day..mistakes/5:src/report.una" context="1"
 --- a/src/report.una
@@ -1014,11 +1112,13 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 
 *Why:* `sort` needs an order, and a record has none: should lines sort by SKU, by category, by price?
 
-*Fix:* sort something that has an order, such as `lines.map(each: fn(line) -> line.sku).sort()`, or group into a map keyed by what you want to sort by, as exercise 3 ([section 5.11](#s5-11)) does.
+*Fix:* sort something that has an order, such as `lines.map(each: fn(line) -> line.sku).sort()`, or group into a map keyed by what you want to sort by, as [exercise 3](#exercise-3-categories-by-revenue) does.
 :::
 
+### Calling `set` without `edit` (U2020)
+
 :::mistake
-**6. Calling `set` without `edit` (U2020).** Writing the update in `units_by_sku` as a plain call:
+Write the update in `units_by_sku` as a plain call:
 
 ```diff include="day-to-day..mistakes/6:src/report.una" context="1"
 --- a/src/report.una
@@ -1039,8 +1139,10 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* `edit units.set(...)`, as the message says.
 :::
 
+### Parsing JSON without a clause (U3007)
+
 :::mistake
-**7. Parsing JSON without a clause (U3007).** Removing `if error use Null` from `read_line`:
+Remove `if error use Null` from `read_line`:
 
 ```diff include="day-to-day..mistakes/7:src/report.una" context="1"
 --- a/src/report.una
@@ -1060,8 +1162,10 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* add a clause. [Chapter 6](/learn/failure/) shows all of them.
 :::
 
+### A brace in JSON text (U0007)
+
 :::mistake
-**8. A brace in JSON text (U0007).** Writing a JSON object in a text literal without escaping its braces:
+Write a JSON object in a text literal without escaping its braces:
 
 ```diff include="day-to-day..mistakes/8:src/report.una" context="0"
 --- a/src/report.una
@@ -1081,24 +1185,14 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 *Fix:* `una fix .` writes `\{` and `\}` for you.
 :::
 
-## 5.10 For agents
-
-:::agents
-Every diagnostic above is available as JSON with `una --json check .`. For mistake 4:
-
-```json include="mistakes/4/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2007","severity":"error","domain":"types","message":"`when` does not match variant `None` of `Option`","primary":{"file":"src/report.una","start":{"line":97,"col":3},"end":{"line":97,"col":7}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"add an arm for each missing variant, such as `is None`, or an `else` arm","edit":null}],"explain":"una explain U2007"}],"fixable":0}
-```
-
-The repair of U2007 has a description and no `edit`, because the right arm depends on what the absence means. The U0007 of mistake 8 carries exact edits, which `una fix .` applies. The compact rule: *a value from `first`, `at`, `get`, `first_where` or `to_int` is an `Option`, used through `when` with both arms or `or_else`; a binding that changes is `let edit`, and a call that updates a map is written `edit m.set(...)`.*
-:::
-
-## 5.11 Exercises
+## 5.10 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with a stub of the function to write, whose body is `[]`, and the exercise's example. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
 
+### Exercise 1: the SKUs of a category
+
 ::::exercise
-**Exercise 1: the SKUs of a category.** Write `skus_in(lines, category)`, the SKUs sold in one category, each once, in SKU order. The start package ends with:
+Write `skus_in(lines, category)`, the SKUs sold in one category, each once, in SKU order. The start package ends with:
 
 ```una include="exercises/1/start/src/report.una#L178-L187" title="exercises/1/start/src/report.una"
 --- The SKUs sold in `category`, each once, in SKU order.
@@ -1148,8 +1242,10 @@ Give `skus_in` its body:
 :::
 ::::
 
+### Exercise 2: say which lines were skipped
+
 ::::exercise
-**Exercise 2: say which lines were skipped.** The report says how many lines it skipped. Write `skipped_lines(export)`, the numbers of those lines in the export, counting from 1, and print them on the first line of the report: `8 lines, 1 skipped: [5]`. The start package ends with:
+The report says how many lines it skipped. Write `skipped_lines(export)`, the numbers of those lines in the export, counting from 1, and print them on the first line of the report: `8 lines, 1 skipped: [5]`. The start package ends with:
 
 ```una include="exercises/2/start/src/report.una#L178-L183" title="exercises/2/start/src/report.una"
 --- The numbers of the lines that could not be read, counting from 1.
@@ -1197,8 +1293,10 @@ The example covers a line that is not JSON and an object without a SKU, around a
 :::
 ::::
 
+### Exercise 3: categories by revenue
+
 ::::exercise
-**Exercise 3: categories by revenue.** Write `ranked(summaries)`, the categories from the highest revenue to the lowest, and print them after the category lines: `by revenue: furniture, textiles, lighting, other`. When two categories have the same revenue, they keep the order of `summaries`. The start package ends with:
+Write `ranked(summaries)`, the categories from the highest revenue to the lowest, and print them after the category lines: `by revenue: furniture, textiles, lighting, other`. When two categories have the same revenue, they keep the order of `summaries`. The start package ends with:
 
 ```una include="exercises/3/start/src/report.una#L178-L184" title="exercises/3/start/src/report.una"
 --- The categories, the highest revenue first. On a tie they keep the order of `summaries`,
@@ -1249,7 +1347,21 @@ Give `ranked` its body, and print its result in `main`:
 :::
 ::::
 
-## 5.12 Recap
+## 5.11 Recap and reference
+
+### For agents
+
+:::agents
+Every diagnostic of [Common mistakes](#s5-9) is available as JSON with `una --json check .`. For [a `when` that forgets `None`](#a-when-that-forgets-none-u2007):
+
+```json include="mistakes/4/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2007","severity":"error","domain":"types","message":"`when` does not match variant `None` of `Option`","primary":{"file":"src/report.una","start":{"line":97,"col":3},"end":{"line":97,"col":7}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"add an arm for each missing variant, such as `is None`, or an `else` arm","edit":null}],"explain":"una explain U2007"}],"fixable":0}
+```
+
+The repair of U2007 has a description and no `edit`, because the right arm depends on what the absence means. The U0007 of [a brace in JSON text](#a-brace-in-json-text-u0007) carries exact edits, which `una fix .` applies. The compact rule: *a value from `first`, `at`, `get`, `first_where` or `to_int` is an `Option`, used through `when` with both arms or `or_else`; a binding that changes is `let edit`, and a call that updates a map is written `edit m.set(...)`.*
+:::
+
+### Recap
 
 :::recap
 - A list holds values of one type in order, and `append` returns a new list. Read a position with `at` or `first`.
@@ -1261,7 +1373,7 @@ Give `ranked` its body, and print its result in `main`:
 - Parsed JSON is a `Json`: read it with `when` and `get`, write it with `to_json`, and keep money in whole cents.
 :::
 
-## 5.13 Reference
+### Reference
 
 :::reference
 - Construct pages: [`for`](/docs/language/control-flow/for/), [`let edit` and `edit` parameters](/docs/language/control-flow/let-edit/), [`when`](/docs/language/control-flow/when/), [`example`](/docs/language/examples/example/), [`if error` and `if none`](/docs/language/errors/if-error/)
