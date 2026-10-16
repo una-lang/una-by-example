@@ -116,7 +116,7 @@ DESK-02, LAMP-01, RUG-07
 
 `sort` works on any type with an order: `Int`, `Text`, the fixed-width integers, and kinds whose variants carry no data, in the order the variants are declared. It is stable, so equal elements keep the order they had. A record such as an order line has no order of its own, and Common mistakes shows what the checker says when you try.
 
-Positions in a list count from 0. There is no `xs[0]` syntax. `xs.at(index: 0)` and `xs.first()` read an element, and they return an `Option`, because the list may be shorter than you think. Section 5.3 shows how to use what they return.
+Positions in a list count from 0. There is no `xs[0]` syntax. `xs.at(index: 0)` and `xs.first()` read an element, and they return an `Option`, because the list may be shorter than you think. [Section 5.3](#s5-3) shows how to use what they return.
 
 > [!NOTE]
 > A list is a value, but `append` does not copy the whole list each time. When nothing else holds the list, it is updated in place, so a loop that appends one element at a time takes time in proportion to the number of elements.
@@ -231,7 +231,7 @@ pub main() -> Unit
   @console.print("{typed} and {catalog.at(index: 5)}")
 ```
 
-1. **`catalog.first_where(keep: fn(product) -> product.sku == sku)`.** The first element for which the test holds, as an `Option[Product]`. The test is a lambda, a function written in place ([chapter 3](/learn/functions/lambdas/); section 5.4 uses more of them).
+1. **`catalog.first_where(keep: fn(product) -> product.sku == sku)`.** The first element for which the test holds, as an `Option[Product]`. The test is a lambda, a function written in place ([chapter 3](/learn/functions/lambdas/); [section 5.4](#s5-4) uses more of them).
 2. **`when found`.** A `when` over an `Option` has one arm per case, `is Some(product)` and `is None`. The name in `Some(product)` binds the value inside. A `when` that leaves out a case does not check.
 3. **`Some(product.cents)`.** `price_of` itself returns an `Option`, so its caller decides what a missing price means. `label` decides: it prints "not sold here".
 4. **`missing.or_else(default: 0)`.** The short form when a default is right: the value inside `Some`, or the default for `None`.
@@ -416,7 +416,7 @@ The order has a cost and a rule. Each lookup, insertion and removal takes O(log 
 
 ## 5.6 JSON
 
-JSON is how stores, services and exports exchange records. The prelude reads it into a value of the kind `Json`, with one variant for each kind of JSON value: `Null`, `Boolean(value)`, `Number(value)` for a whole number, `Decimal(text)` for a number with a fraction or an exponent, `Str(value)`, `Array(items)` and `Object(fields)`. The fields of an object are a `Map[Text, Json]`, so everything from section 5.5 applies.
+JSON is how stores, services and exports exchange records. The prelude reads it into a value of the kind `Json`, with one variant for each kind of JSON value: `Null`, `Boolean(value)`, `Number(value)` for a whole number, `Decimal(text)` for a number with a fraction or an exponent, `Str(value)`, `Array(items)` and `Object(fields)`. The fields of an object are a `Map[Text, Json]`, so everything from [section 5.5](#s5-5) applies.
 
 :::steps
 ```una include="steps/06-json/src/feed.una" title="steps/06-json/src/feed.una" verified="check, run"
@@ -559,7 +559,7 @@ pub read_all(export: List[Text]) -> List[Line]
   lines
 ```
 
-**Grouping.** The pattern of section 5.5, twice. `by_category` keeps a `Summary` per category, and `units_by_sku` an `Int` per SKU.
+**Grouping.** The pattern of [section 5.5](#s5-5), twice. `by_category` keeps a `Summary` per category, and `units_by_sku` an `Int` per SKU.
 
 ```una include="day-to-day/src/report.una#by_category..units_by_sku" title="day-to-day/src/report.una" caption="grouping with maps"
 --- The units and revenue of each category, ordered by category.
@@ -1014,7 +1014,7 @@ Each mistake below is a small change to `day-to-day/src/report.una`, followed by
 
 *Why:* `sort` needs an order, and a record has none: should lines sort by SKU, by category, by price?
 
-*Fix:* sort something that has an order, such as `lines.map(each: fn(line) -> line.sku).sort()`, or group into a map keyed by what you want to sort by, as exercise 3 (section 5.11) does.
+*Fix:* sort something that has an order, such as `lines.map(each: fn(line) -> line.sku).sort()`, or group into a map keyed by what you want to sort by, as exercise 3 ([section 5.11](#s5-11)) does.
 :::
 
 :::mistake

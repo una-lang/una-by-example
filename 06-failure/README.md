@@ -112,7 +112,7 @@ Walkthrough:
 2. **`fails QuantityError`.** This header line says that `parse_quantity` can fail, and with which kind. A function declares at most one error kind.
 3. **`raw.trim.to_int()` then `if none fail NotANumber(raw)`.** `to_int` returns an `Option[Int]` ([chapter 5](/learn/collections/)): `None` when the text is not a number. The clause on the next line turns `None` into a failure of this function. After it, `n` is a plain `Int`.
 4. **`fail TooSmall(value: n)`.** This ends the function with that variant. `fail` can stand in any branch, and the other branches give the value.
-5. **`if error use 0`.** In `main`, each call is followed by a handling clause. Here it recovers with `0`. Section 6.2 shows the others.
+5. **`if error use 0`.** In `main`, each call is followed by a handling clause. Here it recovers with `0`. [Section 6.2](#s6-2) shows the others.
 :::
 
 `una run .` prints:
@@ -233,7 +233,7 @@ Walkthrough:
 1. **`if none fail MissingQuantity(line: number)`.** `at(index: 1)` gives `None` when the line has no comma. That is the input's fault, so it becomes a failure.
 2. **`if error fail BadQuantity(line: number, cause: error)`.** This is translation. `quantity_on_line` fails with `LineError`, and `parse_quantity` fails with `QuantityError`, so `if error pass` would not be allowed (see Common mistakes). `error` is the `QuantityError` that occurred, and it is kept as the `cause`.
 3. **`explain` and `cause_text`.** Turning a failure into a message is an ordinary `when`. Because `when` must cover every variant, adding a variant to `LineError` later makes the checker point at every message function that needs a new arm.
-4. **`attempt quantity_on_line(number, text: text)` in `show`.** `attempt` keeps the outcome as a value, `Ok(value)` or `Err(failure)`, so `show` can print a message for either. Section 6.3 explains it.
+4. **`attempt quantity_on_line(number, text: text)` in `show`.** `attempt` keeps the outcome as a value, `Ok(value)` or `Err(failure)`, so `show` can print a message for either. [Section 6.3](#s6-3) explains it.
 :::
 
 ### Recovering with a default from a service
@@ -313,7 +313,7 @@ The handlers `fixed` and `down` are fake catalogs. This is how every failure pat
 
 The handling clauses decide on the spot. Sometimes you want to *keep* the outcome and decide later, for example to report every line of a batch rather than stop at the first bad one. `attempt` turns one call into a `Result[T, E]`: `Ok(value)` if it returned, `Err(failure)` if it failed. `Result` is a sum kind of the prelude, so `when` takes it apart.
 
-`attempt` takes exactly one call, never a larger expression. You usually bind its result with `let`, as `show` does in 6.2. It can also be the whole body of a function that returns the `Result`. When the outcome is `Ok`, everything the callee promises about its result in its header holds for the value, exactly as after a direct call ([chapter 7](/learn/contracts/) shows those promises, `ensures`).
+`attempt` takes exactly one call, never a larger expression. You usually bind its result with `let`, as `show` does in [section 6.2](#s6-2). It can also be the whole body of a function that returns the `Result`. When the outcome is `Ok`, everything the callee promises about its result in its header holds for the value, exactly as after a direct call ([chapter 7](/learn/contracts/) shows those promises, `ensures`).
 
 This step checks quantities typed by a person with the prelude's own failing function, `parse_int`, which fails with `ParseError`. It reports every quantity and counts the good ones, instead of stopping at the first bad one:
 
@@ -380,7 +380,7 @@ The last value interpolates as `Ok(7)`: a `Result` is printed like any other val
 | Let the caller decide, same error kind | `if error pass` |
 | Report the failure in your own terms | `if error fail V(cause: error)` |
 | Keep going and collect outcomes, retry, or count failures | `attempt`, then `when` |
-| Accept outside input that no proof can establish | `checked` (section 6.4) |
+| Accept outside input that no proof can establish | `checked` ([section 6.4](#s6-4)) |
 :::
 
 ## 6.4 When no proof can decide: `checked`
@@ -531,7 +531,7 @@ pub check_stock(order: Order) -> Order
     order
 ```
 
-**Composing the steps.** Both steps fail with `OrderError`, the same kind as `accept`, so `if error pass` hands their failures on unchanged. The order of the two statements is the order of the work: a line that does not parse never reaches the inventory, which section 6.6 proves with an example.
+**Composing the steps.** Both steps fail with `OrderError`, the same kind as `accept`, so `if error pass` hands their failures on unchanged. The order of the two statements is the order of the work: a line that does not parse never reaches the inventory, which [section 6.6](#s6-6) proves with an example.
 
 ```una include="day-to-day/src/orders.una#accept" title="day-to-day/src/orders.una"
 --- One line, from text to an order that can be shipped.
@@ -837,7 +837,7 @@ Each mistake below is a small change to `day-to-day/src/orders.una`, followed by
 
 *Why:* nothing propagates implicitly.
 
-*Fix:* add the clause that matches your intent (table in 6.2).
+*Fix:* add the clause that matches your intent (table in [section 6.2](#s6-2)).
 :::
 
 :::mistake
