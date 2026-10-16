@@ -97,9 +97,9 @@ refund: -13 and 95
 no overflow: 9223372036854775808
 ```
 
-### No overflow
+### No 64-bit limit
 
-Two lines need a closer look. The last one shows that `Int` has no 64-bit limit: the sum is exact. Many languages would print a large negative number there, or stop with an error.
+The last line shows that `Int` has no 64-bit limit: the sum is exact. Many languages would print a large negative number there, or stop with an error.
 
 ### Euclidean division
 
@@ -373,7 +373,7 @@ A fixed-width value never wraps around. Every `+`, `-`, `*`, `/` and `mod` on on
 
 ### Label copies as one byte: `U8`
 
-The module `printer` counts the copies of a shelf label in a `U8`:
+The module `printer` counts the copies of a shelf label in a `U8`, and a roll of labels in a `U16`:
 
 :::steps
 ```una include="steps/07-fixed-width/src/printer.una" title="src/printer.una" verified="check, run"
@@ -468,7 +468,7 @@ pub fit_name(name: Text) -> Text = if name.len > 24 then name.slice(start: 0, en
 pub money(cents: Int) -> Text = "{cents / 100}.{cents mod 100 / 10}{cents mod 10}"
 ```
 
-`money` writes the two digits of the cents one by one, as in the last exercise of [chapter 1](/learn/hello/#exercise-3-amounts-with-two-decimals), so 1205 is `12.05` and never `12.5`. Its doc comment states that it is for amounts that are not negative, since a refund would need the Euclidean rule of [section 2.1](#euclidean-division) in mind.
+`money` writes the two digits of the cents one by one, as in the last exercise of [chapter 1](/learn/hello/#exercise-3-amounts-with-two-decimals), so 1205 is `12.05` and never `12.5`. Its doc comment states that it is for amounts that are not negative, since a refund would need the rule of [Euclidean division](#euclidean-division), in section 2.1.
 
 ### Sale prices and prices per kilogram
 

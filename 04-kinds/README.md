@@ -222,6 +222,9 @@ A variant with fields prints as you would build it: one field without its label,
 
 The checker makes sure that every variant has an arm. An `else` arm, last, covers every variant not named before it. Over an `Int` or a `Text`, arms name literals with `is`, or ranges with `in`, and these need an `else` unless the ranges cover every value.
 
+> [!TIP]
+> Prefer an arm per variant to `else` on a sum that will grow. Keep `else` for "every other case is the same", as `refund_due` does in the day-to-day program, and for literals and ranges.
+
 ### Postage by zone, weight and delivery
 
 The module `postage` uses `when` over a sum, over ranges of an `Int`, and with arms that bind fields:
@@ -283,11 +286,6 @@ collect at locker Station 14
 ### Range arms, a proof obligation
 
 Range arms with no `else` are a proof obligation: the verifier must show that some arm matches every `Int`. When it cannot, it reports the value that no arm matches, a counterexample ([Ranges that leave a gap](#ranges-that-leave-a-gap-u5001), in Common mistakes). [Chapter 7](/learn/contracts/) explains what the verifier proves and how to read its counterexamples.
-
-### An arm per variant, or `else`
-
-> [!TIP]
-> Prefer an arm per variant to `else` on a sum that will grow. Keep `else` for "every other case is the same", as `refund_due` does in the day-to-day program, and for literals and ranges.
 
 ## 4.4 Generic kinds and constraints
 

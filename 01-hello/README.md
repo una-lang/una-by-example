@@ -186,7 +186,7 @@ Each diagnostic has the same parts, in the same order:
 
 ### The commands at a glance
 
-The table lists the commands of this chapter:
+The table lists the commands you will use most:
 
 | Command | What it does | Prints when all is well |
 | --- | --- | --- |
