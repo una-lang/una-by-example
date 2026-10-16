@@ -18,10 +18,10 @@ shown_price(sku: Text) -> Int
   found
 
 handler fixed(sku: Text, price: Int) for Catalog
-  op cents(s) = if s == sku then Some(price) else None
+  op cents(asked) = if asked == sku then Some(price) else None
 
 handler down() for Catalog
-  op cents(s) = fail Timeout
+  op cents(asked) = fail Timeout
 
 pub main() -> Unit
   uses @console: Console[print]

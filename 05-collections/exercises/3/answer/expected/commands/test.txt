@@ -7,6 +7,6 @@ example report "two lines of one category add up" ... ok
 example report "on a tie, the first SKU in order is the best seller" ... ok
 example report "a day without sales has no best seller" ... ok
 example report "amounts keep two digits of cents" ... ok
-example report "categories with the same revenue keep their name order" ... ok
+example report "categories with the same revenue keep the order of the summaries" ... ok
 
 9 examples: 9 passed, 0 failed

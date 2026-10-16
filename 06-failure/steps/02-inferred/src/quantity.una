@@ -18,8 +18,8 @@ parse_quantity(raw: Text) -> Int
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let a = parse_quantity(" 3 ")
+  let typed = parse_quantity(" 3 ")
     if error use 0
-  let b = parse_quantity("three")
+  let spelled = parse_quantity("three")
     if error use 0
-  @console.print("{a} and {b}")
+  @console.print("{typed} and {spelled}")

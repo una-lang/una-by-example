@@ -64,18 +64,6 @@ pub read_all(export: List[Text]) -> List[Line]
       is None -> unit
   lines
 
---- The numbers of the lines that could not be read, counting from 1.
-pub skipped_lines(export: List[Text]) -> List[Int]
-=
-  let edit numbers: List[Int] = []
-  let edit number = 0
-  for text in export
-    number = number + 1
-    let found = read_line(text)
-    if found is None
-      numbers = numbers.append(item: number)
-  numbers
-
 --- The units and revenue of each category, ordered by category.
 pub by_category(lines: List[Line]) -> Map[Text, Summary]
 =
@@ -186,6 +174,18 @@ example "a day without sales has no best seller"
 example "amounts keep two digits of cents"
   do money(1205)
   expect result == "12.05"
+
+--- The numbers of the lines that could not be read, counting from 1.
+pub skipped_lines(export: List[Text]) -> List[Int]
+=
+  let edit numbers: List[Int] = []
+  let edit number = 0
+  for text in export
+    number = number + 1
+    let found = read_line(text)
+    if found is None
+      numbers = numbers.append(item: number)
+  numbers
 
 example "the skipped lines are numbered from 1"
   do skipped_lines(["LAMP-01", "\{\"sku\": \"RUG-07\", \"quantity\": 1, \"cents\": 4500\}", "\{\}"])

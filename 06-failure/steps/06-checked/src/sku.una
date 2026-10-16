@@ -14,11 +14,14 @@ parse_sku(raw: Text) -> Sku
 =
   checked(raw.trim, well_formed(it)) else fail NotASku
 
+--- The label printed on a shelf. It takes a `Sku`, so it never sees unchecked text.
+shelf_label(sku: Sku) -> Text = "sku {sku}"
+
 show(raw: Text) -> Text
 =
   let outcome = attempt parse_sku(raw)
   when outcome
-    is Ok(value) -> "sku {value}"
+    is Ok(value) -> shelf_label(value)
     is Err -> "not a sku: {raw}"
 
 pub main() -> Unit

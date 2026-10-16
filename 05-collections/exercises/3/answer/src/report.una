@@ -76,20 +76,6 @@ pub by_category(lines: List[Line]) -> Map[Text, Summary]
     edit totals.set(key: line.category, value: Summary(category: line.category, units: units, cents: cents))
   totals
 
---- The categories, the highest revenue first, and in name order on a tie.
-pub ranked(summaries: List[Summary]) -> List[Text]
-=
-  let edit by_revenue: Map[Int, List[Text]] = empty_map()
-  for summary in summaries
-    let key = -summary.cents
-    let before = by_revenue.get(key: key).or_else(default: [])
-    edit by_revenue.set(key: key, value: before.append(item: summary.category))
-  let edit names: List[Text] = []
-  for group in by_revenue.values()
-    for name in group
-      names = names.append(item: name)
-  names
-
 --- The units sold of each SKU.
 pub units_by_sku(lines: List[Line]) -> Map[Text, Int]
 =
@@ -191,6 +177,21 @@ example "amounts keep two digits of cents"
   do money(1205)
   expect result == "12.05"
 
-example "categories with the same revenue keep their name order"
+--- The categories, the highest revenue first. On a tie they keep the order of `summaries`,
+--- which is name order when they come from `by_category`.
+pub ranked(summaries: List[Summary]) -> List[Text]
+=
+  let edit by_revenue: Map[Int, List[Text]] = empty_map()
+  for summary in summaries
+    let key = -summary.cents
+    let before = by_revenue.get(key: key).or_else(default: [])
+    edit by_revenue.set(key: key, value: before.append(item: summary.category))
+  let edit names: List[Text] = []
+  for group in by_revenue.values()
+    for name in group
+      names = names.append(item: name)
+  names
+
+example "categories with the same revenue keep the order of the summaries"
   do ranked([Summary(category: "lighting", units: 1, cents: 500), Summary(category: "garden", units: 2, cents: 900), Summary(category: "textiles", units: 5, cents: 500)])
   expect result == ["garden", "lighting", "textiles"]

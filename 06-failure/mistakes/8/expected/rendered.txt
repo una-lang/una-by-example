@@ -1,7 +1,7 @@
 [U0101] Error: unexpected `failure`, expected a variant
-    ╭─[ src/orders.una:85:29 ]
+    ╭─[ src/orders.una:86:29 ]
     │
- 85 │     is Err(failure) -> fail failure
+ 86 │     is Err(failure) -> fail failure
     │                             ───┬───
     │                                ╰───── unexpected `failure`, expected a variant
     │

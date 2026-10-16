@@ -69,22 +69,23 @@ pub process(lines: List[Text]) -> List[Result[Order, OrderError]]
   results
 
 --- What a person reads in the batch report.
-pub reason(e: OrderError) -> Text
+pub reason(failure: OrderError) -> Text
 =
-  when e
+  when failure
     is Malformed(line) -> "cannot read the line '{line}'"
     is BadQuantity(line) -> "the quantity in '{line}' is not a whole number above 0"
     is UnknownSku(sku) -> "no product has the SKU {sku}"
     is OutOfStock(sku, wanted, left) -> "{wanted} of {sku} wanted, {left} left"
     is Unavailable -> "the inventory did not answer; retry later"
 
+--- One line of the batch report.
 pub describe(outcome: Result[Order, OrderError]) -> Text
 =
   when outcome
     is Ok(value) -> "ok      {value.quantity} x {value.sku}"
     is Err(failure) -> "reject  {reason(failure)}"
 
---- An inventory held in memory, for the demo and for tests.
+--- An inventory held in memory, for this example run and for tests.
 handler warehouse(stock: Map[Text, Int]) for Inventory
   op on_hand(sku) = stock.get(key: sku)
 
@@ -121,6 +122,17 @@ example "an inventory that does not answer is Unavailable"
   given @inventory = offline()
   do accept("LAMP-01, 1")
   expect fails Unavailable
+
+example "a SKU the inventory does not know is UnknownSku"
+  given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
+  do accept("CHAIR-09, 1")
+  expect fails UnknownSku
+
+example "a quantity that is not a number is BadQuantity, before the inventory is asked"
+  given @inventory = offline()
+  do accept("LAMP-01, two")
+  expect fails BadQuantity
+  expect not performed @inventory.on_hand
 
 --- The units an outcome ships: its quantity when accepted, 0 when rejected.
 units(outcome: Result[Order, OrderError]) -> Int

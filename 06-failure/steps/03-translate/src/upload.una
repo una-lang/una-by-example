@@ -24,15 +24,15 @@ quantity_on_line(number: Int, text: Text) -> Int
   parse_quantity(raw)
     if error fail BadQuantity(line: number, cause: error)
 
-explain(e: LineError) -> Text
+explain(failure: LineError) -> Text
 =
-  when e
+  when failure
     is MissingQuantity(line) -> "line {line}: no quantity"
     is BadQuantity(line, cause) -> "line {line}: {cause_text(cause)}"
 
-cause_text(c: QuantityError) -> Text
+cause_text(cause: QuantityError) -> Text
 =
-  when c
+  when cause
     is NotANumber(raw) -> "'{raw.trim}' is not a number"
     is OutOfRange(value) -> "{value} is not between 1 and 99"
 
