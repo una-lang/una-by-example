@@ -1,0 +1,2 @@
+error U5001 at src/labels.una:46:7: `@printer.print_label` may run where `not dry_run` is not proven
+  counterexample: dry_run = true, line = "Line#0", line.sku = "Text#0", line.units = 1, lines = "List#0", lines.len = 1, printed = 0

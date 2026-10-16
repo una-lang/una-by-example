@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+fixed src/pricetags.una:68:67 U2004 label it `off`

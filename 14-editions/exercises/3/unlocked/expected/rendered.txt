@@ -1,0 +1,17 @@
+[U3023] Error: the header of `print_labels` lets `@printer.print_summary` run, which its lock in `una.toml` does not list
+    ╭─[ src/labels.una:43:57 ]
+    │
+ 43 │   uses @printer: Printer[print_label where not dry_run, print_summary]
+    │                                                         ──────┬──────
+    │                                                               ╰──────── the header of `print_labels` lets `@printer.print_summary` run, which its lock in `una.toml` does not list
+    │
+    ├─[ una.toml:11:26 ]
+    │
+ 11 │ "labels.print_labels" = ["@printer: Printer[print_label where not dry_run]"]
+    │                          ─────────────────────────┬────────────────────────
+    │                                                   ╰────────────────────────── the lock
+    │
+    │ Help: repair 1: list only the operations of the lock in the header's `@printer`
+    │
+    │ Note: run `una explain U3023` for an explanation
+────╯

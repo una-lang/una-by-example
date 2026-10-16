@@ -1,0 +1,21 @@
+[U5001] Error: `@printer.print_label` may run where `not dry_run` is not proven
+    ╭─[ src/labels.una:46:7 ]
+    │
+ 41 │   uses @printer: Printer[print_label where not dry_run]
+    │                                            ─────┬─────
+    │                                                 ╰─────── condition
+    │
+ 46 │       @printer.print_label(line.sku, units: line.units)
+    │       ────────────────────────┬────────────────────────
+    │                               ╰────────────────────────── `@printer.print_label` may run where `not dry_run` is not proven
+    │
+    │ Help 1: repair 1: guard the operation with `if not dry_run`
+    │
+    │ Help 2: repair 2: add `requires not dry_run` to the enclosing function; its callers then prove it
+    │
+    │ Note 1: obligation ob-e03b3850e838 (effect_condition) is refuted: not dry_run
+    │
+    │ Note 2: counterexample: dry_run = true, line = Line#0, line.sku = Text#0, line.units = 1, lines = List#0, lines.len = 1, printed = 0
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

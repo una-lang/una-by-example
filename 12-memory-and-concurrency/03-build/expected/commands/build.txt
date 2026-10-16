@@ -1,2 +1,0 @@
-$ una build .
-built target/una/native

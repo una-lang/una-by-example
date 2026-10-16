@@ -1,0 +1,4 @@
+$ una contract discount.parse_percent
+--- A percent typed by a person, such as "30".
+parse_percent(raw: Text) -> Percent
+  fails PercentError -- inferred

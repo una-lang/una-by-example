@@ -1,2 +1,0 @@
-$ una --json check .
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2001","severity":"error","domain":"types","message":"argument `line` of operation `Console.print` must be `Text`, found `Int`","primary":{"file":"src/labels.una","start":{"line":8,"col":18},"end":{"line":8,"col":20}},"related":[],"repairs":[],"explain":"una explain U2001"}],"fixable":0}

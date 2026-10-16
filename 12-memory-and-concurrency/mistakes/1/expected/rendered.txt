@@ -1,0 +1,12 @@
+[U2020] Error: parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`
+    ╭─[ src/stockcount.una:63:22 ]
+    │
+ 63 │     let line = apply(ledger, movement: movement)
+    │                      ───┬──
+    │                         ╰──── parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`
+    │
+    │ Help: repair 1: write `edit ledger`; edit src/stockcount.una:63:22..63:28 to "edit ledger"
+    │
+    │ Note: run `una explain U2020` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

@@ -1,0 +1,9 @@
+[U1006] Error: requirement `PRICING_2` is not declared in this package
+    ╭─[ src/pricetags.una:28:16 ]
+    │
+ 28 │   derived from PRICING_2
+    │                ────┬────
+    │                    ╰────── requirement `PRICING_2` is not declared in this package
+    │
+    │ Note: run `una explain U1006` for an explanation
+────╯

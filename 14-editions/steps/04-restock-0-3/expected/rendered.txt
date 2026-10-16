@@ -1,0 +1,23 @@
+[U3025] Error: this `if error` clause never runs, since the call of `order_quantity` cannot fail; remove the clause
+    ╭─[ src/restock.una:15:5 ]
+    │
+ 15 │     if error use 0
+    │     ─┬
+    │      ╰── this `if error` clause never runs, since the call of `order_quantity` cannot fail; remove the clause
+    │
+    │ Help: repair 1: remove the clause; edit src/restock.una:14:36..15:19 to ""
+    │
+    │ Note: run `una explain U3025` for an explanation
+────╯
+[U3026] Error: the call of `order_quantity` cannot fail, so `attempt` gives a `Result` whose `Err` is never taken; use the value of the call directly
+    ╭─[ src/restock.una:23:19 ]
+    │
+ 23 │     let outcome = attempt order_quantity(line)
+    │                   ──────────────┬─────────────
+    │                                 ╰─────────────── the call of `order_quantity` cannot fail, so `attempt` gives a `Result` whose `Err` is never taken; use the value of the call directly
+    │
+    │ Help: repair 1: remove `attempt` and use the value of the call directly, then unwrap each use of the `Result`: a `when ... is Ok(v)` becomes the value `v`, its `is Err` arm goes, and a declared `Result[T, E]` becomes `T`
+    │
+    │ Note: run `una explain U3026` for an explanation
+────╯
+1 of 2 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

@@ -1,0 +1,20 @@
+module shelf
+
+--- A shelf of the store: the SKU it holds and how many units are on it.
+kind Shelf
+  sku: Text
+  units: Int
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let opening = Shelf(sku: "LAMP-01", units: 4)
+  let edit current = opening
+  current.units = current.units + 6
+  let snapshot = current
+  current.units = current.units - 3
+  let edit counts = [4, 0, 7]
+  edit counts.set(index: 1, item: 12)
+  @console.print("opening {opening.units}, snapshot {snapshot.units}, now {current.units}")
+  @console.print("counts {counts}")
+  @console.print("{current}")

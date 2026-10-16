@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `sale_price` is refuted
+    ╭─[ src/discount.una:24:29 ]
+    │
+ 20 │   ensures result >= cost
+    │           ───────┬──────
+    │                  ╰──────── ensures clause
+    │
+ 24 │   if discounted < cost then price else discounted
+    │                             ──┬──
+    │                               ╰──── postcondition of `sale_price` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= cost` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-8a05af02a5f7 (postcondition) is refuted: result >= cost
+    │
+    │ Note 2: counterexample: cost = 1, off = 0, price = 0, result = 0
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

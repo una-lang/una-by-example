@@ -1,0 +1,1 @@
+error U1006 at src/pricetags.una:28:16: requirement `PRICING_2` is not declared in this package

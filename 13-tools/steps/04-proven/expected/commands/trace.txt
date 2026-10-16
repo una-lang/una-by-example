@@ -1,0 +1,9 @@
+$ una trace PRICING_1
+requirement PRICING_1 (active)
+  text "A sale price is never below what the store paid for the product"
+  source human
+  owner pricing
+discount.sale_price
+  ensures result >= cost
+  proven   ob-a1f2aa4dc27a refinement    result >= 0
+  proven   ob-8a05af02a5f7 postcondition result >= cost

@@ -1,0 +1,21 @@
+[U3023] Error: the header of `print_labels` lets `@printer.print_label` run where `not dry_run` does not hold, which `una.toml` locks
+    ╭─[ src/labels.una:41:26 ]
+    │
+ 41 │   uses @printer: Printer[print_label]
+    │                          ─────┬─────
+    │                               ╰─────── the header of `print_labels` lets `@printer.print_label` run where `not dry_run` does not hold, which `una.toml` locks
+    │
+    ├─[ una.toml:11:26 ]
+    │
+ 11 │ "labels.print_labels" = ["@printer: Printer[print_label where not dry_run]"]
+    │                          ─────────────────────────┬────────────────────────
+    │                                                   ╰────────────────────────── lock
+    │
+    │ Help: repair 1: restore the locked condition: write `print_label where not dry_run` in the header of `print_labels`, or a condition that implies it
+    │
+    │ Note 1: obligation ob-35b380cf8520 (contract_lock) is refuted: not dry_run
+    │
+    │ Note 2: counterexample: dry_run = true
+    │
+    │ Note 3: run `una explain U3023` for an explanation
+────╯

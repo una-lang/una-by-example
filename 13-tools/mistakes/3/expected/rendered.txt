@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `sale_price` is refuted
+    ╭─[ src/pricetags.una:31:37 ]
+    │
+ 27 │   ensures result >= product.cost
+    │           ───────────┬──────────
+    │                      ╰──────────── ensures clause
+    │
+ 31 │   if discounted < product.cost then product.price else discounted
+    │                                     ──────┬──────
+    │                                           ╰──────── postcondition of `sale_price` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= product.cost` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-a498f6efa270 (postcondition) is refuted: result >= product.cost
+    │
+    │ Note 2: counterexample: off = 0, product = Product#0, product.cost = 1, product.price = 0, result = 0
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

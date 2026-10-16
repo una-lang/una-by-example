@@ -1,0 +1,8 @@
+[package]
+name = "receipt"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "receipt"
+grants = ["console"]

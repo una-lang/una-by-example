@@ -1,0 +1,4 @@
+error U5001 at src/pricetags.una:90:40: refinement `result >= 0` is refuted
+  counterexample: product = "Product#0", product.cost = 0, product.price = 1, result = -499
+error U5001 at src/pricetags.una:90:40: postcondition of `clearance_price` is refuted
+  counterexample: product = "Product#0", product.cost = 0, product.price = 1, result = -499

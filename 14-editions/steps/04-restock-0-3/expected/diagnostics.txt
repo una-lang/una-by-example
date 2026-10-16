@@ -1,0 +1,2 @@
+error U3025 at src/restock.una:15:5: this `if error` clause never runs, since the call of `order_quantity` cannot fail; remove the clause
+error U3026 at src/restock.una:23:19: the call of `order_quantity` cannot fail, so `attempt` gives a `Result` whose `Err` is never taken; use the value of the call directly

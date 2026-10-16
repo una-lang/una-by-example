@@ -1,0 +1,1 @@
+error U3001 at src/pricetags.una:64:16: `tag` needs `@catalog: Catalog[product]`, which is not in scope here

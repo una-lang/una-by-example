@@ -1,0 +1,6 @@
+$ una contract discount.sale_price
+--- The price after `off` percent, never below `cost`.
+pub sale_price(price: Cents, cost: Cents, off: Percent) -> Cents
+  ensures result >= cost
+  derived from PRICING_1
+-- requirement PRICING_1 (active): "A sale price is never below what the store paid for the product"

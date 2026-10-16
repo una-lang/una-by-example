@@ -1,0 +1,1 @@
+error U2017 at src/stockcount.una:67:65: `ledger` was passed by `take`, so it cannot be used afterwards

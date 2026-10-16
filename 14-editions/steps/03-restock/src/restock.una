@@ -1,0 +1,35 @@
+module restock
+
+--- A line of a stock list: a SKU and the units on hand.
+kind Line
+  sku: Text
+  units: Int
+
+--- How many units to order so that the shelf holds 10.
+order_quantity(line: Line) -> Int = if line.units >= 10 then 0 else 10 - line.units
+
+--- The order line for `line`, or a note when nothing is needed.
+order_text(line: Line) -> Text
+=
+  let wanted = order_quantity(line)
+    if error use 0
+  if wanted == 0 then "{line.sku}: enough" else "{line.sku}: order {wanted}"
+
+--- The total of every order quantity.
+total(lines: List[Line]) -> Int
+=
+  let edit sum = 0
+  for line in lines
+    let outcome = attempt order_quantity(line)
+    sum = when outcome
+      is Ok(wanted) -> sum + wanted
+      is Err -> sum
+  sum
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lines = [Line(sku: "LAMP-01", units: 4), Line(sku: "SHELF-03", units: 12), Line(sku: "DESK-02", units: 9)]
+  for line in lines
+    @console.print(order_text(line))
+  @console.print("{total(lines)} units to order")

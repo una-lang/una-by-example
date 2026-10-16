@@ -1,0 +1,2 @@
+$ una --json run .
+{"schema":"una.run/1","tier":1,"status":"ok","output":["LAMP-01 1393, DESK-02 11000"],"failure":null,"diagnostics":[],"trace":[{"seq":1,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"LAMP-01 1393, DESK-02 11000\""},"outcome":{"kind":"ok","value":"unit"}}]}

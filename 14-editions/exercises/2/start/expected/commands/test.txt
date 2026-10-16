@@ -1,0 +1,12 @@
+$ una test .
+example labels "a line that does not parse is left out" ... ok
+example labels "a dry run counts the labels and prints none" ... ok
+example labels "a run prints a label for each line with stock" ... ok
+example labels "a restock run prints the lines below the limit" ... FAILED
+  src/labels.una:98: expect result == 2
+  it is false, with `result` = `0`
+example labels "a restock dry run prints nothing" ... FAILED
+  src/labels.una:104: expect result == 2
+  it is false, with `result` = `0`
+
+5 examples: 3 passed, 2 failed

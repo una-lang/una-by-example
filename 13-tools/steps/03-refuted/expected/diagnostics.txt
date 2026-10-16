@@ -1,0 +1,2 @@
+error U5001 at src/discount.una:24:29: postcondition of `sale_price` is refuted
+  counterexample: cost = 1, off = 0, price = 0, result = 0

@@ -1,0 +1,1 @@
+error U2019 at src/stockcount.una:63:27: `ledger` is not editable; declare it `let edit ledger`, or the parameter `edit ledger`

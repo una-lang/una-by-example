@@ -1,0 +1,9 @@
+[U3013] Error: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+    ╭─[ src/stockcount.una:63:27 ]
+    │
+ 63 │     let outcome = attempt apply(edit ledger, movement: movement)
+    │                           ───────────────────┬──────────────────
+    │                                              ╰──────────────────── `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+    │
+    │ Note: run `una explain U3013` for an explanation
+────╯

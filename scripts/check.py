@@ -377,8 +377,30 @@ def read(path):
         return handle.read()
 
 
+# `una report` names the host target on its `native:` line (spec/13 §6, spec/16 §1). For the two
+# targets una builds for, that line is compared without its value, so the report of a package
+# checks on either host; any other value on the line is compared as it is, and fails.
+NATIVE = re.compile(r"^native: (aarch64-apple-darwin|x86_64-unknown-linux-gnu)$", re.MULTILINE)
+
+
+def host_neutral(args, text):
+    """`text`, the output of `una <args>`, with the target of a `report` command's `native:` line
+    replaced by a fixed token when it is one of the supported targets."""
+    if args.split(" ") != ["report", "."]:
+        return text
+    return NATIVE.sub("native: <supported target>", text)
+
+
+def has_commands(expected):
+    """Whether `expected/commands/` holds a command file."""
+    directory = os.path.join(expected, "commands")
+    return os.path.isdir(directory) and any(name.endswith(".txt") for name in os.listdir(directory))
+
+
 def outcome(una, package, expected, where, failures):
-    """Checks the package at `package` against the outcome in `expected`; returns its codes."""
+    """Checks the package at `package` against the outcome in `expected`; returns its codes. An
+    empty diagnostics.txt states that the package checks clean and is not run, which only a
+    command file that shows what running it does may stand in for."""
     output = os.path.join(expected, "output.txt")
     listed = os.path.join(expected, "diagnostics.txt")
     if os.path.isfile(output) == os.path.isfile(listed):
@@ -392,6 +414,8 @@ def outcome(una, package, expected, where, failures):
         return set()
     if os.path.isfile(listed):
         wanted = [line for line in read(listed).splitlines() if line]
+        if not wanted and not has_commands(expected):
+            failures.add(where, "an empty diagnostics.txt says the package checks clean and is not run; it needs a command in expected/commands/ that shows what running it does, or an output.txt")
         for line in wanted:
             if not DIAGNOSTIC.match(line) and not COUNTEREXAMPLE.match(line):
                 failures.add(where, f"diagnostics.txt: not `error <code> at <file>:<line>:<col>: <message>`: {line}")
@@ -435,8 +459,9 @@ def commands(una, package, expected, where, failures, fresh=None):
         if not manifest(cwd, where, Failures()):
             failures.add(f"{where}/commands/{name}", "not run: the package's una.toml is not allowed")
             continue
-        ran = run(una, first[len("$ una "):].split(" "), cwd)
-        if ran.stdout.decode(errors="replace") != printed:
+        args = first[len("$ una "):]
+        ran = run(una, args.split(" "), cwd)
+        if host_neutral(args, ran.stdout.decode(errors="replace")) != host_neutral(args, printed):
             failures.add(f"{where}/commands/{name}", f"`{first[2:]}` prints:\n{ran.stdout.decode(errors='replace')}")
         count += 1
     return count
@@ -968,6 +993,11 @@ if args == ["test", "."]:
 if args == ["run", "."]:
     sys.stdout.write(src.split("print ", 1)[1] if "print " in src else "")
     sys.exit(0)
+if args == ["report", "."]:
+    target = src.split("target ", 1)[1].split()[0] if "target " in src else "aarch64-apple-darwin"
+    print("package main 0.1.0")
+    print(f"native: {target}")
+    sys.exit(0)
 sys.exit(2)
 '''
 
@@ -1140,6 +1170,23 @@ def self_test():
         case("a command", True, lambda r, p: write(os.path.join(p, "expected", "commands", "test.txt"), "$ una test .\n1 example passed\n"))
         case("a wrong command output", False,
              lambda r, p: write(os.path.join(p, "expected", "commands", "test.txt"), "$ una test .\n2 examples passed\n"), "prints")
+        report = "$ una report .\npackage main 0.1.0\nnative: aarch64-apple-darwin\n"
+
+        def reported(r, p, target):
+            write(os.path.join(p, "expected", "commands", "report.txt"), report)
+            if target:
+                write(os.path.join(p, "src", "main.una"), f"module main\n-- target {target}\nprint hi\n")
+        case("a report on the same host", True, lambda r, p: reported(r, p, None))
+        case("a report on the other supported host", True, lambda r, p: reported(r, p, "x86_64-unknown-linux-gnu"))
+        case("a report on an unsupported host", False, lambda r, p: reported(r, p, "riscv64gc-unknown-linux-gnu"), "prints")
+
+        def unrun(r, p, command):
+            os.remove(os.path.join(p, "expected", "output.txt"))
+            write(os.path.join(p, "expected", "diagnostics.txt"), "")
+            if command:
+                write(os.path.join(p, "expected", "commands", "test.txt"), "$ una test .\n1 example passed\n")
+        case("an empty diagnostics.txt with a command", True, lambda r, p: unrun(r, p, True))
+        case("an empty diagnostics.txt alone", False, lambda r, p: unrun(r, p, False), "an empty diagnostics.txt")
         case("both outcomes", False, lambda r, p: write(os.path.join(p, "expected", "diagnostics.txt"), "x\n"), "exactly one")
         case("a missing part", False,
              lambda r, p: write(os.path.join(p, "README.md"), README.format(codes="U1001").replace("## See also", "## Also")),
@@ -1231,7 +1278,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (42 cases, archives reproducible, and the template 2 tests)")
+    print("check.py: self-test PASS (47 cases, archives reproducible, and the template 2 tests)")
     return 0
 
 

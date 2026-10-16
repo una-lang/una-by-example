@@ -1,0 +1,157 @@
+module stockcount
+
+--- One movement of stock at a site: a SKU and a change in units, negative for a sale.
+pub kind Movement
+  sku: Text
+  change: Int
+
+--- Why a movement could not be applied to a ledger.
+pub kind CountError = UnknownSku(sku: Text) | Oversold(sku: Text, wanted: Int, left: Int)
+
+--- The running count of one site: the units of each SKU, and how many movements it took.
+pub kind Ledger
+  site: Text
+  counts: Map[Text, Int]
+  applied: Int
+
+--- One site's day: its opening counts and the movements its tills recorded.
+pub kind Day
+  site: Text
+  opening: Map[Text, Int]
+  movements: List[Movement]
+
+--- What a closed day reports: a summary, one line per movement, and the closing counts.
+pub kind Report
+  summary: Text
+  lines: List[Text]
+  closing: Map[Text, Int]
+
+--- Applies one movement to the ledger. On failure the ledger is left as it was.
+pub apply(edit ledger: Ledger, movement: Movement) -> Text
+  ensures ledger.applied == old(ledger).applied + 1
+  fails CountError
+=
+  let left = ledger.counts.get(key: movement.sku)
+    if none fail UnknownSku(sku: movement.sku)
+  let next = left + movement.change
+  if next < 0
+    fail Oversold(sku: movement.sku, wanted: -movement.change, left: left)
+  ledger.counts = ledger.counts.with(key: movement.sku, value: next)
+  ledger.applied = ledger.applied + 1
+  "{movement.sku} {left} -> {next}"
+
+--- What a person reads for a movement that was not applied.
+pub reason(failure: CountError) -> Text
+=
+  when failure
+    is UnknownSku(sku) -> "no product has the SKU {sku}"
+    is Oversold(sku, wanted, left) -> "{wanted} of {sku} sold, {left} counted"
+
+--- Closes the ledger: the report keeps its counts, and nothing can update the ledger after.
+pub close(take ledger: Ledger, lines: List[Text]) -> Report
+=
+  let rejected = lines.len - ledger.applied
+  let summary = "{ledger.site}: {ledger.applied} applied, {rejected} rejected"
+  Report(summary: summary, lines: lines, closing: ledger.counts)
+
+--- Replays one site's day, movement by movement.
+pub close_day(day: Day) -> Report
+=
+  let edit ledger = Ledger(site: day.site, counts: day.opening, applied: 0)
+  let edit lines: List[Text] = []
+  for movement in day.movements
+    let line = apply(edit ledger, movement: movement)
+      if error use "rejected: {reason(error)}"
+    lines = lines.append(item: line)
+  close(take ledger, lines: lines)
+
+--- Closes every site's day at once, one task per site. The reports come back in site order.
+pub close_all(days: List[Day]) -> List[Report]
+=
+  together for day in days
+    close_day(day)
+
+--- A sale of `units` units: a negative movement.
+pub sale(sku: Text, units: Int) -> Movement = Movement(sku: sku, change: -units)
+
+--- A delivery of `units` units: a positive movement.
+pub delivery(sku: Text, units: Int) -> Movement = Movement(sku: sku, change: units)
+
+--- The north site's day, as its tills recorded it.
+north_day() -> Day
+=
+  let opening = empty_map().with(key: "LAMP-01", value: 4).with(key: "DESK-02", value: 1)
+  let movements = [sale("LAMP-01", units: 1), sale("DESK-02", units: 2), delivery("LAMP-01", units: 6)]
+  Day(site: "north", opening: opening, movements: movements)
+
+--- The south site's day.
+south_day() -> Day
+=
+  let opening = empty_map().with(key: "LAMP-01", value: 2)
+  let movements = [sale("CHAIR-09", units: 1), sale("LAMP-01", units: 2)]
+  Day(site: "south", opening: opening, movements: movements)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let reports = close_all([north_day(), south_day()])
+  for report in reports
+    @console.print(report.summary)
+    for line in report.lines
+      @console.print("  {line}")
+    @console.print("  closing {report.closing}")
+
+--- A north ledger that counts `units` of LAMP-01 and nothing else, for the examples.
+lamps(units: Int) -> Ledger = Ledger(site: "north", counts: empty_map().with(key: "LAMP-01", value: units), applied: 0)
+
+--- `apply` through a copy, since a `do` line cannot pass `edit`.
+applied(ledger: Ledger, movement: Movement) -> Ledger
+  fails CountError
+=
+  let edit copy = ledger
+  let receipt = apply(edit copy, movement: movement)
+    if error pass
+  copy
+
+example "a sale lowers the count of its SKU"
+  do applied(lamps(4), movement: sale("LAMP-01", units: 1))
+  expect result.counts.get(key: "LAMP-01") == Some(3)
+  expect result.applied == 1
+
+example "selling more than is counted is Oversold"
+  do applied(lamps(4), movement: sale("LAMP-01", units: 9))
+  expect fails Oversold
+
+example "a rejected movement leaves the counts as they were"
+  do close_day(Day(site: "south", opening: empty_map().with(key: "LAMP-01", value: 2), movements: [sale("LAMP-01", units: 5)]))
+  expect result.closing == empty_map().with(key: "LAMP-01", value: 2)
+  expect result.summary == "south: 0 applied, 1 rejected"
+
+example "closing every day at once gives the reports in site order"
+  do close_all([north_day(), south_day()])
+  expect result == [close_day(north_day()), close_day(south_day())]
+
+--- Applies a delivery note, every movement or none, and gives one line per movement.
+--- Exercise 2: write the body.
+pub apply_note(edit ledger: Ledger, movements: List[Movement]) -> List[Text]
+  fails CountError
+=
+  []
+
+--- `apply_note` through a copy, for the examples: the ledger after the note, or before it.
+after_note(ledger: Ledger, movements: List[Movement]) -> Ledger
+=
+  let edit copy = ledger
+  let lines = apply_note(edit copy, movements: movements)
+    if error use []
+  copy
+
+example "a note whose movements all apply applies all of them"
+  do after_note(lamps(4), movements: [delivery("LAMP-01", units: 6), sale("LAMP-01", units: 2)])
+  expect result.counts.get(key: "LAMP-01") == Some(8)
+  expect result.applied == 2
+
+example "a note with one bad movement applies none of them"
+  do after_note(lamps(4), movements: [delivery("LAMP-01", units: 6), sale("DESK-02", units: 1)])
+  expect result.counts.get(key: "LAMP-01") == Some(4)
+  expect result.applied == 0

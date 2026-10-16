@@ -1,0 +1,100 @@
+module pricetags
+
+requirement PRICING_1
+  text "A sale price is never below what the store paid for the product"
+  source human
+  owner pricing
+  status active
+
+--- An amount of money in cents, never negative.
+pub kind Cents = Int where it >= 0
+
+--- A discount in percent, from 0 to 90.
+pub kind Percent = Int in 0..90
+
+--- A product on the shelf: its SKU, its price and what the store paid for it.
+pub kind Product
+  sku: Text
+  price: Cents
+  cost: Cents
+
+--- The store's catalog: the product with a SKU, or `None` for a SKU it does not list.
+pub capability Catalog
+  op product(sku: Text) -> Option[Product]
+
+--- The price after `off` percent, never below cost.
+pub sale_price(product: Product, off: Percent) -> Cents
+  ensures result >= product.cost
+  derived from PRICING_1
+=
+  let discounted = product.price - product.price * off / 100
+  if discounted < product.cost then product.cost else discounted
+
+--- Cents as a person reads them, such as 19.90.
+pub shown(amount: Cents) -> Text
+=
+  let cents = amount mod 100
+  let pad = if cents < 10 then "0" else ""
+  "{amount / 100}.{pad}{cents}"
+
+--- The tag printed on the shelf for `sku` during a sale of `off` percent.
+pub tag(sku: Text, off: Percent) -> Text
+  uses @catalog: Catalog[product]
+=
+  let found = @catalog.product(sku)
+  when found
+    is Some(product) -> "{sku}  {shown(product.price)} now {shown(sale_price(product, off: off))}"
+    is None -> "{sku}  not in the catalog"
+
+--- A catalog held in memory, for this run and for tests.
+handler listed(products: Map[Text, Product]) for Catalog
+  op product(sku) = products.get(key: sku)
+
+--- The products of this example run.
+sample() -> Map[Text, Product]
+=
+  let lamp = Product(sku: "LAMP-01", price: 1990, cost: 1200)
+  let desk = Product(sku: "DESK-02", price: 12900, cost: 11000)
+  empty_map().with(key: lamp.sku, value: lamp).with(key: desk.sku, value: desk)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  for sku in ["LAMP-01", "DESK-02", "CHAIR-09"]
+    let line = tag(sku, off: 30) with @catalog = listed(sample())
+    @console.print(line)
+
+example "a sale takes the percent off the price"
+  do sale_price(Product(sku: "LAMP-01", price: 1990, cost: 1200), off: 30)
+  expect result == 1393
+
+example "a sale price stops at cost"
+  do sale_price(Product(sku: "DESK-02", price: 12900, cost: 11000), off: 30)
+  expect result == 11000
+
+example "cents are shown with two digits"
+  do shown(1905)
+  expect result == "19.05"
+
+example "a SKU the catalog does not list gets no price"
+  given @catalog = listed(sample())
+  do tag("CHAIR-09", off: 30)
+  expect result == "CHAIR-09  not in the catalog"
+
+--- The total of a basket during a sale of `off` percent. A SKU the catalog does not list
+--- adds nothing.
+pub basket_total(skus: List[Text], off: Percent) -> Cents
+  uses @catalog: Catalog[product]
+=
+  let edit total: Cents = 0
+  for sku in skus
+    let found = @catalog.product(sku)
+    total = when found
+      is Some(product) -> total + sale_price(product, off: off)
+      is None -> total
+  total
+
+example "a basket adds the sale prices of the products it lists"
+  given @catalog = listed(sample())
+  do basket_total(["LAMP-01", "DESK-02", "CHAIR-09"], off: 30)
+  expect result == 12393

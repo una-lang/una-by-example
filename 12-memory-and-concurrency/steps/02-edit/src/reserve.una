@@ -1,0 +1,30 @@
+module reserve
+
+--- A shelf of the store: its SKU, the units on it, and the units set aside for orders.
+kind Shelf
+  sku: Text
+  units: Int
+  reserved: Int
+
+kind ReserveError = | NotEnough(sku: Text, wanted: Int, free: Int)
+
+--- Sets `units` aside for an order. On failure the shelf is left as it was.
+reserve(edit shelf: Shelf, units: Int) -> Unit
+  requires units > 0
+  ensures shelf.reserved == old(shelf).reserved + units
+  fails ReserveError
+=
+  let free = shelf.units - shelf.reserved
+  if units > free
+    fail NotEnough(sku: shelf.sku, wanted: units, free: free)
+  shelf.reserved = shelf.reserved + units
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit lamps = Shelf(sku: "LAMP-01", units: 5, reserved: 0)
+  edit lamps.reserve(units: 2)
+    if error use unit
+  reserve(edit lamps, units: 9)
+    if error use unit
+  @console.print("{lamps.reserved} of {lamps.units} reserved")

@@ -1,0 +1,10 @@
+$ una test .
+example stockcount "a sale lowers the count of its SKU" ... ok
+example stockcount "selling more than is counted is Oversold" ... ok
+example stockcount "a rejected movement leaves the counts as they were" ... ok
+example stockcount "closing every day at once gives the reports in site order" ... ok
+example stockcount "a recount sets the count and is not a movement" ... FAILED
+  src/stockcount.una:150: expect result.counts.get(key: "LAMP-01") == Some(7)
+  it is false, with `result` = `Ledger(site: "north", counts: {"LAMP-01": 4}, applied: 2)`
+
+5 examples: 4 passed, 1 failed

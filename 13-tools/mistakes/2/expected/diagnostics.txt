@@ -1,0 +1,1 @@
+error U2004 at src/pricetags.una:68:67: argument 2 of `sale_price` needs a label; only the first argument may go without one

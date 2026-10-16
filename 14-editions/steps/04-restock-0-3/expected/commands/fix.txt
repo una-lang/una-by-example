@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+fixed src/restock.una:14:36 U3025 remove the clause

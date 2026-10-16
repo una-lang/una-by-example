@@ -1,0 +1,1 @@
+error U2020 at src/stockcount.una:63:22: parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`

@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+skipped src/pricetags.una:61:32 U3001 declare `uses @catalog: Catalog[product]` in the header: widens authority

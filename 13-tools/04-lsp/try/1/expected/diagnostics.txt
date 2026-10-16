@@ -1,1 +1,0 @@
-error U2001 at src/editor.una:10:27: argument `name` of `greeting` must be `Text`, found `Int`

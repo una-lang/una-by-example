@@ -1,0 +1,13 @@
+[U7001] Error: lines 51 to 52 are not in canonical form
+    ╭─[ src/pricetags.una:51:1 ]
+    │
+ 51 │ ╭─▶   op product(sku) =
+ 52 │ ├─▶     products.get(key: sku)
+    │ │
+    │ ╰──────────────────────────────── lines 51 to 52 are not in canonical form
+    │
+    │     Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/pricetags.una:51:1..53:1 to "  op product(sku) = products.get(key: sku)\n"
+    │
+    │     Note: run `una explain U7001` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

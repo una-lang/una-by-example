@@ -1,0 +1,20 @@
+module shelf
+
+--- A line of a stock list: a SKU and the units on hand.
+kind Line
+  sku: Text
+  units: Int
+
+--- The units of every line, added up.
+total(lines: List[Line]) -> Int
+=
+  let edit sum = 0
+  for line in lines
+    sum = sum + line.units
+  sum
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lines = [Line(sku: "LAMP-01", units: 4), Line(sku: "DESK-02", units: 1)]
+  @console.print("{lines.len} lines, {total(lines)} units")

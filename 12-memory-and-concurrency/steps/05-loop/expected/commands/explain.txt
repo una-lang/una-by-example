@@ -1,0 +1,34 @@
+$ una explain U6003
+# U6003: Call depth or memory limit exceeded
+
+`una run`, `una test` and native executables abort when the calls in progress exceed the maximum call depth: 10,000 by default, or the value of `--max-depth` (`spec/11 §7`). The diagnostic points at the call that goes one level too deep. Calls of functions, predicates, lambdas, policies and handler operations all count. Most often a recursion never reaches its base case; a recursion that is only deep can run with a higher `--max-depth`, up to what a stack of 1 GiB holds.
+
+They also abort when a call finds the run holding more memory than its budget: 4096 MiB by default, or the value of `--max-memory` in MiB (ADR 0061). The message then reads `this call exceeds the memory limit of N MiB`. A program that holds every intermediate value, such as a recursion that keeps each step's text, can hold less, or run with a higher `--max-memory`.
+
+Running out of depth or memory is outside the noninterference model (`spec/07 §1`).
+
+## Failing example
+
+```una
+module demo
+
+countdown(n: Int) -> Int = if n == 0 then 0 else countdown(n - 1)
+
+pub main() -> Unit
+=
+  let steps = countdown(-1)
+  unit
+```
+
+## Fixed example
+
+```una
+module demo
+
+countdown(n: Int) -> Int = if n <= 0 then 0 else countdown(n - 1)
+
+pub main() -> Unit
+=
+  let steps = countdown(-1)
+  unit
+```

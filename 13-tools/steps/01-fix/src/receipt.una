@@ -1,0 +1,10 @@
+module receipt
+
+--- One line of a receipt: the units, the SKU and the line's total in cents.
+line_text(units: Int, sku: Text, cents: Int) -> Text =
+  "{units} x {sku}  {cents}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(line_text(2, "LAMP-01", cents: 3980))

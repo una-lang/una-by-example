@@ -1,0 +1,18 @@
+[U0101] Error: unexpected keyword `where`, expected `,` or `]`
+    ╭─[ src/labels.una:41:38 ]
+    │
+ 41 │   uses @printer: Printer[print_label where not dry_run]
+    │                                      ──┬──
+    │                                        ╰──── unexpected keyword `where`, expected `,` or `]`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯
+[U7002] Error: unknown table [contracts] in una.toml
+    ╭─[ una.toml:10:2 ]
+    │
+ 10 │ [contracts]
+    │  ────┬────
+    │      ╰────── unknown table [contracts] in una.toml
+    │
+    │ Note: run `una explain U7002` for an explanation
+────╯

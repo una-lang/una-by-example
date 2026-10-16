@@ -1,0 +1,12 @@
+$ una trace PRICING_2
+requirement PRICING_2 (active)
+  text "A member never pays more than the price on the shelf"
+  source human
+  owner pricing
+pricetags.member_price
+  requires product.cost <= product.price
+  ensures result >= product.cost
+  ensures result <= product.price
+  proven   ob-f6655d5a7e9c refinement    result >= 0
+  proven   ob-077e1c646169 postcondition result >= product.cost
+  proven   ob-592d56ba992b postcondition result <= product.price

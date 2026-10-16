@@ -1,0 +1,7 @@
+$ una test .
+example labels "a line that does not parse is left out" ... ok
+example labels "a dry run counts the labels and prints none" ... ok
+example labels "a run prints a label for each line with stock" ... ok
+example labels "a dry run prints the summary, and no label" ... ok
+
+4 examples: 4 passed, 0 failed
