@@ -7,6 +7,7 @@ time: 35
 builds: The shelf labels of a store, with prices, sale prices, prices per kilogram and the number of copies to print
 prerequisites: ["1"]
 template: 2
+nav: ["Numbers: Int", "Conditions: Bool", "Text", "let and let edit", "Fixed-width integers", "Day-to-day: shelf labels", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
 ---
 
 # 2 Values

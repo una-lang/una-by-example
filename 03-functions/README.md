@@ -7,6 +7,7 @@ time: 35
 builds: A shipping quote for each order of the day, by weight and zone, with promotions passed in as functions
 prerequisites: ["1", "2"]
 template: 2
+nav: ["Parameters, labels and results", "Two forms and clauses", "if", "pub and inferred headers", "Functions as values and lambdas", "Day-to-day: shipping quotes", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
 ---
 
 # 3 Functions

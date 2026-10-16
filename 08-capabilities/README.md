@@ -7,6 +7,7 @@ time: 40
 builds: A shipping-notice service that looks customers up and emails them, tested with fake services
 prerequisites: ["3", "4", "6"]
 template: 2
+nav: ["uses", "Host capabilities and grants", "Your capabilities and handlers", "with, rebinding and narrowing", "Conditions and boundaries (0.3)", "Day-to-day: shipping notices", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
 ---
 
 # 8 Capabilities

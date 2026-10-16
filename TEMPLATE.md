@@ -57,18 +57,25 @@ time: 35
 builds: An order-intake step that accepts or rejects each line of an order batch
 prerequisites: ["3", "4", "5"]
 template: 2
+nav: ["fails and fail", "The five handling clauses", "attempt and Result", "checked", "Day-to-day: order intake", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
 ---
 ```
 
-- The fields are exactly these, one `key: value` line each, with no blank line.
+- The fields are exactly these, one `key: value` line each, with no blank line; only `nav` is optional.
 - `learn` is the chapter's number, as its directory says.
 - `codes` is the union of the codes of every `expected/diagnostics.txt` in the chapter.
 - `time` is the reading time in minutes, without the exercises.
 - `builds` describes the day-to-day program in one line.
 - `prerequisites` lists the numbers of earlier chapters the reader needs.
 - `template: 2` turns on the rules of this document.
+- `nav` gives the site's sidebar a short label for each numbered section, `N.1` to the last one, in order; the sidebar shows `N.k <label>`. When it is present:
+  - It has one label per numbered section, no more and no fewer.
+  - Each label is in double quotes, and the labels are separated by commas. A label may hold a comma, but no double quote.
+  - Each label is plain text of 1 to 32 characters, with no space at its ends, no backtick, tilde, `<` or `>` (the front matter holds none), no section number of its own, and no control or invisible character.
+  - A label names what the section teaches, briefly: `fails and fail`, not `Declaring a failure: fails and fail`. Code names are written plainly, without backticks.
+  - The fixed parts keep their headings (`Testing it`, `Common mistakes`, `For agents`, `Exercises`, `Recap`, `Reference`), and the day-to-day label is `Day-to-day: <program>`, shortened to fit.
 
-A translation keeps `learn`, `editions`, `codes`, `template`, `time` and `prerequisites`, translates `title` and `builds`, and adds `source` and `status` as in template 1.
+A translation keeps `learn`, `editions`, `codes`, `template`, `time` and `prerequisites`, translates `title` and `builds`, and adds `source` and `status` as in template 1. It translates `nav` when the English page has one, by the same rules and with one label per section, and has no `nav` when the English page has none.
 
 ## Parts, in order, with target lengths
 

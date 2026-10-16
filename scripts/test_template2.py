@@ -540,6 +540,13 @@ class Units(unittest.TestCase):
         deeper = body.replace("### How `fail` ends a function", "#### How `fail` ends a function")
         self.assertEqual(len(template2.structure(deeper, 3, "p", check.Failures())), 1)
 
+    def test_quoted_lists(self):
+        fields, _ = check.front_matter('---\nnav: ["checked, and the escape budget", "Maps"]\ncodes: [U0101, U0102]\n---\nx\n')
+        self.assertEqual(fields["nav"], ["checked, and the escape budget", "Maps"])
+        self.assertEqual(fields["codes"], ["U0101", "U0102"])
+        for value in ('["a", b]', '["a"b"]', '["a",]', '["a" "b"]'):
+            self.assertIsNone(check.front_matter(f"---\nnav: {value}\n---\nx\n")[0], value)
+
     def test_caption_only_in_the_opener(self):
         english = check.skeleton('```una\nlet caption="Total"\n```\n')
         translated = check.skeleton('```una\nlet caption="Anything"\n```\n')
@@ -991,6 +998,67 @@ class Chapters(Base):
     def test_a_link_to_github_main(self):
         edit(self.readme, "(/docs/errors/U3007/)", "(https://github.com/una-lang/una/blob/main/docs/guide/errors.md)")
         self.assertFails("links to the repositories")
+
+    NAV = '["Declaring a failure", "Handling a failure", "Failures as values", "Day-to-day: order intake", ' \
+          '"Testing it", "Common mistakes", "Exercises", "Recap and reference"]'
+
+    def with_nav(self, labels):
+        edit(self.readme, "template: 2\n", f"template: 2\nnav: {labels}\n")
+
+    def test_nav(self):
+        self.with_nav(self.NAV)
+        self.assertPasses()
+
+    def test_nav_with_commas_and_32_characters(self):
+        self.with_nav(self.NAV.replace('"Declaring a failure"', '"fails, fail and the clauses abcd"'))
+        self.assertPasses()
+
+    def test_nav_with_a_label_too_few(self):
+        self.with_nav(self.NAV.replace(', "Recap and reference"', ""))
+        self.assertFails("`nav` has 7 labels, but the page has 8 numbered sections (6.1 to 6.8)")
+
+    def test_nav_with_a_label_too_many(self):
+        self.with_nav(self.NAV.replace('"Recap and reference"', '"Recap and reference", "More"'))
+        self.assertFails("`nav` has 9 labels, but the page has 8 numbered sections")
+
+    def test_nav_with_a_long_label(self):
+        self.with_nav(self.NAV.replace('"Declaring a failure"', '"Declaring a failure: fails and fail"'))
+        self.assertFails("has 35 characters, more than 32")
+
+    def test_nav_with_an_empty_label(self):
+        self.with_nav(self.NAV.replace('"Exercises"', '""'))
+        self.assertFails("`nav` label 7 (for 6.7) is empty")
+
+    def test_nav_with_spaces_at_the_ends(self):
+        self.with_nav(self.NAV.replace('"Exercises"', '" Exercises"'))
+        self.assertFails("has spaces at its ends")
+
+    def test_nav_with_markup(self):
+        original = check.read(self.readme)
+        for label in ("`fails`", "a ~ b", "a < b", "a > b"):
+            write(self.readme, original)
+            self.with_nav(self.NAV.replace('"Declaring a failure"', f'"{label}"'))
+            self.assertFails("a label is plain text")
+
+    def test_nav_with_an_invisible_character(self):
+        self.with_nav(self.NAV.replace('"Declaring a failure"', '"Declaring\u00a0a failure"'))
+        self.assertFails("holds a control, format or invisible character")
+
+    def test_nav_with_a_section_number(self):
+        self.with_nav(self.NAV.replace('"Declaring a failure"', '"6.1 Declaring a failure"'))
+        self.assertFails("starts with a section number")
+
+    def test_nav_that_is_not_a_list(self):
+        self.with_nav('"Declaring a failure"')
+        self.assertFails("`nav` is a list of quoted labels")
+
+    def test_nav_with_a_quote_inside(self):
+        self.with_nav(self.NAV.replace('"Declaring a failure"', '"the "fails" clause"'))
+        self.assertFails("its front matter does not parse")
+
+    def test_another_optional_field(self):
+        edit(self.readme, "template: 2\n", "template: 2\nsidebar: x\n")
+        self.assertFails("the front matter has no field `sidebar`")
 
     def test_wrong_codes(self):
         edit(self.readme, "codes: [U3007]", "codes: [U3007, U3008]")
@@ -1486,6 +1554,23 @@ class Translations(Base):
 
     def test_a_changed_number(self):
         self.assertTranslationFails(self.text.replace("## 6.2 Handling a failure", "## 6.20 Tratando uma falha"), "numbered as the English page's")
+
+    def test_a_translated_nav(self):
+        english = os.path.join(self.root, "06-failure", "README.md")
+        edit(english, "template: 2\n", f"template: 2\nnav: {Chapters.NAV}\n")
+        text = check.read(english)
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        translated = text.replace("title: Failure", "title: Falhas").replace("# 6 Failure", "# 6 Falhas").replace(
+            "template: 2", f"template: 2\nsource: {digest}\nstatus: approved").replace('"Exercises"', '"Exercícios"')
+        self.assertEqual(self.failures(translated), [])
+        self.assertTranslationFails(translated.replace(', "Recap and reference"', ""), "`nav` has 7 labels")
+        self.assertTranslationFails(translated.replace('"Exercícios"', '"`Exercícios`"'), "a label is plain text")
+        self.assertTranslationFails(translated.replace(f"nav: {Chapters.NAV.replace('Exercises', 'Exercícios')}\n", ""),
+                                    "`nav` is translated when the English page has one")
+
+    def test_a_nav_the_english_page_has_not(self):
+        self.assertTranslationFails(self.text.replace("template: 2\n", f"template: 2\nnav: {Chapters.NAV}\n"),
+                                    "absent when it has none")
 
     def test_a_changed_time(self):
         self.assertTranslationFails(self.text.replace("time: 35", "time: 40"), "`time` is '40'")

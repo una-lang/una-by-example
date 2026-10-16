@@ -7,6 +7,7 @@ time: 40
 builds: The billing step of a store, which prices an invoice, applies a coupon, splits the payment and refunds
 prerequisites: ["3", "4", "5", "6"]
 template: 2
+nav: ["requires", "ensures and counterexamples", "Refined kinds and predicates", "What the verifier proves", "Contracts at the boundary", "Day-to-day: billing", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
 ---
 
 # 7 Contracts and the verifier
