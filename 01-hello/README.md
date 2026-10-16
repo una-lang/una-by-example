@@ -892,7 +892,7 @@ Give `amount` its body, and use it in `total_line` and its example:
 - `una check .` reports every problem with a code, a place and a message, and prints nothing when all is well. `una run .` and `una test .` check first.
 - `una explain` prints what a code means; `una fmt .` writes canonical form.
 - A function that prints says so in its header, `uses @console: Console[print]`, and the run grants `console`. A public function without `uses` cannot print.
-- `print` takes a `Text`. Put any value into a text with braces, `"{units} units"`.
+- `print` takes a `Text`. Put most values into a text with braces, `"{units} units"`.
 - Comments start with `--`, and doc comments with `---`. A doc comment belongs to the declaration below it, and `una contract` prints it.
 - Keep the logic in functions without `uses`, and test each one with an `example`: `do` a call, `expect` a fact about `result`.
 :::
