@@ -1,0 +1,2 @@
+error U0007 at src/report.una:129:31: unescaped `{` in text, where no interpolation can start; write `\{`
+error U0007 at src/report.una:129:86: unescaped `}` in text; write `\}`

@@ -1,0 +1,9 @@
+[U0101] Error: unexpected `[`, expected end of line
+     ╭─[ src/report.una:138:21 ]
+     │
+ 138 │   let first = export[0]
+     │                     ┬
+     │                     ╰── unexpected `[`, expected end of line
+     │
+     │ Note: run `una explain U0101` for an explanation
+─────╯

@@ -1,0 +1,5 @@
+total: 26480 cents
+bulk: ["RUG-07"]
+week 1: 26480 cents so far
+week 2: 52960 cents so far
+week 3: 79440 cents so far

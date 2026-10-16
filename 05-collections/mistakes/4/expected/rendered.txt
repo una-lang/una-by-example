@@ -1,0 +1,11 @@
+[U2007] Error: `when` does not match variant `None` of `Option`
+    ╭─[ src/report.una:97:3 ]
+    │
+ 97 │   when best
+    │   ──┬─
+    │     ╰─── `when` does not match variant `None` of `Option`
+    │
+    │ Help: repair 1: add an arm for each missing variant, such as `is None`, or an `else` arm
+    │
+    │ Note: run `una explain U2007` for an explanation
+────╯

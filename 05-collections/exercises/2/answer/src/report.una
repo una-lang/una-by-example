@@ -1,0 +1,192 @@
+module report
+
+--- One line of an order: a SKU, its category, how many units, and the price of one unit in cents.
+pub kind Line
+  sku: Text
+  category: Text
+  quantity: Int
+  cents: Int
+
+--- What one category sold: its units and its revenue in cents.
+pub kind Summary
+  category: Text
+  units: Int
+  cents: Int
+
+--- The text in the field `name` of a JSON object, or `None` when it is missing or not a string.
+text_field(fields: Map[Text, Json], name: Text) -> Option[Text]
+=
+  let found = fields.get(key: name).or_else(default: Null)
+  when found
+    is Str(value) -> Some(value)
+    else -> None
+
+--- The whole number in the field `name` of a JSON object, or `None`.
+int_field(fields: Map[Text, Json], name: Text) -> Option[Int]
+=
+  let found = fields.get(key: name).or_else(default: Null)
+  when found
+    is Number(value) -> Some(value)
+    else -> None
+
+--- An order line from one line of the export, or `None` when the line cannot be read.
+--- A line without a category counts under "other".
+pub read_line(text: Text) -> Option[Line]
+=
+  let json = text.parse_json()
+    if error use Null
+  when json
+    is Object(fields) ->
+      let category = text_field(fields, name: "category").or_else(default: "other")
+      let sku = text_field(fields, name: "sku")
+      let quantity = int_field(fields, name: "quantity")
+      let cents = int_field(fields, name: "cents")
+      when sku
+        is None -> None
+        is Some(code) ->
+          when quantity
+            is None -> None
+            is Some(units) ->
+              when cents
+                is None -> None
+                is Some(price) -> Some(Line(sku: code, category: category, quantity: units, cents: price))
+    else -> None
+
+--- The lines that could be read, in the order of the export.
+pub read_all(export: List[Text]) -> List[Line]
+=
+  let edit lines: List[Line] = []
+  for text in export
+    let found = read_line(text)
+    when found
+      is Some(line) ->
+        lines = lines.append(item: line)
+      is None -> unit
+  lines
+
+--- The numbers of the lines that could not be read, counting from 1.
+pub skipped_lines(export: List[Text]) -> List[Int]
+=
+  let edit numbers: List[Int] = []
+  let edit number = 0
+  for text in export
+    number = number + 1
+    let found = read_line(text)
+    if found is None
+      numbers = numbers.append(item: number)
+  numbers
+
+--- The units and revenue of each category, ordered by category.
+pub by_category(lines: List[Line]) -> Map[Text, Summary]
+=
+  let edit totals: Map[Text, Summary] = empty_map()
+  for line in lines
+    let empty = Summary(category: line.category, units: 0, cents: 0)
+    let before = totals.get(key: line.category).or_else(default: empty)
+    let units = before.units + line.quantity
+    let cents = before.cents + line.quantity * line.cents
+    edit totals.set(key: line.category, value: Summary(category: line.category, units: units, cents: cents))
+  totals
+
+--- The units sold of each SKU.
+pub units_by_sku(lines: List[Line]) -> Map[Text, Int]
+=
+  let edit units: Map[Text, Int] = empty_map()
+  for line in lines
+    let before = units.get(key: line.sku).or_else(default: 0)
+    edit units.set(key: line.sku, value: before + line.quantity)
+  units
+
+--- The SKU that sold the most units, the first in SKU order on a tie; `None` for no sales.
+pub best_seller(units: Map[Text, Int]) -> Option[Entry[Text, Int]]
+=
+  let most = units.values().fold(initial: 0, step: fn(top, n) -> max(top, b: n))
+  units.entries().first_where(keep: fn(entry) -> entry.value == most)
+
+--- The report's line about the best seller.
+pub headline(best: Option[Entry[Text, Int]]) -> Text
+=
+  when best
+    is Some(entry) -> "best seller: {entry.key}, {entry.value} units"
+    is None -> "no sales"
+
+--- Cents as a decimal amount: 13930 is "139.30".
+pub money(cents: Int) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
+
+--- The totals of the day as one JSON object, for the accounting service.
+pub totals_json(summaries: List[Summary], skipped: Int) -> Text
+=
+  let units = summaries.map(each: fn(summary) -> summary.units).sum()
+  let cents = summaries.map(each: fn(summary) -> summary.cents).sum()
+  let edit fields: Map[Text, Json] = empty_map()
+  edit fields.set(key: "categories", value: Number(value: summaries.len))
+  edit fields.set(key: "units", value: Number(value: units))
+  edit fields.set(key: "cents", value: Number(value: cents))
+  edit fields.set(key: "skipped", value: Number(value: skipped))
+  Object(fields).to_json()
+
+--- The day's export: one JSON object per order line.
+pub sample_export() -> List[Text]
+=
+  let edit lines: List[Text] = []
+  lines = lines.append(item: "\{\"sku\": \"LAMP-01\", \"category\": \"lighting\", \"quantity\": 2, \"cents\": 1990\}")
+  lines = lines.append(item: "\{\"sku\": \"DESK-02\", \"category\": \"furniture\", \"quantity\": 2, \"cents\": 15900\}")
+  lines = lines.append(item: "\{\"sku\": \"RUG-07\", \"category\": \"textiles\", \"quantity\": 3, \"cents\": 4500\}")
+  lines = lines.append(item: "\{\"sku\": \"LAMP-01\", \"category\": \"lighting\", \"quantity\": 4, \"cents\": 1990\}")
+  lines = lines.append(item: "\{\"sku\": \"CHAIR-09\", \"category\": \"furniture\"\}")
+  lines = lines.append(item: "\{\"sku\": \"SHADE-05\", \"category\": \"lighting\", \"quantity\": 2, \"cents\": 1250\}")
+  lines = lines.append(item: "\{\"sku\": \"VASE-03\", \"quantity\": 2, \"cents\": 2400\}")
+  lines = lines.append(item: "\{\"sku\": \"RUG-07\", \"category\": \"textiles\", \"quantity\": 1, \"cents\": 4500\}")
+  lines
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let export = sample_export()
+  let lines = read_all(export)
+  let skipped = export.len - lines.len
+  @console.print("{export.len} lines, {skipped} skipped: {skipped_lines(export)}")
+  let summaries = by_category(lines).values()
+  for summary in summaries
+    @console.print("{summary.category}: {summary.units} units, {money(summary.cents)}")
+  @console.print(headline(best_seller(units_by_sku(lines))))
+  @console.print(totals_json(summaries, skipped: skipped))
+
+example "a line with every field is read"
+  do read_line("\{\"sku\": \"LAMP-01\", \"category\": \"lighting\", \"quantity\": 2, \"cents\": 1990\}")
+  expect result == Some(Line(sku: "LAMP-01", category: "lighting", quantity: 2, cents: 1990))
+
+example "a line without a category counts under other"
+  do read_line("\{\"sku\": \"VASE-03\", \"quantity\": 2, \"cents\": 2400\}")
+  expect result == Some(Line(sku: "VASE-03", category: "other", quantity: 2, cents: 2400))
+
+example "a line without a quantity is skipped"
+  do read_line("\{\"sku\": \"CHAIR-09\", \"category\": \"furniture\"\}")
+  expect result == None
+
+example "a line that is not JSON is skipped"
+  do read_line("LAMP-01, 2")
+  expect result == None
+
+example "two lines of one category add up"
+  do by_category([Line(sku: "LAMP-01", category: "lighting", quantity: 2, cents: 1990), Line(sku: "SHADE-05", category: "lighting", quantity: 1, cents: 1250)])
+  expect result.get(key: "lighting") == Some(Summary(category: "lighting", units: 3, cents: 5230))
+
+example "on a tie, the first SKU in order is the best seller"
+  do best_seller(empty_map().with(key: "RUG-07", value: 3).with(key: "LAMP-01", value: 3))
+  expect result == Some(Entry(key: "LAMP-01", value: 3))
+
+example "a day without sales has no best seller"
+  do headline(best_seller(empty_map()))
+  expect result == "no sales"
+
+example "amounts keep two digits of cents"
+  do money(1205)
+  expect result == "12.05"
+
+example "the skipped lines are numbered from 1"
+  do skipped_lines(["LAMP-01", "\{\"sku\": \"RUG-07\", \"quantity\": 1, \"cents\": 4500\}", "\{\}"])
+  expect result == [1, 3]

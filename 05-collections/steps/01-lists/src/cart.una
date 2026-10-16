@@ -1,0 +1,15 @@
+module cart
+
+--- The SKUs of a cart in the order a receipt lists them.
+receipt(skus: List[Text]) -> Text = skus.sort().join(separator: ", ")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let quantities = [2, 1, 3]
+  let more = quantities.append(item: 4)
+  @console.print("{quantities} then {more}")
+  @console.print("{more.len} lines, {more.sum()} units")
+  @console.print("a line of 3 units: {more.contains(item: 3)}")
+  let skus = ["RUG-07", "LAMP-01", "DESK-02"]
+  @console.print(receipt(skus))

@@ -1,0 +1,23 @@
+[U0007] Error: unescaped `{` in text, where no interpolation can start; write `\{`
+     ╭─[ src/report.una:129:31 ]
+     │
+ 129 │   lines = lines.append(item: "{\"sku\": \"VASE-03\", \"quantity\": 2, \"cents\": 2400}")
+     │                               ┬
+     │                               ╰── unescaped `{` in text, where no interpolation can start; write `\{`
+     │
+     │ Help: repair 1: write `\{`; edit src/report.una:129:31..129:32 to "\\{"
+     │
+     │ Note: run `una explain U0007` for an explanation
+─────╯
+[U0007] Error: unescaped `}` in text; write `\}`
+     ╭─[ src/report.una:129:86 ]
+     │
+ 129 │   lines = lines.append(item: "{\"sku\": \"VASE-03\", \"quantity\": 2, \"cents\": 2400}")
+     │                                                                                      ┬
+     │                                                                                      ╰── unescaped `}` in text; write `\}`
+     │
+     │ Help: repair 1: write `\}`; edit src/report.una:129:86..129:87 to "\\}"
+     │
+     │ Note: run `una explain U0007` for an explanation
+─────╯
+2 of 2 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

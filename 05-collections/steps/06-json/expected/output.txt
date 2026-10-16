@@ -1,0 +1,4 @@
+Object({"cents": Number(1990), "sku": Str("LAMP-01"), "tags": Array([Str("new")])})
+Some(1990)
+None
+{"cents":1990,"in_stock":true,"sku":"LAMP-01"}

@@ -1,0 +1,9 @@
+[U3009] Error: `Timeout` is a variant of `StoreError`, and this code fails with `OrderError`
+    ╭─[ src/orders.una:44:19 ]
+    │
+ 44 │     if error fail Timeout
+    │                   ───┬───
+    │                      ╰───── `Timeout` is a variant of `StoreError`, and this code fails with `OrderError`
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯

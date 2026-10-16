@@ -1,0 +1,52 @@
+module upload
+
+kind QuantityError = NotANumber(raw: Text) | OutOfRange(value: Int)
+
+--- Why a line of an uploaded file was rejected, with its line number.
+kind LineError = MissingQuantity(line: Int) | BadQuantity(line: Int, cause: QuantityError)
+
+parse_quantity(raw: Text) -> Int
+  fails QuantityError
+=
+  let n = raw.trim.to_int()
+    if none fail NotANumber(raw)
+  if n < 1 or n > 99
+    fail OutOfRange(value: n)
+  else
+    n
+
+--- The quantity on line `number` of an upload, `"SKU, quantity"`.
+quantity_on_line(number: Int, text: Text) -> Int
+  fails LineError
+=
+  let raw = text.split(on: ",").at(index: 1)
+    if none fail MissingQuantity(line: number)
+  parse_quantity(raw)
+    if error fail BadQuantity(line: number, cause: error)
+
+explain(e: LineError) -> Text
+=
+  when e
+    is MissingQuantity(line) -> "line {line}: no quantity"
+    is BadQuantity(line, cause) -> "line {line}: {cause_text(cause)}"
+
+cause_text(c: QuantityError) -> Text
+=
+  when c
+    is NotANumber(raw) -> "'{raw.trim}' is not a number"
+    is OutOfRange(value) -> "{value} is not between 1 and 99"
+
+show(number: Int, text: Text) -> Text
+=
+  let outcome = attempt quantity_on_line(number, text: text)
+  when outcome
+    is Ok(value) -> "line {number}: {value} units"
+    is Err(failure) -> explain(failure)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(show(1, text: "LAMP-01, 2"))
+  @console.print(show(2, text: "LAMP-01"))
+  @console.print(show(3, text: "LAMP-01, lots"))
+  @console.print(show(4, text: "LAMP-01, 500"))

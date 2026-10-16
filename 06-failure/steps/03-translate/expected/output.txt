@@ -1,0 +1,4 @@
+line 1: 2 units
+line 2: no quantity
+line 3: 'lots' is not a number
+line 4: 500 is not between 1 and 99

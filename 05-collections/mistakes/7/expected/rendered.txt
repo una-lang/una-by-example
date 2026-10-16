@@ -1,0 +1,9 @@
+[U3007] Error: `parse_json` can fail with `JsonError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    ╭─[ src/report.una:36:14 ]
+    │
+ 36 │   let json = text.parse_json()
+    │              ────────┬────────
+    │                      ╰────────── `parse_json` can fail with `JsonError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    │
+    │ Note: run `una explain U3007` for an explanation
+────╯

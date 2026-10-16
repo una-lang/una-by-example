@@ -1,0 +1,9 @@
+[U2019] Error: `lines` is not editable; declare it `let edit lines`, or the parameter `edit lines`
+    ╭─[ src/report.una:63:9 ]
+    │
+ 63 │         lines = lines.append(item: line)
+    │         ──┬──
+    │           ╰──── `lines` is not editable; declare it `let edit lines`, or the parameter `edit lines`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯

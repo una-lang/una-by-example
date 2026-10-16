@@ -1,0 +1,4 @@
+[3980, 4500, 5000]
+["LAMP-01"]
+4 units
+free shipping: false

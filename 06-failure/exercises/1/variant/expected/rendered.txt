@@ -1,0 +1,11 @@
+[U2007] Error: `when` does not match variant `TooMany` of `OrderError`
+    ╭─[ src/orders.una:74:3 ]
+    │
+ 74 │   when e
+    │   ──┬─
+    │     ╰─── `when` does not match variant `TooMany` of `OrderError`
+    │
+    │ Help: repair 1: add an arm for each missing variant, such as `is TooMany`, or an `else` arm
+    │
+    │ Note: run `una explain U2007` for an explanation
+────╯

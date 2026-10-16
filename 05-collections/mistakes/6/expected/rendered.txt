@@ -1,0 +1,9 @@
+[U2020] Error: `set` updates the map, so the call is written `edit units.set(...)`
+    ╭─[ src/report.una:85:5 ]
+    │
+ 85 │     units.set(key: line.sku, value: before + line.quantity)
+    │     ──┬──
+    │       ╰──── `set` updates the map, so the call is written `edit units.set(...)`
+    │
+    │ Note: run `una explain U2020` for an explanation
+────╯

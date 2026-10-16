@@ -1,0 +1,12 @@
+$ una test .
+example report "a line with every field is read" ... ok
+example report "a line without a category counts under other" ... ok
+example report "a line without a quantity is skipped" ... ok
+example report "a line that is not JSON is skipped" ... ok
+example report "two lines of one category add up" ... ok
+example report "on a tie, the first SKU in order is the best seller" ... ok
+example report "a day without sales has no best seller" ... ok
+example report "amounts keep two digits of cents" ... ok
+example report "categories with the same revenue keep their name order" ... ok
+
+9 examples: 9 passed, 0 failed

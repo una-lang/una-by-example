@@ -1,0 +1,30 @@
+module pricing
+
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+kind CartLine
+  sku: Text
+  quantity: Int
+  cents: Int
+
+--- What one line costs, in cents.
+line_cents(line: CartLine) -> Int = line.quantity * line.cents
+
+--- Whether a cart ships for free: 10000 cents or more, not counting gift cards.
+ships_free(lines: List[CartLine]) -> Bool
+=
+  let goods = lines.filter(keep: fn(line) -> not line.sku.starts_with(prefix: "GIFT-"))
+  goods.map(each: line_cents).sum() >= 10000
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = CartLine(sku: "LAMP-01", quantity: 2, cents: 1990)
+  let rug = CartLine(sku: "RUG-07", quantity: 1, cents: 4500)
+  let gift = CartLine(sku: "GIFT-50", quantity: 1, cents: 5000)
+  let cart = [lamp, rug, gift]
+  @console.print("{cart.map(each: line_cents)}")
+  let big = cart.filter(keep: fn(line) -> line.quantity >= 2)
+  @console.print("{big.map(each: fn(line) -> line.sku)}")
+  let units = cart.fold(initial: 0, step: fn(sum, line) -> sum + line.quantity)
+  @console.print("{units} units")
+  @console.print("free shipping: {ships_free(cart)}")

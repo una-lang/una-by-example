@@ -1,0 +1,7 @@
+$ una test .
+example orders "a line in stock is accepted" ... ok
+example orders "too many units are out of stock" ... ok
+example orders "a malformed line never reaches the inventory" ... ok
+example orders "an inventory that does not answer is Unavailable" ... ok
+
+4 examples: 4 passed, 0 failed

@@ -1,0 +1,9 @@
+[U2001] Error: expected `Order`, found `Text`
+    ╭─[ src/orders.una:57:18 ]
+    │
+ 57 │     if error use "none"
+    │                  ───┬──
+    │                     ╰──── expected `Order`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
