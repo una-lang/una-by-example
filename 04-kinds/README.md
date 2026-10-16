@@ -55,7 +55,11 @@ The price is a few more declarations at the top of a module. In return, a value 
 
 ## 4.1 Records
 
+### Fields, labels and the dot
+
 A record kind declares a type of named fields, one per line, indented under its name. Each field has a type, and the types can be other kinds. You build a value by naming the kind and giving every field, with its label, and you read a field with a dot.
+
+### Each step is a package
 
 Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
@@ -76,6 +80,10 @@ grants = ["console"]
 una check .
 una run .
 ```
+
+### An address inside a parcel
+
+The module `labels` declares two record kinds, builds a parcel, and redirects it:
 
 :::steps
 ```una include="steps/01-records/src/labels.una" title="steps/01-records/src/labels.una" verified="check, run"
@@ -126,13 +134,23 @@ Corner Bakery, Southport, 1200 g
 Address(name: "Corner Bakery", street: "12 Elm Road", city: "Northfield")
 ```
 
+### Records are nominal
+
 Records are **nominal**: two kinds with the same fields are two different types. If you declare `kind Warehouse` with a `name`, a `street` and a `city`, a `Warehouse` still cannot be passed where an `Address` is expected. The name of a kind is part of what it means, so the checker keeps a warehouse's address apart from a customer's.
+
+### Aliases: another name for a type
 
 A kind can also be another name for a type: `kind Sku = Text` is an **alias**, and a `Sku` is a `Text` wherever one is expected. An alias documents a field, but does not keep two kinds apart the way a record does. [Chapter 7, Contracts and the verifier](/learn/contracts/), adds a condition to an alias, as in `kind Cents = Int where it >= 0`, and proves it.
 
 ## 4.2 Sum kinds
 
+### One of several cases
+
 A sum kind lists its variants, separated by `|`. A value is exactly one of them. A variant may carry fields, written in parentheses, and different variants carry different fields. Use a sum whenever a value is one of several cases that a program treats differently: a delivery to the door, to a locker, or to a store.
+
+### Zones and deliveries
+
+The module `carriers` declares three sum kinds, then builds, tests and compares their variants:
 
 :::steps
 ```una include="steps/02-sums/src/carriers.una" title="steps/02-sums/src/carriers.una" verified="check, run"
@@ -180,6 +198,8 @@ NoCarrier
 
 A variant with fields prints as you would build it: one field without its label, as `AtLocker("Station 14")`, and two or more with their labels.
 
+### A record, a sum or an alias
+
 :::decide
 **Which to use:**
 
@@ -194,9 +214,20 @@ A variant with fields prints as you would build it: one field without its label,
 
 ## 4.3 Taking a value apart: `when`
 
+### Arms, bindings and the value of a `when`
+
 `when` chooses an arm by the value it is given. Each arm starts with `is` and a variant, then `->` and the value of that arm. An arm can bind the fields of its variant, by name, and use them. The value of the `when` is the value of the arm that matched.
 
+### Every variant has an arm
+
 The checker makes sure that every variant has an arm. An `else` arm, last, covers every variant not named before it. Over an `Int` or a `Text`, arms name literals with `is`, or ranges with `in`, and these need an `else` unless the ranges cover every value.
+
+> [!TIP]
+> Prefer an arm per variant to `else` on a sum that will grow. Keep `else` for "every other case is the same", as `refund_due` does in the day-to-day program, and for literals and ranges.
+
+### Postage by zone, weight and delivery
+
+The module `postage` uses `when` over a sum, over ranges of an `Int`, and with arms that bind fields:
 
 :::steps
 ```una include="steps/03-when/src/postage.una" title="steps/03-when/src/postage.una" verified="check, run"
@@ -252,16 +283,23 @@ collect at Harbour Road from 9:00
 collect at locker Station 14
 ```
 
-Range arms with no `else` are a proof obligation: the verifier must show that some arm matches every `Int`. When it cannot, it reports the value that no arm matches, a counterexample ([section 4.7](#s4-7), mistake 4). [Chapter 7](/learn/contracts/) explains what the verifier proves and how to read its counterexamples.
+### Range arms, a proof obligation
 
-> [!TIP]
-> Prefer an arm per variant to `else` on a sum that will grow. Keep `else` for "every other case is the same", as `refund_due` does in the day-to-day program, and for literals and ranges.
+Range arms with no `else` are a proof obligation: the verifier must show that some arm matches every `Int`. When it cannot, it reports the value that no arm matches, a counterexample ([Ranges that leave a gap](#ranges-that-leave-a-gap-u5001), in Common mistakes). [Chapter 7](/learn/contracts/) explains what the verifier proves and how to read its counterexamples.
 
 ## 4.4 Generic kinds and constraints
 
+### Generic kinds: `Change[T]`
+
 Some kinds have the same shape whatever they hold. A change to a catalog entry has a value before and a value after, whether it is a price, a name or a zone. A **generic kind** takes a type parameter in brackets, `Change[T]`, and `Change[Int]` and `Change[Text]` are two types built from it. The type argument is inferred where a value is built.
 
+### Constraints on a generic function: `Eq`, `Ord` and `Integer`
+
 A generic function takes type parameters too. Without a constraint, it knows nothing about a `T` and can only move values around. A **constraint** gives it more: `Eq` allows `==` and `!=`, `Ord` also allows `<`, `<=`, `>` and `>=`, and `Integer` also allows `to_int()`.
+
+### Undoing and comparing changes
+
+The module `changes` declares `Change[T]` and three generic functions over it:
 
 :::steps
 ```una include="steps/04-generics/src/changes.una" title="steps/04-generics/src/changes.una" verified="check, run"
@@ -309,13 +347,21 @@ price changed: true, name changed: false
 larger price 1990, farther zone Abroad
 ```
 
+### The weakest constraint the body needs
+
 Write the weakest constraint the body needs. `undo` needs none, so it works on a `Change` of any type. `changed` needs `Eq`, and `larger` needs `Ord`, which also gives `Eq`. A stronger constraint than the body uses only refuses callers for no reason. When a call passes a type that does not satisfy the constraint, such as a record to `larger`, the checker reports it at the call (U2025).
+
+### Type parameters of kinds, and `Option`
 
 A kind's type parameters take no constraint; only a function's do. The prelude's `Option[T]`, which holds a value or nothing, is a generic sum kind, and [chapter 5, Collections](/learn/collections/), uses it everywhere.
 
 ## 4.5 Day-to-day: shipment tracking
 
+### What the program must do
+
 Now the program from the start of the chapter. The store ships parcels by post or by courier. Each parcel has a price for its zone and its weight. Carriers report events: a pickup, a delivery, a parcel that came back. The tracker must keep each shipment's status, ignore an event that does not fit, such as a pickup scan sent twice, and say whether a returned parcel is owed a refund.
+
+### The kinds
 
 The design starts from the kinds. Everything a function does follows from them.
 
@@ -349,7 +395,9 @@ pub kind Change[T]
 
 `Status` is the heart of the program. Each variant carries what is known in that state: a carrier and a tracking number while in transit, a day once delivered, a reason and a day once returned. `Event` is a second sum, for what the outside world reports, and its variants mirror the transitions. `Change[Status]` records a status before and after an event, so the report can tell an event that changed something from one that did not.
 
-**Pricing.** `postage` adds the price of the zone to the supplement for the weight. Each part is a `when`: one arm per zone, and weight bands with an `else`, as in [section 4.3](#s4-3). `postage` is public and has a doc comment; its two helpers are private.
+### Pricing a parcel
+
+`postage` adds the price of the zone to the supplement for the weight. Each part is a `when`: one arm per zone, and weight bands with an `else`, as in [section 4.3](#s4-3). `postage` is public and has a doc comment; its two helpers are private.
 
 ```una include="day-to-day/src/tracking.una#postage..weight_cents" title="day-to-day/src/tracking.una"
 --- Postage in cents: a price for the zone, and a supplement for the weight.
@@ -370,7 +418,9 @@ weight_cents(grams: Int) -> Int
     else -> 400
 ```
 
-**Following events.** `apply` takes the status and an event, and gives the next status. One `when` over the event, and in each arm a test of the status with `is`. An event that does not fit the current status leaves it as it is, so a second pickup scan, or a return before any delivery, changes nothing. `track` wraps the two statuses in a `Change`, and `changed` compares them with the `Eq` constraint of [section 4.4](#s4-4).
+### Following events
+
+`apply` takes the status and an event, and gives the next status. One `when` over the event, and in each arm a test of the status with `is`. An event that does not fit the current status leaves it as it is, so a second pickup scan, or a return before any delivery, changes nothing. `track` wraps the two statuses in a `Change`, and `changed` compares them with the `Eq` constraint of [section 4.4](#s4-4).
 
 ```una include="day-to-day/src/tracking.una#apply..changed" title="day-to-day/src/tracking.una"
 --- The status after an event. An event that does not fit the status changes nothing, such
@@ -393,7 +443,9 @@ Why ignore an event that does not fit, rather than fail? Carriers resend scans, 
 
 `InTransit(carrier, tracking)` in the first arm builds a variant from two bindings of the same names as its fields. A name equal to the field's name counts as its label, so this is `InTransit(carrier: carrier, tracking: tracking)`.
 
-**Words for people.** `describe` has one arm per status and binds the fields it prints. `carrier_name` and `reason_text` turn variants without fields into words. None of them has an `else`, so a new carrier, reason or status is reported at the `when` that must say something about it. `refund_due` is the other kind of function: one case matters, and `else` covers the rest. A parcel refused at the door is not owed a refund, since the store sent it correctly.
+### Words for people
+
+`describe` has one arm per status and binds the fields it prints. `carrier_name` and `reason_text` turn variants without fields into words. None of them has an `else`, so a new carrier, reason or status is reported at the `when` that must say something about it. `refund_due` is the other kind of function: one case matters, and `else` covers the rest. A parcel refused at the door is not owed a refund, since the store sent it correctly.
 
 ```una include="day-to-day/src/tracking.una#describe..refund_due" title="day-to-day/src/tracking.una"
 --- A status, for a person to read.
@@ -427,7 +479,9 @@ pub refund_due(status: Status) -> Bool
     else -> false
 ```
 
-**Running it.** `main` prices a lamp, then sends it through a pickup, the same pickup again, and a delivery. Then it prices a vase sent abroad and reports its return. Each line comes from `report`, which says "no change" when the event did not change the status.
+### Running it
+
+`main` prices a lamp, then sends it through a pickup, the same pickup again, and a delivery. Then it prices a vase sent abroad and reports its return. Each line comes from `report`, which says "no change" when the event did not change the status.
 
 ```una include="day-to-day/src/tracking.una#report..main" title="day-to-day/src/tracking.una"
 --- One line of the tracking report.
@@ -450,7 +504,9 @@ pub main() -> Unit
   @console.print("{report(vase.order, change: back)}; refund due: {refund_due(back.after)}")
 ```
 
-`una run .` prints the report shown under "What you'll build". The third line is the duplicate scan: the status stayed `InTransit`, and the report says so instead of pretending something happened. Nothing in `main` can build a delivered shipment without a day, or a shipment in transit without a tracking number, because `Status` has no such variant.
+`una run .` prints the report shown in [What you'll build](#what-youll-build). The third line is the duplicate scan: the status stayed `InTransit`, and the report says so instead of pretending something happened. Nothing in `main` can build a delivered shipment without a day, or a shipment in transit without a tracking number, because `Status` has no such variant.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -587,6 +643,8 @@ example "a refused parcel is not refunded"
 
 ## 4.6 Testing it
 
+### Values typed in place
+
 Kinds make tests short. Each example builds the values it needs, in one line, and checks one fact. There is no setup and no fake object: `Packed` and `Returned(reason: Refused, day: 5)` are values you type.
 
 ```una include="day-to-day/src/tracking.una#L110-L128" title="day-to-day/src/tracking.una" caption="the examples"
@@ -614,7 +672,11 @@ example "a refused parcel is not refunded"
 > [!TIP]
 > An `example` is a test that lives next to the code. `do` calls the code under test, `result` is what that call returned, and each `expect` line states something that must hold. `una test .` runs every example and reports each one. [Chapter 10, Testing](/learn/testing/), covers examples in full.
 
+### Variants, and the edges the run does not reach
+
 `expect result is InTransit` checks the variant without its fields, which is all that example is about. `expect not changed(result)` calls a function of the program on the result: any `Bool` expression works. The examples cover the edges that the run in `main` does not reach: a heavy parcel abroad, a return before a delivery, and a refused parcel. Each one names its case in plain words, so the list of examples reads as the rules of the tracker.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -628,14 +690,18 @@ example tracking "a refused parcel is not refunded" ... ok
 5 examples: 5 passed, 0 failed
 ```
 
-When an example fails, `una test .` names it and shows the value `result` had, as exercise 1 below shows. Because every value prints as you would build it, the failure message is a value you can paste into a new example.
+### When an example fails
+
+When an example fails, `una test .` names it and shows the value `result` had, as [Exercise 1](#exercise-1-a-lost-parcel) shows. Because every value prints as you would build it, the failure message is a value you can paste into a new example.
 
 ## 4.7 Common mistakes
 
 Each mistake below is a small change to `day-to-day/src/tracking.una`, followed by what `una check .` reports.
 
+### Leaving out a field (U2009)
+
 :::mistake
-**1. Leaving out a field (U2009).** Build the lamp's `Parcel` without its zone:
+Build the lamp's `Parcel` without its zone:
 
 ```diff include="day-to-day..mistakes/1:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -656,8 +722,10 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* give the field, `zone: National`.
 :::
 
+### A `when` that misses a variant (U2007)
+
 :::mistake
-**2. A `when` that misses a variant (U2007).** Remove the `Returned` arm from `describe`:
+Remove the `Returned` arm from `describe`:
 
 ```diff include="day-to-day..mistakes/2:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -678,8 +746,10 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* add the arm. Add `else` only when every remaining variant really gets the same answer.
 :::
 
+### A text where a variant goes (U2001)
+
 :::mistake
-**3. A text where a variant goes (U2001).** Give the zone as a text:
+Give the zone as a text:
 
 ```diff include="day-to-day..mistakes/3:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -700,8 +770,10 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* the variant, `zone: Abroad`.
 :::
 
+### Ranges that leave a gap (U5001)
+
 :::mistake
-**4. Ranges that leave a gap (U5001).** Replace the `else` of `weight_cents` with a last band:
+Replace the `else` of `weight_cents` with a last band:
 
 ```diff include="day-to-day..mistakes/4:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -723,8 +795,10 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* end with an `else` arm. To rule out negative weights for good, give the field a refined kind, as [chapter 7](/learn/contracts/) shows.
 :::
 
+### Comparing with a variant that has fields (U2009)
+
 :::mistake
-**5. Comparing with a variant that has fields (U2009).** Test the status with `==` in `apply`:
+Test the status with `==` in `apply`:
 
 ```diff include="day-to-day..mistakes/5:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -746,8 +820,10 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* `status is InTransit`, which tests the variant only. `una fix .` applies the repair shown.
 :::
 
+### Comparing values of a type parameter without `Eq` (U2026)
+
 :::mistake
-**6. Comparing values of a type parameter without `Eq` (U2026).** Leave the constraint out of `changed`:
+Leave the constraint out of `changed`:
 
 ```diff include="day-to-day..mistakes/6:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -769,8 +845,10 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* `[T: Eq]`, which `una fix .` writes.
 :::
 
+### A field without its label (U2004)
+
 :::mistake
-**7. A field without its label (U2004).** Build the lamp's parcel with its order number first and unlabeled, as a function call allows:
+Build the lamp's parcel with its order number first and unlabeled, as a function call allows:
 
 ```diff include="day-to-day..mistakes/7:src/tracking.una" context="1" title="src/tracking.una"
 --- a/src/tracking.una
@@ -792,24 +870,14 @@ Each mistake below is a small change to `day-to-day/src/tracking.una`, followed 
 *Fix:* `order: "A-1001"`, which `una fix .` writes.
 :::
 
-## 4.8 For agents
-
-:::agents
-`una --json check .` gives every diagnostic as JSON. For mistake 2:
-
-```json include="mistakes/2/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2007","severity":"error","domain":"types","message":"`when` does not match variant `Returned` of `Status`","primary":{"file":"src/tracking.una","start":{"line":64,"col":3},"end":{"line":64,"col":7}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"add an arm for each missing variant, such as `is Returned`, or an `else` arm","edit":null}],"explain":"una explain U2007"}],"fixable":0}
-```
-
-U2007 carries no `edit`, since only the author knows what a new arm should do. U2004, U2026 and the `==` form of U2009 carry exact edits, which `una fix .` applies. The compact rule: *records label every field and are nominal; a sum of one variant starts with `|`; `when` covers every variant or ends with `else`; test a variant with `is`, not `==`; a generic function writes `[T: Eq]`, `[T: Ord]` or `[T: Integer]` for what it does with `T`.*
-:::
-
-## 4.9 Exercises
+## 4.8 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added, and a stub of what to write when there is one. `una check .` or `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
 
+### Exercise 1: a lost parcel
+
 ::::exercise
-**Exercise 1: a lost parcel.** Sometimes a carrier loses a parcel. Add a variant `Lost(day: Int)` to `Status`, describe it as "lost since day N", and make it owed a refund. The start package ends with these examples, and `una check .` reports U1001 until the variant exists:
+Sometimes a carrier loses a parcel. Add a variant `Lost(day: Int)` to `Status`, describe it as "lost since day N", and make it owed a refund. The start package ends with these examples, and `una check .` reports U1001 until the variant exists:
 
 ```una include="exercises/1/start/src/tracking.una#L130-L136" title="exercises/1/start/src/tracking.una"
 example "a lost parcel says since when"
@@ -869,8 +937,10 @@ The `else` of `refund_due` would have answered `false` for a lost parcel. This i
 :::
 ::::
 
+### Exercise 2: express shipping
+
 ::::exercise
-**Exercise 2: express shipping.** The store offers express shipping for 5.00 more. Add a field `express: Bool` to `Parcel`, and add 500 cents to the postage of an express parcel. The start package ends with this example, and `una check .` reports U2009 until the field exists:
+The store offers express shipping for 5.00 more. Add a field `express: Bool` to `Parcel`, and add 500 cents to the postage of an express parcel. The start package ends with this example, and `una check .` reports U2009 until the field exists:
 
 ```una include="exercises/2/start/src/tracking.una#L130-L132" title="exercises/2/start/src/tracking.una"
 example "express adds 5.00 to the postage"
@@ -920,8 +990,10 @@ The answer sends the vase express, so `una run .` prints `A-1002: postage 1700`.
 :::
 ::::
 
+### Exercise 3: the next action
+
 ::::exercise
-**Exercise 3: the next action.** Design a kind. For each status, the store does one thing next: wait while a parcel is packed, send the tracking number to the customer while it is in transit, ask for a review once it is delivered, refund a parcel returned damaged or wrong, and put a refused parcel back on the shelf. The start package has a placeholder kind, `Action`, a stub for `next_action`, and these examples, which report U1001 until the kind has the variants they name:
+Design a kind. For each status, the store does one thing next: wait while a parcel is packed, send the tracking number to the customer while it is in transit, ask for a review once it is delivered, refund a parcel returned damaged or wrong, and put a refused parcel back on the shelf. The start package has a placeholder kind, `Action`, a stub for `next_action`, and these examples, which report U1001 until the kind has the variants they name:
 
 ```una include="exercises/3/start/src/tracking.una#L136-L150" title="exercises/3/start/src/tracking.una"
 example "a parcel in transit sends its tracking number"
@@ -975,7 +1047,21 @@ Declare the actions, and choose one for each status:
 :::
 ::::
 
-## 4.10 Recap
+## 4.9 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` gives every diagnostic as JSON. For [A `when` that misses a variant](#a-when-that-misses-a-variant-u2007):
+
+```json include="mistakes/2/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2007","severity":"error","domain":"types","message":"`when` does not match variant `Returned` of `Status`","primary":{"file":"src/tracking.una","start":{"line":64,"col":3},"end":{"line":64,"col":7}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"add an arm for each missing variant, such as `is Returned`, or an `else` arm","edit":null}],"explain":"una explain U2007"}],"fixable":0}
+```
+
+U2007 carries no `edit`, since only the author knows what a new arm should do. U2004, U2026 and the `==` form of U2009 carry exact edits, which `una fix .` applies. The compact rule: *records label every field and are nominal; a sum of one variant starts with `|`; `when` covers every variant or ends with `else`; test a variant with `is`, not `==`; a generic function writes `[T: Eq]`, `[T: Ord]` or `[T: Integer]` for what it does with `T`.*
+:::
+
+### Recap
 
 :::recap
 - Declare a record for data whose parts are all there at once; build it with every field labeled, and read it with a dot.
@@ -987,7 +1073,7 @@ Declare the actions, and choose one for each status:
 - A generic kind holds any type; a generic function writes the constraint, `Eq` or `Ord`, for what it does with its values.
 :::
 
-## 4.11 Reference
+### Reference
 
 :::reference
 - Construct pages: [`kind`](/docs/language/types/kind/), [`when`](/docs/language/control-flow/when/), [constraints on generics](/docs/language/types/constraints/), [`example`](/docs/language/examples/example/)

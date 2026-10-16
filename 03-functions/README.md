@@ -53,7 +53,11 @@ Una puts the whole story in the header, and checks it:
 
 ## 3.1 Parameters, labels and results
 
+### Types in the header
+
 A function's header lists its parameters in parentheses, each with its type, then `->` and the type of its result. The types are never inferred in a header: you write them, and every call is checked against them.
+
+### Labels at the call
 
 A call passes the first argument as it is, and every other one with its parameter's name, a **label**: `line_total(1_990, units: 2)`. The rule makes a call readable on its own, without a look at the header, and it makes a swap of two values visible where it happens: `units: 1_990` reads as wrong at a glance.
 
@@ -91,16 +95,27 @@ pub main() -> Unit
 lamps 3980, rugs 13500, mugs 4500
 ```
 
-A call with one argument may leave out its label, as `availability(3)` does in [section 3.3](#s3-3), since there is nothing to confuse it with. Name parameters for what they mean to a caller: `unit_cents` and `units` read well at the call, where `a` and `b` would not. A label that names no parameter does not check, and neither does a second argument without a label. [Common mistakes](#s3-8) shows the diagnostic, and its repair, which `una fix .` applies for you.
+### Calls of one argument, and names that read well
 
-**Method syntax.** A call can also be written with its first argument in front, as the prelude's functions are in [chapter 2](/learn/values/#s2-3): `raw.trim` is `trim(raw)`, and `cents.line_total(units: 2)` would be `line_total(cents, units: 2)`. Use it where it reads as a pipeline of steps on one value, as `raw.trim.to_upper` does, and the plain form elsewhere.
+A call with one argument may leave out its label, as `availability(3)` does in [section 3.3](#s3-3), since there is nothing to confuse it with. Name parameters for what they mean to a caller: `unit_cents` and `units` read well at the call, where `a` and `b` would not. A label that names no parameter does not check, and neither does a second argument without a label. [A second argument without its label](#a-second-argument-without-its-label-u2004), in Common mistakes, shows the diagnostic, and its repair, which `una fix .` applies for you.
+
+### Method syntax
+
+A call can also be written with its first argument in front, as the prelude's functions are in [chapter 2](/learn/values/#s2-3): `raw.trim` is `trim(raw)`, and `cents.line_total(units: 2)` would be `line_total(cents, units: 2)`. Use it where it reads as a pipeline of steps on one value, as `raw.trim.to_upper` does, and the plain form elsewhere.
 
 ## 3.2 Two forms, and clauses
+
+### The short form and the long form
 
 Every function has exactly one canonical form, and `una fmt` writes it:
 
 - The **short form**, `name(params) -> Type = expression`, on one line. It is the form of a function with no clauses whose body is one line.
 - The **long form**: the header, then its clauses, one per line, then `=` alone on its line, then the body, indented by two spaces. Every other function takes it.
+
+> [!TIP]
+> Canonical form is not a style to learn: it is what `una fmt` writes. Write a function in the layout that comes to you, run `una fmt .`, and read the form it chose.
+
+### Clauses: `requires` and `ensures`
 
 **Clauses** are lines of the header after the result type. `uses` is one, from [chapter 1](/learn/hello/#s1-3). Two more state a function's promises:
 
@@ -108,6 +123,10 @@ Every function has exactly one canonical form, and `una fmt` writes it:
 - `ensures q` is a **postcondition**: a fact about the result, named `result`, that the function guarantees whenever it returns. Every caller may rely on it.
 
 The verifier proves both before the program runs: each `ensures` against the body, and each `requires` at every call.
+
+### Fees in both forms
+
+The module `fees` shows both forms, and both clauses:
 
 :::steps
 ```una include="steps/02-forms/src/fees.una" title="src/fees.una" verified="check, run"
@@ -154,6 +173,8 @@ with the card fee: 2040
 500 g: 450, 2300 g: 950
 ```
 
+### A promise the body does not keep
+
 A promise the body does not keep does not check. Raise the promised minimum to 500:
 
 ```diff include="steps/02-forms..steps/03-promise:src/fees.una" title="src/fees.una" context="0"
@@ -180,12 +201,15 @@ A promise the body does not keep does not check. Raise the promised minimum to 5
 
 The counterexample names an input, a parcel of 1000 g, for which the body returns 450, which breaks the promise. Either the body or the clause is wrong, and the verifier cannot tell which: that is your decision. [Chapter 7, Contracts and the verifier](/learn/contracts/), covers clauses in depth.
 
-> [!TIP]
-> Canonical form is not a style to learn: it is what `una fmt` writes. Write a function in the layout that comes to you, run `una fmt .`, and read the form it chose.
-
 ## 3.3 Choosing a value: `if`
 
+### `if` is an expression
+
 `if` in Una is an expression: it gives a value, and both branches give one of the same type. On one line it reads `if condition then value else value`. Over several lines, each branch is an indented block, and its value is its last line. `else if` chains further conditions.
+
+### Stock messages with `if`
+
+The module `stock` uses both forms of `if`:
 
 :::steps
 ```una include="steps/04-if/src/stock.una" title="src/stock.una" verified="check, run"
@@ -230,7 +254,11 @@ only 3 units left
 in stock
 ```
 
+### `else`, and branches of one type
+
 An `if` that gives a value always has an `else`, since a value is needed whichever way the condition goes. The one-line form without `else` does not parse. An `if` over several lines without `else` is a statement, not a value: its body runs only when the condition holds, and a loop in [chapter 5](/learn/collections/) uses it so. The checker also holds the branches to one type, so an `if` whose branches return a text and a number is reported where it is written, not where its value is used.
+
+### One line, several lines, or `when`
 
 :::decide
 **Which to use:**
@@ -243,11 +271,17 @@ An `if` that gives a value always has an `else`, since a value is needed whichev
 | Do something only when a condition holds | `if` without `else`, as a statement, in a loop or a body |
 :::
 
+### What a branch knows from its condition
+
 The branches of an `if` are checked with what the condition says. In [chapter 2](/learn/values/#s2-3), `fit_name` cuts a name only in the branch where `name.len > 24`, and the verifier uses that fact to prove the cut is in range.
 
 ## 3.4 `pub`, and the headers the checker infers
 
+### Public and private
+
 A declaration is private to its module unless it starts with `pub`. A private function can be called only from its own module. A `pub` function can be called from other modules, so its header is a promise to code you do not see, and it must declare everything: the `uses` of every capability it touches, and the failures it may return, which [chapter 6](/learn/failure/) covers.
+
+### A private function's inferred `uses`
 
 A private function may leave out its `uses`. The checker works it out from the body and from the calls, and `una contract` prints the result:
 
@@ -282,6 +316,8 @@ LAMP-01: order 7
 RUG-07: order 0
 ```
 
+### Reading the inferred header: `una contract`
+
 `una contract` shows the header the checker inferred for `show`, marked as such:
 
 ```sh
@@ -293,7 +329,9 @@ show(sku: Text, units: Int) -> Unit
   uses @console: Console[print] -- inferred
 ```
 
-The inference saves lines inside a module, where every caller is in view, and the `-- inferred` mark keeps it visible to a reviewer and to the build report. At the boundary of a module, nothing is inferred: a `pub` function that prints without `uses` does not check, as [Common mistakes](#s3-8) shows. Types are never inferred in a header, for any declared function: every parameter and every result is written.
+The inference saves lines inside a module, where every caller is in view, and the `-- inferred` mark keeps it visible to a reviewer and to the build report. At the boundary of a module, nothing is inferred: a `pub` function that prints without `uses` does not check, as [A public function that prints without `uses`](#a-public-function-that-prints-without-uses-u3004), in Common mistakes, shows. Types are never inferred in a header, for any declared function: every parameter and every result is written.
+
+### Authority in the build report
 
 The build report lists the authority of every function, declared or inferred, so a reviewer can read the effects of a whole package in one place. For this package, the authority part of `una report .` lists `restock.main` as public and `restock.show` as private and inferred, each with `@console: Console[print]`.
 
@@ -302,7 +340,13 @@ The build report lists the authority of every function, declared or inferred, so
 
 ## 3.5 Functions as values, and lambdas
 
+### Function types and lambdas
+
 A function is a value, and a parameter can take one. Its type is written `fn(Int) -> Int`: a function that takes an `Int` and returns an `Int`. You pass a function declared with a name by that name, or write one in place as a **lambda**, `fn(params) -> expression`.
+
+### Pricing rules passed as values
+
+The module `pricing` passes a named function and two lambdas to the same parameter:
 
 :::steps
 ```una include="steps/06-lambdas/src/pricing.una" title="src/pricing.una" verified="check, run"
@@ -338,9 +382,15 @@ pub main() -> Unit
 2460
 ```
 
+### Where a lambda gets its types
+
 A lambda gets its parameter types from where it is used. Bound with `let` on its own line, it has no such place, and the checker asks for the type: write `fn(cents: Int) -> …`, or pass it straight to the function that uses it. A lambda's body is one expression, so a rule that needs several lines is a named function, passed by its name.
 
-Functions can also return functions, since a function is a value like any other. The last exercise of this chapter builds one promotion out of two that way.
+### Functions that return functions
+
+Functions can also return functions, since a function is a value like any other. [Exercise 3](#exercise-3-two-promotions-in-a-row), the last of this chapter, builds one promotion out of two that way.
+
+### A named function or a lambda
 
 :::decide
 **Which to use:**
@@ -358,11 +408,15 @@ Functions can also return functions, since a function is a value like any other.
 
 ## 3.6 Day-to-day: shipping quotes
 
+### What the program must do
+
 Every order needs a shipping charge before it can be paid. The rate depends on the parcel's weight, the zone adds a surcharge, large orders within the country ship for free, and marketing runs promotions that change from week to week. The report at the end of the day lists the charge of each order.
 
 Each rule is a function, and each function's header states what a caller may rely on. The promotions are the part that changes most, so they are parameters: the code that applies a promotion does not know which one it is, and a new promotion is a new function, not a change to the quote.
 
-**The rate and the zone.** Two functions with `if` chains, each with a precondition and a postcondition:
+### The rate and the zone
+
+Two functions with `if` chains, each with a precondition and a postcondition:
 
 ```una include="day-to-day/src/shipping.una#base_rate..zone_surcharge" title="day-to-day/src/shipping.una" caption="rate and surcharge"
 --- The rate of a parcel of `grams` grams within the home country, in cents: 450 up to
@@ -394,9 +448,11 @@ pub zone_surcharge(zone: Int) -> Int
 
 `base_rate` requires a weight above zero, which rules out an empty parcel. Its third branch rounds up to a started kilogram: adding 999 grams before dividing by 1000 turns 1 to 1000 extra grams into one kilogram, 1001 to 2000 into two. Its `ensures result >= 450` says that no parcel ships for less than the lowest rate, and the verifier proves it for each branch.
 
-`zone_surcharge` requires a zone from 1 to 3, the zones the store ships to. Its `ensures result >= 0` looks obvious from the body, and it matters all the same: callers of `zone_surcharge` see its header, not its body. [Common mistakes](#s3-8) shows what happens to `quote` without that line.
+`zone_surcharge` requires a zone from 1 to 3, the zones the store ships to. Its `ensures result >= 0` looks obvious from the body, and it matters all the same: callers of `zone_surcharge` see its header, not its body. [A promise the caller needs, left out](#a-promise-the-caller-needs-left-out-u5001), in Common mistakes, shows what happens to `quote` without that line.
 
-**The quote.** One function puts the rules together:
+### The quote
+
+One function puts the rules together:
 
 ```una include="day-to-day/src/shipping.una#ships_free..quote" title="day-to-day/src/shipping.una" caption="the quote"
 --- Whether an order ships for free: 10000 cents of goods or more, within the home country.
@@ -411,9 +467,11 @@ pub quote(goods: Int, grams: Int, zone: Int) -> Int
   if ships_free(goods, zone) then 0 else base_rate(grams) + zone_surcharge(zone)
 ```
 
-`ships_free(goods, zone)` passes `goods` first, and `zone` punned, since the name matches the parameter. `quote` repeats the preconditions of the functions it calls, since its callers must provide the weight and the zone. Its `ensures result >= 0` follows from the two postconditions above it: 0 when the order ships free, at least 450 plus at least 0 otherwise.
+`ships_free(goods, zone)` passes `goods` first, and `zone` punned, since the name matches the parameter. `quote` repeats the preconditions of the functions it calls, since its callers must provide the weight and the zone. Its `ensures result >= 0` follows from the postconditions of `base_rate` and `zone_surcharge`: 0 when the order ships free, at least 450 plus at least 0 otherwise.
 
-**Promotions as values.** A promotion is any function from a charge to a charge. `promoted` applies one, and its header guarantees that the customer never pays more than the charge, and never less than nothing, whatever the promotion computes:
+### Promotions as values
+
+A promotion is any function from a charge to a charge. `promoted` applies one, and its header guarantees that the customer never pays more than the charge, and never less than nothing, whatever the promotion computes:
 
 ```una include="day-to-day/src/shipping.una#half_off..promoted" title="day-to-day/src/shipping.una" caption="promotions"
 --- A promotion: half the charge, rounded up to a whole cent.
@@ -430,7 +488,9 @@ pub promoted(charge: Int, promotion: fn(Int) -> Int) -> Int
 
 The body clamps the promotion's result between 0 and the charge, with `min` and `max` from the prelude. Their own postconditions let the verifier prove `promoted`'s promise for every promotion, the ones that exist today and the ones marketing has not invented yet.
 
-**The report.** `money` writes cents as an amount, as in [chapter 2](/learn/values/#s2-6). `report_line` chooses the text with a one-line `if`. `show` prints one line, and is private, so its `uses` is inferred. `main` quotes five orders:
+### The report
+
+`money` writes cents as an amount, as in [chapter 2](/learn/values/#s2-6). `report_line` chooses the text with a one-line `if`. `show` prints one line, and is private, so its `uses` is inferred. `main` quotes five orders:
 
 ```una include="day-to-day/src/shipping.una#money..main" title="day-to-day/src/shipping.una" caption="the report"
 --- Cents as an amount with two decimals, for an amount that is not negative.
@@ -461,6 +521,15 @@ pub main() -> Unit
 The first three orders show the rules: a light parcel within the country, a heavy desk that ships free, and a parcel abroad. The last two apply promotions: `half_off` by its name, and a members' rule of 20 percent off as a lambda. `show(1044, charge)` uses punning again: the value named `charge` goes to the parameter `charge`.
 
 Every call of `quote` is checked against its preconditions, so the verifier proves that `24_000 > 0` and that zone 3 is between 1 and 3. Every call of `promoted` must provide `charge >= 0`, and the verifier proves it from `quote`'s postcondition: the promise of one function is what makes the call of the next one safe.
+
+### Running it
+
+`una run .` prints the report shown in [What you'll build](#what-youll-build). Order 1044 ships 3200 g abroad: 790 for the first 2 kg, 500 for two started kilograms above them, and 1800 for the zone, 30.90 in all. Its weekend promotion halves that to 15.45.
+
+> [!SECURITY]
+> Of the ten functions in the file, only `show` and `main` touch the console. `main` says so in its header, `una contract shipping.show` shows the inferred `uses` of `show`, and every other function has no `uses`, so it cannot have an effect of any kind. A promotion passed to `promoted` is a pure function too: the type `fn(Int) -> Int` has no `uses`, so a promotion that tried to print would not check.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -579,12 +648,9 @@ example "a free order says so"
   expect result == "order 1043: ships free"
 ```
 
-`una run .` prints the report shown under "What you'll build". Order 1044 ships 3200 g abroad: 790 for the first 2 kg, 500 for two started kilograms above them, and 1800 for the zone, 30.90 in all. Its weekend promotion halves that to 15.45.
-
-> [!SECURITY]
-> Of the ten functions in the file, only `show` and `main` touch the console. `main` says so in its header, `una contract shipping.show` shows the inferred `uses` of `show`, and every other function has no `uses`, so it cannot have an effect of any kind. A promotion passed to `promoted` is a pure function too: the type `fn(Int) -> Int` has no `uses`, so a promotion that tried to print would not check.
-
 ## 3.7 Testing it
+
+### Each rule at its edges
 
 The examples cover each rule at its edges: the lowest rate, a started kilogram, the far zone, free shipping within the country and not abroad, the rounding of `half_off`, and the two guarantees of `promoted`:
 
@@ -626,11 +692,19 @@ example "a free order says so"
   expect result == "order 1043: ships free"
 ```
 
+### Misbehaving promotions, passed as lambdas
+
 Two of them pass lambdas in their `do` lines. "a promotion never raises the charge" passes a promotion that adds 100 cents, and "a promotion never makes the charge negative" one that takes off 1000. Neither is a real promotion. They are the misbehaving promotions that `promoted` exists to contain, so they test the reason for its body, not only the happy path.
+
+### Postconditions and examples together
 
 The postconditions and the examples do different jobs. `ensures result >= 0 and result <= charge` is proved for every promotion and every charge, but it does not say which value `promoted` returns. The examples fix exact values, 790 and 0, for two cases. Together they say both what is always true and what happens in the cases a reader cares about.
 
+### What the examples leave out
+
 The examples leave out `show` and `main`, the two functions that print. Everything they do is call a function the examples already cover and print the result, so a test of them would test the console. Zone 2 has no example of its own either; "a large order abroad pays shipping" passes through it, with 6890 cents: 6290 for 24 kg and 600 for the zone.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -652,8 +726,10 @@ example shipping "a free order says so" ... ok
 
 Each mistake below is a small change to `day-to-day/src/shipping.una`, followed by what `una check .` reports.
 
+### A second argument without its label (U2004)
+
 :::mistake
-**1. A second argument without its label (U2004).** Passing the weight by position:
+Pass the weight by position:
 
 ```diff include="day-to-day..mistakes/1:src/shipping.una" context="1"
 --- a/src/shipping.una
@@ -675,8 +751,10 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* `grams: 1_200`. The repair is an exact edit, which `una fix .` applies. See [U2004](/docs/errors/U2004/).
 :::
 
+### Branches of two types (U2001)
+
 :::mistake
-**2. Branches of two types (U2001).** Returning the number itself when the order does not ship free:
+Return the number itself when the order does not ship free:
 
 ```diff include="day-to-day..mistakes/2:src/shipping.una" context="0"
 --- a/src/shipping.una
@@ -695,8 +773,10 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* a text in both branches, such as `"order {order}: {money(charge)}"`. See [U2001](/docs/errors/U2001/).
 :::
 
+### A promise the caller needs, left out (U5001)
+
 :::mistake
-**3. A promise the caller needs, left out (U5001).** Removing the postcondition of `zone_surcharge`:
+Remove the postcondition of `zone_surcharge`:
 
 ```diff include="day-to-day..mistakes/3:src/shipping.una" context="1"
 --- a/src/shipping.una
@@ -726,8 +806,10 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* put the clause back. A caller can rely only on what a header promises. See [U5001](/docs/errors/U5001/).
 :::
 
+### A call that breaks a precondition (U5001)
+
 :::mistake
-**4. A call that breaks a precondition (U5001).** Quoting a zone the store does not ship to:
+Quote a zone the store does not ship to:
 
 ```diff include="day-to-day..mistakes/4:src/shipping.una" context="1"
 --- a/src/shipping.una
@@ -757,8 +839,10 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* a zone from 1 to 3. When the zone comes from data, check it with an `if` before the call, so that the verifier sees the check. See [U5001](/docs/errors/U5001/).
 :::
 
+### A public function that prints without `uses` (U3004)
+
 :::mistake
-**5. A public function that prints without `uses` (U3004).** Making `show` public:
+Make `show` public:
 
 ```diff include="day-to-day..mistakes/5:src/shipping.una" context="1"
 --- a/src/shipping.una
@@ -781,8 +865,10 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* add `uses @console: Console[print]` to its header, or keep it private. See [U3004](/docs/errors/U3004/).
 :::
 
+### A lambda bound with `let` (U2010)
+
 :::mistake
-**6. A lambda bound with `let` (U2010).** Naming the members' rule before passing it:
+Name the members' rule before passing it:
 
 ```diff include="day-to-day..mistakes/6:src/shipping.una" context="1"
 --- a/src/shipping.una
@@ -804,8 +890,10 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* `fn(cents: Int) -> cents * 80 / 100`, or pass the lambda straight to `promoted`. See [U2010](/docs/errors/U2010/).
 :::
 
+### The long form for a one-line function (U7001)
+
 :::mistake
-**7. The long form for a one-line function (U7001).** Writing `ships_free` with `=` on its own line:
+Write `ships_free` with `=` on its own line:
 
 ```diff include="day-to-day..mistakes/7:src/shipping.una" context="0"
 --- a/src/shipping.una
@@ -826,18 +914,14 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 *Fix:* `una fmt .` rewrites it. See [U7001](/docs/errors/U7001/).
 :::
 
-## 3.9 For agents
-
-:::agents
-`una --json check .` gives every diagnostic with its repairs. U2004 and U7001 carry exact edits, which `una fix .` applies; U5001 carries a counterexample and ranked repairs that need a decision. `una --json contract shipping.quote` gives a function's full header, declared or inferred, which is what a caller may rely on. The compact rule: *label every argument after the first; write the long form when a function has clauses or a body of several lines; a `pub` header declares its `uses`; a caller relies only on `requires` and `ensures`; a lambda gets its parameter types from where it is passed.*
-:::
-
-## 3.10 Exercises
+## 3.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
+### Exercise 1: delivery days
+
 ::::exercise
-**Exercise 1: delivery days.** Write `delivery_days(zone)`: 2 days within the home country, 4 in the neighboring countries, and 9 in the rest of the world. The start package ends with:
+Write `delivery_days(zone)`: 2 days within the home country, 4 in the neighboring countries, and 9 in the rest of the world. The start package ends with:
 
 ```una include="exercises/1/start/src/shipping.una#L114-L124" title="exercises/1/start/src/shipping.una"
 --- The days an order takes to arrive: 2 within the home country, 4 in the neighboring
@@ -895,8 +979,10 @@ The precondition is optional for the examples to pass, but it states the rule: a
 :::
 ::::
 
+### Exercise 2: a promotion for members
+
 ::::exercise
-**Exercise 2: a promotion for members.** Members pay 300 cents less for shipping. Write `member_discount(charge)`, and print a sixth line of the report, for order 1047, with the charge of order 1044 at the members' price. The start package ends with:
+Members pay 300 cents less for shipping. Write `member_discount(charge)`, and print a sixth line of the report, for order 1047, with the charge of order 1044 at the members' price. The start package ends with:
 
 ```una include="exercises/2/start/src/shipping.una#L114-L123" title="exercises/2/start/src/shipping.una"
 --- A promotion for members: 300 cents off the charge.
@@ -939,8 +1025,10 @@ Give `member_discount` its body, and print order 1047 in `main`:
 :::
 ::::
 
+### Exercise 3: two promotions in a row
+
 ::::exercise
-**Exercise 3: two promotions in a row.** Write `both(first, second)`, which returns a new promotion: `first`, then `second` on what `first` gives. The start package ends with:
+Write `both(first, second)`, which returns a new promotion: `first`, then `second` on what `first` gives. The start package ends with:
 
 ```una include="exercises/3/start/src/shipping.una#L114-L123" title="exercises/3/start/src/shipping.una"
 --- A promotion made of two: `first`, then `second` on what `first` gives.
@@ -978,7 +1066,15 @@ Return a lambda that applies both:
 :::
 ::::
 
-## 3.11 Recap
+## 3.10 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` gives every diagnostic with its repairs. U2004 and U7001 carry exact edits, which `una fix .` applies; U5001 carries a counterexample and ranked repairs that need a decision. `una --json contract shipping.quote` gives a function's full header, declared or inferred, which is what a caller may rely on. The compact rule: *label every argument after the first; write the long form when a function has clauses or a body of several lines; a `pub` header declares its `uses`; a caller relies only on `requires` and `ensures`; a lambda gets its parameter types from where it is passed.*
+:::
+
+### Recap
 
 :::recap
 - A header lists each parameter with its type, and the result type. Types in a header are never inferred.
@@ -990,7 +1086,7 @@ Return a lambda that applies both:
 - Pass a named function for a rule worth naming and testing, and a lambda for a one-line rule at the call.
 :::
 
-## 3.12 Reference
+### Reference
 
 :::reference
 - Construct pages: [functions: forms, clauses, labels, method calls, lambdas](/docs/language/functions/), [`requires`](/docs/language/functions/requires/), [`ensures` and `result`](/docs/language/functions/ensures/), [`if` and blocks](/docs/language/control-flow/), [`uses`](/docs/language/capabilities/uses/), [canonical form](/docs/language/canonical-form/)
