@@ -11,7 +11,7 @@ template: 2
 
 # 8 Capabilities
 
-A service that sends shipping notices talks to a customer directory, a mail server and a log. In most languages any function can open a connection, read a file or print, so you learn what a function touches only by reading its body and every body it calls. In Una a function can only compute unless its header says otherwise. Every effect outside the program goes through a capability that the header names and that the caller hands over. This chapter shows how to use the host's capabilities, how to declare your own with handlers, how to pass and narrow authority, and how to test the whole service with fake handlers.
+A service that sends shipping notices talks to a customer directory, a mail server and a log. In most languages any function can open a connection, read a file or print, so you learn what a function touches only by reading its body and every body it calls. In Una a function can only compute unless its `uses`, written or inferred, say otherwise. Every effect outside the program goes through a capability that the header names and that the caller hands over. This chapter shows how to use the host's capabilities, how to declare your own with handlers, how to pass and narrow authority, and how to test the whole service with fake handlers.
 
 ## What you'll build
 
@@ -50,7 +50,7 @@ Una has no ambient authority. Three rules replace it:
 The cost is a line in the header for each capability. In return, a reviewer reads what a function may do from its header, the checker holds every body to it, and a test replaces any service by installing another handler.
 
 > [!KEY]
-> A function's `uses`, written or inferred, are the complete list of what it may do outside the program. A `pub` function writes them all, and one with no `uses` is pure: it can only compute its result. The host's capabilities reach `main` only as `una.toml` grants them.
+> A function's `uses`, written or inferred, are the complete list of what it may do outside the program. A `pub` function writes them all, and one with no `uses` is pure: it can only compute its result. The host's capabilities reach `main` only as `una run` grants them: in `[run] grants` of `una.toml`, or with a `--grant` flag.
 
 ## 8.1 Declaring what a function may do: `uses`
 
@@ -202,10 +202,12 @@ export written: 3 lines
 
 and leaves the export in `src/stock-export.csv`. The time in it changes on every run, so the program does not print it.
 
-When `una.toml` lists `[run] grants`, `una check` compares them with the `uses` of `main`. Remove `"clock"` from the list, and the check fails with U3012 before anything runs. A grant is a line in the manifest, so a change to what a program may do shows in review.
+When `una.toml` lists `[run] grants`, `una check` compares them with the `uses` of `main`. Remove `"clock"` from the list, and the check fails with U3012. A grant in the manifest is a line that shows in review.
 
-> [!NOTE] What a program reads from outside is labeled.
-> `Files.read` returns `internal Text`, and `Env.get` returns `internal` values too. A label says how sensitive data is, and the console accepts only `public` data. So the program can write what it read to a file, but cannot print it without a declared policy. [Chapter 9, Information flow](/learn/information-flow/), explains labels and how to release data legitimately.
+`una run` takes `--grant` flags as a second source, such as `una run . --grant clock`. It grants the union of `[run] grants` and its flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest lacks `"clock"` therefore fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
+
+> [!NOTE] What a program reads from files and the environment is labeled.
+> `Files.read` returns `internal Text`, and `Env.get` returns `internal` values too. `Clock.now` returns a public `Int`. A label says how sensitive data is, and the console accepts only `public` data. So the program can write what it read to a file, but cannot print it without a declared policy. [Chapter 9, Information flow](/learn/information-flow/), explains labels and how to release data legitimately.
 
 ## 8.3 Your own capabilities and handlers
 
@@ -409,7 +411,7 @@ The first call is a dry run, so it only prints. The third finds enough stock and
 
 ### Boundaries
 
-A package often holds code it did not write, such as a vendored library that prints barcodes. `una.toml` can mark such a module as a boundary, with a ceiling: the most the rest of the package may grant it, as a list of capabilities and operations. A call into a boundary takes nothing by name. The caller grants each capability with `with`, so every call shows what the boundary receives, and the checker holds every grant under the ceiling:
+A package often holds code it did not write, such as a vendored library that prints barcodes. `una.toml` can mark such a module as a boundary, with a ceiling: the most the rest of the package may grant it, as a list of capabilities and operations. A call into a boundary takes nothing by name. The caller grants each capability with `with`, so every call shows what the boundary receives, and the checker holds every grant under the ceiling. Here the vendored module is `barcode`, and its ceiling allows `Console[print]`:
 
 ```toml include="steps/07-boundaries/una.toml" title="steps/07-boundaries/una.toml"
 [package]
@@ -424,6 +426,21 @@ grants = ["console"]
 [boundaries]
 "barcode" = ["Console[print]"]
 ```
+
+This is the vendored module. Its function needs `@console`, which the store's code must grant it:
+
+```una include="steps/07-boundaries/src/barcode.una" title="steps/07-boundaries/src/barcode.una" verified="check, run"
+module barcode
+
+--- Prints a shelf label with the SKU spelled out for a barcode font. This module is code from
+--- outside the store, so `una.toml` lists it as a boundary.
+pub print_label(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("*{sku.to_upper}*")
+```
+
+The store's own module calls it:
 
 ```una include="steps/07-boundaries/src/shelf.una" title="steps/07-boundaries/src/shelf.una" verified="check, run"
 module shelf
@@ -444,7 +461,7 @@ pub main() -> Unit
 *DESK-02*
 ```
 
-A call to `print_label` without `with @console = @console` is U3020, and a grant beyond the ceiling, such as a `Clock`, is U3021. A boundary module can never be trusted, so it can never release labeled data ([chapter 9](/learn/information-flow/)).
+A call to `print_label` without `with @console = @console` is U3020. If `print_label` also needed a `Clock`, granting it would be U3021, since the ceiling allows only `Console[print]`. A binding that the callee does not need is not counted against the ceiling. A boundary module can never be trusted, so it can never release labeled data ([chapter 9](/learn/information-flow/)).
 
 ## 8.6 Day-to-day: shipping notices
 
@@ -1191,7 +1208,7 @@ In the `else` branch, `dry_run` is false, so the verifier proves the condition a
 - A function's `uses` list everything it may do outside the program. A `pub` function without `uses` is pure.
 - List the operations a function needs in brackets. A callee holds only the operations its own header lists.
 - Bindings pass by name. `with @x = @y` rebinds, and `with @x = handler(args)` installs a handler, for one statement.
-- The host's capabilities reach `main` only as `[run] grants` grants them.
+- The host's capabilities reach `main` only as `una run` grants them: `[run] grants` in `una.toml`, plus any `--grant` flags of that run.
 - Declare each outside service as a `capability`, and give it one handler for production and fakes for tests.
 - Every example installs its fakes with `given`, and checks effects with `expect performed` and `expect not performed`.
 - In edition `0.3`, `where` puts a condition on an operation, and `[boundaries]` limits what outside code receives.

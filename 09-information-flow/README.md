@@ -44,11 +44,11 @@ Una checks the flow of data as part of the type system:
 :::steps
 1. **A label says how sensitive a value is.** It is part of the type: `secret[PII] Text` is a text that is secret and personal. A type without a label is `public`.
 2. **A result carries the labels of what it was computed from.** That includes values chosen by a branch on labeled data, since the choice reveals the condition.
-3. **Every place data leaves is a sink with a ceiling.** The console accepts `public` data. An operation of your own accepts what its `accepts` clause says. The checker proves, at every call, that the data is below the ceiling.
+3. **Every place data leaves is a sink with a ceiling.** The console accepts `public` data. An operation of your own accepts what its `accepts` clause says. The checker proves, at every call, that the data is at or below the ceiling.
 4. **Lowering a label takes a policy.** A policy names what it releases, to what label, through which function, for what purpose and with which owner. It lives in a trusted module, which `una.toml` lists, and the build report lists every call.
 :::
 
-What the checker guarantees has a precise scope. An observer who sees only what reaches `public` places, such as the console, sees the same output from two runs whose labeled inputs differ, unless a policy released something. Timing, termination and resource use are outside that model, and the build report says so.
+What the checker guarantees has a precise scope. An observer who sees only what reaches `public` places, such as the console, sees the same output from two runs whose labeled inputs differ, unless a policy released something. Timing, termination and resource use, among others, are outside that model, and the build report lists them under `out of model`.
 
 > [!KEY]
 > Labeled data leaves a program only through a place that accepts its label, or through a policy that a reviewer can read. The checker does not trust names, comments or intentions: it follows the data.
@@ -56,6 +56,13 @@ What the checker guarantees has a precise scope. An observer who sees only what 
 ## 9.1 Labels and how they follow data
 
 A label is a level, optionally with categories. The levels, from least to most sensitive, are `public`, `internal`, `confidential`, `secret` and `restricted`. You write a label in front of a type: `confidential Int`, `secret Text`. A type with no label is `public`.
+
+Each step is a package, set up as in [chapter 8](/learn/capabilities/#s8-1): `una.toml`, `verification.lock` and the module under `src/`. Then, in the package's directory:
+
+```sh
+una check .
+una run .
+```
 
 Start with a catalog. The price of a product is public. What the store pays its supplier is confidential, and so is anything computed from it:
 
@@ -141,7 +148,7 @@ These are conventions, not rules of the language. The checker knows only the ord
 
 A sink is a place where data leaves the program: an argument of a capability operation. Each sink has a ceiling, its `accepts` label, and every argument must be at or below it. The ceilings of the host's operations are fixed: `Console.print` accepts `public`, `Files.write` accepts `internal`. An operation you declare accepts `public`, unless its `accepts` clause says more.
 
-Data that comes from outside is labeled too. `Files.read` returns `internal Text`, and `Env.get` returns `internal` values: a file or an environment variable may hold anything, so the program may pass what it read to the store's own systems, but may not print it. This step passes a reorder list from a file to the supplier, whose service accepts `internal` data:
+Data read from files, the environment or the network is labeled `internal`. `Files.read` returns `internal Text`, and `Env.get` returns `internal` values: a file or an environment variable may hold anything, so the program may pass what it read to the store's own systems, but may not print it. This step passes a reorder list from a file to the supplier, whose service accepts `internal` data:
 
 :::steps
 ```una include="steps/03-sinks/src/reorder.una" title="steps/03-sinks/src/reorder.una" verified="check, run"
@@ -389,7 +396,9 @@ A policy has five lines, all required:
 | `purpose "…"` | Why the release is needed, in words a reviewer reads |
 | `owner purchasing` | Who answers for it |
 
-The `via` function is private to the module, so the policy is the only way to call it. Inside a `via` function the checker does not check labels, since lowering one is its job. Every other check still applies to it: types, refinements and proofs.
+The `via` function is private to the module, so the policy is the only way to call it. Inside a `via` function the checker does not check labels, since lowering one is its job. Types, refinements and proofs are still checked.
+
+That makes a `via` function trusted code, and it covers what the function does as well as what it returns. A `via` function may declare `uses`, and the policy then has the same `uses`. Its operations stay within those `uses`, but nothing checks the labels of what it sends through them: a `via` function that holds a console could print the raw value it receives, and `una check` would pass. So keep every function of a trusted module small, keep each `via` function pure, with no `uses`, unless the release needs one, such as a keyed hash, and review it line by line. The Reference part links the rules of the specification that say so.
 
 A policy may live only in a trusted module, and a module is trusted only when it says so twice: `trusted module` in its header, and its name under `[trusted] modules` in `una.toml`:
 
@@ -434,17 +443,17 @@ pub main() -> Unit
 ```
 
 > [!WARNING]
-> A policy is trusted code: the guarantee holds only if the `via` function releases what its purpose says, and nothing more. Release the least you can, such as a count, a first letter or one yes-or-no answer, and keep `via` functions short enough to review line by line.
+> A policy is trusted code: the guarantee holds only if the `via` function releases what its purpose says and nothing more, through its result or through its effects. Release the least you can, such as a count, a first letter or one yes-or-no answer, and keep `via` functions short enough to review line by line.
 
 ### What the U4 codes mean
 
-| Code | The checker found… | Usual repair |
+| Code | Typical cause | Usual repair |
 | --- | --- | --- |
 | U4001 | A value flowing into a declared type with a lower label: a return, a parameter, a field, an annotated `let` | Raise the declared label, or lower the value through a policy |
-| U4002 | A failure, or a call that may fail or act, under a branch on labeled data | Return a labeled value instead of failing |
-| U4003 | An argument of an operation above the operation's `accepts` | Send less, or send it to a place that accepts it |
+| U4002 | A failure, a call that may fail or act, or a policy call, under a branch on labeled data | Return a labeled value instead of failing, or release before the branch |
+| U4003 | An argument of an operation above the operation's `accepts`, or an operation under a branch on data above it | Send less, or send it to a place that accepts it, or act outside the branch |
 | U4004 | A policy in a module that is not trusted | Move it into a trusted module |
-| U4005 | A policy whose `via` function is public, used directly, or of the wrong types | Make `via` private and call the policy |
+| U4005 | A policy whose `via` function is public, used directly, of the wrong types, or has a `requires` clause | Make `via` private, match the types, drop `requires`, and call the policy |
 | U4007 | A category that `una.toml` does not declare | Declare it, or correct its name |
 
 ## 9.6 Day-to-day: shipping notices with labels
@@ -566,7 +575,7 @@ pub notify(shipment: Shipment) -> Text
 
 Look at what did not change in `notify`. It still fails with `OptedOut` and `UnknownCustomer`, because the conditions it branches on, the `Option` from the directory and the field `wants_notices`, are public. Reading `customer.email` gives a `secret[PII] Text`, while `customer.wants_notices` stays a public `Bool`: a field keeps its own label. A branch on the address itself, followed by a `fail`, would be U4002, as exercise 3 shows.
 
-The call of the policy obeys the same rule as a `fail`. It runs where the program counter is `public`: after the checks of the directory and of `wants_notices`, which are public. A call of `masked_email` inside a branch on labeled data would be U4002 too, since whether the release happened would reveal the condition. Put each release on a path that public data alone decides.
+The call of the policy obeys the same rule as a `fail`. It runs where the program counter is `public`: after the checks of the directory and of `wants_notices`, which are public. A call of `masked_email` inside a branch on labeled data would be U4002 too, since its public result would reveal the condition. Put each release on a path that public data alone decides.
 
 The manifest declares the category and the trusted module:
 
@@ -587,9 +596,9 @@ entry = "notices"
 grants = ["console"]
 ```
 
-`una run .` prints the log shown under "What you'll build". `una report .` lists the one release of the package under `information`: `privacy.masked_email`, at its call in `notify`, with its purpose and its owner. It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
+`una run .` prints the log shown under "What you'll build". `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 9.7](#s9-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
 
-So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change that prints a name or an address, in any function of the package, fails `una check` instead of reaching the log. A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the policies, and not every line.
+So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change that prints a name or an address, in any function outside the `via` functions of the policies, fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 9.5](#s9-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
 
 The whole file, to read in one piece or to copy:
 
@@ -1000,7 +1009,7 @@ Add the policy and its `via` function to `privacy.una`:
 ::::
 
 ::::exercise
-**Exercise 2: priority notices.** Some customers have a priority flag, which the store keeps `confidential`. Their notice's subject starts with `Priority:`. The start package adds the field `vip: confidential Bool` to `Customer`, uses `subject` in `notify`, and has a stub of it that ignores the flag:
+**Exercise 2: priority notices.** Some customers have a priority flag, which the store keeps `confidential`. Their notice's subject is `Priority: order A-1001 has shipped` instead of `Order A-1001 has shipped`. The start package adds the field `vip: confidential Bool` to `Customer`, uses `subject` in `notify`, and has a stub of it that ignores the flag:
 
 ```una include="exercises/2/start/src/notices.una#subject" title="exercises/2/start/src/notices.una"
 --- The subject of a notice. Exercise 2: mark it `Priority:` for a priority customer.
@@ -1135,6 +1144,6 @@ The policy releases one bit of personal data, on purpose, and the report lists t
 - Configuration: [`[labels] categories`](/docs/configure/labels/categories/), [`[trusted] modules`](/docs/configure/trusted/modules/)
 - Standard library: [the prelude and the host capabilities](/docs/std/)
 - Diagnostics: [U1001](/docs/errors/U1001/), [U4001](/docs/errors/U4001/), [U4002](/docs/errors/U4002/), [U4003](/docs/errors/U4003/), [U4004](/docs/errors/U4004/), [U4005](/docs/errors/U4005/), [U4007](/docs/errors/U4007/), [U7005](/docs/errors/U7005/)
-- Specification: [information flow](/docs/spec/07-information-flow/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [standard library](/docs/spec/14-standard-library/), [diagnostics and ABI](/docs/spec/13-diagnostics-and-abi/)
+- Specification: [information flow](/docs/spec/07-information-flow/), including [declassification policies](/docs/spec/07-information-flow/#s5) (rule 3: inside `via` functions labels are not checked, and they are part of the trusted computing base) and [checking](/docs/spec/07-information-flow/#s7) (rules 5 and 6), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [standard library](/docs/spec/14-standard-library/), [diagnostics and ABI](/docs/spec/13-diagnostics-and-abi/)
 - Security model: [what is proven, trusted and outside the model](/docs/security/)
 :::
