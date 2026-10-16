@@ -1199,3 +1199,38 @@ def fill(root):
                     handle.write(new)
                 changed.append(os.path.relpath(path, root))
     return changed, problems
+
+
+# --- Downloads.
+
+def is_v2_chapter(root, chapter):
+    """Whether the chapter's README.md is on template 2 (classify() checks the rest)."""
+    readme = os.path.join(root, chapter, "README.md")
+    return os.path.isfile(readme) and not os.path.islink(readme) and is_v2(base.front_matter(base.read(readme))[0])
+
+
+def chapter_files(root, chapter):
+    """What the download of a template 2 chapter holds, as {path in the chapter: source file}:
+    its README.md, and every package of steps/, day-to-day/, mistakes/ and exercises/, each
+    one a whole package a reader can run as it is (una.toml, verification.lock and src/). An
+    overlay is resolved: its base's files, with its own over them, so base.txt is not needed.
+    expected/ stays in the repository, as for a template 1 page. Symbolic links, which the
+    check refuses, are never followed."""
+    directory = os.path.join(root, chapter)
+    out = {"README.md": os.path.join(directory, "README.md")}
+    for ref, package in chapter_packages(directory, chapter, base.Failures()).items():
+        if package.overlay and package.base is None:
+            continue  # the check reports the overlay
+        sources = {}
+        if package.overlay:
+            for name in base.package_files(package.base.directory):
+                sources[name] = os.path.join(package.base.directory, *name.split("/"))
+            for name in package.own_files():
+                sources[name] = os.path.join(package.directory, *name.split("/"))
+        else:
+            for name in base.package_files(package.directory):
+                sources[name] = os.path.join(package.directory, *name.split("/"))
+        for name, source in sources.items():
+            if name != "README.md" and not os.path.islink(source):
+                out[f"{ref}/{name}"] = source
+    return dict(sorted(out.items()))

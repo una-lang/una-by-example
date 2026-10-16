@@ -694,9 +694,54 @@ def safe_members(archive, where, failures):
     return out
 
 
+def unpack(path, where, failures):
+    """The regular files of the archive at `path`, {name: bytes}, or None (missing, unsafe)."""
+    if not os.path.isfile(path):
+        failures.add(where, "missing")
+        return None
+    with tarfile.open(path, "r:gz") as archive:
+        members = safe_members(archive, where, failures)
+        if members is None:
+            return None
+        return {m.name: archive.extractfile(m).read() for m in members}
+
+
+def write_out(found, target):
+    for member, data in found.items():
+        path = os.path.join(target, member)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as handle:
+            handle.write(data)
+
+
 def archives(root, una, directory, failures, scratch):
-    """Step 5: each page's archive unpacks to its files and passes step 2."""
+    """Step 5: each page's archive and each template 2 chapter's archive unpacks to its files
+    and passes step 2, each package against its expected outcome in the repository; the
+    archive of everything holds exactly the root's files, every chapter's README.md and every
+    page's and chapter's files; SHA256SUMS matches."""
+    import template2
+
+    for chapter in chapters(root):
+        if not template2.is_v2_chapter(root, chapter):
+            continue
+        where = f"archive {chapter}.tar.gz"
+        found = unpack(os.path.join(directory, f"{chapter}.tar.gz"), where, failures)
+        if found is None:
+            continue
+        wanted = {f"{chapter}/{name}": read_bytes(source) for name, source in template2.chapter_files(root, chapter).items()}
+        if found != wanted:
+            failures.add(where, f"holds {sorted(found)}, not {sorted(wanted)}")
+            continue
+        unpacked = os.path.join(scratch, "archives", chapter)
+        write_out(found, os.path.join(scratch, "archives"))
+        packages = template2.chapter_packages(os.path.join(root, chapter), chapter, Failures())
+        for ref, package in packages.items():
+            expected = os.path.join(package.outcome_of().directory, "expected")
+            if os.path.isdir(os.path.join(unpacked, *ref.split("/"))) and os.path.isdir(expected):
+                outcome(una, os.path.join(unpacked, *ref.split("/")), expected, f"{where} {ref}", failures)
     for chapter, page in pages(root):
+        if template2.is_v2_chapter(root, chapter):
+            continue
         name = f"{chapter[:2]}-{page}"
         path = os.path.join(directory, f"{name}.tar.gz")
         where = f"archive {name}.tar.gz"
@@ -734,13 +779,22 @@ def archives(root, una, directory, failures, scratch):
                     if os.path.isfile(os.path.join(root, name)):
                         wanted[f"{whole}/{name}"] = read_bytes(os.path.join(root, name))
                 for chapter in chapters(root):
-                    wanted[f"{whole}/{chapter}/README.md"] = read_bytes(os.path.join(root, chapter, "README.md"))
+                    if os.path.isfile(os.path.join(root, chapter, "README.md")):
+                        wanted[f"{whole}/{chapter}/README.md"] = read_bytes(os.path.join(root, chapter, "README.md"))
                 for chapter, page in pages(root):
+                    if template2.is_v2_chapter(root, chapter):
+                        continue
                     source = os.path.join(root, chapter, page)
                     for f in package_files(source):
                         wanted[f"{whole}/{chapter}/{page}/{f}"] = read_bytes(os.path.join(source, f))
+                for chapter in chapters(root):
+                    if template2.is_v2_chapter(root, chapter):
+                        for name, source in template2.chapter_files(root, chapter).items():
+                            wanted[f"{whole}/{chapter}/{name}"] = read_bytes(source)
                 if found != wanted:
-                    failures.add(f"archive {whole}.tar.gz", "does not hold exactly the repository's pages")
+                    missing, extra = sorted(set(wanted) - set(found)), sorted(set(found) - set(wanted))
+                    changed = sorted(n for n in set(found) & set(wanted) if found[n] != wanted[n])
+                    failures.add(f"archive {whole}.tar.gz", f"does not hold exactly the repository's pages and chapters: missing {missing[:5]}, extra {extra[:5]}, changed {changed[:5]}")
     sums = os.path.join(directory, "SHA256SUMS")
     if not os.path.isfile(sums):
         failures.add("SHA256SUMS", "missing")

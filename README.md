@@ -46,7 +46,7 @@ The website shows a translated page only when it is `approved` and its `source` 
 
 ## Downloads
 
-Each release of this repository is named after the una release it is checked against, such as `for-una-0.3.14`. It carries one archive per page, one archive of everything, and `SHA256SUMS`, all built by `python3 -B scripts/archive.py OUT`. `-B` keeps Python from writing bytecode into the repository, which `check.py` refuses.
+Each release of this repository is named after the una release it is checked against, such as `for-una-0.3.14`. It carries one archive per page of a template 1 chapter (`01-01-package.tar.gz`), one archive per template 2 chapter (`06-failure.tar.gz`, its page and every package, each overlay resolved into a whole package that runs as it is), one archive of everything, and `SHA256SUMS`, all built by `python3 -B scripts/archive.py OUT`. `-B` keeps Python from writing bytecode into the repository, which `check.py` refuses.
 
 ## License
 

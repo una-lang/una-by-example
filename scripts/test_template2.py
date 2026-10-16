@@ -998,6 +998,94 @@ class Chapters(Base):
         self.assertIn("warning: 06-failure/README.md", out.getvalue())
 
 
+class Archives(Base):
+    """The download archives of a repository with a template 1 chapter and a template 2 one."""
+
+    def setUp(self):
+        super().setUp()
+        import archive
+
+        self.archive = archive
+        self.chapter = chapter(self.root)
+        check.fixture(self.root)
+        check.git(self.root, "init", "-q")
+        check.git(self.root, "add", "-A")
+        check.git(self.root, "commit", "-q", "-m", "c")
+        self.out = os.path.join(self.base, "out")
+        archive.build(self.root, self.out, 0)
+
+    def members(self, name):
+        import tarfile
+
+        with tarfile.open(os.path.join(self.out, name), "r:gz") as handle:
+            return {m.name: (m, handle.extractfile(m).read() if m.isfile() else None) for m in handle.getmembers()}
+
+    def checked(self):
+        out = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(out):
+            code = check.check(self.root, self.una, False, self.out)
+        return code, out.getvalue()
+
+    def test_the_archives_pass(self):
+        self.assertEqual(sorted(os.listdir(self.out)),
+                         ["01-01-first.tar.gz", "06-failure.tar.gz", "SHA256SUMS", "una-by-example-9.9.9.tar.gz"])
+        code, report = self.checked()
+        self.assertEqual(code, 0, report)
+
+    def test_a_chapter_archive_holds_whole_packages(self):
+        found = self.members("06-failure.tar.gz")
+        files = {n: d for n, (m, d) in found.items() if m.isfile()}
+        self.assertEqual(files["06-failure/README.md"], check.read_bytes(os.path.join(self.chapter, "README.md")))
+        # An overlay is resolved: its own file, and its base's others.
+        self.assertEqual(files["06-failure/mistakes/1/src/orders.una"],
+                         check.read_bytes(os.path.join(self.chapter, "mistakes", "1", "src", "orders.una")))
+        for ref in ("mistakes/1", "exercises/1/start", "exercises/1/answer", "steps/01-quantity", "day-to-day"):
+            self.assertIn(f"06-failure/{ref}/una.toml", files, ref)
+            self.assertIn(f"06-failure/{ref}/verification.lock", files, ref)
+        self.assertEqual(files["06-failure/exercises/1/answer/una.toml"], check.read_bytes(os.path.join(self.chapter, "day-to-day", "una.toml")))
+        self.assertFalse([n for n in files if n.endswith("/base.txt") or "/expected/" in n])
+        for member, _ in found.values():
+            self.assertEqual((member.uid, member.gid, member.uname, member.gname, member.mtime), (0, 0, "", "", 0))
+            self.assertIn(member.mode, (0o644, 0o755))
+        whole = self.members("una-by-example-9.9.9.tar.gz")
+        for name, data in files.items():
+            self.assertEqual(whole[f"una-by-example-9.9.9/{name}"][1], data, name)
+        self.assertIn("una-by-example-9.9.9/01-hello/README.md", whole)
+        self.assertIn("una-by-example-9.9.9/01-hello/01-first/src/main.una", whole)
+
+    def test_two_builds_are_the_same_bytes(self):
+        again = os.path.join(self.base, "again")
+        self.archive.build(self.root, again, 0)
+        for name in sorted(os.listdir(self.out)):
+            self.assertEqual(check.read_bytes(os.path.join(self.out, name)), check.read_bytes(os.path.join(again, name)), name)
+
+    def test_a_missing_chapter_archive(self):
+        os.remove(os.path.join(self.out, "06-failure.tar.gz"))
+        code, report = self.checked()
+        self.assertIn("archive 06-failure.tar.gz: missing", report)
+
+    def test_a_chapter_archive_with_another_file(self):
+        write(os.path.join(self.chapter, "steps", "01-quantity", "src", "quantity.una"), "--- changed\n" + STEP.format(name="quantity", extra="3"))
+        code, report = self.checked()
+        self.assertIn("archive 06-failure.tar.gz: holds", report)
+
+    def test_a_whole_archive_without_the_chapter(self):
+        import tarfile
+
+        path = os.path.join(self.out, "una-by-example-9.9.9.tar.gz")
+        kept = {n: d for n, (m, d) in self.members("una-by-example-9.9.9.tar.gz").items() if m.isfile() and "/06-failure/steps/" not in n}
+        files = []
+        for name, data in kept.items():
+            source = os.path.join(self.base, "kept", name)
+            write(source, "")
+            with open(source, "wb") as handle:
+                handle.write(data)
+            files.append((source, name.split("/", 1)[1]))
+        self.archive.tar_gz(path, "una-by-example-9.9.9", files, 0)
+        code, report = self.checked()
+        self.assertIn("does not hold exactly the repository's pages and chapters: missing ['una-by-example-9.9.9/06-failure/steps/01-quantity/src/quantity.una'", report)
+
+
 class TemplateOne(Base):
     """A chapter on template 1: no front matter, no code, pages, no template 2 directories."""
 

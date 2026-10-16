@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Builds the download archives of Una by Example into OUT.
 
-- One archive per page, `NN-MM-page.tar.gz` (`01-01-package.tar.gz`), holding only the package a
-  reader runs: `NN-MM-page/README.md`, `una.toml`, `verification.lock` and `src/`.
+- One archive per page of a template 1 chapter, `NN-MM-page.tar.gz` (`01-01-package.tar.gz`),
+  holding only the package a reader runs: `NN-MM-page/README.md`, `una.toml`,
+  `verification.lock` and `src/`.
+- One archive per template 2 chapter, `NN-chapter.tar.gz` (`06-failure.tar.gz`), holding
+  `NN-chapter/README.md` and every package of the chapter (steps/, day-to-day/, mistakes/N/,
+  exercises/N/start/, answer/ and the others), each a whole package that runs as it is: an
+  overlay is resolved into its base's files with its own over them (template2.chapter_files).
 - One archive of everything, `una-by-example-<version>.tar.gz`, with the root's README.md,
-  LICENSE and una.lock, and every chapter's page and packages, under
-  `una-by-example-<version>/`.
+  LICENSE and una.lock, every chapter's README.md, and every page's and chapter's packages as
+  in the archives above, under `una-by-example-<version>/`.
 - `SHA256SUMS`, one line per archive.
 
 The archives are reproducible: entries sorted, every mtime the commit's time (or
@@ -29,7 +34,8 @@ import tarfile  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from check import ROOT, lock_version, package_files, pages  # noqa: E402
+from check import ROOT, chapters, lock_version, package_files, pages  # noqa: E402
+import template2  # noqa: E402
 
 
 def entries_of(root, chapter, page):
@@ -76,11 +82,18 @@ def build(root, out, mtime):
     for name in ("README.md", "LICENSE", "una.lock"):
         if os.path.isfile(os.path.join(root, name)):
             everything.append((os.path.join(root, name), name))
-    chapters_seen = set()
-    for chapter, page in pages(root):
-        if chapter not in chapters_seen:
-            chapters_seen.add(chapter)
+    for chapter in chapters(root):
+        if os.path.isfile(os.path.join(root, chapter, "README.md")):
             everything.append((os.path.join(root, chapter, "README.md"), f"{chapter}/README.md"))
+        if not template2.is_v2_chapter(root, chapter):
+            continue
+        files = [(source, name) for name, source in template2.chapter_files(root, chapter).items()]
+        tar_gz(os.path.join(out, f"{chapter}.tar.gz"), chapter, files, mtime)
+        names.append(f"{chapter}.tar.gz")
+        everything.extend((source, f"{chapter}/{name}") for source, name in files if name != "README.md")
+    for chapter, page in pages(root):
+        if template2.is_v2_chapter(root, chapter):
+            continue  # a template 2 chapter has no pages; the check fails any it holds
         files = entries_of(root, chapter, page)
         name = f"{chapter[:2]}-{page}"
         tar_gz(os.path.join(out, f"{name}.tar.gz"), name, files, mtime)
