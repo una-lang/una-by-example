@@ -1,0 +1,12 @@
+module opening
+
+--- Prints today's opening hours.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let opens = 9
+  let closes = 18
+  let hours = closes - opens
+  @console.print("Open today from {opens}:00 to {closes}:00")
+  @console.print("That is {hours} hours of trading")
+  @console.print("Orders placed before {closes}:00 ship today")

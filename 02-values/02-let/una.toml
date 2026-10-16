@@ -1,8 +1,0 @@
-[package]
-name = "counter"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "counter"
-grants = ["console"]

@@ -1,0 +1,123 @@
+module shipping
+
+-- Shipping quotes: what each order of the day costs to ship, by weight and zone, and what
+-- the store's promotions take off.
+
+--- The rate of a parcel of `grams` grams within the home country, in cents: 450 up to
+--- 500 g, 790 up to 2 kg, and 250 more for each kilogram or part of one above 2 kg.
+pub base_rate(grams: Int) -> Int
+  requires grams > 0
+  ensures result >= 450
+=
+  if grams <= 500
+    450
+  else if grams <= 2_000
+    790
+  else
+    790 + (grams - 2_000 + 999) / 1_000 * 250
+
+--- What a zone adds to the rate, in cents. Zone 1 is the home country, zone 2 its
+--- neighbors, and zone 3 the rest of the world.
+pub zone_surcharge(zone: Int) -> Int
+  requires zone >= 1 and zone <= 3
+  ensures result >= 0
+=
+  if zone == 1
+    0
+  else if zone == 2
+    600
+  else
+    1_800
+
+--- Whether an order ships for free: 10000 cents of goods or more, within the home country.
+pub ships_free(goods: Int, zone: Int) -> Bool = zone == 1 and goods >= 10_000
+
+--- What shipping costs for an order, before any promotion.
+pub quote(goods: Int, grams: Int, zone: Int) -> Int
+  requires grams > 0
+  requires zone >= 1 and zone <= 3
+  ensures result >= 0
+=
+  if ships_free(goods, zone) then 0 else base_rate(grams) + zone_surcharge(zone)
+
+--- A promotion: half the charge, rounded up to a whole cent.
+pub half_off(charge: Int) -> Int = (charge + 1) / 2
+
+--- The charge after a promotion. Whatever the promotion computes, the customer never pays
+--- more than the charge, and never less than nothing.
+pub promoted(charge: Int, promotion: fn(Int) -> Int) -> Int
+  requires charge >= 0
+  ensures result >= 0 and result <= charge
+=
+  max(0, b: min(promotion(charge), b: charge))
+
+--- Cents as an amount with two decimals, for an amount that is not negative.
+pub money(cents: Int) -> Text = "{cents / 100}.{cents mod 100 / 10}{cents mod 10}"
+
+--- The line of the shipping report for one order.
+pub report_line(order: Int, charge: Int) -> Text = if charge == 0 then "order {order}: ships free" else "order {order}: {money(charge)}"
+
+-- Prints one line of the report. It is private, so its `uses` is inferred from its body.
+show(order: Int, charge: Int) -> Unit = @console.print(report_line(order, charge))
+
+--- Prints the shipping report of five orders of the day.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = quote(3_980, grams: 1_200, zone: 1)
+  show(1042, charge: lamps)
+  let desk = quote(15_900, grams: 24_000, zone: 1)
+  show(1043, charge: desk)
+  let charge = quote(4_500, grams: 3_200, zone: 3)
+  show(1044, charge)
+  let weekend = promoted(charge, promotion: half_off)
+  show(1045, charge: weekend)
+  let members = promoted(lamps, promotion: fn(cents) -> cents * 80 / 100)
+  show(1046, charge: members)
+
+example "a parcel up to 500 g ships at the lowest rate"
+  do base_rate(500)
+  expect result == 450
+
+example "each started kilogram above 2 kg adds 250 cents"
+  do base_rate(3_200)
+  expect result == 1_290
+
+example "the rest of the world adds 1800 cents"
+  do zone_surcharge(3)
+  expect result == 1_800
+
+example "a large order within the country ships free"
+  do quote(15_900, grams: 24_000, zone: 1)
+  expect result == 0
+
+example "a large order abroad pays shipping"
+  do quote(15_900, grams: 24_000, zone: 2)
+  expect result == 6_890
+
+example "half off rounds up to a whole cent"
+  do half_off(3_091)
+  expect result == 1_546
+
+example "a promotion never raises the charge"
+  do promoted(790, promotion: fn(cents) -> cents + 100)
+  expect result == 790
+
+example "a promotion never makes the charge negative"
+  do promoted(790, promotion: fn(cents) -> cents - 1_000)
+  expect result == 0
+
+example "a free order says so"
+  do report_line(1043, charge: 0)
+  expect result == "order 1043: ships free"
+
+--- A promotion for members: 300 cents off the charge.
+pub member_discount(charge: Int) -> Int = charge
+
+example "members pay 300 cents less"
+  do promoted(3_090, promotion: member_discount)
+  expect result == 2_790
+
+example "a member never pays less than nothing"
+  do promoted(200, promotion: member_discount)
+  expect result == 0

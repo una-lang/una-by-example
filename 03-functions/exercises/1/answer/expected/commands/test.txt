@@ -1,0 +1,14 @@
+$ una test .
+example shipping "a parcel up to 500 g ships at the lowest rate" ... ok
+example shipping "each started kilogram above 2 kg adds 250 cents" ... ok
+example shipping "the rest of the world adds 1800 cents" ... ok
+example shipping "a large order within the country ships free" ... ok
+example shipping "a large order abroad pays shipping" ... ok
+example shipping "half off rounds up to a whole cent" ... ok
+example shipping "a promotion never raises the charge" ... ok
+example shipping "a promotion never makes the charge negative" ... ok
+example shipping "a free order says so" ... ok
+example shipping "an order within the country arrives in two days" ... ok
+example shipping "an order to the rest of the world takes nine days" ... ok
+
+11 examples: 11 passed, 0 failed

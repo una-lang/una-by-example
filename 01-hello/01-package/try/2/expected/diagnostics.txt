@@ -1,2 +1,0 @@
-error U7001 at src/hello.una:5:1: lines 5 to 7 are not in canonical form
-error U3004 at src/hello.una:7:3: `@console` is used here, but this code declares no `uses`, so it is pure

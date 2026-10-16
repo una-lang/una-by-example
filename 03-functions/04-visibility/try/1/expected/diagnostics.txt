@@ -1,1 +1,0 @@
-error U3004 at src/visibility.una:5:33: `@console` is used here, but this code declares no `uses`, so it is pure

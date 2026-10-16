@@ -57,7 +57,7 @@ The price is a few more declarations at the top of a module. In return, a value 
 
 A record kind declares a type of named fields, one per line, indented under its name. Each field has a type, and the types can be other kinds. You build a value by naming the kind and giving every field, with its label, and you read a field with a dot.
 
-Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/package/): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
+Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
 ```toml include="steps/01-records/una.toml" title="steps/01-records/una.toml"
 [package]

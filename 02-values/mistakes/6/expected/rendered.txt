@@ -1,0 +1,9 @@
+[U2001] Error: the condition of `if` must be `Bool`, found `Int`
+    ╭─[ src/labels.una:36:6 ]
+    │
+ 36 │   if percent then "{regular}, now {money(now)} ({percent}% off)" else regular
+    │      ───┬───
+    │         ╰───── the condition of `if` must be `Bool`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

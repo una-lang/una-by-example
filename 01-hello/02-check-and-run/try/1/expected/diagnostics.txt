@@ -1,1 +1,0 @@
-error U2001 at src/greet.una:9:23: argument `n` of `double` must be `Int`, found `Text`

@@ -1,0 +1,15 @@
+[U5001] Error: division obligation `grams != 0` is refuted
+    ╭─[ src/labels.una:22:47 ]
+    │
+ 22 │ pub per_kilo(cents: Int, grams: Int) -> Int = cents * 1000 / grams
+    │                                               ──────────┬─────────
+    │                                                         ╰─────────── division obligation `grams != 0` is refuted
+    │
+    │ Help: repair 1: guard the division with `if grams != 0`
+    │
+    │ Note 1: obligation ob-912172bdc46e (division) is refuted: grams != 0
+    │
+    │ Note 2: counterexample: cents = 0, grams = 0
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

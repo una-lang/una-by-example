@@ -57,7 +57,7 @@ Una makes each of these visible:
 
 A list holds values of one type, in order. You write it between brackets, and `List[Int]` is its type. The prelude, the functions every module has without an import, gives lists most of what a program needs. You call them with method syntax: `more.sum()` is the call `sum(more)`.
 
-Each step of this chapter is a package, as in [chapter 1](/learn/hello/package/): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
+Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
 ```toml include="steps/01-lists/una.toml" title="steps/01-lists/una.toml"
 [package]
@@ -231,7 +231,7 @@ pub main() -> Unit
   @console.print("{typed} and {catalog.at(index: 5)}")
 ```
 
-1. **`catalog.first_where(keep: fn(product) -> product.sku == sku)`.** The first element for which the test holds, as an `Option[Product]`. The test is a lambda, a function written in place ([chapter 3](/learn/functions/lambdas/); [section 5.4](#s5-4) uses more of them).
+1. **`catalog.first_where(keep: fn(product) -> product.sku == sku)`.** The first element for which the test holds, as an `Option[Product]`. The test is a lambda, a function written in place ([chapter 3](/learn/functions/#s3-5); [section 5.4](#s5-4) uses more of them).
 2. **`when found`.** A `when` over an `Option` has one arm per case, `is Some(product)` and `is None`. The name in `Some(product)` binds the value inside. A `when` that leaves out a case does not check.
 3. **`Some(product.cents)`.** `price_of` itself returns an `Option`, so its caller decides what a missing price means. `label` decides: it prints "not sold here".
 4. **`missing.or_else(default: 0)`.** The short form when a default is right: the value inside `Some`, or the default for `None`.

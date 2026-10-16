@@ -1,0 +1,1 @@
+error U2010 at src/shipping.una:75:25: cannot infer the type of lambda parameter `cents`; annotate it, as in `cents: Int`

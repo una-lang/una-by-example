@@ -1,0 +1,4 @@
+12000 cents: free at home true, free abroad false
+30000 cents: signature as a gift true, otherwise false
+a small order pays shipping: true
+same SKU: true, different SKUs: true
