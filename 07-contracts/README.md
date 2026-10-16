@@ -278,11 +278,11 @@ Now write the body most people write first, `price - off`, and check:
 
 The diagnostic points at the returned expression, `price - off`, and at the clause it breaks, `ensures result >= 0`. The counterexample is `off = 1, price = 0, result = -1`: a coupon of 1 cent on a free item. Run the body by hand on those values and the result is −1, so the rule is broken.
 
+The solver often picks the smallest numbers that break the rule, such as 0 and 1, so a case that looks artificial usually stands for a real one: here, any coupon worth more than its order.
+
 ### When the body calls other functions
 
 A counterexample gives values of the parameters, and of `result`, for which the contract breaks. When the body has no calls, as here, it is a case you can run by hand. When the body calls other functions, the verifier knows each call only by the callee's header, so a call's result in the counterexample can be any value that header allows, even one the callee never returns. Then the values are not a run, but they still point at the problem: the body relies on something the callee does not promise ([a caller that needs a promise the callee does not make](#a-caller-that-needs-a-promise-the-callee-does-not-make-u5001)), or it does not handle an input it should ([exercise 3](#exercise-3-a-second-refund)).
-
-The solver often picks the smallest numbers that break the rule, such as 0 and 1, so a case that looks artificial usually stands for a real one: here, any coupon worth more than its order.
 
 ### From a counterexample to an example
 

@@ -969,7 +969,7 @@ example "amounts keep two digits of cents"
 
 ### Ties and empty days
 
-Two of them pin down what the output alone would hide. "on a tie, the first SKU in order is the best seller" builds the map with `RUG-07` first and expects `LAMP-01`, so it proves that the result follows the key order and not the order of insertion. "a day without sales has no best seller" checks the `None` arm of `headline`, a path the sample export never reaches.
+Two of the examples pin down what the report's output alone would hide. "on a tie, the first SKU in order is the best seller" builds the map with `RUG-07` first and expects `LAMP-01`, so it proves that the result follows the key order and not the order of insertion. "a day without sales has no best seller" checks the `None` arm of `headline`, a path the sample export never reaches.
 
 ### Pure functions, whole values
 

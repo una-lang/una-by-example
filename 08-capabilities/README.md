@@ -228,7 +228,7 @@ When `una.toml` lists `[run] grants`, `una check` compares them with the `uses` 
 
 `una run` takes `--grant` flags as a second source, such as `una run . --grant clock`. It grants the union of `[run] grants` and its flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest lacks `"clock"` therefore fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
 
-### What a program reads is labeled
+### Labels on what a program reads
 
 > [!NOTE] What a program reads from files and the environment is labeled.
 > `Files.read` returns `internal Text`, and `Env.get` returns `internal` values too. `Clock.now` returns a public `Int`. A label says how sensitive data is, and the console accepts only `public` data. So the program can write what it read to a file, but cannot print it without a declared policy. [Chapter 9, Information flow](/learn/information-flow/), explains labels and how to release data legitimately.
@@ -393,7 +393,7 @@ audit: erased customer C-20
 
 Each `with @customers = directory(customers)` installs a new instance. A handler holds no state between calls, and `directory` takes its map as a parameter, so `forget` has nothing to change here. A handler for a real directory would call the service.
 
-### Narrowing is a promise you can check
+### Checking that authority narrows
 
 > [!IMPORTANT]
 > Narrowing is a promise you can check. Because `greeting` holds `Customers[find]`, no change to its body can make it erase a customer without a change to its header, which a reviewer sees.
@@ -451,7 +451,7 @@ would order 20 x LAMP-01
 ordered 20 x LAMP-01
 ```
 
-The first call is a dry run, so it only prints. The third finds enough stock and does nothing. If `reorder` placed the order without the `dry_run` branch, `una check` would report U5001, with a counterexample in which `dry_run` is true ([an operation where its condition does not hold](#an-operation-where-its-condition-does-not-hold-edition-03-u5001) shows it).
+The first call is a dry run, so it only prints. The third finds enough stock and does nothing. If `reorder` placed the order without the `dry_run` branch, `una check` would report U5001, with a counterexample in which `dry_run` is true ([running an operation where its condition may not hold](#running-an-operation-where-its-condition-may-not-hold-edition-03-u5001) shows it).
 
 ### Boundaries
 
@@ -1070,7 +1070,7 @@ Remove `given @log = quiet()` from the last example:
 *Fix:* install a handler for every binding the `do` line needs, such as `quiet()` for a console.
 :::
 
-### An operation where its condition does not hold, edition 0.3 (U5001)
+### Running an operation where its condition may not hold, edition 0.3 (U5001)
 
 :::mistake
 In [step 06](#a-restock-with-a-dry-run), place the order without the dry-run branch:
