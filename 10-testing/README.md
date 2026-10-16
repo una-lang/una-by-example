@@ -7,6 +7,7 @@ time: 40
 builds: A checkout that reserves stock, charges a card and mails a receipt, tested with fake services
 prerequisites: ["6", "7", "8"]
 template: 2
+nav: ["do and expect", "expect fails", "Fakes and expect performed", "What proofs and examples show", "Day-to-day: checkout", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 10 Testing

@@ -7,6 +7,7 @@ time: 35
 builds: A shipment tracker that prices parcels and follows each one from packing to delivery or return
 prerequisites: ["2", "3"]
 template: 2
+nav: ["Records", "Sum kinds", "when", "Generic kinds and constraints", "Day-to-day: shipment tracking", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 4 Kinds

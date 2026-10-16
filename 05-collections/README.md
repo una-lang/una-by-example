@@ -7,6 +7,7 @@ time: 35
 builds: A daily sales report that reads order lines from JSON, groups them by category and sums them up
 prerequisites: ["2", "3", "4"]
 template: 2
+nav: ["Lists", "for and let edit", "Option", "map, filter and fold", "Maps", "JSON", "Day-to-day: a daily sales report", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 5 Collections

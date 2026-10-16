@@ -70,6 +70,11 @@ verified="check, run, test", mistake="wrong" or mistake="right".
 
 TEMPLATE = "2"
 FRONT_MATTER = ("learn", "title", "editions", "codes", "time", "builds", "prerequisites", "template")
+# Optional fields. `nav`: the sidebar's short label of each numbered section `## N.1` to
+# `## N.k`, in order, one per section: plain text of 1 to NAV_MAX characters, none of NAV_NOT.
+OPTIONAL_FRONT_MATTER = ("nav",)
+NAV_MAX = 32
+NAV_NOT = '`~<>"'
 KEPT_BY_TRANSLATIONS = ("template", "time", "prerequisites")
 FIXED = ["## What you'll build", "## Why it works this way"]
 DAY_TO_DAY = "Day-to-day: "
@@ -1084,6 +1089,44 @@ def structure(body, concepts, where, failures, chapter_dir=None):
     return problems
 
 
+def numbered(body, number):
+    """The `## N.M` headings of the page, as their numbers."""
+    return [line.split(" ")[1] for _, line in prose_lines(body) if re.match(rf"^## {re.escape(number)}\.\d+ ", line)]
+
+
+def nav(fields, body, number, where, failures):
+    """The optional `nav` of the front matter: a list of labels, one per numbered section, in
+    order, each plain text of 1 to NAV_MAX characters, with no character of NAV_NOT, no space at
+    its ends, no section number of its own, and no control, format or other invisible
+    character."""
+    import unicodedata
+
+    if "nav" not in fields:
+        return
+    labels = fields["nav"]
+    sections = numbered(body, number)
+    if not isinstance(labels, list):
+        failures.add(where, '`nav` is a list of quoted labels, one per numbered section, such as ["fails and fail", "Recap"]')
+        return
+    if len(labels) != len(sections):
+        failures.add(where, f"`nav` has {len(labels)} labels, but the page has {len(sections)} numbered sections"
+                            f" ({sections[0] if sections else 'none'} to {sections[-1] if sections else 'none'}); give one per section, in order")
+    for i, label in enumerate(labels):
+        name = f"`nav` label {i + 1}" + (f" (for {sections[i]})" if i < len(sections) else "")
+        if not label.strip() or label != label.strip():
+            failures.add(where, f"{name} is empty or has spaces at its ends")
+            continue
+        if len(label) > NAV_MAX:
+            failures.add(where, f"{name}, {label!r}, has {len(label)} characters, more than {NAV_MAX}")
+        bad = sorted({ch for ch in label if ch in NAV_NOT})
+        if bad:
+            failures.add(where, f"{name}, {label!r}, holds {' '.join(bad)}; a label is plain text, without a backtick, a tilde, <, > or a double quote")
+        if any((unicodedata.category(ch) in ("Cc", "Cf", "Zl", "Zp")) or (unicodedata.category(ch) == "Zs" and ch != " ") for ch in label):
+            failures.add(where, f"{name} holds a control, format or invisible character; it holds plain spaces only")
+        if re.match(r"^\d+\.\d+\s", label):
+            failures.add(where, f"{name} starts with a section number; the site adds it")
+
+
 LINK = re.compile(r"\]\(\s*<?([^)\s>]+)")
 
 
@@ -1166,8 +1209,8 @@ def check_page(root, chapter, fields, body, packages, una_path, codes, failures,
     where = f"{chapter}/README.md"
     chapter_dir = os.path.join(root, chapter)
     for key in fields:
-        if key not in FRONT_MATTER:
-            failures.add(where, f"the front matter has no field `{key}`; the fields are {list(FRONT_MATTER)}")
+        if key not in FRONT_MATTER + OPTIONAL_FRONT_MATTER:
+            failures.add(where, f"the front matter has no field `{key}`; the fields are {list(FRONT_MATTER)}, and optionally {list(OPTIONAL_FRONT_MATTER)}")
     for key in FRONT_MATTER:
         if key not in fields:
             failures.add(where, f"the front matter has no `{key}`")
@@ -1182,6 +1225,7 @@ def check_page(root, chapter, fields, body, packages, una_path, codes, failures,
     if not isinstance(fields.get("editions", []), list) or not fields.get("editions"):
         failures.add(where, "`editions` lists the editions, such as [\"0.2\"]")
     concepts = headings(fields, body, where, failures)
+    nav(fields, body, number, where, failures)
     markup(body, where, failures)
     blocks = check_blocks(body, packages, chapter_dir, where, failures, una_path, scratch)
     links(body, where, failures)
@@ -1294,7 +1338,8 @@ def check_chapters(root, una_path, failures, scratch, warnings):
 
 def check_translation(root, path, fields, body, english_fields, english_body, where, failures):
     """The further rules of a translation of a template 2 page: the title line with the
-    translated `title`; `template`, `time`, `prerequisites` and the `## N.M` numbers kept; the
+    translated `title`; `template`, `time`, `prerequisites` and the `## N.M` numbers kept; `nav`
+    translated, by the English page's rules, when the English page has one, and absent otherwise; the
     strict markup and link rules of the English page; and the same blocks, in the same order,
     byte for byte but for `caption`, each resolving to its include, and the same containers."""
     if not is_v2(english_fields):
@@ -1322,6 +1367,9 @@ def check_translation(root, path, fields, body, english_fields, english_body, wh
 
     if numbers(body) != numbers(english_body):
         failures.add(where, "its `## N.M` headings are not numbered as the English page's")
+    if ("nav" in fields) != ("nav" in english_fields):
+        failures.add(where, "`nav` is translated when the English page has one, and absent when it has none")
+    nav(fields, body, number, where, failures)
     markup(body, where, failures)
     links(body, where, failures)
     chapter_dir = os.path.join(root, *path)

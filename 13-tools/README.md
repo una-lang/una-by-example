@@ -7,6 +7,7 @@ time: 40
 builds: Sale price tags for a store, taken through every check before a release
 prerequisites: ["6", "7", "8", "10"]
 template: 2
+nav: ["Check, format and fix", "Reading a diagnostic", "Obligations, contracts, traces", "The build report", "Running, testing and building", "Day-to-day: sale price tags", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 13 Tools

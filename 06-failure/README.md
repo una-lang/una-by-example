@@ -7,6 +7,7 @@ time: 40
 builds: An order-intake step that accepts or rejects each line of an order batch
 prerequisites: ["3", "4", "5"]
 template: 2
+nav: ["fails and fail", "The five handling clauses", "attempt and Result", "checked", "Day-to-day: order intake", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 6 Failure

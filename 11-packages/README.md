@@ -7,6 +7,7 @@ time: 40
 builds: A store's invoice, split into modules for money, the catalog, prices and the invoice itself
 prerequisites: ["6", "7", "8", "10"]
 template: 2
+nav: ["Modules: one file each", "pub and import", "The manifest and the lock", "Locks in edition 0.3", "Day-to-day: the store's invoice", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 11 Packages and modules

@@ -7,6 +7,7 @@ time: 30
 builds: A shelf-label printer on the edition 0.3 preview, with a dry run the checker enforces
 prerequisites: ["6", "8", "11", "12", "13"]
 template: 2
+nav: ["An edition per package", "What edition 0.2 adds", "Edition 0.3, a preview", "Moving a package forward", "Day-to-day: shelf-label printer", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 14 Editions

@@ -128,8 +128,15 @@ def pages(root):
     return out
 
 
+# A list whose first item is quoted holds quoted items only, each without a quote, and they may
+# hold commas: `["checked, and the escape budget", "Maps"]`. The site reads lists the same way.
+QUOTED_LIST = re.compile(r'^"[^"]*"(?:\s*,\s*"[^"]*")*$')
+
+
 def front_matter(text):
-    """The front matter of `text` as a dict of strings and lists, and the rest of the text."""
+    """The front matter of `text` as a dict of strings and lists, and the rest of the text.
+    A list is `[a, b]`, or, when its first item is quoted, quoted items only (QUOTED_LIST);
+    a quoted list that is not that does not parse."""
     if not text.startswith("---\n"):
         return None, text
     end = text.find("\n---\n", 4)
@@ -142,7 +149,13 @@ def front_matter(text):
             return None, text
         value = value.strip()
         if value.startswith("[") and value.endswith("]"):
-            items = [v.strip().strip('"') for v in value[1:-1].split(",") if v.strip()]
+            inner = value[1:-1].strip()
+            if inner.startswith('"'):
+                if not QUOTED_LIST.match(inner):
+                    return None, text
+                items = re.findall(r'"([^"]*)"', inner)
+            else:
+                items = [v.strip().strip('"') for v in inner.split(",") if v.strip()]
             fields[key.strip()] = items
         else:
             fields[key.strip()] = value.strip('"')
