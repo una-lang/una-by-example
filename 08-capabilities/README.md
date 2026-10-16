@@ -56,7 +56,7 @@ The cost is a line in the header for each capability. In return, a reviewer read
 
 Start with the smallest effect: printing. A packing slip has a title and one line per item. Building a line is pure computation. Printing it is an effect, and the header says so.
 
-The step is a package, as in [chapter 1](/learn/hello/package/): `una.toml`, `verification.lock` (copy it from chapter 1, or download the step from this page) and the module under `src/`. The manifest grants the console, which is what lets `main` print:
+The step is a package, as in [chapter 1](/learn/hello/package/): `una.toml`, `verification.lock` (copy it from chapter 1, or take the step, whole, from the chapter's download, `08-capabilities.tar.gz`) and the module under `src/`. The manifest grants the console, which is what lets `main` print:
 
 ```toml include="steps/01-uses/una.toml" title="steps/01-uses/una.toml"
 [package]

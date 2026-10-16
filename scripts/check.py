@@ -48,8 +48,8 @@ or followed; each is a failure, and so is a tracked one anywhere. una.toml is re
 or on a Python before 3.11 with the stricter `plain_toml`.
 
 Then every commit's author and committer must be GitHub noreply addresses, and with
-`--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
-pass step 2 as unpacked.
+`--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's or chapter's
+files, each package byte for byte the copy the check runs, and pass step 2 as unpacked.
 
 Usage:
   check.py --una PATH [--una-version-from-binary] [--archives DIR] [--require-neutrality]
@@ -150,9 +150,12 @@ def front_matter(text):
 
 def package_files(directory):
     """The files of the package in `directory`, relative to it, in order: the README, the
-    manifest, the lock and every file under `src/`."""
+    manifest, the lock and every file under `src/`. A symbolic link is never followed: a
+    linked `src/` or directory under it is not entered (`symlinks` reports it)."""
     out = [name for name in PACKAGE_FILES if os.path.isfile(os.path.join(directory, name))]
     src = os.path.join(directory, "src")
+    if os.path.islink(src):
+        return out
     for base, dirs, files in os.walk(src):
         dirs.sort()
         for name in sorted(files):
@@ -706,6 +709,27 @@ def unpack(path, where, failures):
         return {m.name: archive.extractfile(m).read() for m in members}
 
 
+def tree_bytes(directory, leave_out=()):
+    """Every file under `directory`, {relative path: bytes}, but the names in `leave_out`."""
+    out = {}
+    for base, dirs, files in os.walk(directory):
+        dirs.sort()
+        for name in sorted(files):
+            relative = os.path.relpath(os.path.join(base, name), directory).replace(os.sep, "/")
+            if relative not in leave_out:
+                out[relative] = read_bytes(os.path.join(base, name))
+    return out
+
+
+def same_as_checked(unpacked, copy, where, failures, leave_out=()):
+    """The identity of the two paths: a package as an archive gives it is, byte for byte, the
+    copy of it that the check runs."""
+    archived, checked = tree_bytes(unpacked, leave_out), tree_bytes(copy)
+    if archived != checked:
+        differ = sorted(n for n in set(archived) | set(checked) if archived.get(n) != checked.get(n))
+        failures.add(where, f"is not the package the check runs: {differ[:5]} differ")
+
+
 def write_out(found, target):
     for member, data in found.items():
         path = os.path.join(target, member)
@@ -716,7 +740,8 @@ def write_out(found, target):
 
 def archives(root, una, directory, failures, scratch):
     """Step 5: each page's archive and each template 2 chapter's archive unpacks to its files
-    and passes step 2, each package against its expected outcome in the repository; the
+    and passes step 2, each package against its expected outcome in the repository, and each
+    package unpacked is byte for byte the copy of it that the check runs (`same_as_checked`); the
     archive of everything holds exactly the root's files, every chapter's README.md and every
     page's and chapter's files; SHA256SUMS matches."""
     import template2
@@ -736,6 +761,11 @@ def archives(root, una, directory, failures, scratch):
         write_out(found, os.path.join(scratch, "archives"))
         packages = template2.chapter_packages(os.path.join(root, chapter), chapter, Failures())
         for ref, package in packages.items():
+            if package.overlay and package.base is None:
+                continue
+            copy = os.path.join(scratch, "identity", chapter, *ref.split("/"))
+            template2.materialize(package, copy)
+            same_as_checked(os.path.join(unpacked, *ref.split("/")), copy, f"{where} {ref}", failures)
             expected = os.path.join(package.outcome_of().directory, "expected")
             if os.path.isdir(os.path.join(unpacked, *ref.split("/"))) and os.path.isdir(expected):
                 outcome(una, os.path.join(unpacked, *ref.split("/")), expected, f"{where} {ref}", failures)
@@ -759,11 +789,10 @@ def archives(root, una, directory, failures, scratch):
             failures.add(where, f"holds {sorted(found)}, not {sorted(wanted)}")
             continue
         unpacked = os.path.join(scratch, "archives", name)
-        for member, data in found.items():
-            target = os.path.join(unpacked, member)
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            with open(target, "wb") as handle:
-                handle.write(data)
+        write_out(found, unpacked)
+        copy = os.path.join(scratch, "identity", name)
+        copy_package(source, copy)
+        same_as_checked(os.path.join(unpacked, name), copy, where, failures, leave_out=("README.md",))
         outcome(una, os.path.join(unpacked, name), os.path.join(source, "expected"), where, failures)
     whole = f"una-by-example-{lock_version(root)}"
     path = os.path.join(directory, f"{whole}.tar.gz")

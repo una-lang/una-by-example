@@ -46,7 +46,9 @@ The website shows a translated page only when it is `approved` and its `source` 
 
 ## Downloads
 
-Each release of this repository is named after the una release it is checked against, such as `for-una-0.3.14`. It carries one archive per page of a template 1 chapter (`01-01-package.tar.gz`), one archive per template 2 chapter (`06-failure.tar.gz`, its page and every package, each overlay resolved into a whole package that runs as it is), one archive of everything, and `SHA256SUMS`, all built by `python3 -B scripts/archive.py OUT`. `-B` keeps Python from writing bytecode into the repository, which `check.py` refuses.
+Each release of this repository is named after the una release it is checked against, such as `for-una-0.3.14`. It carries one archive per page of a template 1 chapter (`01-01-package.tar.gz`), one archive per template 2 chapter (`06-failure.tar.gz`, its page and every package, each overlay resolved into a whole package that runs as it is), one archive of everything, and `SHA256SUMS`, all built by `python3 -B scripts/archive.py OUT`. `archive.py` refuses a symbolic link anywhere in a chapter, and the check compares every archived package, byte for byte, with the copy of it that the check runs.
+
+A release is published once and never changes: its name, its archives and the commit they were built from stay as they are. The next release takes a new name, such as `for-una-0.3.15` for the next una release, or `for-una-0.3.14-2` for new archives checked against the same one, and it is built from exactly the commit that the website's Learn pin names. `for-una-0.3.14` stays untouched. `-B` keeps Python from writing bytecode into the repository, which `check.py` refuses.
 
 ## License
 
