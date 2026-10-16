@@ -398,7 +398,7 @@ A policy has five lines, all required:
 
 The `via` function is private to the module, so the policy is the only way to call it. Inside a `via` function the checker does not check labels, since lowering one is its job. Types, refinements and proofs are still checked.
 
-That makes a `via` function trusted code, and it covers what the function does as well as what it returns. A `via` function may declare `uses`, and the policy then has the same `uses`. Its operations stay within those `uses`, but nothing checks the labels of what it sends through them: a `via` function that holds a console could print the raw value it receives, and `una check` would pass. So keep every function of a trusted module small, keep each `via` function pure, with no `uses`, unless the release needs one, such as a keyed hash, and review it line by line. The Reference part links the rules of the specification that say so.
+That makes a `via` function trusted code, and it covers what the function does and how it fails, as well as what it returns. A `via` function may declare `uses`, and the policy then has the same `uses`. Its operations stay within those `uses`, but nothing checks the labels of what it sends through them: a `via` function that holds a console could print the raw value it receives, and `una check` would pass. So keep every function of a trusted module small, keep each `via` function pure, with no `uses`, unless the release needs one, such as a keyed hash, and review it line by line. The Reference part links the rules of the specification that say so.
 
 A policy may live only in a trusted module, and a module is trusted only when it says so twice: `trusted module` in its header, and its name under `[trusted] modules` in `una.toml`:
 
@@ -443,7 +443,7 @@ pub main() -> Unit
 ```
 
 > [!WARNING]
-> A policy is trusted code: the guarantee holds only if the `via` function releases what its purpose says and nothing more, through its result or through its effects. Release the least you can, such as a count, a first letter or one yes-or-no answer, and keep `via` functions short enough to review line by line.
+> A policy is trusted code: the guarantee holds only if the `via` function releases what its purpose says and nothing more, through its result, its failures or its effects. Release the least you can, such as a count, a first letter or one yes-or-no answer, and keep `via` functions short enough to review line by line.
 
 ### What the U4 codes mean
 
@@ -598,7 +598,7 @@ grants = ["console"]
 
 `una run .` prints the log shown under "What you'll build". `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 9.7](#s9-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
 
-So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change that prints a name or an address, in any function outside the `via` functions of the policies, fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 9.5](#s9-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
+So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change outside the trusted module that prints a name or an address fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 9.5](#s9-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
 
 The whole file, to read in one piece or to copy:
 
