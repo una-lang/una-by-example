@@ -670,7 +670,7 @@ fixed src/shelf.una:11:7 U0103 rename it to `the_edit`
 
 *Why:* in edition `0.1`, `edit` is a reserved word, not a keyword, so the checker reads it as a name that must change. Applied here, the rename gives `let the_edit sum = 0`, which does not parse.
 
-*Fix:* change `edition` in `una.toml` to `"0.2"`. Do not apply the rename: offering it here is a known issue of una 0.3.14. See [U0103](/docs/errors/U0103/).
+*Fix:* change `edition` in `una.toml` to `"0.2"`. Do not apply the rename: offering it here is a known issue of una 0.3.15. See [U0103](/docs/errors/U0103/).
 :::
 
 :::mistake

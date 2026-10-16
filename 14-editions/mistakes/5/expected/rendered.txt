@@ -11,7 +11,7 @@
     │                          ─────────────────────────┬────────────────────────
     │                                                   ╰────────────────────────── lock
     │
-    │ Help: repair 1: restore the locked condition: write `print_label where not dry_run` in the header of `print_labels`, or a condition that implies it
+    │ Help: repair 1: restore the locked condition: write `print_label where not dry_run` in the header of `print_labels`, or a condition that implies it; edit src/labels.una:41:37..41:37 to " where not dry_run"
     │
     │ Note 1: obligation ob-35b380cf8520 (contract_lock) is refuted: not dry_run
     │
@@ -19,3 +19,4 @@
     │
     │ Note 3: run `una explain U3023` for an explanation
 ────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

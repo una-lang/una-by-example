@@ -11,7 +11,7 @@
     │                          ────────────────────────┬────────────────────────
     │                                                  ╰────────────────────────── lock
     │
-    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `end_sale`, or a condition that implies it
+    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `end_sale`, or a condition that implies it; edit src/store/sale.una:18:36..18:36 to " where not dry_run"
     │
     │ Note 1: obligation ob-0b5fcbd98cc9 (contract_lock) is refuted: not dry_run
     │
@@ -19,3 +19,4 @@
     │
     │ Note 3: run `una explain U3023` for an explanation
 ────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

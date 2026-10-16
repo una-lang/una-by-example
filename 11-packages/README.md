@@ -35,7 +35,7 @@ You will learn to:
 
 ## Why it works this way
 
-In many languages, a file can see a great deal it never asked for: every public name of every file in the project, globals, and whatever an import brings in with it. Splitting a program into files does not, by itself, say which parts are the interface of a file and which are its details. A dependency added by one line in a manifest can bring in code that reads files or opens connections, and nothing in the caller's code shows it. In una 0.3.14 a package has no dependencies on other packages ([section 11.3](#s11-3)).
+In many languages, a file can see a great deal it never asked for: every public name of every file in the project, globals, and whatever an import brings in with it. Splitting a program into files does not, by itself, say which parts are the interface of a file and which are its details. A dependency added by one line in a manifest can bring in code that reads files or opens connections, and nothing in the caller's code shows it. In una 0.3.15 a package has no dependencies on other packages ([section 11.3](#s11-3)).
 
 Una keeps the structure small and visible:
 
@@ -270,7 +270,7 @@ The package still runs as before. A table or key that is not in this list is U70
 
 ### No dependencies on other packages yet
 
-una 0.3.14 has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
+una 0.3.15 has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
 
 ```text include="steps/05-no-dependencies/expected/rendered.txt#L1"
 [U1001] Error: module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
@@ -372,7 +372,7 @@ The lock and the body are checked separately. The verifier proves that the body 
  12 │ "store.sale.apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
     │                            ────────────────────────┬────────────────────────
     │                                                    ╰────────────────────────── lock
-    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `apply_sale`, or a condition that implies it
+    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `apply_sale`, or a condition that implies it; edit src/store/sale.una:9:36..9:36 to " where not dry_run"
     │ Note 2: counterexample: dry_run = true
 ```
 
@@ -985,7 +985,7 @@ Write the locked condition in the header, and guard the operation to match it:
 - Declarations are private by default. Mark `pub` only what other modules need, with a doc comment and its whole header written.
 - Import each declaration you use by name. A sum kind brings its variants, and a record its constructor and fields.
 - Keep the imports a graph with no cycle, and let `una fmt` keep them sorted.
-- `una.toml` has a fixed set of tables, and an unknown one is U7002. In una 0.3.14, a package imports only its own modules, `std.host` and `std.testing`.
+- `una.toml` has a fixed set of tables, and an unknown one is U7002. In una 0.3.15, a package imports only its own modules, `std.host` and `std.testing`.
 - `verification.lock` pins the solver, so a check gives the same result on every machine.
 - In edition `0.3`, lock the `uses` of a public function in `[contracts]`, and give a supplier's module a ceiling in `[boundaries]`.
 :::
