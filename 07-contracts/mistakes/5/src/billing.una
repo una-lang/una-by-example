@@ -51,7 +51,7 @@ pub subtotal(lines: List[Line]) -> Cents
     total = total + line_total(line)
   total
 
---- `rate` percent of `amount`, rounded down. The guard cannot fire: `rate` is at most 100.
+--- `rate` percent of `amount`, rounded down. The guard cannot fire: both factors are at least 0, and `rate` is at most 100.
 percent_of(amount: Cents, rate: Percent) -> Cents
   ensures result <= amount
 =

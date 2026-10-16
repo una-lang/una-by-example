@@ -45,7 +45,7 @@ Una moves the rules into the header and proves them:
 :::steps
 1. **A contract is part of the header.** `requires` states what must hold of the arguments, and `ensures` what holds of the result. A reader learns what a function does from its header alone.
 2. **The verifier proves every contract, for every input.** `una check` turns each rule into a question for an SMT solver, Z3, at the version `verification.lock` pins. A rule that fails for some input is refuted, and the diagnostic shows that input: a counterexample.
-3. **Nothing unproven passes.** When the solver cannot decide a question, the result is an error too, never a silent pass. A program that checks holds no value that breaks its contracts, and its contracts cost nothing when it runs. The exceptions are visible: `checked`, which tests at run time, and the standard library, whose contracts are trusted rather than proven.
+3. **Nothing unproven passes.** When the solver cannot decide a question, the result is an error too, never a silent pass. A program that checks holds no value that breaks its contracts, and its contracts cost nothing when it runs. The exceptions are visible: `checked`, which tests at run time, and the standard library and capability operations, whose contracts are trusted, not proven.
 :::
 
 The price: you state your rules in a small language the solver understands, and sometimes write a guard to give it a fact it cannot see. In return, the checker finds the input that breaks a rule before a customer does.
@@ -282,7 +282,7 @@ example coupons "a coupon worth more than the price gives 0" ... ok
 
 ## 7.3 Refined kinds and predicates
 
-A rule that holds of every value belongs on the kind. A refined kind is a base type with a condition: `kind Cents = Int where it >= 0` is the integers that are not negative, and `it` stands for the value. `Int in 1..99` is short for `Int where 1 <= it and it <= 99`, and `in 0..<100` would leave out 100.
+A rule that holds of every value of a kind belongs on the kind. A refined kind is a base type with a condition: `kind Cents = Int where it >= 0` is the integers that are not negative, and `it` stands for the value. `Int in 1..99` is short for `Int where 1 <= it and it <= 99`, and `in 0..<100` would leave out 100.
 
 The verifier proves the condition at every place a value enters the kind: an argument, a returned value, a field of a record, and a `let` with the kind written. The other way needs no proof: a `Cents` goes wherever an `Int` goes.
 
@@ -604,7 +604,7 @@ pub subtotal(lines: List[Line]) -> Cents
 **The coupon.** `discount` promises that it never takes off more than the amount. Each arm keeps the promise: no coupon takes 0, a percentage takes part of the amount, and a coupon worth more than the amount takes all of it and no more. `percent_of` multiplies two values, so it has the guard too, and its own `ensures` gives `discount` the fact it needs about that arm.
 
 ```una include="day-to-day/src/billing.una#percent_of..discount" title="day-to-day/src/billing.una"
---- `rate` percent of `amount`, rounded down. The guard cannot fire: `rate` is at most 100.
+--- `rate` percent of `amount`, rounded down. The guard cannot fire: both factors are at least 0, and `rate` is at most 100.
 percent_of(amount: Cents, rate: Percent) -> Cents
   ensures result <= amount
 =
@@ -760,7 +760,7 @@ pub subtotal(lines: List[Line]) -> Cents
     total = total + line_total(line)
   total
 
---- `rate` percent of `amount`, rounded down. The guard cannot fire: `rate` is at most 100.
+--- `rate` percent of `amount`, rounded down. The guard cannot fire: both factors are at least 0, and `rate` is at most 100.
 percent_of(amount: Cents, rate: Percent) -> Cents
   ensures result <= amount
 =
