@@ -7,7 +7,7 @@ time: 30
 builds: A packing slip that a store prints for the box of one order, with examples that test each line
 prerequisites: []
 template: 2
-nav: ["A first package", "Reading a diagnostic", "Printing and the console", "Functions and comments", "Examples and una test", "Day-to-day: a packing slip", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
+nav: ["A first package", "Reading a diagnostic", "Printing and the console", "Functions and comments", "Examples and una test", "Day-to-day: a packing slip", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 1 Hello, Una

@@ -7,7 +7,7 @@ time: 40
 builds: The shipping-notice service with customer data labeled, and a policy that releases a masked address to the log
 prerequisites: ["4", "6", "8"]
 template: 2
-nav: ["Labels and how they follow data", "Sinks", "Implicit flows", "Categories", "Policies and trusted modules", "Day-to-day: labeled notices", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
+nav: ["Labels and how they follow data", "Sinks", "Implicit flows", "Categories", "Policies and trusted modules", "Day-to-day: labeled notices", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 9 Information flow

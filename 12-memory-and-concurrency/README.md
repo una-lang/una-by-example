@@ -7,7 +7,7 @@ time: 40
 builds: An end-of-day stock count that replays each site's movements and closes every site at once
 prerequisites: ["4", "5", "6", "7", "8", "10"]
 template: 2
-nav: ["Values, not references", "edit", "take", "together", "Call depth and memory limits", "Day-to-day: a stock count", "Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
+nav: ["Values, not references", "edit", "take", "together", "Call depth and memory limits", "Day-to-day: a stock count", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 12 Memory and concurrency
