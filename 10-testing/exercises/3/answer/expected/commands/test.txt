@@ -1,0 +1,11 @@
+$ una test .
+example checkout "a cart under 50.00 pays shipping" ... ok
+example checkout "a cart of two lamps is charged and mailed" ... ok
+example checkout "an empty cart asks nobody anything" ... ok
+example checkout "a cart the warehouse cannot hold is never charged" ... ok
+example checkout "a declined card releases the stock and mails nothing" ... ok
+example checkout "a card processor that does not answer is PaymentDown" ... ok
+example checkout "a line out of stock releases the lines reserved before it" ... ok
+example checkout "a first line out of stock releases nothing" ... ok
+
+8 examples: 8 passed, 0 failed

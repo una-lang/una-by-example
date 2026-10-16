@@ -1,0 +1,38 @@
+module cart
+
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+pub kind Line
+  sku: Text
+  quantity: Int
+  unit_cents: Int
+
+--- What a whole cart holds: its units, and their price in cents.
+pub kind Summary
+  units: Int
+  cents: Int
+
+--- Adds up the units and the price of every line.
+pub summarize(lines: List[Line]) -> Summary
+=
+  let edit units = 0
+  let edit cents = 0
+  for line in lines
+    units = units + line.quantity
+    cents = cents + line.quantity * line.unit_cents
+  Summary(units: units, cents: cents)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let cart = [Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990), Line(sku: "MUG-03", quantity: 1, unit_cents: 890)]
+  let summary = summarize(cart)
+  @console.print("{summary.units} units, {summary.cents} cents")
+
+example "two lamps and a mug"
+  do summarize([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990), Line(sku: "MUG-03", quantity: 1, unit_cents: 890)])
+  expect result.units == 3
+  expect result.cents == 4870
+
+example "an empty cart holds nothing"
+  do summarize([])
+  expect result == Summary(units: 0, cents: 0)

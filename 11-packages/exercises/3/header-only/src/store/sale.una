@@ -1,0 +1,34 @@
+module store.sale
+
+--- The price list of the shop.
+pub capability PriceList
+  op set_price(sku: Text, cents: Int) -> Unit
+
+--- Takes `percent` off the price of a product. A dry run changes nothing, and says what it would do.
+pub apply_sale(sku: Text, cents: Int, percent: Int, dry_run: Bool) -> Int
+  uses @prices: PriceList[set_price where not dry_run]
+=
+  let sale = cents - cents * percent / 100
+  if not dry_run
+    @prices.set_price(sku, cents: sale)
+  sale
+
+--- Puts back the price a product had before its sale. Exercise 3: honor the lock in `una.toml`.
+pub end_sale(sku: Text, cents: Int, dry_run: Bool) -> Unit
+  uses @prices: PriceList[set_price where not dry_run]
+=
+  @prices.set_price(sku, cents: cents)
+
+--- A price list that keeps nothing, for examples.
+handler ignored() for PriceList
+  op set_price(sku, cents) = unit
+
+example "a dry run of the end of a sale changes no price"
+  given @prices = ignored()
+  do end_sale("DESK-02", cents: 24900, dry_run: true)
+  expect not performed @prices.set_price
+
+example "the end of a sale sets the old price back"
+  given @prices = ignored()
+  do end_sale("DESK-02", cents: 24900, dry_run: false)
+  expect performed @prices.set_price

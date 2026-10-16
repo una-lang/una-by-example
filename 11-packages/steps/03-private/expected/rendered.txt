@@ -1,0 +1,17 @@
+[U1004] Error: function `digits` is private to module `store.money`
+    ╭─[ src/store/app.una:4:21 ]
+    │
+  4 │ import store.money (digits, format)
+    │                     ───┬──
+    │                        ╰──── function `digits` is private to module `store.money`
+    │
+    ├─[ src/store/money.una:10:1 ]
+    │
+ 10 │ digits(cents: Int) -> Text
+    │ ───┬──
+    │    ╰──── declared here without `pub`
+    │
+    │ Help: repair 1 (widens visibility: every module may then call it: check that it belongs to the module's interface): declare `digits` with `pub`; edit src/store/money.una:10:1..10:1 to "pub "
+    │
+    │ Note: run `una explain U1004` for an explanation
+────╯

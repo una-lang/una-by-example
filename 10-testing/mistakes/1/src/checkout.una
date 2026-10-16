@@ -1,0 +1,178 @@
+module checkout
+
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+pub kind Line
+  sku: Text
+  quantity: Int
+  unit_cents: Int
+
+--- Why a checkout did not go through.
+pub kind CheckoutError = EmptyCart | OutOfStock(sku: Text) | Declined(cents: Int) | PaymentDown
+
+--- How the card processor can fail.
+pub kind PaymentError = Refused | Unreachable
+
+--- The warehouse. `reserve` holds units for an order and says whether it could.
+pub capability Inventory
+  op reserve(sku: Text, quantity: Int) -> Bool
+  op release(sku: Text, quantity: Int) -> Unit
+
+--- The card processor. A charge gives the processor's reference for the payment.
+pub capability Payments
+  op charge(cents: Int) -> Text
+    fails PaymentError
+
+--- The store's mail service.
+pub capability Mail
+  op send(to: Text, body: Text) -> Unit
+
+--- The shipping fee in cents: 4.90, and nothing from 50.00 on.
+pub shipping_fee(subtotal: Int) -> Int
+  ensures result >= 0 and result <= 490
+  ensures subtotal >= 5000 implies result == 0
+=
+  if subtotal >= 5000 then 0 else 490
+
+--- What the customer pays for a cart, shipping included.
+pub total(lines: List[Line]) -> Int
+=
+  let edit subtotal = 0
+  for line in lines
+    subtotal = subtotal + line.quantity * line.unit_cents
+  subtotal + shipping_fee(subtotal)
+
+--- Reserves the units of every line, and fails at the first line the warehouse cannot hold.
+reserve_all(lines: List[Line]) -> Unit
+  uses @inventory: Inventory[reserve]
+  fails CheckoutError
+=
+  for line in lines
+    let held = @inventory.reserve(line.sku, quantity: line.quantity)
+    if not held
+      fail OutOfStock(sku: line.sku)
+
+--- Hands the units of every line back to the warehouse.
+release_all(lines: List[Line]) -> Unit
+  uses @inventory: Inventory[release]
+=
+  for line in lines
+    @inventory.release(line.sku, quantity: line.quantity)
+
+--- Reserves the cart, charges the card, and mails a receipt. Gives the payment's reference.
+pub checkout(lines: List[Line], email: Text) -> Text
+  uses @inventory: Inventory[reserve, release]
+  uses @payments: Payments[charge]
+  uses @mail: Mail[send]
+  fails CheckoutError
+=
+  if lines.len == 0
+    fail EmptyCart
+  else
+    reserve_all(lines)
+      if error pass
+    let cents = total(lines)
+    let charged = attempt @payments.charge(cents)
+    when charged
+      is Ok(reference) ->
+        @mail.send(email, body: "Paid {cents} cents. Reference {reference}.")
+        reference
+      is Err(problem) ->
+        release_all(lines)
+        when problem
+          is Refused -> fail Declined(cents)
+          is Unreachable -> fail PaymentDown
+
+--- What the store's log says about a checkout.
+pub describe(outcome: Result[Text, CheckoutError]) -> Text
+=
+  when outcome
+    is Ok(reference) -> "paid, reference {reference}"
+    is Err(problem) -> reason(problem)
+
+reason(problem: CheckoutError) -> Text
+=
+  when problem
+    is EmptyCart -> "the cart is empty"
+    is OutOfStock(sku) -> "not enough {sku} in stock"
+    is Declined(cents) -> "the card was declined for {cents} cents"
+    is PaymentDown -> "the card processor did not answer"
+
+--- A fake warehouse that holds the units in `stock`.
+handler shelf(stock: Map[Text, Int]) for Inventory
+  op reserve(sku, quantity) = stock.get(key: sku).or_else(default: 0) >= quantity
+  op release(sku, quantity) = unit
+
+--- A fake card processor that accepts every charge up to `limit` cents.
+handler card(limit: Int) for Payments
+  op charge(cents) = if cents <= limit then "PAY-{cents}" else fail Refused
+
+--- A fake card processor that never answers.
+handler offline() for Payments
+  op charge(cents) = fail Unreachable
+
+--- A fake mail service: it accepts every message and delivers none.
+handler outbox() for Mail
+  op send(to, body) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let stock = empty_map().with(key: "LAMP-01", value: 4).with(key: "DESK-02", value: 1)
+  let lamps = [Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)]
+  let two_desks = [Line(sku: "DESK-02", quantity: 2, unit_cents: 24900)]
+  let one_desk = [Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)]
+  let empty: List[Line] = []
+  for cart in [lamps, two_desks, one_desk, empty]
+    let outcome = attempt checkout(cart, email: "ana@example.invalid") with @inventory = shelf(stock), @payments = card(limit: 10000), @mail = outbox()
+    @console.print(describe(outcome))
+
+example "a cart under 50.00 pays shipping"
+  do total([Line(sku: "MUG-03", quantity: 1, unit_cents: 4999)])
+  expect result == 5489
+
+example "a cart of two lamps is charged and mailed"
+  given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
+  given @payments = card(limit: 10000)
+  given @mail = outbox()
+  do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
+  expect result == "PAY-4470"
+  expect performed @mail.send
+
+example "an empty cart asks nobody anything"
+  given @inventory = shelf(empty_map())
+  given @payments = offline()
+  given @mail = outbox()
+  do checkout([], email: "ana@example.invalid")
+  expect fails EmptyCart
+  expect not performed @inventory.reserve
+  expect not performed @payments.charge
+  expect not performed @mail.send
+
+example "a cart the warehouse cannot hold is never charged"
+  given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
+  given @payments = card(limit: 100000)
+  given @mail = outbox()
+  do checkout([Line(sku: "DESK-02", quantity: 2, unit_cents: 24900)], email: "ana@example.invalid")
+  expect fails OutOfStock
+  expect not performed @payments.charge
+
+example "a declined card releases the stock and mails nothing"
+  given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
+  given @payments = card(limit: 10000)
+  given @mail = outbox()
+  do checkout([Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)], email: "ana@example.invalid")
+  expect fails Declined
+  expect performed @inventory.release
+  expect not performed @mail.send
+
+example "a card processor that does not answer is PaymentDown"
+  given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
+  given @payments = offline()
+  given @mail = outbox()
+  do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
+  expect fails PaymentDown
+  expect performed @inventory.release
+
+example "the log shows four checkouts"
+  do main()
+  expect result == unit

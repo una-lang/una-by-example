@@ -1,0 +1,4 @@
+module shipping
+
+--- The shipping fee in cents: 4.90, and nothing from 50.00 on.
+pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490

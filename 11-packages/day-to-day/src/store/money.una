@@ -1,0 +1,25 @@
+module store.money
+
+--- An amount of money in cents, never below zero.
+pub kind Cents = Int where it >= 0
+
+--- An amount in cents as a person reads it: 1990 is "19.90", and -150 is "-1.50".
+pub format(cents: Int) -> Text = if cents < 0 then "-{digits(0 - cents)}" else digits(cents)
+
+--- The digits of an amount of 0 or more, with two after the point.
+digits(cents: Int) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
+
+example "two digits after the point"
+  do format(1990)
+  expect result == "19.90"
+
+example "a leading zero is kept"
+  do format(24905)
+  expect result == "249.05"
+
+example "a refund keeps its sign"
+  do format(-150)
+  expect result == "-1.50"

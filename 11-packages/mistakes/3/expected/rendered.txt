@@ -1,0 +1,13 @@
+[U1002] Error: `format` is already defined in this module
+    ╭─[ src/store/invoice.una:4:21 ]
+    │
+  4 │ import store.money (format)
+    │                     ───┬──
+    │                        ╰──── `format` is already defined in this module
+    │
+ 24 │ format(quantity: Int) -> Text = "{quantity} x"
+    │ ───┬──
+    │    ╰──── first defined here
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯

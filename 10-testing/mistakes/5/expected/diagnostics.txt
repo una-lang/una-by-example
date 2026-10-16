@@ -1,0 +1,1 @@
+error U1002 at src/checkout.una:133:9: example "a cart under 50.00 pays shipping" is defined twice in this module

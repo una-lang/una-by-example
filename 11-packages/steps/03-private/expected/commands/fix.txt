@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+skipped src/store/money.una:10:1 U1004 declare `digits` with `pub`: widens authority

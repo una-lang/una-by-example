@@ -1,7 +1,0 @@
-$ una test .
-example orders "an item in stock is mailed" ... ok
-example orders "an item out of stock fails, and nothing is mailed" ... FAILED
-  src/orders.una:43: expect not performed @mail.send
-  the trace has `@mail.send` at event 1
-
-2 examples: 1 passed, 1 failed

@@ -1,0 +1,2 @@
+error U5001 at src/restock.una:29:18: postcondition of `left` is refuted
+  counterexample: result = -1, units = -1

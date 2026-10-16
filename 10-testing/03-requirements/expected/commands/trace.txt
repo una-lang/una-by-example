@@ -1,8 +1,0 @@
-$ una trace SOLD_OUT_1
-requirement SOLD_OUT_1 (active)
-  text "An event with no seats left is always shown as sold out"
-  source human
-  owner box_office
-tickets.availability
-  ensures remaining < 1 implies result is SoldOut
-  proven   ob-d7fc541adb4b postcondition remaining < 1 implies result is SoldOut

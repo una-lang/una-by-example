@@ -1,0 +1,49 @@
+module store.invoice
+
+import store.catalog (Catalog, Product, listed)
+import store.money (format)
+import store.pricing (discount, line_cents, member_price)
+
+--- Why a line could not be invoiced.
+pub kind InvoiceError = | UnknownSku(sku: Text)
+
+--- One line of an order: a SKU and how many units of it.
+pub kind OrderLine
+  sku: Text
+  quantity: Int
+
+--- The product an order line names.
+pub product_of(line: OrderLine) -> Product
+  uses @catalog: Catalog[find]
+  fails InvoiceError
+=
+  @catalog.find(line.sku)
+    if none fail UnknownSku(sku: line.sku)
+
+--- One line of the invoice, as text, with the members' price of one unit.
+pub describe(line: OrderLine, product: Product) -> Text
+=
+  let total = line_cents(product.cents, quantity: line.quantity)
+  let member = member_price(product.cents)
+  "{line.quantity} x {product.name} at {format(product.cents)} (members {format(member)}): {format(total)}"
+
+--- What a member saves on one unit.
+pub saving_note(product: Product) -> Text = "members save {format(discount(product.cents))}"
+
+example "a known SKU is found"
+  given @catalog = listed([Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990)])
+  do product_of(OrderLine(sku: "LAMP-01", quantity: 2))
+  expect result.name == "Desk lamp"
+
+example "a line shows the members' price of one unit"
+  do describe(OrderLine(sku: "LAMP-01", quantity: 2), product: Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990))
+  expect result == "2 x Desk lamp at 19.90 (members 17.91): 39.80"
+
+example "an unknown SKU is UnknownSku"
+  given @catalog = listed([])
+  do product_of(OrderLine(sku: "CHAIR-09", quantity: 1))
+  expect fails UnknownSku
+
+example "a note says what a member saves on one unit"
+  do saving_note(Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990))
+  expect result == "members save 1.99"

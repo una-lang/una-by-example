@@ -1,0 +1,9 @@
+[U3014] Error: `main` needs `@console: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`
+     ╭─[ src/checkout.una:177:6 ]
+     │
+ 177 │   do main()
+     │      ───┬──
+     │         ╰──── `main` needs `@console: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`
+     │
+     │ Note: run `una explain U3014` for an explanation
+─────╯

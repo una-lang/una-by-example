@@ -1,0 +1,5 @@
+$ una test .
+example store.sale "a dry run of the end of a sale changes no price" ... ok
+example store.sale "the end of a sale sets the old price back" ... ok
+
+2 examples: 2 passed, 0 failed

@@ -1,0 +1,1 @@
+error U1004 at src/store/app.una:4:21: function `digits` is private to module `store.money`

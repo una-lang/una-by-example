@@ -1,0 +1,2 @@
+error U1001 at src/store/invoice.una:6:8: module `store.shipping` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+error U1001 at src/store/invoice.una:32:54: cannot find name `shipping_fee` in this module, its imports or the prelude

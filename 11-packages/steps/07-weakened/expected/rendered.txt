@@ -1,0 +1,21 @@
+[U3023] Error: the header of `apply_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
+    ╭─[ src/store/sale.una:9:27 ]
+    │
+  9 │   uses @prices: PriceList[set_price]
+    │                           ────┬────
+    │                               ╰────── the header of `apply_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
+    │
+    ├─[ una.toml:12:28 ]
+    │
+ 12 │ "store.sale.apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
+    │                            ────────────────────────┬────────────────────────
+    │                                                    ╰────────────────────────── lock
+    │
+    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `apply_sale`, or a condition that implies it
+    │
+    │ Note 1: obligation ob-941d8a411eef (contract_lock) is refuted: not dry_run
+    │
+    │ Note 2: counterexample: dry_run = true
+    │
+    │ Note 3: run `una explain U3023` for an explanation
+────╯

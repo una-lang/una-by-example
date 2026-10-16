@@ -1,0 +1,4 @@
+module store.shipping
+
+--- The shipping fee of an order, in cents: 4.90, and nothing from 50.00 on.
+pub shipping_fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490

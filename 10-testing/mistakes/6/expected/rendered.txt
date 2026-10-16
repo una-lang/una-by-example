@@ -1,0 +1,9 @@
+[U0101] Error: unexpected keyword `with`, expected end of line
+     ╭─[ src/checkout.una:171:100 ]
+     │
+ 171 │   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid") with @payments = offline()
+     │                                                                                                    ──┬─
+     │                                                                                                      ╰─── unexpected keyword `with`, expected end of line
+     │
+     │ Note: run `una explain U0101` for an explanation
+─────╯

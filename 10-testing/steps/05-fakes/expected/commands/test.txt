@@ -1,0 +1,5 @@
+$ una test .
+example restock "two units left mails the buyer" ... ok
+example restock "forty units left mails nobody" ... ok
+
+2 examples: 2 passed, 0 failed

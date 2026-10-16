@@ -1,0 +1,3 @@
+a dry run plans 19920
+set LAMP-01 to 1791
+the sale applied 1791

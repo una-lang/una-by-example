@@ -1,0 +1,7 @@
+module vendor.labels
+
+--- Prints a shelf label for a product.
+pub print_label(sku: Text, price: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("[{sku} | {price}]")
