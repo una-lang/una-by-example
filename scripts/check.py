@@ -43,7 +43,8 @@ and the report says so.
 `una` always runs with a minimal environment (`una_env`: PATH, a HOME and TMPDIR of its own, a
 fixed locale, no colors, nothing else), on a package whose una.toml stays within MANIFEST_TABLES
 and GRANT, with the commands of COMMAND only. No symbolic link in a page or package is copied
-or followed; each is a failure.
+or followed; each is a failure, and so is a tracked one anywhere. una.toml is read with tomllib,
+or on a Python before 3.11 with the stricter `plain_toml`.
 
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
@@ -207,10 +208,11 @@ def una_home():
 
 
 def una_env():
-    """The environment `una` runs with: PATH (to find Z3 and a C toolchain), a HOME and TMPDIR
-    of its own, a fixed locale and no colors. Nothing else of the caller's environment reaches
-    it, UNA_NEUTRALITY_PATTERN and every other variable included."""
-    home = una_home()
+    """The environment of one `una` run: PATH (to find Z3 and a C toolchain), a fresh HOME and
+    TMPDIR of its own, which no other run sees, a fixed locale and no colors. Nothing else of
+    the caller's environment reaches it, UNA_NEUTRALITY_PATTERN and every other variable
+    included."""
+    home = tempfile.mkdtemp(prefix="home-", dir=una_home())
     return {"PATH": os.environ.get("PATH", os.defpath), "HOME": home, "TMPDIR": home,
             "LANG": "C.UTF-8", "NO_COLOR": "1"}
 
@@ -225,6 +227,7 @@ def run(una, args, cwd):
 # What a package's una.toml may hold: these tables, and in [run] only `entry` and `grants`,
 # with these grants. No env, no network, no files outside the package's src/.
 MANIFEST_TABLES = {"package", "run", "escape_budget", "labels", "trusted", "boundaries", "contracts"}
+PACKAGE_KEYS = {"name", "version", "edition"}
 GRANT = re.compile(r"^(console|clock|files:src(/[A-Za-z0-9_-]+)*:(read|write|read,write))$")
 # The commands an `expected/commands/*.txt` may run, all in the package and nowhere else.
 COMMAND = re.compile(
@@ -233,29 +236,106 @@ COMMAND = re.compile(
 )
 
 
-def manifest(package, where, failures):
-    """Whether the una.toml of the copy at `package` is within MANIFEST_TABLES and GRANT."""
-    import tomllib
+TOML_KEY = re.compile(r'[A-Za-z0-9_-]+|"[^"\\\n]*"')
+TOML_STRING = re.compile(r'"([^"\\\n]*)"')
 
+
+def plain_toml(text):
+    """A strict reading of the TOML a una-by-example manifest uses, for a Python without
+    tomllib (before 3.11): `[table]` headers, and `key = value` lines whose value is a string
+    without escapes, an integer, true or false, or a one-line array of such strings; comments
+    and blank lines. Anything else raises ValueError, so the manifest fails: the reading is
+    never looser than tomllib's."""
+    document, table = {}, None
+    for number, raw in enumerate(text.split("\n"), start=1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        header = re.fullmatch(r"\[([A-Za-z0-9_-]+)\]", line)
+        if header:
+            if header.group(1) in document:
+                raise ValueError(f"line {number}: [{header.group(1)}] twice")
+            table = document[header.group(1)] = {}
+            continue
+        key = TOML_KEY.match(line)
+        if not key or table is None:
+            raise ValueError(f"line {number}: not a key in a table")
+        rest = line[key.end():].lstrip()
+        if not rest.startswith("="):
+            raise ValueError(f"line {number}: no `=` after the key")
+        rest = rest[1:].strip()
+        name = key.group(0).strip('"')
+        if rest.startswith("["):
+            items, rest = [], rest[1:].strip()
+            while not rest.startswith("]"):
+                found = TOML_STRING.match(rest)
+                if not found:
+                    raise ValueError(f"line {number}: an array holds strings only")
+                items.append(found.group(1))
+                rest = rest[found.end():].strip()
+                if rest.startswith(","):
+                    rest = rest[1:].strip()
+                elif not rest.startswith("]"):
+                    raise ValueError(f"line {number}: an array's items are separated by commas")
+            value, rest = items, rest[1:].strip()
+        elif TOML_STRING.match(rest):
+            found = TOML_STRING.match(rest)
+            value, rest = found.group(1), rest[found.end():].strip()
+        else:
+            found = re.match(r"(-?[0-9]+|true|false)\b", rest)
+            if not found:
+                raise ValueError(f"line {number}: a value is a string, a whole number, true, false or an array of strings")
+            value = int(found.group(1)) if found.group(1) not in ("true", "false") else found.group(1) == "true"
+            rest = rest[found.end():].strip()
+        if rest and not rest.startswith("#"):
+            raise ValueError(f"line {number}: text after the value")
+        if name in table:
+            raise ValueError(f"line {number}: `{name}` twice")
+        table[name] = value
+    return document
+
+
+def manifest(package, where, failures):
+    """Whether the una.toml of the copy at `package` is within MANIFEST_TABLES and GRANT. It is
+    read with tomllib, or where Python has none, with the stricter `plain_toml`."""
     path = os.path.join(package, "una.toml")
     try:
         with open(path, "rb") as handle:
-            document = tomllib.load(handle)
+            data = handle.read()
+        try:
+            import tomllib
+
+            document = tomllib.loads(data.decode("utf-8"))
+        except ImportError:
+            document = plain_toml(data.decode("utf-8"))
     except (OSError, ValueError) as error:
         failures.add(where, f"una.toml cannot be read: {error}")
         return False
     good = True
-    for table in document:
+    for table, value in document.items():
         if table not in MANIFEST_TABLES:
             failures.add(where, f"una.toml: no [{table}] in una-by-example; the tables are {sorted(MANIFEST_TABLES)}")
+            good = False
+        elif not isinstance(value, dict):
+            failures.add(where, f"una.toml: `{table}` is a table, [{table}]")
+            good = False
+    if not good:
+        return False
+    for key in document.get("package", {}):
+        if key not in PACKAGE_KEYS:
+            failures.add(where, f"una.toml: [package] holds only {sorted(PACKAGE_KEYS)}, not `{key}`")
             good = False
     section = document.get("run", {})
     for key in section:
         if key not in ("entry", "grants"):
             failures.add(where, f"una.toml: [run] holds only `entry` and `grants`, not `{key}`")
             good = False
-    for grant in section.get("grants", []):
-        if not isinstance(grant, str) or not GRANT.match(grant) or ".." in grant:
+    grants = section.get("grants", [])
+    if not isinstance(grants, list):
+        failures.add(where, "una.toml: [run] grants is a list of strings")
+        return False
+    for grant in grants:
+        if not isinstance(grant, str) or not GRANT.fullmatch(grant) or ".." in grant:
             failures.add(where, f"una.toml: the grant {grant!r} is not allowed; grants are console, clock and files:src[/dir]:read|write|read,write")
             good = False
     return good
@@ -336,7 +416,7 @@ def commands(una, package, expected, where, failures, fresh=None):
         if not first.startswith("$ una "):
             failures.add(f"{where}/commands/{name}", "the first line must be `$ una <args>`")
             continue
-        if not COMMAND.match(first[len("$ una "):]):
+        if not COMMAND.fullmatch(first[len("$ una "):]):
             failures.add(f"{where}/commands/{name}", f"`{first[2:]}` is not one of the commands una-by-example runs")
             continue
         cwd = fresh() if fresh else package
@@ -565,6 +645,15 @@ def commits(root, failures):
             failures.add(f"commit {sha}", "the committer email is not a GitHub noreply address")
 
 
+def tracked_links(root, failures):
+    """No tracked file is a symbolic link, anywhere in the repository."""
+    result = subprocess.run(["git", "ls-files", "-s", "-z"], cwd=root, capture_output=True, check=False)
+    for entry in result.stdout.decode("utf-8", "replace").split("\0"):
+        mode, _, rest = entry.partition(" ")
+        if mode == "120000":
+            failures.add(rest.split("\t", 1)[-1], "a symbolic link; una-by-example holds none")
+
+
 def tracked(root, failures):
     """No tracked file is Python bytecode: `__pycache__/` or `*.pyc` is a build artifact."""
     result = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True, check=False)
@@ -717,6 +806,9 @@ def checked(root, una, from_binary, archive_dir, require_neutrality, failures, s
     if not from_binary and found != wanted:
         failures.add("una.lock", f"pins una {wanted}, but {una} is {found}")
     counted = check_pages(root, una, failures, scratch)
+    tracked_links(root, failures)
+    if os.path.isdir(os.path.join(root, "translations")):
+        symlinks(os.path.join(root, "translations"), "translations", failures)
     import template2
 
     warnings = []

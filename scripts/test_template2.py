@@ -443,7 +443,7 @@ class Units(unittest.TestCase):
         self.assertIn("inside a quote", found("> [!NOTE]\n> ```una\n> BAD\n> ```\n"))
         self.assertIn("inside a quote", found("- First:\n  - then:\n\n    ```una\n    nonsense\n    ```\n"))
         self.assertIn("indented by 4", found("Text.\n\n    pub main() -> Unit = nonsense\n"))
-        self.assertIn("indented by 4", found("Text.\n\n\tnonsense\n"))
+        self.assertIn("a tab in the indentation", found("Text.\n\n\tnonsense\n"))
         self.assertIn("setext", found("An extra part\n-------------\n"))
         self.assertIn("setext", found("An extra part\n===\n"))
         self.assertIn("heading", found("> ## A heading in a quote\n"))
@@ -529,6 +529,93 @@ class Units(unittest.TestCase):
                 os.environ["UNA_NEUTRALITY_PATTERN"] = saved
             shutil.rmtree(base, ignore_errors=True)
 
+    def test_round_two_markup(self):
+        def found(text):
+            failures = check.Failures()
+            template2.markup(text, "p", failures)
+            return "\n".join(failures.items)
+
+        # $$ blocks, which the site renders as code.
+        self.assertIn("`$$`", found("Text.\n\n$$\npub main() -> Unit = nonsense\n$$\n"))
+        self.assertIn("`$$`", found("Text.\n$$\nnonsense\n$$\n"))
+        self.assertIn("`$$`", found("- item\n  $$\n  nonsense\n  $$\n"))
+        # A list or quote marker followed by 5 or more columns, or by a tab.
+        for line in ("- item\n-     pub main() -> Unit = nonsense\n", "1.     pub main() -> Unit = nonsense\n",
+                     "-\t\tpub main() -> Unit = nonsense\n", "- >     pub main() -> Unit = nonsense\n",
+                     "> -     pub main() -> Unit = nonsense\n", ">      pub main() -> Unit = nonsense\n"):
+            self.assertRegex(found(line), "columns after a list or quote marker|a tab in the indentation", line)
+        self.assertEqual(found("-    four columns is a paragraph\n> - quote and list\n>    three after a quote\n"), "")
+        # Invisible and control characters, a fence closer among them.
+        for ch in ("\u00a0", "\u200b", "\u2028", "\u3000", "\x0c", "\ufeff"):
+            self.assertIn(f"U+{ord(ch):04X}", found(f"Text{ch}here.\n"), repr(ch))
+        self.assertEqual(found("Text with a\ttab inside.\n"), "")
+        # Indented or spaced ::: lines.
+        self.assertIn("a ::: line starts at column 0", found(" :::mistake\nx\n :::\n"))
+        self.assertIn("a ::: line starts at column 0", found("> :::agents\n> x\n> :::\n"))
+        self.assertIn("with the name right after the colons", found("::: mistake\nx\n:::\n"))
+        self.assertIn("no container :::demo", found(":::demo\nx\n:::\n"))
+
+    def test_a_closer_with_other_whitespace(self):
+        for ch in ("\u00a0", "\x0c", "\u2000"):
+            blocks, _ = template2.fences(f"```una\ncode\n```{ch}\nfree\n```\n")
+            self.assertEqual(blocks[0].body, f"code\n```{ch}\nfree\n", repr(ch))
+        self.assertEqual(template2.fences("```una\ncode\n``` \t\nprose\n")[0][0].body, "code\n")
+
+    def test_round_two_links(self):
+        for bad in ("\\`[src](https://github.com/una-lang/una/blob/main/x.una)`",
+                    "[a](https://GitHub.com/una-lang/una/blob/main/x)",
+                    "[a](https://github.com:443/una-lang/una/blob/main/x)",
+                    "[a](HTTPS://WWW.GITHUB.COM/una-lang/una/tree/main/)"):
+            failures = check.Failures()
+            template2.links(bad, "p", failures)
+            self.assertTrue(any("repositories" in i for i in failures.items), (bad, failures.items))
+        failures = check.Failures()
+        template2.links("`[a](https://github.com/una-lang/una/blob/main/x)` and ``[b](../x) `with` ticks``", "p", failures)
+        self.assertEqual(failures.items, [])
+
+    def test_round_two_manifests(self):
+        base = tempfile.mkdtemp(prefix="una-by-example-manifest-")
+        try:
+            for toml in ('[[run]]\nentry = "x"\n', 'run = "x"\n', TOML.replace('["console"]', '["console\\n"]'),
+                         TOML.replace('edition = "0.2"', 'edition = "0.2"\nextra = 1'), TOML.replace('["console"]', '"console"')):
+                write(os.path.join(base, "una.toml"), toml)
+                failures = check.Failures()
+                self.assertFalse(check.manifest(base, "p", failures), toml)
+                self.assertTrue(failures.items, toml)
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
+
+    def test_the_toml_reading_without_tomllib(self):
+        document = check.plain_toml(TOML + '\n# a comment\n[contracts]\n"billing.charge" = ["@console: Console[print where not dry_run]"]\n')
+        self.assertEqual(document["run"], {"entry": "orders", "grants": ["console"]})
+        self.assertEqual(document["contracts"], {"billing.charge": ["@console: Console[print where not dry_run]"]})
+        for text in ('x = 1\n', '[a]\nb = "c\\"d"\n', '[a]\nb = [1]\n', '[a]\nb.c = 1\n', '[a]\nb = { c = 1 }\n',
+                     "[a]\nb = 'x'\n", '[a]\nb = 1\nb = 2\n', '[a]\n[a]\n', '[[run]]\n'):
+            with self.assertRaises(ValueError, msg=text):
+                check.plain_toml(text)
+        try:
+            import tomllib
+        except ImportError:
+            return
+        self.assertEqual(document, tomllib.loads(TOML + '\n# a comment\n[contracts]\n"billing.charge" = ["@console: Console[print where not dry_run]"]\n'))
+
+    def test_a_fresh_home_per_run(self):
+        first, second = check.una_env()["HOME"], check.una_env()["HOME"]
+        self.assertNotEqual(first, second)
+        self.assertEqual(os.path.dirname(first), check.una_home())
+
+    def test_sh_lines(self):
+        def found(body):
+            failures = check.Failures()
+            block = template2.fences(f"```sh\n{body}```\n")[0][0]
+            template2.check_sh(block, "p", failures)
+            return failures.items
+
+        self.assertEqual(found("cd 06-failure/day-to-day\nmkdir orders\nuna run .\nuna --json check .\npython3 -B scripts/check.py --fill\n"), [])
+        for line in ("una run .   ok 99 x LAMP-01  Total: 4200 cents", "una run . --grant env", "$ una run .",
+                     "cd 06-failure; rm -rf x", "python3 -B scripts/check.py --una x", "ok 2 x LAMP-01"):
+            self.assertTrue(found(line + "\n"), line)
+
 
 class Chapters(Base):
     def setUp(self):
@@ -598,6 +685,40 @@ class Chapters(Base):
     def test_an_unknown_container(self):
         edit(self.readme, ":::agents", ":::demo")
         self.assertFails("no container :::demo")
+
+    # Round two: code the site renders that the check would not see.
+
+    def test_a_math_block(self):
+        edit(self.readme, "## 6.2 Handling a failure\n", "## 6.2 Handling a failure\n\nText.\n$$\npub main() -> Unit = nonsense\n$$\n")
+        self.assertFails("a `$$` line")
+
+    def test_a_marker_and_five_columns(self):
+        edit(self.readme, "- declare an error kind.", "- declare an error kind.\n-     pub main() -> Unit = nonsense")
+        self.assertFails("columns after a list or quote marker")
+
+    def test_a_closer_with_a_no_break_space_in_a_card(self):
+        text = check.read(self.readme)
+        at = text.index('```text include="mistakes/1/expected/rendered.txt"')
+        close = text.index("\n```\n", at) + 1
+        write(self.readme, text[:close] + "```\u00a0\n*Fix:* use pub main() -> Unit = nonsense\n" + text[close + 4:])
+        self.assertFails("U+00A0")
+        self.assertFails('is not the text of include=mistakes/1/expected/rendered.txt')
+
+    def test_a_closer_with_a_form_feed_at_the_end(self):
+        with open(self.readme, "a", encoding="utf-8") as handle:
+            handle.write('\n```text include="day-to-day/expected/output.txt"\n' + OUTPUT + "```\x0c\npub main() -> Unit = nonsense\n")
+        self.assertFails("U+000C")
+
+    def test_an_indented_card(self):
+        edit(self.readme, ":::agents\n", " :::mistake\n```text include=\"mistakes/2/expected/rendered.txt\"\n```\n :::\n\n:::agents\n")
+        self.refill()
+        self.assertFails("a ::: line starts at column 0")
+
+    def test_a_symlinked_readme(self):
+        outside = os.path.join(self.base, "README.md")
+        shutil.move(self.readme, outside)
+        os.symlink(outside, self.readme)
+        self.assertFails("06-failure/README.md: a symbolic link")
 
     # Includes (H4, M4, M5, M7, L6).
 
@@ -878,6 +999,21 @@ class TemplateOne(Base):
         shutil.rmtree(os.path.join(self.root, "01-hello", "01-first"))
         self.assertFails("a chapter with no page directories is on template 2")
 
+    def test_hidden_code_on_a_template_1_chapter_page(self):
+        for extra in ("$$\nnonsense\n$$\n", "-     pub main() -> Unit = nonsense\n", "Text\u00a0here.\n"):
+            write(self.readme, "# 1 Hello\n\n" + extra)
+            self.assertFails("a template 1 chapter page holds no code")
+
+    def test_a_tracked_symbolic_link(self):
+        os.makedirs(os.path.join(self.root, "translations", "pt-br"))
+        os.symlink(os.path.join(self.root, "una.lock"), os.path.join(self.root, "translations", "pt-br", "x.md"))
+        check.git(self.root, "init", "-q")
+        check.git(self.root, "add", "-A")
+        check.git(self.root, "commit", "-q", "-m", "c")
+        failures = check.Failures()
+        check.tracked_links(self.root, failures)
+        self.assertIn("translations/pt-br/x.md: a symbolic link; una-by-example holds none", failures.items)
+
 
 class Translations(Base):
     def setUp(self):
@@ -917,6 +1053,13 @@ class Translations(Base):
 
     def test_indented_code(self):
         self.assertTranslationFails(self.text.replace("Você vai aprender a:", "Texto.\n\n    nonsense()\n\nVocê vai aprender a:"), "indented by 4")
+
+    def test_a_math_block(self):
+        self.assertTranslationFails(self.text.replace("Você vai aprender a:", "$$\nnonsense\n$$\n\nVocê vai aprender a:"), "a `$$` line")
+
+    def test_a_marker_and_five_columns(self):
+        self.assertTranslationFails(self.text.replace("- declare an error kind.", "-     pub main() -> Unit = nonsense"),
+                                    "columns after a list or quote marker")
 
     def test_swapped_blocks(self):
         first = self.text.index('```una include="day-to-day/src/orders.una#Order"')

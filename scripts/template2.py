@@ -95,13 +95,14 @@ INCLUDABLE = re.compile(
 )
 SOURCE = re.compile(r"^(una\.toml|src/.+\.una)$")
 # A plain `sh` block holds only commands the reader types, never their output.
-SH_LINE = re.compile(r"^(una|cd|mkdir|python3 -B scripts/check\.py)( [^$<>|;&`]*)?$")
+SH_LINE = re.compile(r"^(una (?P<args>.+)|(cd|mkdir) [A-Za-z0-9_./-]+|python3 -B scripts/check\.py( --fill| --self-test)?)$")
 # The component vocabulary of TEMPLATE.md.
 CONTAINERS = {"build", "steps", "decide", "mistake", "pair", "agents", "exercise", "hint", "answer",
               "recap", "reference"}
 CALLOUTS = {"NOTE", "TIP", "IMPORTANT", "WARNING", "SECURITY", "KEY"}
-OPENER = re.compile(r"^(:{3,})\s*([a-z]+)(.*)$")
-CLOSER = re.compile(r"^(:{3,})\s*$")
+# As the site reads them: a name right after the colons, and only spaces or tabs after a closer.
+OPENER = re.compile(r"^(:{3,})([a-z][\w-]*)[ \t]*(.*)$")
+CLOSER = re.compile(r"^(:{3,})[ \t]*$")
 HTML = re.compile(r"<[A-Za-z/!?][^>\n]*>?")
 AUTOLINK = re.compile(r"<(https?://|mailto:)[^>\s]*>")
 # Word targets per part: outside them is a warning.
@@ -168,9 +169,10 @@ class Block:
         return (self.indent, self.fence, self.lang, attrs, "caption" in self.attrs, tuple(self.stray), self.body)
 
 
-def fences(text):
+def fences(text, lenient=False):
     """The fenced blocks of `text` that open at the start of a line (0 to 3 spaces), and the set
-    of line numbers (0-based) inside them."""
+    of line numbers (0-based) inside them. A closer is the fence followed by spaces or tabs
+    only, as the site reads it; `lenient` also takes any other whitespace after it."""
     lines = text.split("\n")
     out, inside = [], set()
     i = 0
@@ -180,7 +182,7 @@ def fences(text):
             i += 1
             continue
         indent, fence, info = match.group(1), match.group(2), match.group(3)
-        close = re.compile(r"^ {0,3}" + re.escape(fence[0]) + "{" + str(len(fence)) + r",}\s*$")
+        close = re.compile(r"^ {0,3}" + re.escape(fence[0]) + "{" + str(len(fence)) + r",}" + (r"\s*$" if lenient else r"[ \t]*$"))
         j = i + 1
         while j < len(lines) and not close.match(lines[j]):
             j += 1
@@ -199,56 +201,117 @@ def prose_lines(text):
 
 # --- Code and markup the check would not see.
 
+def columns(text, col):
+    """The column after `text` (spaces and tabs) when it starts at `col`; tabs stop every 4."""
+    for ch in text:
+        col = col + 4 - col % 4 if ch == "\t" else col + 1
+    return col
+
+
+def analyse(line):
+    """How Markdown reads the start of `line`: (rest, markers, lead, why). `rest` is the text
+    after the blockquote and list-item markers, `markers` how many there were, `lead` the
+    columns of whitespace before `rest`, and `why` a reason the line hides code, or None: a tab
+    in the indentation; 4 or more columns at the start of the line, or 5 or more after a
+    marker, which make an indented code block."""
+    i, col, markers = 0, 0, 0
+    while True:
+        j = i
+        while j < len(line) and line[j] in " \t":
+            j += 1
+        start = col
+        col = columns(line[i:j], col)
+        lead = col - start
+        if j >= len(line):
+            return "", markers, lead, None
+        if "\t" in line[i:j]:
+            return line[j:], markers, lead, "a tab in the indentation, which Markdown may read as code; indent with spaces"
+        if lead >= (5 if markers else 4):
+            return line[j:], markers, lead, (f"{lead} columns after a list or quote marker, which Markdown renders as code" if markers
+                                             else "a line indented by 4 or more spaces, which Markdown may render as code; indent list items by 2 or 3 spaces")
+        if line[j] == ">":
+            i, col, markers = j + 1, col + 1, markers + 1
+            continue
+        marker = re.match(r"([-*+]|\d{1,9}[.)])(?=[ \t]|$)", line[j:])
+        if marker:
+            i, col, markers = j + len(marker.group(0)), col + len(marker.group(0)), markers + 1
+            continue
+        return line[j:], markers, lead, None
+
+
 def strip_containers(line):
     """`line` without its blockquote and list-item markers: (rest, markers stripped)."""
-    stripped = 0
-    while True:
-        match = re.match(r"^ {0,3}>\s?", line) or re.match(r"^ {0,3}([-*+]|\d{1,9}[.)])(\s+|$)", line)
-        if not match or not match.group(0):
-            return line, stripped
-        line = line[match.end():]
-        stripped += 1
+    rest, markers, _, _ = analyse(line)
+    return rest, markers
+
+
+def invisible(text):
+    """The characters a page's text may not hold, outside the bodies of its includes, as
+    (line, why): controls but the tab (Cc), format characters (Cf), line and paragraph
+    separators (Zl, Zp), and every space separator but the plain space (Zs), NBSP included.
+    They make the check and the site read a line differently."""
+    import unicodedata
+
+    # Block ends as both readings see them: a line that closes a block for one and not for the
+    # other is never skipped.
+    blocks, _ = fences(text, lenient=True)
+    skip = set()
+    for block in blocks:
+        if "include" in block.attrs:
+            skip.update(range(block.line, block.line + block.body.count("\n")))
+    out = []
+    for n, line in enumerate(text.split("\n")):
+        if n in skip:
+            continue
+        for ch in line:
+            category = unicodedata.category(ch)
+            if (category in ("Cc", "Cf", "Zl", "Zp") and ch != "\t") or (category == "Zs" and ch != " "):
+                out.append((n + 1, f"the invisible or control character U+{ord(ch):04X}; page text holds plain spaces only"))
+                break
+    return out
 
 
 def hidden_code(text):
-    """Code outside the fences `fences` finds, as (line, why): a fence inside a quote or a list
-    item, or indented by 4 or more spaces; and an indented code block, any line indented by 4
-    or more spaces or by a tab (after quote markers). Lists may nest one level, by 2 spaces."""
-    out = []
+    """Code outside the fences `fences` finds, as (line, why): a fence or a `$$` block inside a
+    quote or a list item, or anywhere for `$$`; an indented code block (4 or more columns at the
+    start of a line, 5 or more after a list or quote marker, or a tab); and invisible or control
+    characters. Lists may nest one level, by 2 spaces."""
+    out = list(invisible(text))
     for n, line in prose_lines(text):
         if not line.strip():
             continue
-        rest, stripped = strip_containers(line)
-        if re.match(r"^\s*(`{3,}|~{3,})", rest):
+        rest, markers, lead, why = analyse(line)
+        if rest.rstrip().startswith("$$"):
+            out.append((n + 1, "a `$$` line, which the site renders as a block of code; Learn pages have none"))
+            continue
+        if re.match(r"^(`{3,}|~{3,})", rest):
             out.append((n + 1, "a fenced block inside a quote, a list or an indentation; every block starts at column 0, outside any container but ::: ones"))
             continue
-        unquoted = line
-        while re.match(r"^ {0,3}>", unquoted):
-            unquoted = re.sub(r"^ {0,3}>\s?", "", unquoted, count=1)
-        lead = unquoted[:len(unquoted) - len(unquoted.lstrip(" \t"))]
-        if "\t" in lead or len(lead) >= 4:
-            out.append((n + 1, "a line indented by 4 or more spaces or by a tab, which Markdown may render as code; indent list items by 2 or 3 spaces"))
+        if why:
+            out.append((n + 1, why))
     return out
 
 
 def markup(text, where, failures):
     """The strict reading of a template 2 page or translation: no hidden code, headings only as
     `#` lines at column 0, no setext heading, no raw HTML, and only the containers and callouts
-    of the template."""
+    of the template, each `:::` line at column 0."""
     for line, why in hidden_code(text):
         failures.add(f"{where}:{line}", why)
     previous, previous_n = "", -2
     stack = []
     for n, line in prose_lines(text):
         at = f"{where}:{n + 1}"
-        rest, stripped = strip_containers(line)
-        if re.match(r"^ {0,3}#{1,6}(\s|$)", rest) and (stripped or not re.match(r"^#{1,6} \S", line)):
+        rest, markers, lead, _ = analyse(line)
+        if re.match(r"^#{1,6}(\s|$)", rest) and (markers or lead or not re.match(r"^#{1,6} \S", line)):
             failures.add(at, "a heading is a `#` line at column 0, `## Name`, outside quotes and lists")
+        if rest.startswith(":::") and (markers or lead):
+            failures.add(at, "a ::: line starts at column 0, outside quotes and lists")
         unquoted = re.sub(r"^( {0,3}>\s?)+", "", line)
-        if re.match(r"^ {0,3}(=+|-+)\s*$", unquoted) and previous_n == n - 1 and previous.strip() and not CLOSER.match(previous):
+        if re.match(r"^ {0,3}(=+|-+)[ \t]*$", unquoted) and previous_n == n - 1 and previous.strip() and not CLOSER.match(previous):
             failures.add(at, "a setext heading (a line of = or - under text); use `## ` headings, or a blank line before a rule")
         previous, previous_n = (unquoted if line.strip() else ""), n
-        prose = base.SPAN.sub("", AUTOLINK.sub("", line))
+        prose = spans_removed(AUTOLINK.sub("", line))
         if HTML.search(prose):
             failures.add(at, "raw HTML; the pages are Markdown without HTML")
         callout = re.match(r"^ {0,3}>\s*\[!([^\]]*)\]", line)
@@ -266,9 +329,16 @@ def markup(text, where, failures):
                 else:
                     stack.pop()
             else:
-                failures.add(at, "a ::: line is `:::name` or a closing `:::`")
+                failures.add(at, "a ::: line is `:::name`, with the name right after the colons, or a closing `:::`")
     if stack:
         failures.add(where, f"{len(stack)} ::: container(s) not closed")
+
+
+def spans_removed(text):
+    """`text` without its code spans, read as CommonMark does: a backslash-escaped backtick
+    opens no span, and a span closes on a run of as many backticks."""
+    text = re.sub(r"\\.", "  ", text)
+    return re.sub(r"(?<!`)(`+)(?!`)(.*?[^`])\1(?!`)", "", text)
 
 
 class Container:
@@ -671,8 +741,9 @@ def resolve(block, packages, chapter_dir):
 
 def check_sh(block, at, failures):
     """A plain `sh` block: commands only, one per line, no prompt and no output."""
-    for line in block.body.splitlines():
-        if line.strip() and not SH_LINE.match(line):
+    for line in block.body.split("\n"):
+        match = SH_LINE.match(line)
+        if line.strip() and (not match or (match.group("args") is not None and not base.COMMAND.fullmatch(match.group("args")))):
             failures.add(at, f"an `sh` block holds only commands (una, cd, mkdir), with no prompt and no output; not {line!r}")
 
 
@@ -717,7 +788,7 @@ def check_blocks(text, packages, chapter_dir, where, failures, una_path=None, sc
             allowed = {found.relative} if block.lang == "diff" else {path, found.relative}
             if block.attrs["title"] not in allowed:
                 failures.add(at, f"title=\"{block.attrs['title']}\" is not the included file's path ({' or '.join(sorted(allowed))})")
-        if re.search(r"^ {0,3}" + re.escape(block.fence[0]) + "{" + str(len(block.fence)) + r",}\s*$", found.text, re.M):
+        if re.search(r"^ {0,3}" + re.escape(block.fence[0]) + "{" + str(len(block.fence)) + r",}[ \t]*$", found.text, re.M):
             failures.add(at, f"the included text holds a line that closes a {block.fence} fence; use a longer fence")
         if block.body != found.text:
             failures.add(at, f"the block is not the text of include={block.attrs['include']} (run `python3 -B scripts/check.py --fill`)")
@@ -814,19 +885,20 @@ LINK = re.compile(r"\]\(\s*<?([^)\s>]+)")
 def links(body, where, failures):
     """A page links to the site's own pages: a root-relative route such as /docs/errors/U3007/,
     an anchor on the page, or an https URL that is not a file of the una-lang repositories."""
-    rest = base.SPAN.sub("", "\n".join(line for _, line in prose_lines(body)))
+    rest = "\n".join(spans_removed(line) for _, line in prose_lines(body))
     targets = LINK.findall(rest) + base.REFERENCE.findall(rest) + base.URL.findall(rest)
     targets += re.findall(r"<(https?://[^>\s]+)>", rest)
     for target in targets:
+        lower = target.lower()
         if target.startswith("#") or (target.startswith("/") and not target.startswith("//")):
             continue
-        if target.startswith("mailto:"):
+        if lower.startswith("mailto:"):
             continue
-        if target.startswith("http://"):
+        if lower.startswith("http://"):
             failures.add(where, f"{target}: links use https")
-        elif re.match(r"^https://(www\.)?(github\.com|raw\.githubusercontent\.com)/una-lang/", target):
+        elif re.match(r"^https://(www\.)?(github\.com|raw\.githubusercontent\.com)(:\d+)?/una-lang/", lower):
             failures.add(where, f"{target}: links to the repositories, which change after the release; link the site's page, such as /docs/...")
-        elif not target.startswith("https://"):
+        elif not lower.startswith("https://"):
             failures.add(where, f"{target}: a relative link resolves on GitHub, not on the site; use a route such as /docs/... or /learn/...")
 
 
@@ -950,10 +1022,13 @@ def classify(root, chapter, failures):
     is not exactly template 2 fails."""
     directory = os.path.join(root, chapter)
     readme = os.path.join(directory, "README.md")
-    if not os.path.isfile(readme) or os.path.islink(readme):
-        return None
-    text = base.read(readme)
     where = f"{chapter}/README.md"
+    if os.path.islink(readme):
+        failures.add(where, "a symbolic link; una-by-example holds none, and the chapter is not checked through it")
+        return None
+    if not os.path.isfile(readme):
+        return None  # check_pages reports it
+    text = base.read(readme)
     if b"\r" in base.read_bytes(readme):
         failures.add(where, "carriage returns; the pages use LF line ends")
         return None

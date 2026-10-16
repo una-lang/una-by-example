@@ -2,7 +2,7 @@
 
 A chapter on template 2 is one long page that teaches one idea of Una through a program the reader builds. Every block of code, output and diagnostic on it comes from a package that `scripts/check.py` checks against the pinned `una`, so nothing on the page is typed by hand.
 
-A chapter opts in with exactly `template: 2` in the front matter of its `README.md`. A chapter stays on template 1 (the fixed parts `The program`, `What you should see`, `Try it` and `See also`, one directory per page) only while its `README.md` has no front matter and no code block, it has page directories, and it has none of `steps/`, `day-to-day/`, `mistakes/` or `exercises/`. Anything in between fails the check: a front matter that does not parse, `template` with another value or spelling (`template: 02`, `Template: 2`), or template 2 directories without `template: 2`. Pages use LF line ends; a carriage return fails.
+A chapter opts in with exactly `template: 2` in the front matter of its `README.md`. A chapter stays on template 1 (the fixed parts `The program`, `What you should see`, `Try it` and `See also`, one directory per page) only while its `README.md` has no front matter and no code block, it has page directories, and it has none of `steps/`, `day-to-day/`, `mistakes/` or `exercises/`. Anything in between fails the check: a front matter that does not parse, `template` with another value or spelling (`template: 02`, `Template: 2`), or template 2 directories without `template: 2`. Pages use LF line ends; a carriage return fails. The chapter's `README.md` is a plain file: a symbolic link fails.
 
 ## Files
 
@@ -41,7 +41,7 @@ Every package and every overlay with files of its own has `expected/`, checked a
 
 **Commands.** A command is one of: `check .`, `test .`, `run .`, `build .`, `report .` and `obligations .` (each optionally after `--json`), `fmt --check .`, `fix --dry-run .`, `explain U1234`, `trace NAME` and `contract NAME` (optionally after `--json`). No other argument, no `--grant`, and no path but `.`.
 
-**What `una` may do.** `una` runs with a minimal environment: `PATH`, a `HOME` and `TMPDIR` of its own, `LANG=C.UTF-8` and `NO_COLOR=1`, nothing else. A package's `una.toml` holds only the tables `[package]`, `[run]`, `[escape_budget]`, `[labels]`, `[trusted]`, `[boundaries]` and `[contracts]`; `[run]` holds only `entry` and `grants`; and the grants are `console`, `clock` and `files:src:<access>` or `files:src/<dir>:<access>`, where `<access>` is `read`, `write` or `read,write`. No environment, no network, no files outside the package's `src/`. Each command runs on a fresh copy of the package, so what one writes never reaches another.
+**What `una` may do.** `una` runs with a minimal environment: `PATH`, a `HOME` and `TMPDIR` of its own, fresh for each run, `LANG=C.UTF-8` and `NO_COLOR=1`, nothing else. A package's `una.toml` holds only the tables `[package]`, `[run]`, `[escape_budget]`, `[labels]`, `[trusted]`, `[boundaries]` and `[contracts]`; `[package]` holds only `name`, `version` and `edition`; `[run]` holds only `entry` and `grants`; and the grants are `console`, `clock` and `files:src:<access>` or `files:src/<dir>:<access>`, where `<access>` is `read`, `write` or `read,write`. No environment, no network, no files outside the package's `src/`. Each command runs on a fresh copy of the package, so what one writes never reaches another.
 
 **Normalization of `rendered.txt`.** The checks run each package in a fresh copy, at a path that changes on every run. Before comparing, the output is normalized: CRLF becomes LF; the copy's absolute path followed by `/` is removed, and where it stands alone it becomes `.`; spaces and tabs at the end of a line are removed; blank lines at the end are removed, and the text ends with one newline. Write `rendered.txt` already normalized. Only stderr counts: in the package, run `una --color never check . 2>&1 >/dev/null`, and remove the spaces at the ends of lines.
 
@@ -115,7 +115,15 @@ The page has no free-floating code. Every fenced block names, in its info string
 
 A block shows only `una.toml`, `src/**/*.una` and the expected files. Paths are relative to the chapter's directory, with no `..`. An include of an overlay's file that the overlay does not replace shows its base's file.
 
-**Where blocks go.** Every block starts at column 0, outside quotes and lists; it may sit inside `:::` containers. A fence inside a callout (`> [!NOTE]`) or a list item, a tilde fence that is not an include, and any line indented by 4 or more spaces or by a tab (which Markdown may render as code) fail. Indent list items by 2 or 3 spaces, and nest lists one level at most.
+**Where blocks go.** Every block starts at column 0, outside quotes and lists; it may sit inside `:::` containers. These fail, since Markdown renders each as code the check would not compare:
+
+- a fence inside a callout (`> [!NOTE]`) or a list item, and a tilde fence that is not an include;
+- a line indented by 4 or more spaces, a list or quote marker followed by 5 or more spaces (`-     text`), and a tab in any indentation;
+- a `$$` line, which the site renders as a block.
+
+Indent list items by 2 or 3 spaces, put one space after a marker, and nest lists one level at most. A fence closes on a line of its backticks or tildes followed by nothing but spaces or tabs.
+
+**Plain characters.** Outside the bodies of includes, the page holds no invisible or control characters: no no-break space, no other Unicode space but the plain one, no zero-width or format character, no line or paragraph separator, and no control character but the tab.
 
 **Declarations.** A top-level line is a line at column 0 that is not blank and does not start with `=` (the `=` that opens a function body is part of its declaration). A declaration starts at its name's top-level line, or at the `---` doc comment lines right above it, and ends before the next top-level line, without the blank lines at its end. The name is the first word after `pub`, `trusted`, `kind`, `capability`, `handler`, `predicate`, `opaque`, `measure` and the like: `main` in `pub main() -> Unit`, `Inventory` in `pub capability Inventory`. A plain `--` comment at column 0 ends the declaration above it and belongs to none. Examples, `module` lines and names declared twice cannot be named; include them by lines.
 
@@ -140,7 +148,7 @@ It writes the body of every include, on the English page and its translations, f
 
 Any other attribute fails the check, so a misspelt `include` does not pass unnoticed.
 
-**Blocks written by hand.** Only plain `sh` blocks (```` ```sh ````, no attributes) of commands the reader types: each line starts with `una`, `cd`, `mkdir` or `python3 -B scripts/check.py`, with no `$` prompt and no output. Every other block, `text` and `json` included, is an include; output comes from `expected/commands/`.
+**Blocks written by hand.** Only plain `sh` blocks (```` ```sh ````, no attributes) of commands the reader types, one per line, with no `$` prompt and no output: `una <command>` with a command from the list above, `cd <path>` or `mkdir <path>` with one plain path, or `python3 -B scripts/check.py` alone, with `--fill` or with `--self-test`. Every other block, `text` and `json` included, is an include; output comes from `expected/commands/`.
 
 **Translations.** A translation holds the same blocks, in the same order, byte for byte, with the same includes and bodies, and the same `:::` containers in the same order: only the prose, the `caption` values and the summary after `:::answer` change. `--fill` keeps the blocks in step with the English page.
 
@@ -152,11 +160,11 @@ Any other attribute fails the check, so a misspelt `include` does not pass unnot
 
 ## Links
 
-Links point to the site's own pages at the release: a root-relative route such as `/docs/errors/U3007/`, or an anchor on the page such as `#what-youll-build`. A link to a file of the una-lang repositories on GitHub (`/blob/`, `/tree/`, `raw.githubusercontent.com`) fails, since those files change after the release; so does a relative link such as `../05-collections/README.md`, which resolves on GitHub but not on the site, and an `http://` link. Other `https://` links are allowed.
+Links point to the site's own pages at the release: a root-relative route such as `/docs/errors/U3007/`, or an anchor on the page such as `#what-youll-build`. A link to a file of the una-lang repositories on GitHub (`/blob/`, `/tree/`, `raw.githubusercontent.com`) fails, since those files change after the release; so does a relative link such as `../05-collections/README.md`, which resolves on GitHub but not on the site, and an `http://` link. The host is matched in any case and with any port. Other `https://` links are allowed.
 
 ## Components
 
-The page uses Markdown and a small set of markers that the site renders. Raw HTML fails, and so does a container or callout not in this table.
+The page uses Markdown and a small set of markers that the site renders. Raw HTML fails, and so does a container or callout not in this table (the site knows a `:::demo` container for its own gallery; Learn pages do not use it).
 
 | Write | Get | Part |
 | --- | --- | --- |
@@ -181,7 +189,7 @@ The page uses Markdown and a small set of markers that the site renders. Raw HTM
 | `U1234`, in text or in backticks | a chip linked to the code's page | all |
 | `[[Ctrl]]` | a keyboard key | all |
 
-A container that holds others uses more colons (`::::exercise` around `:::hint`), and every container is closed by a line of as many colons.
+A container that holds others uses more colons (`::::exercise` around `:::hint`), and every container is closed by a line of as many colons. A `:::` line starts at column 0, outside quotes and lists, with the name right after the colons: `:::mistake`, not `::: mistake`.
 
 ## What `check.py` checks on a template 2 chapter
 
@@ -191,7 +199,7 @@ Failures:
 2. The chapter directory holds only `README.md`, `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, laid out as above, with only the allowed files and no symbolic link.
 3. Every package and overlay has an allowed `una.toml` and the outcome in its `expected/`; its commands are allowed and print what they say; its `rendered.txt` is what `una` prints, normalized.
 4. The front matter has exactly its fields; `learn` matches the directory; `codes` are the codes the outcomes show.
-5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections, and the markup is strict: no code outside the blocks the check reads, no setext heading, no raw HTML, only the template's containers and callouts.
+5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections, and the markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
 6. Every fenced block is an include (or a plain `sh` block of commands); its include resolves; its body is the included text; its attributes are quoted, known and given once; its `title` is its path; its `verified` badges hold.
 7. "What you'll build" has a block that includes exactly `day-to-day/expected/output.txt`; the page shows something of `day-to-day/`; there are at least 4 mistakes and 3 to 5 exercises; each card shows its own mistake or answer, as above.
 8. Each exercise's examples fail on `start/`; each answer checks clean, runs, and passes `una test .`.
