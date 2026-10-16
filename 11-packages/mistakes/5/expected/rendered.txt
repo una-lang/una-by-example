@@ -1,0 +1,23 @@
+[U7001] Error: line 3 is not in canonical form
+   ╭─[ src/store/invoice.una:3:1 ]
+   │
+ 3 │ import store.money (format)
+   │ ─────────────┬─────────────
+   │              ╰─────────────── line 3 is not in canonical form
+   │
+   │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/store/invoice.una:3:1..4:1 to ""
+   │
+   │ Note: run `una explain U7001` for an explanation
+───╯
+[U7001] Error: the canonical form adds lines before line 5
+   ╭─[ src/store/invoice.una:5:1 ]
+   │
+ 5 │ import store.pricing (line_cents, member_price)
+   │ │
+   │ ╰─ the canonical form adds lines before line 5
+   │
+   │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/store/invoice.una:5:1..5:1 to "import store.money (format)\n"
+   │
+   │ Note: run `una explain U7001` for an explanation
+───╯
+2 of 2 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

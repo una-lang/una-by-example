@@ -1,0 +1,7 @@
+$ una test .
+example shipping "an order of 49.99 pays 4.90" ... FAILED
+  src/shipping.una:24: expect result == 490
+  it is false, with `result` = `49`
+example shipping "an order of exactly 50.00 ships for free" ... ok
+
+2 examples: 1 passed, 1 failed

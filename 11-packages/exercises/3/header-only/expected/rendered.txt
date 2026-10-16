@@ -1,0 +1,21 @@
+[U5001] Error: `@prices.set_price` may run where `not dry_run` is not proven
+    ╭─[ src/store/sale.una:20:3 ]
+    │
+ 18 │   uses @prices: PriceList[set_price where not dry_run]
+    │                                           ─────┬─────
+    │                                                ╰─────── condition
+    │
+ 20 │   @prices.set_price(sku, cents: cents)
+    │   ──────────────────┬─────────────────
+    │                     ╰─────────────────── `@prices.set_price` may run where `not dry_run` is not proven
+    │
+    │ Help 1: repair 1: guard the operation with `if not dry_run`
+    │
+    │ Help 2: repair 2: add `requires not dry_run` to the enclosing function; its callers then prove it
+    │
+    │ Note 1: obligation ob-804d5404565b (effect_condition) is refuted: not dry_run
+    │
+    │ Note 2: counterexample: dry_run = true
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

@@ -1,0 +1,2 @@
+error U3023 at src/store/sale.una:9:27: the header of `apply_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
+  counterexample: dry_run = true

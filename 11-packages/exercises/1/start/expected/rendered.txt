@@ -1,0 +1,18 @@
+[U1001] Error: module `store.shipping` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+   ╭─[ src/store/invoice.una:6:8 ]
+   │
+ 6 │ import store.shipping (shipping_fee)
+   │        ───────┬──────
+   │               ╰──────── module `store.shipping` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+[U1001] Error: cannot find name `shipping_fee` in this module, its imports or the prelude
+    ╭─[ src/store/invoice.una:32:54 ]
+    │
+ 32 │ pub with_shipping(subtotal: Int) -> Int = subtotal + shipping_fee(subtotal)
+    │                                                      ──────┬─────
+    │                                                            ╰─────── cannot find name `shipping_fee` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯

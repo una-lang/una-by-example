@@ -1,0 +1,5 @@
+$ una test .
+example cart "two lamps and a mug" ... ok
+example cart "an empty cart holds nothing" ... ok
+
+2 examples: 2 passed, 0 failed

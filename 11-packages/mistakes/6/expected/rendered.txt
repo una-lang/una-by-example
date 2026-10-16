@@ -1,0 +1,9 @@
+[U7002] Error: unknown table [contracts] in una.toml
+    ╭─[ una.toml:10:2 ]
+    │
+ 10 │ [contracts]
+    │  ────┬────
+    │      ╰────── unknown table [contracts] in una.toml
+    │
+    │ Note: run `una explain U7002` for an explanation
+────╯

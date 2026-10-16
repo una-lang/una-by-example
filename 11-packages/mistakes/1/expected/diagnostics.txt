@@ -1,0 +1,1 @@
+error U1008 at src/store/shipping.una:1:8: module `shipping` is in `src/store/shipping.una`, which must hold module `store.shipping`

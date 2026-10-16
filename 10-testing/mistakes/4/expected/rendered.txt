@@ -1,0 +1,9 @@
+[U1001] Error: cannot find variant `Refused` in `CheckoutError`
+     ╭─[ src/checkout.una:164:16 ]
+     │
+ 164 │   expect fails Refused
+     │                ───┬───
+     │                   ╰───── cannot find variant `Refused` in `CheckoutError`
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯

@@ -1,0 +1,13 @@
+[U1002] Error: example "a cart under 50.00 pays shipping" is defined twice in this module
+     ╭─[ src/checkout.una:133:9 ]
+     │
+ 129 │ example "a cart under 50.00 pays shipping"
+     │         ─────────────────┬────────────────
+     │                          ╰────────────────── first defined here
+     │
+ 133 │ example "a cart under 50.00 pays shipping"
+     │         ─────────────────┬────────────────
+     │                          ╰────────────────── example "a cart under 50.00 pays shipping" is defined twice in this module
+     │
+     │ Note: run `una explain U1002` for an explanation
+─────╯

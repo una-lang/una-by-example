@@ -1,0 +1,9 @@
+[U1001] Error: module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+   ╭─[ src/store/app.una:5:8 ]
+   │
+ 5 │ import vendor.tax (rate)
+   │        ─────┬────
+   │             ╰────── module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯

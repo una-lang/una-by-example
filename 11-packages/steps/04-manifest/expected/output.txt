@@ -1,0 +1,2 @@
+Ok("Desk lamp: 19.90")
+Err(NotListed("CHAIR-09"))

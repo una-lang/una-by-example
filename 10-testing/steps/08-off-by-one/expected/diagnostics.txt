@@ -1,0 +1,2 @@
+error U5001 at src/shipping.una:15:34: postcondition of `shipping_fee` is refuted
+  counterexample: result = 490, subtotal = 5000

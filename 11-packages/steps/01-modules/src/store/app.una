@@ -1,0 +1,8 @@
+module store.app
+
+import store.money (format)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("a lamp costs {format(1990)}, a desk {format(24905)}")

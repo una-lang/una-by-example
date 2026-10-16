@@ -1,0 +1,12 @@
+$ una test .
+example checkout "a cart under 50.00 pays shipping" ... ok
+example checkout "a cart of two lamps is charged and mailed" ... ok
+example checkout "an empty cart asks nobody anything" ... ok
+example checkout "a cart the warehouse cannot hold is never charged" ... ok
+example checkout "a declined card releases the stock and mails nothing" ... FAILED
+  src/checkout.una:168: expect not performed @mail.send
+  the trace has `@mail.send` at event 4
+example checkout "a card processor that does not answer is PaymentDown" ... ok
+example checkout "a declined card mails the customer" ... ok
+
+7 examples: 6 passed, 1 failed

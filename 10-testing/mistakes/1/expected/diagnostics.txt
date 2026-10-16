@@ -1,0 +1,1 @@
+error U3014 at src/checkout.una:177:6: `main` needs `@console: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`

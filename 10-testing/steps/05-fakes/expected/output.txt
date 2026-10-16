@@ -1,0 +1,1 @@
+LAMP-01 warned: true, DESK-02 warned: false

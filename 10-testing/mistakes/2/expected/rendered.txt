@@ -1,0 +1,9 @@
+[U3001] Error: `checkout` needs `@payments: Payments[charge]`, which no `given` line binds
+     ╭─[ src/checkout.una:136:6 ]
+     │
+ 136 │   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
+     │      ──────────────────────────────────────────────┬──────────────────────────────────────────────
+     │                                                    ╰──────────────────────────────────────────────── `checkout` needs `@payments: Payments[charge]`, which no `given` line binds
+     │
+     │ Note: run `una explain U3001` for an explanation
+─────╯

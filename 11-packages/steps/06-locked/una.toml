@@ -1,0 +1,12 @@
+[package]
+name = "store"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "store.app"
+grants = ["console"]
+
+# What `store.sale.apply_sale` may do with the price list, and when.
+[contracts]
+"store.sale.apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]

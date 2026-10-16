@@ -1,0 +1,5 @@
+$ una test .
+example shipping "an order of 49.99 pays 4.90" ... ok
+example shipping "an order of exactly 50.00 ships for free" ... ok
+
+2 examples: 2 passed, 0 failed

@@ -1,0 +1,11 @@
+[package]
+name = "store"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "store.app"
+grants = ["console"]
+
+[contracts]
+"store.invoice.product_of" = ["@catalog: Catalog[find]"]

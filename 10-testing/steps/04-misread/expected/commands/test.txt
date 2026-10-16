@@ -1,0 +1,9 @@
+$ una test .
+example coupons "SPRING10 on 50.00 is refused" ... FAILED
+  src/coupons.una:32: expect fails BelowMinimum
+  the `do` line completed with `4500`
+example coupons "WINTER5 takes 5 percent off" ... FAILED
+  src/coupons.una:36: expect result == 4750
+  the `do` line failed with `Unknown("WINTER5")`, so `result` has no value
+
+2 examples: 0 passed, 2 failed

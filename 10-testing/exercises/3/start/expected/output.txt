@@ -1,0 +1,4 @@
+paid, reference PAY-4470
+not enough DESK-02 in stock
+the card was declined for 24900 cents
+the cart is empty

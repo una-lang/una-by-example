@@ -1,0 +1,12 @@
+[U1008] Error: module `shipping` is in `src/store/shipping.una`, which must hold module `store.shipping`
+   ╭─[ src/store/shipping.una:1:8 ]
+   │
+ 1 │ module shipping
+   │        ────┬───
+   │            ╰───── module `shipping` is in `src/store/shipping.una`, which must hold module `store.shipping`
+   │
+   │ Help: repair 1: declare `module store.shipping`, or move the file to match `shipping`; edit src/store/shipping.una:1:8..1:16 to "store.shipping"
+   │
+   │ Note: run `una explain U1008` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
