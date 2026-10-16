@@ -27,6 +27,11 @@ commands. No code may hide where the check does not look: a fence inside a quote
 an indented code block, a setext heading, raw HTML, or an unknown container or callout fails.
 See INCLUDES below.
 
+Inside each `## N.k` section, `structure` checks the subsections: 3 to 6 `### ` in a concept
+section, one `### ` per card in Common mistakes and Exercises, and the closing section
+`Recap and reference` with `### For agents`, `### Recap` and `### Reference`. A chapter of
+STRUCTURE_GRACE, not yet restructured, only warns.
+
 Standard library only.
 """
 
@@ -69,8 +74,23 @@ FRONT_MATTER = ("learn", "title", "editions", "codes", "time", "builds", "prereq
 KEPT_BY_TRANSLATIONS = ("template", "time", "prerequisites")
 FIXED = ["## What you'll build", "## Why it works this way"]
 DAY_TO_DAY = "Day-to-day: "
-TAIL = ["Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
+TAIL = ["Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 CONCEPTS = (3, 6)
+# Inside a section (TEMPLATE.md): a concept section has SUBSECTIONS `### ` headings, none of them
+# a GENERIC label; Common mistakes and Exercises have one `### ` per card; the closing section
+# has exactly CLOSING, in order.
+SUBSECTIONS = (3, 6)
+GENERIC = {"overview", "introduction", "intro", "background", "basics", "details", "example", "examples",
+           "more", "notes", "other", "misc", "summary", "usage", "discussion", "explanation"}
+CLOSING = ["For agents", "Recap", "Reference"]
+# The tail before the section rules: For agents, Recap and Reference as sections of their own.
+LEGACY_TAIL = ["Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
+# Chapters not yet restructured to the section rules: a breach of them there is a warning, not a
+# failure. A chapter leaves this list once it is restructured, and every new chapter follows the
+# rules from the start.
+STRUCTURE_GRACE = {"01-hello", "02-values", "03-functions", "04-kinds", "05-collections", "07-contracts",
+                   "08-capabilities", "09-information-flow", "10-testing", "11-packages",
+                   "12-memory-and-concurrency", "13-tools", "14-editions"}
 GROUPS = ("steps", "day-to-day", "mistakes", "exercises")
 ENTRIES = {"README.md", *GROUPS}
 STEP = re.compile(r"^(\d\d)-[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -885,6 +905,7 @@ def headings(fields, body, where, failures):
     shape = (f"`## What you'll build`, `## Why it works this way`, then `## {number}.1 <concept>` to "
              f"`## {number}.k <concept>` (k from {CONCEPTS[0]} to {CONCEPTS[1]}), then `## {number}.k+1 {DAY_TO_DAY}<program>`, "
              + ", ".join(f"`## {number}.k+{i} {t}`" for i, t in enumerate(TAIL, start=2)))
+    # LEGACY_TAIL passes here; structure() reports it outside STRUCTURE_GRACE.
     if found[:2] != FIXED:
         failures.add(where, f"the parts must be {shape}; found {found}")
         return None
@@ -900,10 +921,72 @@ def headings(fields, body, where, failures):
         failures.add(where, f"no `## {number}.k+1 {DAY_TO_DAY}<program>`; the parts must be {shape}")
         return None
     concepts = starts[0]
-    if not CONCEPTS[0] <= concepts <= CONCEPTS[1] or titles[concepts + 1:] != TAIL:
+    if not CONCEPTS[0] <= concepts <= CONCEPTS[1] or titles[concepts + 1:] not in (TAIL, LEGACY_TAIL):
         failures.add(where, f"the parts must be {shape}; found {found}")
         return None
     return concepts
+
+
+def subsections(lines, inside):
+    """The `### ` subsections of a section's lines, outside fences: [(title or None, [(n, line)])],
+    the first entry holding the lines before the first `### `. A heading's own line is in no entry."""
+    out = [(None, [])]
+    for n, line in lines:
+        if n not in inside and line.startswith("### "):
+            out.append((line[4:].strip(), []))
+        else:
+            out[-1][1].append((n, line))
+    return out
+
+
+def structure(chapter, body, concepts, where, failures, warnings):
+    """The rules inside a section (TEMPLATE.md, "Inside a section"): 3 to 6 `### ` subsections
+    with specific titles in each concept section; in Common mistakes and Exercises, one `### `
+    per card, each holding its card; and the closing section `Recap and reference` with exactly
+    `### For agents`, `### Recap` and `### Reference`. In a chapter of STRUCTURE_GRACE a breach
+    is a warning; elsewhere it fails. Returns the breaches."""
+    _, inside = fences(body)
+    boxes = containers(body)
+    numbered = [(h, lines) for h, lines in sections(body) if h and re.match(r"^## \d+\.\d+ ", h)]
+    titles = [re.sub(r"^## \d+\.\d+ ", "", h) for h, _ in numbered]
+    problems = []
+    if titles[concepts + 1:] == LEGACY_TAIL:
+        number = re.match(r"^## (\d+)\.", numbered[0][0]).group(1)
+        problems.append(f"For agents, Recap and Reference are one closing section, `## {number}.{concepts + 5} Recap and reference`, "
+                        "with `### For agents`, `### Recap` and `### Reference`; the sections after it are renumbered")
+    for index, ((heading, lines), title) in enumerate(zip(numbered, titles)):
+        found = subsections(lines, inside)[1:]
+        names = [name for name, _ in found]
+        label = heading[3:]
+        if index < concepts:
+            if not SUBSECTIONS[0] <= len(names) <= SUBSECTIONS[1]:
+                problems.append(f"`{label}` has {len(names)} `### ` subsections; a concept section has {SUBSECTIONS[0]} to {SUBSECTIONS[1]}")
+            for name in names:
+                if re.sub(r"[^a-z ]", "", name.lower()).strip() in GENERIC:
+                    problems.append(f"`{label}`: `### {name}` is a generic label; title a subsection by what it teaches")
+        elif title in ("Common mistakes", "Exercises"):
+            card = "mistake" if title == "Common mistakes" else "exercise"
+            cards_of = [box for box in boxes if box.name == card and lines and lines[0][0] < box.start <= lines[-1][0] + 1]
+            spans = [(sub[0][0] + 1 if sub else None, sub[-1][0] + 1 if sub else None) for _, sub in found]
+            per = [sum(1 for box in cards_of if a is not None and a <= box.start <= b) for a, b in spans]
+            loose = len(cards_of) - sum(per)
+            if len(names) != len(cards_of) or loose or any(k != 1 for k in per):
+                problems.append(f"`{label}` has one `### ` subsection per :::{card} card, titled by the {card}, "
+                                f"with its card in it; found {len(names)} subsections for {len(cards_of)} cards")
+        elif title == "Recap and reference":
+            loose = [line for n, line in subsections(lines, inside)[0][1] if line.strip()]
+            if names != CLOSING or loose:
+                problems.append(f"`{label}` holds exactly `### For agents`, `### Recap` and `### Reference`, in order; "
+                                f"found {['### ' + n for n in names]}" + (" and text before them" if loose else ""))
+    graced = chapter in STRUCTURE_GRACE
+    if graced and problems:
+        warnings.append(f"{where}: not yet on the section rules (STRUCTURE_GRACE): {len(problems)} to fix, "
+                        f"the first: {problems[0]}")
+    for problem in [] if graced else problems:
+        failures.add(where, problem)
+    if graced and not problems:
+        warnings.append(f"{where}: the chapter follows the section rules; take it out of STRUCTURE_GRACE")
+    return problems
 
 
 LINK = re.compile(r"\]\(\s*<?([^)\s>]+)")
@@ -1016,11 +1099,17 @@ def check_page(root, chapter, fields, body, packages, una_path, codes, failures,
     for ref in packages:
         if ref.startswith("steps/") and ref not in used:
             warnings.append(f"{where}: nothing on the page includes {ref}")
+    if concepts is not None:
+        structure(chapter, body, concepts, where, failures, warnings)
     parts = sections(body)
     _, inside = fences(body)
     by_name = {}
     for heading, lines in parts:
         by_name[None if heading is None else re.sub(r"^## (\d+\.\d+ )?", "", heading)] = lines
+    # For agents and Recap are subsections of the closing section, or, in a chapter not yet
+    # restructured, sections of their own.
+    for name, lines in subsections(by_name.get("Recap and reference", []), inside)[1:]:
+        by_name.setdefault(name, lines)
     recap = sum(1 for _, line in by_name.get("Recap", []) if re.match(r"^[-*] ", line))
     if not RECAP[0] <= recap <= RECAP[1]:
         warnings.append(f"{where}: `Recap` has {recap} bullets; the template asks for {RECAP[0]} to {RECAP[1]}")

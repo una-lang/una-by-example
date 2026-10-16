@@ -16,6 +16,7 @@ import os  # noqa: E402
 import shutil  # noqa: E402
 import tempfile  # noqa: E402
 import unittest  # noqa: E402
+from unittest import mock  # noqa: E402
 from contextlib import redirect_stderr, redirect_stdout  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -177,6 +178,12 @@ You will learn to:
 
 ## 6.1 Declaring a failure
 
+### A quantity that can be wrong
+
+{lead}
+
+### A first failing function
+
 ```una title="steps/01-quantity/src/quantity.una" verified="check, run" include="steps/01-quantity/src/quantity.una"
 ```
 
@@ -185,17 +192,39 @@ You will learn to:
 ```text include="steps/01-quantity/expected/output.txt"
 ```
 
+### How `fail` ends a function
+
+{lead}
+
 ## 6.2 Handling a failure
+
+### The five clauses
+
+{lead}
+
+### Translating between layers
 
 ```una include="steps/02-translate/src/translate.una#translate" verified="check"
 ```
 
+### Recovering with a default
+
+{lead}
+
 ## 6.3 Failures as values
+
+### Keeping an outcome
+
+{lead}
+
+### A batch that goes on
 
 ```diff include="steps/02-translate..steps/03-defaults:src/translate.una"
 ```
 
-See [the errors](/docs/errors/U3007/) and [above](#what-youll-build).
+### Choosing a clause
+
+See [the errors](/docs/errors/U3007/) and [What you'll build](#what-youll-build).
 
 ## 6.4 Day-to-day: order intake
 
@@ -221,16 +250,18 @@ una run .
 ## 6.6 Common mistakes
 
 {mistakes}
-## 6.7 For agents
+## 6.7 Exercises
+
+{exercises}
+## 6.8 Recap and reference
+
+### For agents
 
 :::agents
 Run `una --json check .`.
 :::
 
-## 6.8 Exercises
-
-{exercises}
-## 6.9 Recap
+### Recap
 
 :::recap
 - One.
@@ -240,15 +271,17 @@ Run `una --json check .`.
 - Five.
 :::
 
-## 6.10 Reference
+### Reference
 
 :::reference
 - [fails](/docs/reference/language/errors/fails/)
 :::
 """
 
-MISTAKE = """:::mistake
-**{n}. Forgetting the clause (U3007).**
+MISTAKE = """### Forgetting clause {n} (U3007)
+
+:::mistake
+Remove clause {n}.
 
 ```diff include="day-to-day..mistakes/{n}:src/orders.una" context="1"
 ```
@@ -261,8 +294,10 @@ MISTAKE = """:::mistake
 
 """
 
-EXERCISE = """::::exercise
-**Exercise {n}.** Extend the program.
+EXERCISE = """### Exercise {n}: extend the program
+
+::::exercise
+Extend the program.
 
 :::hint
 *Hint:* look at `reason`.
@@ -470,12 +505,31 @@ class Units(unittest.TestCase):
             failures = check.Failures()
             template2.headings(fields, body.replace(old, new), "p", failures)
             self.assertTrue(any(wants in item for item in failures.items), (old, failures.items))
+        # The tail before the section rules passes here; structure() reports it.
+        old_tail = body[:body.index("## 6.7 Exercises")] + "## 6.7 For agents\n\n## 6.8 Exercises\n\n## 6.9 Recap\n\n## 6.10 Reference\n"
+        failures = check.Failures()
+        self.assertEqual(template2.headings(fields, old_tail, "p", failures), 3)
+        self.assertEqual(failures.items, [])
         fewer = body.replace("## 6.3 Failures as values", "### Failures as values")
         for n in range(4, 11):
             fewer = fewer.replace(f"## 6.{n} ", f"## 6.{n - 1} ")
         failures = check.Failures()
         template2.headings(fields, fewer, "p", failures)
         self.assertTrue(any("the parts must be" in item for item in failures.items), failures.items)
+
+    def test_structure(self):
+        page = PAGE.format(lead="x", mistakes="", exercises="")
+        fields, body = check.front_matter(page)
+        failures, warnings = check.Failures(), []
+        self.assertEqual(template2.structure("06-failure", body, 3, "p", failures, warnings), [])
+        # A `### ` line inside a fenced block is code, not a subsection.
+        fenced = body.replace("### How `fail` ends a function\n", '```text include="steps/01-quantity/expected/output.txt"\n### How `fail` ends a function\n```\n')
+        problems = template2.structure("06-failure", fenced, 3, "p", failures, warnings)
+        self.assertEqual(problems, ["`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 6"])
+        self.assertEqual(failures.items, ["p: " + problems[0]])
+        # A `#### ` part does not count as a subsection.
+        deeper = body.replace("### How `fail` ends a function", "#### How `fail` ends a function")
+        self.assertEqual(len(template2.structure("06-failure", deeper, 3, "p", check.Failures(), [])), 1)
 
     def test_caption_only_in_the_opener(self):
         english = check.skeleton('```una\nlet caption="Total"\n```\n')
@@ -882,7 +936,7 @@ class Chapters(Base):
 
     def test_a_mistake_not_on_the_page(self):
         text = check.read(self.readme)
-        start = text.index(":::mistake\n**4.")
+        start = text.index(":::mistake\nRemove clause 4.")
         write(self.readme, text[:start] + text[text.index(":::\n\n", start) + 5:])
         self.assertFails("`Common mistakes` has 3 :::mistake blocks, but there are 4 mistakes/N")
 
@@ -942,8 +996,87 @@ class Chapters(Base):
         self.assertFails("base.txt names 'steps/09-none'")
 
     def test_a_missing_part(self):
-        edit(self.readme, "## 6.7 For agents", "## 6.7 For machines")
+        edit(self.readme, "## 6.8 Recap and reference", "## 6.8 Recap")
         self.assertFails("the parts must be")
+
+    # Inside a section: subsections, one per card, the closing section, and the grace list.
+
+    def legacy(self):
+        """The fixture's page with the tail before the section rules: For agents, Recap and
+        Reference as sections of their own, and For agents before Exercises."""
+        text = check.read(self.readme)
+        exercises = text[text.index("## 6.7 Exercises\n"):text.index("## 6.8 Recap and reference\n")]
+        closing = text[text.index("## 6.8 Recap and reference\n"):]
+        agents = closing[closing.index(":::agents"):closing.index("### Recap")]
+        recap = closing[closing.index(":::recap"):closing.index("### Reference")]
+        reference = closing[closing.index(":::reference"):]
+        tail = ("## 6.7 For agents\n\n" + agents + exercises.replace("## 6.7 Exercises", "## 6.8 Exercises")
+                + "## 6.9 Recap\n\n" + recap + "## 6.10 Reference\n\n" + reference)
+        write(self.readme, text[:text.index("## 6.7 Exercises\n")] + tail)
+
+    def test_the_old_tail_fails_outside_the_grace_list(self):
+        self.legacy()
+        self.assertFails("For agents, Recap and Reference are one closing section, `## 6.8 Recap and reference`")
+
+    def test_the_old_tail_warns_in_the_grace_list(self):
+        self.legacy()
+        with mock.patch.object(template2, "STRUCTURE_GRACE", {"06-failure"}):
+            items, warnings = self.run_chapters()
+        self.assertEqual(items, [])
+        self.assertTrue(any("not yet on the section rules (STRUCTURE_GRACE)" in w for w in warnings), warnings)
+
+    def test_a_graced_chapter_that_follows_the_rules(self):
+        with mock.patch.object(template2, "STRUCTURE_GRACE", {"06-failure"}):
+            items, warnings = self.run_chapters()
+        self.assertEqual(items, [])
+        self.assertTrue(any("take it out of STRUCTURE_GRACE" in w for w in warnings), warnings)
+
+    def test_a_concept_section_with_two_subsections(self):
+        edit(self.readme, "### How `fail` ends a function\n\n", "")
+        self.assertFails("`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 6")
+
+    def test_a_concept_section_with_seven_subsections(self):
+        edit(self.readme, "### Recovering with a default\n", "### Recovering with a default\n\n" + "".join(
+            f"Text.\n\n### Further case {n}\n\n" for n in range(1, 5)))
+        self.assertFails("`6.2 Handling a failure` has 7 `### ` subsections")
+
+    def test_a_generic_subsection_title(self):
+        edit(self.readme, "### The five clauses", "### Overview")
+        self.assertFails("`### Overview` is a generic label")
+
+    def test_a_mistake_without_its_subsection(self):
+        edit(self.readme, "### Forgetting clause 2 (U3007)\n\n", "")
+        self.assertFails("`6.6 Common mistakes` has one `### ` subsection per :::mistake card, titled by the mistake, with its card in it; found 3 subsections for 4 cards")
+
+    def test_two_mistakes_under_one_subsection(self):
+        edit(self.readme, "### Forgetting clause 3 (U3007)\n\n", "")
+        edit(self.readme, "## 6.7 Exercises\n", "### A subsection with no card\n\nText.\n\n## 6.7 Exercises\n")
+        self.assertFails("found 4 subsections for 4 cards")
+
+    def test_an_exercise_subsection_without_its_card(self):
+        edit(self.readme, "## 6.8 Recap and reference\n", "### Exercise 4: more\n\nText.\n\n## 6.8 Recap and reference\n")
+        self.assertFails("`6.7 Exercises` has one `### ` subsection per :::exercise card")
+
+    def test_a_closing_section_with_another_subsection(self):
+        edit(self.readme, "### Reference\n", "### Links\n")
+        self.assertFails("`6.8 Recap and reference` holds exactly `### For agents`, `### Recap` and `### Reference`")
+
+    def test_a_closing_section_out_of_order(self):
+        text = check.read(self.readme)
+        closing = text[text.index("### For agents"):]
+        agents = closing[:closing.index("### Recap")]
+        recap = closing[closing.index("### Recap"):closing.index("### Reference")]
+        write(self.readme, text[:text.index("### For agents")] + recap + agents + closing[closing.index("### Reference"):])
+        self.assertFails("holds exactly `### For agents`, `### Recap` and `### Reference`, in order")
+
+    def test_text_before_the_closing_subsections(self):
+        edit(self.readme, "## 6.8 Recap and reference\n", "## 6.8 Recap and reference\n\nA few words.\n")
+        self.assertFails("and text before them")
+
+    def test_the_recap_is_counted_inside_the_closing_section(self):
+        edit(self.readme, "- Five.\n", "")
+        _, warnings = self.run_chapters()
+        self.assertTrue(any("`Recap` has 4 bullets" in w for w in warnings), warnings)
 
     def test_a_grant_of_the_environment(self):
         edit(os.path.join(self.chapter, "day-to-day", "una.toml"), 'grants = ["console"]', 'grants = ["console", "env"]')

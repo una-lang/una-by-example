@@ -50,11 +50,15 @@ Una moves all of that into view. Three rules do it:
 The price is a few extra lines at each call. In return, the failure behavior of any function can be read from its header and its call sites, and the checker proves that no failure goes unhandled.
 
 > [!KEY]
-> Nothing in Una fails at run time without the code saying so, apart from a few aborts outside the program's logic, such as running out of call depth or memory (U6003) or host text that is not valid UTF-8 (U6005); the Reference part lists them all. Division by zero and fixed-width overflow are ruled out by proof ([chapter 7](/learn/contracts/)), and there are no exceptions to catch.
+> Nothing in Una fails at run time without the code saying so, apart from a few aborts outside the program's logic, such as running out of call depth or memory (U6003) or host text that is not valid UTF-8 (U6005); [Reference](#reference) lists them all. Division by zero and fixed-width overflow are ruled out by proof ([chapter 7](/learn/contracts/)), and there are no exceptions to catch.
 
 ## 6.1 Declaring a failure: `fails` and `fail`
 
+### Three ways a typed quantity can be wrong
+
 Start with the smallest real case: the quantity a customer types into an order form. It must be a whole number from 1 to 99. Three things can be wrong with it, so the error kind has three variants, and each carries what a message will need.
+
+### Each step is a package
 
 Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
@@ -75,6 +79,10 @@ grants = ["console"]
 una check .
 una run .
 ```
+
+### A function that fails: `parse_quantity`
+
+The module declares the error kind, a function that fails with it, and a `main` that calls the function twice, once with good input and once with bad:
 
 :::steps
 ```una include="steps/01-quantity/src/quantity.una" title="steps/01-quantity/src/quantity.una" verified="check, run"
@@ -121,6 +129,10 @@ Walkthrough:
 3 and 0
 ```
 
+The first call returns `3`. The second fails with `NotANumber`, and its clause recovers with `0`.
+
+### Inferred error kinds in private functions
+
 > [!NOTE] Private functions infer their error kind.
 > `parse_quantity` is private, so its `fails` line could be left out: the checker infers it, and `una contract` prints the inferred header with the comment `-- inferred`. A `pub` function is a module's reviewed boundary, so it must declare `fails`. Write the line anyway whenever the failure is part of what a caller should know.
 
@@ -146,6 +158,8 @@ So a private function without `fails` can still fail. Its contract is the inferr
 
 ## 6.2 Handling a failure: the five clauses
 
+### The five clauses at a glance
+
 A statement that can fail is followed by one or two clauses, each on its own line, indented one level below it:
 
 | Clause | Use it when | After it |
@@ -161,7 +175,7 @@ A statement that can fail is followed by one or two clauses, each on its own lin
 
 ### Translating between layers with `error`
 
-Most programs have layers: a low-level parser, a line reader above it, a batch report above that. Each layer has its own error kind, because each layer knows different things. The quantity parser knows the text was not a number, and the line reader also knows the line number. `if error fail` translates, and `error` keeps the original failure as a payload, so nothing is lost. This step uses a smaller `QuantityError` than 6.1, with one variant for both bounds, which is enough here:
+Most programs have layers: a low-level parser, a line reader above it, a batch report above that. Each layer has its own error kind, because each layer knows different things. The quantity parser knows the text was not a number, and the line reader also knows the line number. `if error fail` translates, and `error` keeps the original failure as a payload, so nothing is lost. This step uses a smaller `QuantityError` than [section 6.1](#s6-1), with one variant for both bounds, which is enough here:
 
 :::steps
 ```una include="steps/03-translate/src/upload.una" title="steps/03-translate/src/upload.una" verified="check, run"
@@ -231,7 +245,7 @@ line 4: 500 is not between 1 and 99
 Walkthrough:
 
 1. **`if none fail MissingQuantity(line: number)`.** `at(index: 1)` gives `None` when the line has no comma. That is the input's fault, so it becomes a failure.
-2. **`if error fail BadQuantity(line: number, cause: error)`.** This is translation. `quantity_on_line` fails with `LineError`, and `parse_quantity` fails with `QuantityError`, so `if error pass` would not be allowed (see Common mistakes). `error` is the `QuantityError` that occurred, and it is kept as the `cause`.
+2. **`if error fail BadQuantity(line: number, cause: error)`.** This is translation. `quantity_on_line` fails with `LineError`, and `parse_quantity` fails with `QuantityError`, so `if error pass` would not be allowed ([Passing a failure of another kind](#passing-a-failure-of-another-kind-u3008) shows the diagnostic). `error` is the `QuantityError` that occurred, and it is kept as the `cause`.
 3. **`explain` and `cause_text`.** Turning a failure into a message is an ordinary `when`. Because `when` must cover every variant, adding a variant to `LineError` later makes the checker point at every message function that needs a new arm.
 4. **`attempt quantity_on_line(number, text: text)` in `show`.** `attempt` keeps the outcome as a value, `Ok(value)` or `Err(failure)`, so `show` can print a message for either. [Section 6.3](#s6-3) explains it.
 :::
@@ -295,6 +309,10 @@ example "a catalog that is down shows 0, and does not fail"
 
 The two clauses read top to bottom. First, a failure of the call becomes the value `None`. Then `None`, from either source, becomes `0`. `shown_price` has no `fails` line, and it needs none: no failure leaves it. Its header promises callers a price, always.
 
+### Testing the fallback with fakes
+
+`prices.una` ends with two examples, one per fallback.
+
 > [!TIP]
 > An `example` is a test that lives next to the code. Its `given` lines install fakes, `do` calls the code under test, `result` is what that call returned, and each `expect` line states something that must hold. `una test .` runs every example and reports each one. [Chapter 10, Testing](/learn/testing/), covers examples in full.
 
@@ -311,9 +329,15 @@ The handlers `fixed` and `down` are fake catalogs. This is how every failure pat
 
 ## 6.3 Failures as values: `attempt` and `Result`
 
+### Keeping an outcome to decide later
+
 The handling clauses decide on the spot. Sometimes you want to *keep* the outcome and decide later, for example to report every line of a batch rather than stop at the first bad one. `attempt` turns one call into a `Result[T, E]`: `Ok(value)` if it returned, `Err(failure)` if it failed. `Result` is a sum kind of the prelude, so `when` takes it apart.
 
+### The rules of `attempt`
+
 `attempt` takes exactly one call, never a larger expression. You usually bind its result with `let`, as `show` does in [section 6.2](#s6-2). It can also be the whole body of a function that returns the `Result`. When the outcome is `Ok`, everything the callee promises about its result in its header holds for the value, exactly as after a direct call ([chapter 7](/learn/contracts/) shows those promises, `ensures`).
+
+### Reporting every typed quantity
 
 This step checks quantities typed by a person with the prelude's own failing function, `parse_int`, which fails with `ParseError`. It reports every quantity and counts the good ones, instead of stopping at the first bad one:
 
@@ -371,6 +395,10 @@ pub main() -> Unit
 
 The last value interpolates as `Ok(7)`: a `Result` is printed like any other value of a sum kind.
 
+### Choosing how to handle a failure
+
+The table compares the handling clauses, `attempt`, and `checked`, which [section 6.4](#s6-4) introduces:
+
 :::decide
 **Which to use:**
 
@@ -385,7 +413,11 @@ The last value interpolates as `Ok(7)`: a `Result` is printed like any other val
 
 ## 6.4 When no proof can decide: `checked`
 
+### Facts the verifier cannot see
+
 Some facts depend on rules the verifier cannot see inside, such as whether a text is a well-formed SKU. `checked(value, condition) else fail V` tests the condition when the program runs, and gives a value of the refined kind when it holds.
+
+### Refined kinds and predicates, briefly
 
 Three constructs of [chapter 7](/learn/contracts/) appear here, briefly:
 
@@ -393,22 +425,9 @@ Three constructs of [chapter 7](/learn/contracts/) appear here, briefly:
 - A `predicate` is a named condition. It is either `reflect`, when the verifier may see its body, or `opaque`, when it may not. In code, `checked` is the only place an opaque predicate runs, so it is how a program establishes one. A capability operation can also promise one in its `ensures` ([chapter 8](/learn/capabilities/)).
 - `t.slice(start: 4, end: 5)` is the text from position 4 up to, not including, position 5.
 
-> [!WARNING]
-> `checked` replaces a proof with a test, so `una.toml` budgets it per module, and `una report .` counts the uses of each module under `escapes`.
+### A checked SKU parser
 
-```toml include="steps/06-checked/una.toml" title="steps/06-checked/una.toml"
-[package]
-name = "sku"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "sku"
-grants = ["console"]
-
-[escape_budget]
-checked_per_module = 1
-```
+The step's module turns outside text into a `Sku` with `checked`, then prints a shelf label for it:
 
 ```una include="steps/06-checked/src/sku.una" title="steps/06-checked/src/sku.una" verified="check, run"
 module sku
@@ -453,18 +472,43 @@ not a sku: lamp 1
 
 `parse_sku` trims the text, then `checked` tests `well_formed(it)` on it, with `it` standing for the trimmed text. When the test holds, the result has the kind `Sku`; when it does not, `parse_sku` fails with `NotASku`, like any `fail`.
 
+### The escape budget
+
+> [!WARNING]
+> `checked` replaces a proof with a test, so `una.toml` budgets it per module, and `una report .` counts the uses of each module under `escapes`.
+
+```toml include="steps/06-checked/una.toml" title="steps/06-checked/una.toml"
+[package]
+name = "sku"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "sku"
+grants = ["console"]
+
+[escape_budget]
+checked_per_module = 1
+```
+
 The budget is a line of the manifest, so raising it is a change a reviewer sees. Without an `[escape_budget]` table the budget is 0, and the first `checked` in a module is U7003. `checked_per_module = 1` allows one use in each module.
 
-From then on, a `Sku` can be passed anywhere one is required, with no second check. `shelf_label` takes a `Sku`, so the only way to call it with outside text is through `parse_sku`. A call with a plain `Text` does not check: the verifier cannot prove that the text is well formed.
+### Using a checked value
+
+Once `parse_sku` has returned it, a `Sku` can be passed anywhere one is required, with no second check. `shelf_label` takes a `Sku`, so the only way to call it with outside text is through `parse_sku`. A call with a plain `Text` does not check: the verifier cannot prove that the text is well formed.
 
 > [!TIP]
 > Use `checked` at the edge of the program, once per fact, and prefer a proof ([chapter 7](/learn/contracts/)) wherever the verifier can see the rule.
 
 ## 6.5 Day-to-day: order intake
 
+### What the program must do
+
 Now the program from the start of the chapter. Orders arrive as lines of text. Each line must parse, name a product the inventory knows, and ask for no more units than are on hand. The inventory is a service that can time out. A bad line must not stop the batch, and the report must say why each rejected line was rejected.
 
 The design follows from that: one error kind for the order layer, `OrderError`, whose variants carry what an operator needs, and one for the inventory service, `StoreError`, which the order layer translates.
+
+### The kinds and the service
 
 ```una include="day-to-day/src/orders.una#L1-L17" title="day-to-day/src/orders.una" caption="the kinds and the service"
 module orders
@@ -488,7 +532,9 @@ pub capability Inventory
 
 `OutOfStock` carries the SKU, the units wanted and the units left, which is everything the report line needs. `Unavailable` carries nothing, because the operator's action is the same whatever the cause: retry later.
 
-**Parsing, a pure step.** `parse_order` only looks at the text. It has no `uses`, so it cannot touch the inventory, and its tests need no fakes.
+### Parsing, a pure step
+
+`parse_order` only looks at the text. It has no `uses`, so it cannot touch the inventory, and its tests need no fakes.
 
 ```una include="day-to-day/src/orders.una#parse_order" title="day-to-day/src/orders.una"
 --- Reads `"SKU, quantity"`. Pure: it only looks at the text.
@@ -514,7 +560,9 @@ pub parse_order(line: Text) -> Order
 > [!NOTE]
 > `at` returns an `Option` even after the length check, because its type does not depend on the check. The `if none fail Malformed(line)` clauses state what the code would do anyway.
 
-**Checking stock, a step with a service.** Two clauses handle the one call: the service's failure becomes `Unavailable`, and an unknown SKU becomes `UnknownSku`. After them, `left` is a plain `Int`, and the comparison with the quantity wanted is ordinary code. `check_stock` returns the order unchanged when there is enough stock, so the next step can use it.
+### Checking stock, a step with a service
+
+Two clauses handle the one call: the service's failure becomes `Unavailable`, and an unknown SKU becomes `UnknownSku`. After them, `left` is a plain `Int`, and the comparison with the quantity wanted is ordinary code. `check_stock` returns the order unchanged when there is enough stock, so the next step can use it.
 
 ```una include="day-to-day/src/orders.una#check_stock" title="day-to-day/src/orders.una"
 --- Confirms that the inventory holds enough units of the order's SKU.
@@ -531,7 +579,9 @@ pub check_stock(order: Order) -> Order
     order
 ```
 
-**Composing the steps.** Both steps fail with `OrderError`, the same kind as `accept`, so `if error pass` hands their failures on unchanged. The order of the two statements is the order of the work: a line that does not parse never reaches the inventory, which [section 6.6](#s6-6) proves with an example.
+### Composing the steps
+
+Both steps fail with `OrderError`, the same kind as `accept`, so `if error pass` hands their failures on unchanged. The order of the two statements is the order of the work: a line that does not parse never reaches the inventory, which [section 6.6](#the-order-of-the-steps-expect-not-performed) proves with an example.
 
 ```una include="day-to-day/src/orders.una#accept" title="day-to-day/src/orders.una"
 --- One line, from text to an order that can be shipped.
@@ -545,7 +595,9 @@ pub accept(line: Text) -> Order
     if error pass
 ```
 
-**The batch.** `attempt` keeps each outcome, so `process` itself never fails. Its header has no `fails`, and that is a promise to its callers.
+### The batch
+
+`attempt` keeps each outcome, so `process` itself never fails. Its header has no `fails`, and that is a promise to its callers.
 
 ```una include="day-to-day/src/orders.una#process" title="day-to-day/src/orders.una"
 --- Every line, accepted or rejected: one bad line does not stop the batch.
@@ -561,7 +613,9 @@ pub process(lines: List[Text]) -> List[Result[Order, OrderError]]
 
 `process` returns `List[Result[Order, OrderError]]`, not the accepted orders alone. The caller keeps every outcome in the order of the batch, so it can print a report, count the rejected lines, retry the `Unavailable` ones later, or ship the rest. A list of orders alone would lose the reasons.
 
-**The report.** One `when` per kind. If `OrderError` gains a variant, the checker reports this `when` until it has an arm for it (exercise 1 shows this). `reason` writes the fields of each variant into its sentence, which is why each variant carries what it does: an operator who reads `3 of DESK-02 wanted, 1 left` knows what to change.
+### The report
+
+One `when` per kind. If `OrderError` gains a variant, the checker reports this `when` until it has an arm for it ([exercise 1](#exercise-1-a-per-line-limit) shows this). `reason` writes the fields of each variant into its sentence, which is why each variant carries what it does: an operator who reads `3 of DESK-02 wanted, 1 left` knows what to change.
 
 ```una include="day-to-day/src/orders.una#reason..describe" title="day-to-day/src/orders.una"
 --- What a person reads in the batch report.
@@ -582,7 +636,9 @@ pub describe(outcome: Result[Order, OrderError]) -> Text
     is Err(failure) -> "reject  {reason(failure)}"
 ```
 
-**Running it.** In production, the `Inventory` handler would call the warehouse over the network. Here, a handler holds the stock in a map, and `main` installs it with `with`. `warehouse` takes the map as a parameter when it is installed, so each run and each example can start from the stock it needs. `offline` always fails, so an example can reach `Unavailable` whenever it needs to.
+### Running it
+
+In production, the `Inventory` handler would call the warehouse over the network. Here, a handler holds the stock in a map, and `main` installs it with `with`. `warehouse` takes the map as a parameter when it is installed, so each run and each example can start from the stock it needs. `offline` always fails, so an example can reach `Unavailable` whenever it needs to.
 
 ```una include="day-to-day/src/orders.una#warehouse..main" title="day-to-day/src/orders.una"
 --- An inventory held in memory, for this example run and for tests.
@@ -603,10 +659,12 @@ pub main() -> Unit
     @console.print(describe(outcome))
 ```
 
-`una run .` prints the report shown under "What you'll build". The order lines here are literals, one for each outcome: a line in stock, too many units, an unknown SKU, a quantity in words and a line with no comma. `describe` pads `ok` and `reject` to the same width, so the reasons line up.
+`una run .` prints the report shown in [What you'll build](#what-youll-build). The order lines here are literals, one for each outcome: a line in stock, too many units, an unknown SKU, a quantity in words and a line with no comma. `describe` pads `ok` and `reject` to the same width, so the reasons line up.
 
 > [!SECURITY]
 > Lines read from a file are labeled `internal`, a label that may not reach the console without a declared policy. Printing a report built from them is a question of information flow, which [chapter 9, Information flow](/learn/information-flow/), answers with a policy.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -750,7 +808,9 @@ example "a quantity that is not a number is BadQuantity, before the inventory is
 
 ## 6.6 Testing it
 
-Every failure path gets an example: a line in stock, too many units, a malformed line, an inventory that does not answer, an unknown SKU, and a quantity that is not a number. The fakes make each one deterministic. Each example states one fact, so when one fails, `una test .` names it and says which `expect` line did not hold, as the exercises below show.
+### One example per path
+
+Every failure path gets an example: a line in stock, too many units, a malformed line, an inventory that does not answer, an unknown SKU, and a quantity that is not a number. The fakes make each one deterministic. Each example states one fact, so when one fails, `una test .` names it and says which `expect` line did not hold, as [the exercises](#s6-8) show.
 
 ```una include="day-to-day/src/orders.una#L105-L135" title="day-to-day/src/orders.una" caption="the examples"
 example "a line in stock is accepted"
@@ -786,13 +846,26 @@ example "a quantity that is not a number is BadQuantity, before the inventory is
   expect not performed @inventory.on_hand
 ```
 
-Each line of an example has one job:
+Each line of an example has one job. The first two set up the call:
 
 - `given @inventory = warehouse(…)` installs a fake inventory for this example only, as `with` does for one call.
 - `do accept("LAMP-01, 9")` calls the code under test. A `do` line may nest calls that can fail, which a statement in a body may not.
-- `expect result.quantity == 2` states a fact about `result`, the value the `do` call returned.
-- `expect fails OutOfStock` holds when the `do` call failed with that variant. A `do` call that fails with no `expect fails` line fails the example.
-- `expect not performed @inventory.on_hand` holds when the call never performed that operation. Here it proves the order of the steps: a malformed line or a quantity that is not a number never reaches the inventory, because parsing comes first.
+
+The `expect` lines that follow depend on what the example tests.
+
+### The accepted line: `expect result`
+
+The first example tests the path on which nothing fails. `expect result.quantity == 2` states a fact about `result`, the value the `do` call returned.
+
+### The failure paths: `expect fails`
+
+The other five examples each test a failure, one for each variant of `OrderError`. `expect fails OutOfStock` holds when the `do` call failed with that variant. A `do` call that fails with no `expect fails` line fails the example.
+
+### The order of the steps: `expect not performed`
+
+`expect not performed @inventory.on_hand` holds when the call never performed that operation. Here it proves the order of the steps: a malformed line or a quantity that is not a number never reaches the inventory, because parsing comes first.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -811,8 +884,10 @@ example orders "a quantity that is not a number is BadQuantity, before the inven
 
 Each mistake below is a small change to `day-to-day/src/orders.una`, followed by what `una check .` reports.
 
+### Forgetting the clause (U3007)
+
 :::mistake
-**1. Forgetting the clause (U3007).** Remove `if error pass` under `let order = parse_order(line)`:
+Remove `if error pass` under `let order = parse_order(line)`:
 
 ```diff include="day-to-day..mistakes/1:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -840,8 +915,10 @@ Each mistake below is a small change to `day-to-day/src/orders.una`, followed by
 *Fix:* add the clause that matches your intent (table in [section 6.2](#s6-2)).
 :::
 
+### Passing a failure of another kind (U3008)
+
 :::mistake
-**2. Passing a failure of another kind (U3008).** In `check_stock`, write `if error pass` instead of `if error fail Unavailable`:
+In `check_stock`, write `if error pass` instead of `if error fail Unavailable`:
 
 ```diff include="day-to-day..mistakes/2:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -862,8 +939,10 @@ Each mistake below is a small change to `day-to-day/src/orders.una`, followed by
 *Fix:* translate with `if error fail Unavailable`. To keep the original, add a variant with a field of type `StoreError`, such as `| StoreFailed(cause: StoreError)`, and write `if error fail StoreFailed(cause: error)`.
 :::
 
+### Failing with a variant of another kind (U3009)
+
 :::mistake
-**3. Failing with a variant of another kind (U3009).** Write `if error fail Timeout` in `check_stock`:
+Write `if error fail Timeout` in `check_stock`:
 
 ```diff include="day-to-day..mistakes/3:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -884,8 +963,10 @@ Each mistake below is a small change to `day-to-day/src/orders.una`, followed by
 *Fix:* name a variant of your own kind.
 :::
 
+### A public function that fails without saying so (U3009)
+
 :::mistake
-**4. A public function that fails without saying so (U3009).** Remove `fails OrderError` from `parse_order`:
+Remove `fails OrderError` from `parse_order`:
 
 ```diff include="day-to-day..mistakes/4:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -908,8 +989,10 @@ una reports this once for every `fail` in the body, five times here.
 *Fix:* `una fix .` applies the repair shown.
 :::
 
+### Nesting a call that can fail (U3013)
+
 :::mistake
-**5. Nesting a call that can fail (U3013).** Write `check_stock(parse_order(line))`:
+Write `check_stock(parse_order(line))`:
 
 ```diff include="day-to-day..mistakes/5:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -932,8 +1015,10 @@ una reports this once for every `fail` in the body, five times here.
 *Fix:* `let order = parse_order(line)` with its clause, then `check_stock(order)` with its own. (`do` lines of examples are exempt.)
 :::
 
+### The clause on the same line (U0101)
+
 :::mistake
-**6. The clause on the same line (U0101).** Write `let order = parse_order(line) if error pass`:
+Write `let order = parse_order(line) if error pass`:
 
 ```diff include="day-to-day..mistakes/6:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -956,8 +1041,10 @@ una reports this once for every `fail` in the body, five times here.
 *Fix:* `una fix .` moves it.
 :::
 
+### `if none` before `if error` (U0102)
+
 :::mistake
-**7. `if none` before `if error` (U0102).** Swap the two clauses under `@inventory.on_hand` in `check_stock`:
+Swap the two clauses under `@inventory.on_hand` in `check_stock`:
 
 ```diff include="day-to-day..mistakes/7:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -979,8 +1066,10 @@ una reports this once for every `fail` in the body, five times here.
 *Fix:* put `if error` first.
 :::
 
+### Re-raising a stored failure (U0101)
+
 :::mistake
-**8. Re-raising a stored failure (U0101).** After `attempt`, writing `is Err(failure) -> fail failure`:
+After `attempt`, write `is Err(failure) -> fail failure`:
 
 ```diff include="day-to-day..mistakes/8:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -999,11 +1088,13 @@ una reports this once for every `fail` in the body, five times here.
 
 *Why:* `fail` names a variant at the place the failure is decided.
 
-*Fix:* if you only want to pass the failure on, do not `attempt`; use `if error pass`. Exercise 3 shows a fallback that needs no re-raise.
+*Fix:* if you only want to pass the failure on, do not `attempt`; use `if error pass`. [Exercise 3](#exercise-3-fall-back-to-the-backup) shows a fallback that needs no re-raise.
 :::
 
+### A default of the wrong type (U2001)
+
 :::mistake
-**9. A default of the wrong type (U2001).** `if error use "none"` where the call gives an `Order`:
+Write `if error use "none"` under `let order = parse_order(line)`, a call that gives an `Order`:
 
 ```diff include="day-to-day..mistakes/9:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
@@ -1024,24 +1115,14 @@ una reports this once for every `fail` in the body, five times here.
 *Fix:* use an `Order`, or handle the failure with `fail` or `pass`.
 :::
 
-## 6.8 For agents
-
-:::agents
-Every diagnostic above is available as JSON with `una --json check .`. For mistake 1:
-
-```json include="mistakes/1/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U3007","severity":"error","domain":"authority","message":"`parse_order` can fail with `OrderError`; handle the failure with an `if error` clause, or wrap the call in `attempt`","primary":{"file":"src/orders.una","start":{"line":56,"col":15},"end":{"line":56,"col":32}},"related":[],"repairs":[],"explain":"una explain U3007"}],"fixable":0}
-```
-
-`repairs` is empty because the right clause depends on intent, which only the author knows. U0101 (mistake 6) and U3009 (mistake 4) carry exact edits, which `una fix .` applies. The compact rule: *a call that can fail is the whole expression of its statement, followed by `if error …` and then `if none …` on their own lines, or is wrapped in `attempt`, which gives a `Result`.*
-:::
-
-## 6.9 Exercises
+## 6.8 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's example added, and a stub of what to write when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
 
+### Exercise 1: a per-line limit
+
 ::::exercise
-**Exercise 1: a per-line limit.** The store ships at most 10 units of a SKU per line. Add a variant `TooMany(sku: Text, limit: Int)` and reject larger quantities in `parse_order`, before the inventory is asked. The start package ends with this example, and `una check .` reports U1001 until the variant exists:
+The store ships at most 10 units of a SKU per line. Add a variant `TooMany(sku: Text, limit: Int)` and reject larger quantities in `parse_order`, before the inventory is asked. The start package ends with this example, and `una check .` reports U1001 until the variant exists:
 
 ```una include="exercises/1/start/src/orders.una#L137-L141" title="exercises/1/start/src/orders.una"
 example "more than ten units on one line is TooMany"
@@ -1090,8 +1171,10 @@ Add the variant to `OrderError`, the limit to `parse_order`, and the arm to `rea
 :::
 ::::
 
+### Exercise 2: units shipped
+
 ::::exercise
-**Exercise 2: units shipped.** Write `shipped(results)`, the total of the units of the accepted lines. The start package has it with a body of `0`, and this example:
+Write `shipped(results)`, the total of the units of the accepted lines. The start package has it with a body of `0`, and this example:
 
 ```una include="exercises/2/start/src/orders.una#L137-L143" title="exercises/2/start/src/orders.una"
 --- How many units a batch ships in all. Exercise 2: replace the 0.
@@ -1141,8 +1224,10 @@ Add `units`, and give `shipped` its body:
 :::
 ::::
 
+### Exercise 3: fall back to the backup
+
 ::::exercise
-**Exercise 3: fall back to the backup.** The store keeps a backup copy of its inventory. When the inventory does not answer, ask the backup once before giving up. The start package has `on_hand_or_backup`, which asks only the inventory, and three examples:
+The store keeps a backup copy of its inventory. When the inventory does not answer, ask the backup once before giving up. The start package has `on_hand_or_backup`, which asks only the inventory, and three examples:
 
 ```una include="exercises/3/start/src/orders.una#on_hand_or_backup" title="exercises/3/start/src/orders.una"
 --- The units of `sku` on hand: asks the inventory, and asks the backup copy once when the
@@ -1210,7 +1295,21 @@ To use it in the program, call it from `check_stock` in place of `@inventory.on_
 :::
 ::::
 
-## 6.10 Recap
+## 6.9 Recap and reference
+
+### For agents
+
+:::agents
+Every diagnostic of [Common mistakes](#s6-7) is available as JSON with `una --json check .`. For [Forgetting the clause](#forgetting-the-clause-u3007):
+
+```json include="mistakes/1/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U3007","severity":"error","domain":"authority","message":"`parse_order` can fail with `OrderError`; handle the failure with an `if error` clause, or wrap the call in `attempt`","primary":{"file":"src/orders.una","start":{"line":56,"col":15},"end":{"line":56,"col":32}},"related":[],"repairs":[],"explain":"una explain U3007"}],"fixable":0}
+```
+
+`repairs` is empty because the right clause depends on intent, which only the author knows. U0101 ([the clause on the same line](#the-clause-on-the-same-line-u0101)) and U3009 ([a public function that fails without saying so](#a-public-function-that-fails-without-saying-so-u3009)) carry exact edits, which `una fix .` applies. The compact rule: *a call that can fail is the whole expression of its statement, followed by `if error …` and then `if none …` on their own lines, or is wrapped in `attempt`, which gives a `Result`.*
+:::
+
+### Recap
 
 :::recap
 - A failure is a value of a sum kind you declare. Its variants carry what someone needs to act on it.
@@ -1222,7 +1321,7 @@ To use it in the program, call it from `check_stock` in place of `@inventory.on_
 - Fake the services with handlers, and give every failure path an example.
 :::
 
-## 6.11 Reference
+### Reference
 
 :::reference
 - Construct pages: [`fails`](/docs/language/errors/fails/), [`fail`](/docs/language/errors/fail/), [`if error` and `if none`](/docs/language/errors/if-error/), [`attempt`](/docs/language/errors/attempt/), [`checked` and the escape budget](/docs/language/errors/checked/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`example`](/docs/language/examples/example/), [`predicate`](/docs/language/types/predicate/)
