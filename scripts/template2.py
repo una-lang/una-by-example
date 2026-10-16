@@ -122,6 +122,13 @@ def is_v2(fields):
     return bool(fields) and fields.get("template") == TEMPLATE
 
 
+def padded(text):
+    """`front_matter(text)`, with the body preceded by as many empty lines as the front matter
+    takes, so that a line number in the body is the line number in the file."""
+    fields, body = base.front_matter(text)
+    return fields, "\n" * text[:len(text) - len(body)].count("\n") + body
+
+
 # --- Normalization of a rendered diagnostic.
 
 def normalize(text, package):
@@ -334,11 +341,31 @@ def markup(text, where, failures):
         failures.add(where, f"{len(stack)} ::: container(s) not closed")
 
 
-def spans_removed(text):
+def spans_removed(text, unescape=False):
     """`text` without its code spans, read as CommonMark does: a backslash-escaped backtick
-    opens no span, and a span closes on a run of as many backticks."""
-    text = re.sub(r"\\.", "  ", text)
+    opens no span, and a span closes on a run of as many backticks. Other backslash escapes of
+    ASCII punctuation become blanks, or with `unescape` the character they escape, as in a
+    link destination (`\\/` is `/`)."""
+    text = re.sub(r"\\([!-/:-@\[-`{-~])", lambda m: "  " if m.group(1) == "`" or not unescape else m.group(1), text)
     return re.sub(r"(?<!`)(`+)(?!`)(.*?[^`])\1(?!`)", "", text)
+
+
+REPOSITORY_HOSTS = {"github.com", "www.github.com", "raw.githubusercontent.com"}
+
+
+def repository_link(target):
+    """Whether `target`, read as the site reads a link (HTML entities decoded, percent escapes
+    decoded, user information and port dropped, the host in any case and without a final
+    dot), points into the una-lang repositories on GitHub."""
+    from html import unescape
+    from urllib.parse import unquote, urlsplit
+
+    try:
+        parts = urlsplit(unescape(target).strip())
+        host = (parts.hostname or "").rstrip(".")
+    except ValueError:
+        return True
+    return host in REPOSITORY_HOSTS and unquote(parts.path).lower().lstrip("/").startswith("una-lang/")
 
 
 class Container:
@@ -885,10 +912,16 @@ LINK = re.compile(r"\]\(\s*<?([^)\s>]+)")
 def links(body, where, failures):
     """A page links to the site's own pages: a root-relative route such as /docs/errors/U3007/,
     an anchor on the page, or an https URL that is not a file of the una-lang repositories."""
-    rest = "\n".join(spans_removed(line) for _, line in prose_lines(body))
+    from html import unescape
+
+    rest = "\n".join(spans_removed(line, unescape=True) for _, line in prose_lines(body))
     targets = LINK.findall(rest) + base.REFERENCE.findall(rest) + base.URL.findall(rest)
     targets += re.findall(r"<(https?://[^>\s]+)>", rest)
     for target in targets:
+        if repository_link(target):
+            failures.add(where, f"{target}: links to the repositories, which change after the release; link the site's page, such as /docs/...")
+            continue
+        target = unescape(target).strip()
         lower = target.lower()
         if target.startswith("#") or (target.startswith("/") and not target.startswith("//")):
             continue
@@ -896,8 +929,6 @@ def links(body, where, failures):
             continue
         if lower.startswith("http://"):
             failures.add(where, f"{target}: links use https")
-        elif re.match(r"^https://(www\.)?(github\.com|raw\.githubusercontent\.com)(:\d+)?/una-lang/", lower):
-            failures.add(where, f"{target}: links to the repositories, which change after the release; link the site's page, such as /docs/...")
         elif not lower.startswith("https://"):
             failures.add(where, f"{target}: a relative link resolves on GitHub, not on the site; use a route such as /docs/... or /learn/...")
 
@@ -1032,7 +1063,7 @@ def classify(root, chapter, failures):
     if b"\r" in base.read_bytes(readme):
         failures.add(where, "carriage returns; the pages use LF line ends")
         return None
-    fields, body = base.front_matter(text)
+    fields, body = padded(text)
     if text.startswith("---") and fields is None:
         failures.add(where, "its front matter does not parse: `key: value` lines between `---` lines, with no blank line")
         return None
@@ -1084,6 +1115,12 @@ def check_translation(root, path, fields, body, english_fields, english_body, wh
     if not is_v2(english_fields):
         if fields and any(k.strip().lower() == "template" for k in fields):
             failures.add(where, "`template` is the English page's: this one has none")
+        # Code the site would render that the skeleton comparison does not see.
+        for line, why in hidden_code(body):
+            failures.add(f"{where}:{line}", why)
+        if len(path) == 1:
+            for block in fences(body)[0]:
+                failures.add(f"{where}:{block.line}", "a template 1 chapter page holds no code block")
         return
     if b"\r" in base.read_bytes(os.path.join(root, *where.split("/"))):
         failures.add(where, "carriage returns; the pages use LF line ends")

@@ -599,6 +599,30 @@ class Units(unittest.TestCase):
             return
         self.assertEqual(document, tomllib.loads(TOML + '\n# a comment\n[contracts]\n"billing.charge" = ["@console: Console[print where not dry_run]"]\n'))
 
+    def test_round_three_links(self):
+        for bad in ("[s](https://github.com\\/una-lang/una/blob/main/x.una)",
+                    "[s](https://github.com&#47;una-lang/una/blob/main/x.una)",
+                    "[s](https://github.com/una&#45;lang/una/blob/main/x.una)",
+                    "[s](https://x@github.com/una-lang/una/blob/main/x.una)",
+                    "[s](https://github.com./una-lang/una/blob/main/x.una)",
+                    "[s](HTTPS://GITHUB.COM/UNA-LANG/una/blob/main/x.una)",
+                    "[s](https://github.com/%75na-lang/una/blob/main/x.una)",
+                    "[s](//github.com/una-lang/una/blob/main/x.una)"):
+            failures = check.Failures()
+            template2.links(bad, "p", failures)
+            self.assertTrue(any("repositories" in i for i in failures.items), (bad, failures.items))
+        failures = check.Failures()
+        template2.links("[a](https://example.org/una-lang/) [b](https://github.com/other/x) [c](/docs/x&#47;y/)", "p", failures)
+        self.assertEqual(failures.items, [])
+
+    def test_round_three_toml(self):
+        for text in ('[package]\nname\u00a0= "x"\n', '[package]\nname = "x\x00"\n', '[package]\nname = "x" # a\rb\n',
+                     '[package]\n\x0bname = "x"\n', '[package]\nname = "x"\u3000\n', '\u2028[package]\n',
+                     '[package]\nname = "x"\r\n', '[escape_budget]\nchecked_per_module = 01\n', '[package]\nname = "x\x7f"\n'):
+            with self.assertRaises(ValueError, msg=repr(text)):
+                check.plain_toml(text)
+        self.assertEqual(check.plain_toml('[package]\nname = "Ñandú"  # é\n'), {"package": {"name": "Ñandú"}})
+
     def test_a_fresh_home_per_run(self):
         first, second = check.una_env()["HOME"], check.una_env()["HOME"]
         self.assertNotEqual(first, second)
@@ -1013,6 +1037,49 @@ class TemplateOne(Base):
         failures = check.Failures()
         check.tracked_links(self.root, failures)
         self.assertIn("translations/pt-br/x.md: a symbolic link; una-by-example holds none", failures.items)
+
+    def test_hidden_code_on_a_template_1_page(self):
+        page = os.path.join(self.root, "01-hello", "01-first", "README.md")
+        english = check.read(page)
+        for extra in ("$$\nnonsense\n$$\n", "-     pub main() -> Unit = nonsense\n", "Text.\n\n    nonsense\n", "Text\u00a0here.\n"):
+            write(page, english.replace("A lead.", "A lead.\n\n" + extra))
+            failures = check.Failures()
+            scratch = tempfile.mkdtemp(dir=self.base)
+            check.check_pages(self.root, self.una, failures, scratch)
+            self.assertTrue(any("01-hello/01-first/README.md:1" in i for i in failures.items), (extra, failures.items))
+        write(page, english.replace("A lead.", "A lead.\n$$\nnonsense\n$$"))
+        failures = check.Failures()
+        check.check_pages(self.root, self.una, failures, tempfile.mkdtemp(dir=self.base))
+        line = english.split("\n").index("A lead.") + 2
+        self.assertIn(f"01-hello/01-first/README.md:{line}: a `$$` line, which the site renders as a block of code; Learn pages have none", failures.items)
+
+    def test_hidden_code_in_template_1_translations(self):
+        english = check.read(os.path.join(self.root, "01-hello", "01-first", "README.md"))
+        chapter = check.read(self.readme)
+        cases = [(("01-hello",), chapter, "# 1 Hello\n"), (("01-hello", "01-first"), english, "A lead.\n")]
+        for path, source, anchor in cases:
+            digest = hashlib.sha256(source.encode()).hexdigest()
+            if source.startswith("---"):
+                base = source.replace('editions: ["0.2"]', f'editions: ["0.2"]\nsource: {digest}\nstatus: approved')
+            else:
+                base = f"---\nsource: {digest}\nstatus: approved\n---\n\n" + source
+            target = os.path.join(self.root, "translations", "pt-br", *path, "README.md")
+            write(target, base)
+            failures = check.Failures()
+            check.check_translations(self.root, failures)
+            self.assertEqual([i for i in failures.items if "README.md:" in i], [], path)
+            for extra, wants in (("$$\nnonsense\n$$\n", "a `$$` line"), ("-     pub main() -> Unit = nonsense\n", "columns after a list"),
+                                 ("Text.\n\n    nonsense\n", "indented by 4"), ("Texto\u00a0aqui.\n", "U+00A0")):
+                write(target, base.replace(anchor, anchor + "\n" + extra, 1))
+                failures = check.Failures()
+                check.check_translations(self.root, failures)
+                self.assertTrue(any(wants in i for i in failures.items), (path, extra, failures.items))
+            write(target, base)
+        write(os.path.join(self.root, "translations", "pt-br", "01-hello", "README.md"),
+              cases[0][1].replace("# 1 Hello\n", f"---\nsource: x\nstatus: draft\n---\n\n# 1 Hello\n\n~~~una\nnonsense\n~~~\n"))
+        failures = check.Failures()
+        check.check_translations(self.root, failures)
+        self.assertTrue(any("a template 1 chapter page holds no code block" in i for i in failures.items), failures.items)
 
 
 class Translations(Base):

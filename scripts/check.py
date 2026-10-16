@@ -11,7 +11,8 @@ page directories and no template 2 directory; anything else that is not exactly 
 fails. For each page directory `NN-chapter/MM-page/` of a template 1 chapter:
 
 1. Its README.md has the front matter (`learn`, `title`, `editions`, `codes`) and the parts of
-   the template in order, its `learn` number matches its path, and its `codes` are the codes its
+   the template in order, no hidden code (template2.hidden_code: a `$$` line, indented code, a
+   fence in a quote or a list, invisible or control characters), its `learn` number matches its path, and its `codes` are the codes its
    outcomes show.
 2. A fresh copy of the package (`una.toml`, `verification.lock`, `src/`) has the outcome in
    `expected/`: either it checks clean at tier 1 in canonical form and `una run` prints
@@ -244,11 +245,19 @@ def plain_toml(text):
     """A strict reading of the TOML a una-by-example manifest uses, for a Python without
     tomllib (before 3.11): `[table]` headers, and `key = value` lines whose value is a string
     without escapes, an integer, true or false, or a one-line array of such strings; comments
-    and blank lines. Anything else raises ValueError, so the manifest fails: the reading is
-    never looser than tomllib's."""
+    and blank lines. Only spaces and tabs separate tokens; a control character other than the
+    tab (a carriage return and DEL included) anywhere, and a character outside ASCII anywhere
+    but inside a string or a comment, raise ValueError, and so does anything else outside
+    that subset, so the manifest fails: the reading is never looser than tomllib's."""
+    bad = re.search(r"[\x00-\x08\x0a-\x1f\x7f]", text.replace("\n", " "))
+    if bad:
+        raise ValueError(f"the control character U+{ord(bad.group(0)):04X}")
     document, table = {}, None
     for number, raw in enumerate(text.split("\n"), start=1):
-        line = raw.strip()
+        line = raw.strip(" \t")
+        code = re.sub(r'"[^"\\\n]*"', '""', line).split("#", 1)[0]
+        if not code.isascii():
+            raise ValueError(f"line {number}: a character outside ASCII outside a string or a comment")
         if not line or line.startswith("#"):
             continue
         header = re.fullmatch(r"\[([A-Za-z0-9_-]+)\]", line)
@@ -260,33 +269,33 @@ def plain_toml(text):
         key = TOML_KEY.match(line)
         if not key or table is None:
             raise ValueError(f"line {number}: not a key in a table")
-        rest = line[key.end():].lstrip()
+        rest = line[key.end():].lstrip(" \t")
         if not rest.startswith("="):
             raise ValueError(f"line {number}: no `=` after the key")
-        rest = rest[1:].strip()
-        name = key.group(0).strip('"')
+        rest = rest[1:].strip(" \t")
+        name = key.group(0)[1:-1] if key.group(0).startswith('"') else key.group(0)
         if rest.startswith("["):
-            items, rest = [], rest[1:].strip()
+            items, rest = [], rest[1:].strip(" \t")
             while not rest.startswith("]"):
                 found = TOML_STRING.match(rest)
                 if not found:
                     raise ValueError(f"line {number}: an array holds strings only")
                 items.append(found.group(1))
-                rest = rest[found.end():].strip()
+                rest = rest[found.end():].strip(" \t")
                 if rest.startswith(","):
-                    rest = rest[1:].strip()
+                    rest = rest[1:].strip(" \t")
                 elif not rest.startswith("]"):
                     raise ValueError(f"line {number}: an array's items are separated by commas")
-            value, rest = items, rest[1:].strip()
+            value, rest = items, rest[1:].strip(" \t")
         elif TOML_STRING.match(rest):
             found = TOML_STRING.match(rest)
-            value, rest = found.group(1), rest[found.end():].strip()
+            value, rest = found.group(1), rest[found.end():].strip(" \t")
         else:
-            found = re.match(r"(-?[0-9]+|true|false)\b", rest)
+            found = re.match(r"(-?(?:0|[1-9][0-9]*)|true|false)\b", rest)
             if not found:
                 raise ValueError(f"line {number}: a value is a string, a whole number, true, false or an array of strings")
             value = int(found.group(1)) if found.group(1) not in ("true", "false") else found.group(1) == "true"
-            rest = rest[found.end():].strip()
+            rest = rest[found.end():].strip(" \t")
         if rest and not rest.startswith("#"):
             raise ValueError(f"line {number}: text after the value")
         if name in table:
@@ -489,6 +498,12 @@ def check_pages(root, una, failures, scratch):
             failures.add(where, "no README.md")
             continue
         template(root, chapter, page, read(readme), len(tries), codes, failures)
+        import template2
+
+        # The site renders these as code that no package backs: a `$$` line, indented code, a
+        # fence inside a quote or a list, and invisible or control characters.
+        for line, why in template2.hidden_code(template2.padded(read(readme))[1]):
+            failures.add(f"{where}/README.md:{line}", why)
     for chapter in chapters(root):
         if not os.path.isfile(os.path.join(root, chapter, "README.md")):
             failures.add(chapter, "no README.md (the chapter page)")
@@ -576,7 +591,8 @@ def check_translations(root, failures):
                 counted[1] += 1
             import template2
 
-            template2.check_translation(root, path, fields, body, english_fields, english_body, where, failures)
+            template2.check_translation(root, path, fields, template2.padded(text)[1], english_fields,
+                                        template2.padded(english_text)[1] if english_fields else english_body, where, failures)
             headings, kept, tags = skeleton(body)
             english_headings, english_kept, english_tags = skeleton(english_body)
             if headings != english_headings:
