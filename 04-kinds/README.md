@@ -112,7 +112,7 @@ pub main() -> Unit
 ```
 
 1. **`kind Address` and `kind Parcel`.** Two record kinds. `Parcel` has a field of kind `Address`, so a parcel holds its address whole.
-2. **`Address(name: "Corner Bakery", street: …, city: …)`.** Building a value. Every field is given, each with its label, in any order; canonical form writes them in the order the kind declares them. There are no default values: a field left out is an error.
+2. **`Address(name: "Corner Bakery", street: …, city: …)`.** Building a value. Every field is given, each with its label. The parser takes them in any order, but `una check .` reports another order than the declared one as not canonical (U7001) until `una fmt .` puts them in that order. There are no default values: a field left out is an error.
 3. **`parcel.address.city`.** Reading a field, and a field of a field.
 4. **`redirect`.** A record never changes after it is built. To "change" a field, you build a new record from the old one, with the new value in that field. `parcel` itself is still sent home, as the first line of the output shows.
 5. **`"{home}"`.** Interpolation writes a record in the form you would type in Una, with its kind's name and every field.
@@ -296,7 +296,7 @@ pub main() -> Unit
 
 1. **`kind Change[T]`.** A record with a type parameter. Both fields have the type `T`, so a change from a price to a name cannot be built.
 2. **`undo[T]`.** No constraint is needed: `undo` only swaps the two values.
-3. **`changed[T: Eq]`.** `!=` compares two values of `T`, so `T` must be `Eq`. Every type but a function type is.
+3. **`changed[T: Eq]`.** `!=` compares two values of `T`, so `T` must be `Eq`: every type whose values hold no functions is, and a record with a function field is not.
 4. **`larger[T: Ord]`.** `>` needs an order, so `T` must be `Ord`: `Int`, `Text`, the fixed-width integers, and sums whose variants carry no fields. `Zone` qualifies, so `larger(zone)` gives the farther zone.
 5. **`Change(before: 1990, after: 1790)`.** `T` is inferred as `Int` here, `Text` for `name` and `Zone` for `zone`.
 :::
@@ -628,7 +628,7 @@ example tracking "a refused parcel is not refunded" ... ok
 5 examples: 5 passed, 0 failed
 ```
 
-When an example fails, `una test .` names it and shows the value `result` had, as the exercises below show. Because every value prints as you would build it, the failure message is a value you can paste into a new example.
+When an example fails, `una test .` names it and shows the value `result` had, as exercise 1 below shows. Because every value prints as you would build it, the failure message is a value you can paste into a new example.
 
 ## 4.7 Common mistakes
 
@@ -832,6 +832,16 @@ What `una check .` reports after adding only the variant:
     │ Help: repair 1: add an arm for each missing variant, such as `is Lost`, or an `else` arm
 ```
 
+With the variant and an arm in `describe`, `una check .` is clean, and `una test .` shows what the `else` of `refund_due` answers:
+
+```text include="exercises/1/described/expected/commands/test.txt#L8-L12"
+example tracking "a lost parcel is refunded" ... FAILED
+  src/tracking.una:137: expect result == true
+  it is false, with `result` = `false`
+
+7 examples: 6 passed, 1 failed
+```
+
 Check your answer with `una test .`.
 
 :::answer Answer (*check, run, test*; `exercises/1/answer`).
@@ -869,7 +879,7 @@ example "express adds 5.00 to the postage"
 ```
 
 :::hint
-*Hint:* add the field, then run `una check .`: every place that builds a `Parcel` is reported, since each must now say whether it is express. An `if … then … else` in parentheses can be one term of a sum.
+*Hint:* add the field, then run `una check .`: every place that builds a `Parcel` is reported, since each must now say whether it is express. An `if … then … else` in parentheses can be one term of an addition; without the parentheses it is U0101.
 :::
 
 Check your answer with `una test .`, and `una run .` to see the new postage of the vase, if you send it express.
@@ -932,7 +942,7 @@ example "a delivered parcel asks for a review"
 ```
 
 :::hint
-*Hint:* only one action carries data, so only one variant has a field. In `next_action`, one arm per status; the `Returned` arm binds `reason` and compares it with `==`, which works on a variant without fields.
+*Hint:* only one action carries data, so only one variant has a field. In `next_action`, one arm per status; the `Returned` arm binds `reason` and compares it with `==`, which works on a variant without fields. A `when` inside an arm starts on its own line, below the `->`.
 :::
 
 Check your answer with `una test .`.
@@ -971,7 +981,7 @@ Declare the actions, and choose one for each status:
 - Declare a record for data whose parts are all there at once; build it with every field labeled, and read it with a dot.
 - Records are nominal: the name of a kind is part of its meaning, and the same fields do not make the same kind.
 - Declare a sum for a value that is one of several cases, and give each variant only the fields true in that case.
-- A sum of one variant starts with `|`. Test a variant with `is`, not `==`.
+- A sum of one variant starts with `|`. Test a variant that has fields with `is`; `==` compares whole values.
 - `when` covers every variant; prefer an arm per variant to `else` on a sum that will grow.
 - Range and literal arms end with `else`, unless they cover every value.
 - A generic kind holds any type; a generic function writes the constraint, `Eq` or `Ord`, for what it does with its values.

@@ -3,7 +3,7 @@ learn: "3.6"
 title: "Caso de estudo: uma pequena calculadora"
 editions: ["0.2"]
 codes: [U5001]
-source: 25fea40d6ec41e04358587f93ca7fcd8bf6e9e77cccdd46a748f737eb61f1600
+source: d5be5c7cd9495606df13c836406ee53257ffcd2523818fe7f66c703833ff1f90
 status: draft
 ---
 
@@ -25,4 +25,4 @@ Esta página junta o que o capítulo mostrou: funções com parâmetros rotulado
 
 ## Veja também
 
-- [Contratos e o verificador](../../07-contracts/)
+- [Contratos e o verificador](../../07-contracts/#s7-1)

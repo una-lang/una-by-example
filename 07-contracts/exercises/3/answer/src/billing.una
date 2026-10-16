@@ -35,8 +35,8 @@ pub kind Payment
 --- Why a refund was refused.
 pub kind RefundError = | MoreThanPaid(paid: Cents)
 
---- What one line costs. The guard states a fact the solver cannot see: its `then` branch
---- never runs.
+--- What one line costs. The guard handles a case that cannot happen, since both factors
+--- are at least 0; the solver cannot see that for itself.
 pub line_total(line: Line) -> Cents
 =
   let total = line.unit_cents * line.quantity
@@ -50,7 +50,7 @@ pub subtotal(lines: List[Line]) -> Cents
     total = total + line_total(line)
   total
 
---- `rate` percent of `amount`, rounded down. The guard never runs, as in `line_total`.
+--- `rate` percent of `amount`, rounded down. The guard cannot fire: `rate` is at most 100.
 percent_of(amount: Cents, rate: Percent) -> Cents
   ensures result <= amount
 =
@@ -91,8 +91,7 @@ pub refund_again(paid: Cents, already: Cents, asked: Cents) -> Cents
   fails RefundError
   derived from BILLING_2
 =
-  refund(paid - already, asked: asked)
-    if error pass
+  if already + asked > paid then fail MoreThanPaid(paid) else asked
 
 --- An amount for a person to read, such as 19.90.
 pub money(cents: Cents) -> Text

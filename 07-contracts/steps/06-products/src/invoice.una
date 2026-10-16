@@ -16,8 +16,8 @@ points(total: Cents) -> Int
 =
   total / 100
 
---- What one line costs. The guard states a fact the solver cannot see for itself: its
---- `then` branch never runs.
+--- What one line costs. The guard handles a case that cannot happen, since both factors
+--- are at least 0; the solver cannot see that for itself.
 line_total(line: Line) -> Cents
 =
   let total = line.unit_cents * line.quantity

@@ -23,4 +23,4 @@ This page combines what the chapter showed: functions with labeled parameters, `
 
 ## See also
 
-- [Contracts and the verifier](../../07-contracts/)
+- [Contracts and the verifier](../../07-contracts/#s7-1)
