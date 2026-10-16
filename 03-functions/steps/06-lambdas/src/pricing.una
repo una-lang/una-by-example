@@ -1,0 +1,16 @@
+module pricing
+
+--- A price after a pricing rule: a function from a price in cents to a price in cents.
+pub priced(cents: Int, rule: fn(Int) -> Int) -> Int = rule(cents)
+
+--- A rule: the price rounded down to the next price that ends in 99 cents.
+pub ends_in_99(cents: Int) -> Int = (cents + 1) / 100 * 100 - 1
+
+--- Prints a price under three rules.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{priced(2_050, rule: ends_in_99)}")
+  @console.print("{priced(2_050, rule: fn(cents) -> cents - 500)}")
+  let markup = 120
+  @console.print("{priced(2_050, rule: fn(cents) -> cents * markup / 100)}")

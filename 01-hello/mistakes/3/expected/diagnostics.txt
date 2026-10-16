@@ -1,0 +1,7 @@
+error U3004 at src/slip.una:34:3: `@console` is used here, but this code declares no `uses`, so it is pure
+error U3004 at src/slip.una:35:3: `@console` is used here, but this code declares no `uses`, so it is pure
+error U3004 at src/slip.una:36:3: `@console` is used here, but this code declares no `uses`, so it is pure
+error U3004 at src/slip.una:37:3: `@console` is used here, but this code declares no `uses`, so it is pure
+error U3004 at src/slip.una:38:3: `@console` is used here, but this code declares no `uses`, so it is pure
+error U3004 at src/slip.una:39:3: `@console` is used here, but this code declares no `uses`, so it is pure
+error U3004 at src/slip.una:40:3: `@console` is used here, but this code declares no `uses`, so it is pure

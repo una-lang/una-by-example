@@ -1,0 +1,12 @@
+$ una test .
+example slip "the title names the order" ... ok
+example slip "the address line holds the customer number and the email" ... ok
+example slip "an item line is indented and starts with the quantity" ... ok
+example slip "a line costs its quantity times the unit price" ... ok
+example slip "a line of zero units costs nothing" ... ok
+example slip "the count line gives units and lines" ... ok
+example slip "the total is in cents" ... ok
+example slip "a weight shows whole kilograms and the grams left over" ... ok
+example slip "a parcel under one kilogram shows 0 kg" ... ok
+
+9 examples: 9 passed, 0 failed

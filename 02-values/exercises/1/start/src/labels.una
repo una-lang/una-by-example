@@ -1,0 +1,113 @@
+module labels
+
+-- Shelf labels: one line for each product, as the label printer prints it, and how many
+-- copies of the labels to print.
+
+--- The SKU as labels print it: without the spaces around it, in capital letters.
+pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
+
+--- A product name cut to the 24 characters a label has room for.
+pub fit_name(name: Text) -> Text = if name.len > 24 then name.slice(start: 0, end: 24) else name
+
+--- Cents as an amount with two decimals, for an amount that is not negative: 1990 is "19.90".
+pub money(cents: Int) -> Text = "{cents / 100}.{cents mod 100 / 10}{cents mod 10}"
+
+--- Whether a discount is one the store runs: from 1 to 90 percent off.
+pub on_sale(percent: Int) -> Bool = percent >= 1 and percent <= 90
+
+--- The price after `percent` off, rounded down to a whole cent.
+pub sale_cents(cents: Int, percent: Int) -> Int = cents * (100 - percent) / 100
+
+--- The price of one kilogram, in cents, for a pack of `grams` grams, rounded down.
+pub per_kilo(cents: Int, grams: Int) -> Int
+  requires grams > 0
+=
+  cents * 1000 / grams
+
+--- The label of a product at its regular price.
+pub regular_label(sku: Text, name: Text, cents: Int) -> Text = "{clean_sku(sku)} | {fit_name(name)} | {money(cents)}"
+
+--- The label of a product on sale, with the old price and the new one. A discount the
+--- store does not run gives the regular label.
+pub sale_label(sku: Text, name: Text, cents: Int, percent: Int) -> Text
+=
+  let now = sale_cents(cents, percent: percent)
+  let regular = regular_label(sku, name: name, cents: cents)
+  if on_sale(percent) then "{regular}, now {money(now)} ({percent}% off)" else regular
+
+--- The label of a product sold by weight, with the price of one kilogram.
+pub weight_label(sku: Text, name: Text, cents: Int, grams: Int) -> Text
+  requires grams > 0
+=
+  let kilo = per_kilo(cents, grams: grams)
+  "{regular_label(sku, name: name, cents: cents)} ({money(kilo)} per kg)"
+
+--- How many copies of a label to print: one for each facing on the shelf, and one spare.
+--- The label printer reads the count as one byte, so it is a `U8`.
+pub copies(facings: U8) -> U8
+  requires facings < 255
+=
+  facings + 1
+
+--- Prints the labels of four products, and how many copies to print in all.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit printed = 0
+  @console.print(regular_label(" lamp-01", name: "Desk lamp, brass", cents: 1990))
+  printed = printed + copies(4).to_int()
+  @console.print(sale_label("rug-07 ", name: "Wool rug, 120 by 180 cm, natural", cents: 4500, percent: 15))
+  printed = printed + copies(2).to_int()
+  @console.print(weight_label("coffee-05", name: "Coffee beans, dark roast", cents: 1250, grams: 500))
+  printed = printed + copies(12).to_int()
+  @console.print(regular_label("DESK-02", name: "Oak writing desk", cents: 15900))
+  printed = printed + copies(1).to_int()
+  @console.print("{printed} labels to print")
+
+example "a SKU loses its spaces and is written in capitals"
+  do clean_sku("  lamp-01 ")
+  expect result == "LAMP-01"
+
+example "a long name is cut to 24 characters"
+  do fit_name("Wool rug, 120 by 180 cm, natural")
+  expect result.len == 24
+
+example "a short name is kept as it is"
+  do fit_name("Desk lamp, brass")
+  expect result == "Desk lamp, brass"
+
+example "an amount keeps the zero of its cents"
+  do money(1205)
+  expect result == "12.05"
+
+example "a discount rounds down to a whole cent"
+  do sale_cents(1999, percent: 15)
+  expect result == 1699
+
+example "a discount over 90 percent is not a sale"
+  do on_sale(95)
+  expect result == false
+
+example "the price of a kilogram of a 500 g pack is twice the price"
+  do per_kilo(1250, grams: 500)
+  expect result == 2500
+
+example "a sale label shows the old and the new price"
+  do sale_label("rug-07", name: "Wool rug", cents: 4500, percent: 15)
+  expect result == "RUG-07 | Wool rug | 45.00, now 38.25 (15% off)"
+
+example "a shelf with four facings gets five labels"
+  do copies(4)
+  expect result == 5
+
+--- The price with `percent` of sales tax added, rounded to the nearest cent; half a cent
+--- rounds up.
+pub with_tax(cents: Int, percent: Int) -> Int = cents
+
+example "tax is added and rounded down below half a cent"
+  do with_tax(1990, percent: 8)
+  expect result == 2149
+
+example "half a cent rounds up"
+  do with_tax(1990, percent: 5)
+  expect result == 2090

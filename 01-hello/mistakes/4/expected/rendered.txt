@@ -1,0 +1,21 @@
+[U1008] Error: module `packing` is in `src/slip.una`, which must hold module `slip`
+   ╭─[ src/slip.una:1:8 ]
+   │
+ 1 │ module packing
+   │        ───┬───
+   │           ╰───── module `packing` is in `src/slip.una`, which must hold module `slip`
+   │
+   │ Help: repair 1: declare `module slip`, or move the file to match `packing`; edit src/slip.una:1:8..1:15 to "slip"
+   │
+   │ Note: run `una explain U1008` for an explanation
+───╯
+[U7002] Error: [run] entry `slip` is not a module of this package
+   ╭─[ una.toml:7:9 ]
+   │
+ 7 │ entry = "slip"
+   │         ───┬──
+   │            ╰──── [run] entry `slip` is not a module of this package
+   │
+   │ Note: run `una explain U7002` for an explanation
+───╯
+1 of 2 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

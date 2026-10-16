@@ -1,0 +1,7 @@
+Packing slip for order 1042
+Ship to customer 318 <customer318@example.invalid>
+  2 x LAMP-01  Desk lamp, brass
+  1 x RUG-07  Wool rug, 120 by 180 cm
+3 units in 2 lines
+Total paid: 8480 cents
+Questions? Write to orders@example.invalid and quote the order number.

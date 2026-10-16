@@ -1,0 +1,12 @@
+[U2004] Error: argument 2 of `quote` needs a label; only the first argument may go without one
+    ╭─[ src/shipping.una:67:28 ]
+    │
+ 67 │   let lamps = quote(3_980, 1_200, zone: 1)
+    │                            ──┬──
+    │                              ╰──── argument 2 of `quote` needs a label; only the first argument may go without one
+    │
+    │ Help: repair 1: label it `grams`; edit src/shipping.una:67:28..67:33 to "grams: 1_200"
+    │
+    │ Note: run `una explain U2004` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

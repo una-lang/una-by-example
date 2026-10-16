@@ -62,7 +62,7 @@ A precondition is checked at both ends:
 - **At every call,** the verifier proves the precondition for the arguments given. A call it cannot prove does not check.
 - **In the body,** the precondition is a fact the verifier assumes. Here it proves that the division never divides by zero.
 
-Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/package/): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
+Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
 ```toml include="steps/01-requires/una.toml" title="steps/01-requires/una.toml"
 [package]

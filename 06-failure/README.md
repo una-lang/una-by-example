@@ -56,7 +56,7 @@ The price is a few extra lines at each call. In return, the failure behavior of 
 
 Start with the smallest real case: the quantity a customer types into an order form. It must be a whole number from 1 to 99. Three things can be wrong with it, so the error kind has three variants, and each carries what a message will need.
 
-Each step of this chapter is a package, as in [chapter 1](/learn/hello/package/): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
+Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
 ```toml include="steps/01-quantity/una.toml" title="steps/01-quantity/una.toml"
 [package]

@@ -1,0 +1,2 @@
+error U5001 at src/labels.una:22:47: division obligation `grams != 0` is refuted
+  counterexample: cents = 0, grams = 0

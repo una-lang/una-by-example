@@ -1,0 +1,16 @@
+module prices
+
+--- Prints a few computations on prices in cents.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = 1_990
+  let rug = 4_500
+  let order = 2 * lamp + rug
+  @console.print("order: {order} cents, or {order / 100} units and {order mod 100} cents")
+  let discount = order * 15 / 100
+  @console.print("15% off: {discount} cents off, {order - discount} to pay")
+  let refund = -1_205
+  @console.print("refund: {refund / 100} and {refund mod 100}")
+  let past_64_bits = 9_223_372_036_854_775_807 + 1
+  @console.print("no overflow: {past_64_bits}")

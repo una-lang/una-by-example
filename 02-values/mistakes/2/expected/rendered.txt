@@ -1,0 +1,36 @@
+[U2019] Error: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    ╭─[ src/labels.una:58:3 ]
+    │
+ 58 │   printed = printed + copies(4).to_int()
+    │   ───┬───
+    │      ╰───── `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯
+[U2019] Error: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    ╭─[ src/labels.una:60:3 ]
+    │
+ 60 │   printed = printed + copies(2).to_int()
+    │   ───┬───
+    │      ╰───── `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯
+[U2019] Error: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    ╭─[ src/labels.una:62:3 ]
+    │
+ 62 │   printed = printed + copies(12).to_int()
+    │   ───┬───
+    │      ╰───── `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯
+[U2019] Error: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    ╭─[ src/labels.una:64:3 ]
+    │
+ 64 │   printed = printed + copies(1).to_int()
+    │   ───┬───
+    │      ╰───── `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯

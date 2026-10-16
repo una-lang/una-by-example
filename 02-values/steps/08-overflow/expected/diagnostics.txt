@@ -1,0 +1,2 @@
+error U5001 at src/printer.una:5:33: overflow obligation `facings + 1 in 0..255` is refuted
+  counterexample: facings = 255

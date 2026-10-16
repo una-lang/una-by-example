@@ -1,0 +1,25 @@
+module notice
+
+-- The notice the store's console shows when the store opens.
+
+--- The hour the store closes, on the 24-hour clock.
+pub closing_hour() -> Int = 18
+
+--- The line that tells customers until when an order ships the same day.
+pub cutoff_line(hour: Int) -> Text = "Orders placed before {hour}:00 ship today"
+
+--- Prints the notice.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- Ask for the hour, then build the line from it.
+  let hour = closing_hour()
+  @console.print(cutoff_line(hour))
+
+example "the store closes at six in the evening"
+  do closing_hour()
+  expect result == 18
+
+example "the cutoff line names the hour"
+  do cutoff_line(18)
+  expect result == "Orders placed before 18:00 ship today"

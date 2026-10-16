@@ -1,0 +1,16 @@
+$ una test .
+example slip "the title names the order" ... ok
+example slip "the address line holds the customer number and the email" ... ok
+example slip "an item line is indented and starts with the quantity" ... ok
+example slip "a line costs its quantity times the unit price" ... ok
+example slip "a line of zero units costs nothing" ... ok
+example slip "the count line gives units and lines" ... ok
+example slip "the total is in cents" ... ok
+example slip "shipping is added to the goods" ... FAILED
+  src/slip.una:79: expect result == 8930
+  it is false, with `result` = `0`
+example slip "the pay line is in cents" ... FAILED
+  src/slip.una:83: expect result == "To pay: 8930 cents"
+  it is false, with `result` = `""`
+
+9 examples: 7 passed, 2 failed

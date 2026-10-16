@@ -1,8 +1,0 @@
-[package]
-name = "parity"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "parity"
-grants = ["console"]

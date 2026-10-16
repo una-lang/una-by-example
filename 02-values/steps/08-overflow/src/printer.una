@@ -1,0 +1,19 @@
+module printer
+
+--- How many copies of a label to print: one per facing on the shelf, and one spare.
+--- The label printer reads the count as one byte, so it is a `U8`.
+pub copies(facings: U8) -> U8 = facings + 1
+
+--- Prints how many labels two shelves need.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps: U8 = 4
+  let mugs: U8 = 12
+  let lamp_labels = copies(lamps)
+  let mug_labels = copies(mugs)
+  @console.print("{lamp_labels} and {mug_labels} labels")
+  let labels = lamp_labels.to_int() + mug_labels.to_int()
+  @console.print("{labels} labels in all")
+  let roll: U16 = 1_000
+  @console.print("{roll.saturating_sub(by: 1_200)} left on a roll of {roll} after 1200")

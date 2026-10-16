@@ -3,7 +3,7 @@
 Small, complete Una programs, one per page of the Learn section of the Una website. Each directory below a chapter is a package you can check and run as it is:
 
 ```sh
-cd 01-hello/01-package
+cd 01-hello/day-to-day
 una check .
 una run .
 ```
@@ -29,11 +29,11 @@ This needs Python 3 and the `una` of `una.lock`, with Z3 at the version its `ver
 
 ## Translations
 
-Pages are translated into Brazilian Portuguese (`pt-br`) and Spanish (`es`) under `translations/<locale>/`, at the path of the English page: `translations/pt-br/01-hello/01-package/README.md` translates `01-hello/01-package/README.md`, and `translations/pt-br/01-hello/README.md` the chapter page. A translated page points to the same package: the code is never copied. The downloads stay in English.
+Pages are translated into Brazilian Portuguese (`pt-br`) and Spanish (`es`) under `translations/<locale>/`, at the path of the English page: `translations/pt-br/01-hello/README.md` translates `01-hello/README.md`. A translated page points to the same package: the code is never copied. The downloads stay in English.
 
 A translation's front matter keeps the English page's `learn`, `editions` and `codes`, translates its `title`, and adds two fields:
 
-- `source`: the SHA-256 of the English README it translates (`shasum -a 256 01-hello/01-package/README.md`).
+- `source`: the SHA-256 of the English README it translates (`shasum -a 256 01-hello/README.md`).
 - `status`: `draft`, or `approved` once a fluent speaker of the language has reviewed it.
 
 `scripts/check.py` checks each translation against its English page:

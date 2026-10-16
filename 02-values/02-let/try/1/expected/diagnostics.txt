@@ -1,2 +1,0 @@
-error U2019 at src/counter.una:10:3: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
-error U2019 at src/counter.una:11:3: `total` is not editable; declare it `let edit total`, or the parameter `edit total`

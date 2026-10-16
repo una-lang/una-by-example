@@ -1,0 +1,18 @@
+[U0001] Error: invalid character `'`; text literals use double quotes
+    ╭─[ src/slip.una:37:52 ]
+    │
+ 37 │   @console.print(item(lamps, sku: "LAMP-01", name: 'Desk lamp, brass'))
+    │                                                    ┬
+    │                                                    ╰── invalid character `'`; text literals use double quotes
+    │
+    │ Note: run `una explain U0001` for an explanation
+────╯
+[U0001] Error: invalid character `'`; text literals use double quotes
+    ╭─[ src/slip.una:37:69 ]
+    │
+ 37 │   @console.print(item(lamps, sku: "LAMP-01", name: 'Desk lamp, brass'))
+    │                                                                     ┬
+    │                                                                     ╰── invalid character `'`; text literals use double quotes
+    │
+    │ Note: run `una explain U0001` for an explanation
+────╯

@@ -1,0 +1,9 @@
+[U2010] Error: cannot infer the type of lambda parameter `cents`; annotate it, as in `cents: Int`
+    ╭─[ src/shipping.una:75:25 ]
+    │
+ 75 │   let members_rule = fn(cents) -> cents * 80 / 100
+    │                         ──┬──
+    │                           ╰──── cannot infer the type of lambda parameter `cents`; annotate it, as in `cents: Int`
+    │
+    │ Note: run `una explain U2010` for an explanation
+────╯

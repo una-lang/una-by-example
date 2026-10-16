@@ -1,0 +1,20 @@
+module till
+
+--- Prints the running total of a till as three items are scanned.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = 1_990
+  let edit total = 0
+  let edit items = 0
+  total = total + lamp
+  items = items + 1
+  total = total + lamp
+  items = items + 1
+  @console.print("{items} items, {total} cents")
+  total = total + 4_500
+  items = items + 1
+  @console.print("{items} items, {total} cents")
+  let edit receipt: Text = "LAMP-01"
+  receipt = "{receipt}, LAMP-01, RUG-07"
+  @console.print(receipt)

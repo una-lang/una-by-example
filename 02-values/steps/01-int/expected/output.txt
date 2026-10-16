@@ -1,0 +1,4 @@
+order: 8480 cents, or 84 units and 80 cents
+15% off: 1272 cents off, 7208 to pay
+refund: -13 and 95
+no overflow: 9223372036854775808
