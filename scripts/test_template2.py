@@ -1053,6 +1053,58 @@ class Archives(Base):
         self.assertIn("una-by-example-9.9.9/01-hello/README.md", whole)
         self.assertIn("una-by-example-9.9.9/01-hello/01-first/src/main.una", whole)
 
+    def test_the_packages_the_check_runs_are_the_archived_ones(self):
+        files = {n: d for n, (m, d) in self.members("06-failure.tar.gz").items() if m.isfile()}
+        packages = template2.chapter_packages(self.chapter, "06-failure", check.Failures())
+        self.assertEqual(len(packages), 14)
+        for ref, package in packages.items():
+            copy = os.path.join(self.base, "copies", *ref.split("/"))
+            template2.materialize(package, copy)
+            archived = {n[len(f"06-failure/{ref}/"):]: d for n, d in files.items() if n.startswith(f"06-failure/{ref}/")}
+            self.assertEqual(archived, check.tree_bytes(copy), ref)
+        page = {n[len("01-01-first/"):]: d for n, (m, d) in self.members("01-01-first.tar.gz").items() if m.isfile()}
+        copy = os.path.join(self.base, "copies", "01-first")
+        check.copy_package(os.path.join(self.root, "01-hello", "01-first"), copy)
+        self.assertEqual({n: d for n, d in page.items() if n != "README.md"}, check.tree_bytes(copy))
+
+    def test_the_check_ties_the_archive_to_the_checked_package(self):
+        saved = template2.materialize
+
+        def more(package, to):
+            saved(package, to)
+            write(os.path.join(to, "src", "extra.una"), "-- not archived\n")
+
+        template2.materialize = more
+        try:
+            code, report = self.checked()
+        finally:
+            template2.materialize = saved
+        self.assertIn("is not the package the check runs: ['src/extra.una'] differ", report)
+
+    def test_a_symlinked_src_directory(self):
+        src = os.path.join(self.chapter, "steps", "01-quantity", "src")
+        moved = os.path.join(self.base, "elsewhere")
+        shutil.move(src, moved)
+        os.symlink(moved, src)
+        self.assertEqual(check.package_files(os.path.dirname(src)), ["una.toml", "verification.lock"])
+        with self.assertRaises(self.archive.LinkError) as raised:
+            self.archive.build(self.root, os.path.join(self.base, "out-2"), 0)
+        self.assertIn("06-failure/steps/01-quantity/src is a symbolic link", str(raised.exception))
+
+    def test_a_symlinked_file_and_page_src(self):
+        os.symlink(os.path.join(self.root, "una.lock"), os.path.join(self.chapter, "day-to-day", "src", "hosts.una"))
+        with self.assertRaises(self.archive.LinkError):
+            self.archive.build(self.root, os.path.join(self.base, "out-2"), 0)
+        os.remove(os.path.join(self.chapter, "day-to-day", "src", "hosts.una"))
+        src = os.path.join(self.root, "01-hello", "01-first", "src")
+        shutil.move(src, os.path.join(self.base, "page-src"))
+        os.symlink(os.path.join(self.base, "page-src"), src)
+        with self.assertRaises(self.archive.LinkError) as raised:
+            self.archive.build(self.root, os.path.join(self.base, "out-3"), 0)
+        self.assertIn("01-hello/01-first/src is a symbolic link", str(raised.exception))
+        with self.assertRaises(self.archive.LinkError):
+            self.archive.plain_source(self.root, os.path.join(src, "main.una"))
+
     def test_two_builds_are_the_same_bytes(self):
         again = os.path.join(self.base, "again")
         self.archive.build(self.root, again, 0)

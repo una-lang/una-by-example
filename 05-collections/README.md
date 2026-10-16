@@ -70,7 +70,7 @@ entry = "cart"
 grants = ["console"]
 ```
 
-`verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or download the step's package from this page. Then, in the package's directory:
+`verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `05-collections.tar.gz`. Then, in the package's directory:
 
 ```sh
 una check .

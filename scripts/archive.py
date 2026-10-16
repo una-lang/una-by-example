@@ -13,6 +13,10 @@
   in the archives above, under `una-by-example-<version>/`.
 - `SHA256SUMS`, one line per archive.
 
+No symbolic link is archived or followed: a link anywhere on the path of a file to archive,
+a file or a directory such as a linked `src/`, stops the build with an error naming it (the
+check refuses such a tree too).
+
 The archives are reproducible: entries sorted, every mtime the commit's time (or
 SOURCE_DATE_EPOCH), owner and group 0:0 with no names, modes 0644 and 0755, and gzip without a
 name or a time. Two builds of one commit give the same bytes. Standard library only.
@@ -44,8 +48,39 @@ def entries_of(root, chapter, page):
     return [(os.path.join(directory, name), name) for name in package_files(directory)]
 
 
-def tar_gz(path, prefix, files, mtime):
-    """Writes `files`, (source, name) pairs, under `prefix/` into a reproducible `path`."""
+class LinkError(Exception):
+    """A symbolic link on the path of a file to archive."""
+
+
+def plain_source(root, source):
+    """Raises LinkError when `source`, or a directory between `root` and it, is a symbolic link."""
+    relative = os.path.relpath(source, root)
+    if relative.startswith(".."):
+        raise LinkError(f"{source} is outside {root}")
+    path = root
+    for part in relative.split(os.sep):
+        path = os.path.join(path, part)
+        if os.path.islink(path):
+            raise LinkError(f"{os.path.relpath(path, root)} is a symbolic link; archive.py never follows one")
+
+
+def refuse_links(root, directory):
+    """Raises LinkError for the first symbolic link under `directory`, file or directory."""
+    if os.path.islink(directory):
+        raise LinkError(f"{os.path.relpath(directory, root)} is a symbolic link; archive.py never follows one")
+    for base, dirs, files in os.walk(directory):
+        dirs.sort()
+        for name in sorted(dirs + files):
+            if os.path.islink(os.path.join(base, name)):
+                raise LinkError(f"{os.path.relpath(os.path.join(base, name), root)} is a symbolic link; archive.py never follows one")
+
+
+def tar_gz(path, prefix, files, mtime, root=None):
+    """Writes `files`, (source, name) pairs, under `prefix/` into a reproducible `path`. With
+    `root`, every source is checked by `plain_source` first."""
+    if root is not None:
+        for source, _ in files:
+            plain_source(root, source)
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w", format=tarfile.PAX_FORMAT) as archive:
         directories = set()
@@ -83,12 +118,14 @@ def build(root, out, mtime):
         if os.path.isfile(os.path.join(root, name)):
             everything.append((os.path.join(root, name), name))
     for chapter in chapters(root):
+        refuse_links(root, os.path.join(root, chapter))
+    for chapter in chapters(root):
         if os.path.isfile(os.path.join(root, chapter, "README.md")):
             everything.append((os.path.join(root, chapter, "README.md"), f"{chapter}/README.md"))
         if not template2.is_v2_chapter(root, chapter):
             continue
         files = [(source, name) for name, source in template2.chapter_files(root, chapter).items()]
-        tar_gz(os.path.join(out, f"{chapter}.tar.gz"), chapter, files, mtime)
+        tar_gz(os.path.join(out, f"{chapter}.tar.gz"), chapter, files, mtime, root)
         names.append(f"{chapter}.tar.gz")
         everything.extend((source, f"{chapter}/{name}") for source, name in files if name != "README.md")
     for chapter, page in pages(root):
@@ -96,12 +133,12 @@ def build(root, out, mtime):
             continue  # a template 2 chapter has no pages; the check fails any it holds
         files = entries_of(root, chapter, page)
         name = f"{chapter[:2]}-{page}"
-        tar_gz(os.path.join(out, f"{name}.tar.gz"), name, files, mtime)
+        tar_gz(os.path.join(out, f"{name}.tar.gz"), name, files, mtime, root)
         names.append(f"{name}.tar.gz")
         everything.extend((source, f"{chapter}/{page}/{inner}") for source, inner in files)
     version = lock_version(root)
     whole = f"una-by-example-{version}"
-    tar_gz(os.path.join(out, f"{whole}.tar.gz"), whole, everything, mtime)
+    tar_gz(os.path.join(out, f"{whole}.tar.gz"), whole, everything, mtime, root)
     names.append(f"{whole}.tar.gz")
     with open(os.path.join(out, "SHA256SUMS"), "w", encoding="ascii") as sums:
         for name in sorted(names):
@@ -123,7 +160,11 @@ def main(argv):
     if len(argv) != 1:
         print(__doc__, file=sys.stderr)
         return 2
-    names = build(ROOT, argv[0], commit_time(ROOT))
+    try:
+        names = build(ROOT, argv[0], commit_time(ROOT))
+    except LinkError as error:
+        print(f"archive.py: {error}", file=sys.stderr)
+        return 1
     print(f"archive.py: {len(names)} archives in {argv[0]}")
     return 0
 
