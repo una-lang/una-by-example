@@ -427,7 +427,7 @@ Three constructs of [chapter 7](/learn/contracts/) appear here, briefly:
 
 ### A checked SKU parser
 
-The step's module turns outside text into a `Sku` with `checked`, then prints a shelf label for it:
+The step's module turns outside text into a `Sku` with `checked`, then prints a shelf label for a well-formed SKU and `not a sku: lamp 1` for the bad input:
 
 ```una include="steps/06-checked/src/sku.una" title="steps/06-checked/src/sku.una" verified="check, run"
 module sku
@@ -504,7 +504,7 @@ Once `parse_sku` has returned it, a `Sku` can be passed anywhere one is required
 
 ### What the program must do
 
-Now the program from the start of the chapter. Orders arrive as lines of text. Each line must parse, name a product the inventory knows, and ask for no more units than are on hand. The inventory is a service that can time out. A bad line must not stop the batch, and the report must say why each rejected line was rejected.
+Now the program from [What you'll build](#what-youll-build). Orders arrive as lines of text. Each line must parse, name a product the inventory knows, and ask for no more units than are on hand. The inventory is a service that can time out. A bad line must not stop the batch, and the report must say why each rejected line was rejected.
 
 The design follows from that: one error kind for the order layer, `OrderError`, whose variants carry what an operator needs, and one for the inventory service, `StoreError`, which the order layer translates.
 
@@ -846,7 +846,7 @@ example "a quantity that is not a number is BadQuantity, before the inventory is
   expect not performed @inventory.on_hand
 ```
 
-Each line of an example has one job. The first two set up the call:
+Each line of an example has one job. The first two install the fakes and make the call:
 
 - `given @inventory = warehouse(…)` installs a fake inventory for this example only, as `with` does for one call.
 - `do accept("LAMP-01, 9")` calls the code under test. A `do` line may nest calls that can fail, which a statement in a body may not.

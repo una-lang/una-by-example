@@ -81,8 +81,13 @@ CONCEPTS = (3, 6)
 # has exactly CLOSING, in order.
 SUBSECTIONS = (3, 6)
 GENERIC = {"overview", "introduction", "intro", "background", "basics", "details", "example", "examples",
-           "more", "notes", "other", "misc", "summary", "usage", "discussion", "explanation"}
+           "more", "notes", "other", "misc", "summary", "usage", "discussion", "explanation", "more details",
+           "further details", "general", "description"}
 CLOSING = ["For agents", "Recap", "Reference"]
+# The ids of the closing subsections, which no other heading of a chapter may take.
+RESERVED_IDS = {"for-agents", "recap", "reference"}
+# Day-to-day and Testing it have at least this many `### ` subsections.
+PARTS_AT_LEAST = 2
 # The tail before the section rules: For agents, Recap and Reference as sections of their own.
 LEGACY_TAIL = ["Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
 # Chapters not yet restructured to the section rules: a breach of them there is a warning, not a
@@ -886,7 +891,8 @@ def sections(text):
 def words(lines, inside):
     count = 0
     for n, line in lines:
-        if n in inside or OPENER.match(line) or CLOSER.match(line):
+        # Prose only: code, ::: lines and headings do not count.
+        if n in inside or OPENER.match(line) or CLOSER.match(line) or re.match(r"^#{1,6} ", line):
             continue
         count += len(re.findall(r"[^\s|>*`#-]\S*", line))
     return count
@@ -939,7 +945,86 @@ def subsections(lines, inside):
     return out
 
 
-def structure(chapter, body, concepts, where, failures, warnings):
+def generic(title):
+    """Whether a heading's title is a generic label (`Overview`, `An overview`, `Details.`)."""
+    words = re.sub(r"[^a-z ]", "", title.lower()).split()
+    if words and words[0] in ("a", "an", "the"):
+        words = words[1:]
+    return " ".join(words) in GENERIC
+
+
+def slug(text):
+    """A heading's id as the site makes it (website scripts/preview/markdown.mjs, `slug`): the
+    heading's text without its inline markup, lowercase, with every character that is not a
+    letter, a digit, a space or `-` dropped, trimmed, and each run of spaces as one `-`."""
+    text = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = text.lower().replace("`", "")
+    text = re.sub(r"[^\w\s-]|_", "", text).strip()
+    return re.sub(r"\s+", "-", text)
+
+
+def heading_ids(body):
+    """Every heading of a page outside fences, as the site gives it ids: [{line, level, text,
+    base, id, number, section}]. A heading numbered `N.M` (`## 6.1 …`) has the id `sN-M`; any
+    other the slug of its words, with `-1` appended while it is taken. A heading of level 3 or
+    deeper inside a numbered section also has the number the site gives it (`6.2.1`, `6.2.1.1`:
+    a level that skips its parent counts that parent as 1), whose id is `s6-2-1`. `section` is
+    the numbered section's title without its number, or None."""
+    _, inside = fences(body)
+    out, used = [], set()
+    prefix, section, counts = None, None, []
+    for n, line in enumerate(body.split("\n")):
+        match = re.match(r"^(#{1,6}) (.*?)\s*$", line)
+        if n in inside or not match:
+            continue
+        level, text = len(match.group(1)), match.group(2)
+        dotted = re.match(r"^(\d+(?:\.\d+)+)\s", text)
+        number = None
+        if level <= 2:
+            prefix = dotted.group(1) if level == 2 and dotted else None
+            section = re.sub(r"^\d+\.\d+ ", "", text) if prefix else None
+            counts = []
+        elif prefix:
+            depth = level - 3
+            counts = (counts + [0] * (depth + 1))[:depth + 1]
+            counts = [c or 1 for c in counts[:depth]] + [counts[depth] + 1]
+            number = prefix + "." + ".".join(str(c) for c in counts)
+        base_id = "s" + dotted.group(1).replace(".", "-") if dotted else slug(text)
+        ident = base_id
+        while ident in used:
+            ident += "-1"
+        used.add(ident)
+        out.append({"line": n + 1, "level": level, "text": text, "base": base_id, "id": ident,
+                    "number": number, "section": section})
+    return out
+
+
+def anchors(body, where, failures):
+    """The anchors of a page: every `#id` link names a heading of the page (its id, or the id
+    of its number, `#s6-2-1`); no two headings have the same id; and no heading's words make
+    the id of a section number. Returns heading_ids(body)."""
+    found = heading_ids(body)
+    for heading in found:
+        if heading["id"] != heading["base"]:
+            failures.add(f"{where}:{heading['line']}", f"`{heading['text']}` has the id `{heading['base']}`, as an earlier heading does; "
+                         "every heading of a chapter has its own words, so that its anchor is its own")
+        if not re.match(r"^\d+(?:\.\d+)+\s", heading["text"]) and re.match(r"^s\d+(-\d+)+$", heading["base"]):
+            failures.add(f"{where}:{heading['line']}", f"`{heading['text']}` would take the id of a section number (`{heading['base']}`); reword it")
+    known = {h["id"] for h in found} | {"s" + h["number"].replace(".", "-") for h in found if h["number"]}
+    rest = "\n".join(spans_removed(line, unescape=True) for _, line in prose_lines(body))
+    for target in LINK.findall(rest) + base.REFERENCE.findall(rest):
+        if not target.startswith("#"):
+            continue
+        from urllib.parse import unquote
+
+        ident = unquote(target[1:])
+        if ident not in known:
+            failures.add(where, f"the link {target} names no heading of the chapter; a numbered heading's anchor is its number "
+                         "(#s6-1), another's the slug of its words (#what-youll-build)")
+    return found
+
+
+def structure(chapter, body, concepts, where, failures, warnings, chapter_dir=None):
     """The rules inside a section (TEMPLATE.md, "Inside a section"): 3 to 6 `### ` subsections
     with specific titles in each concept section; in Common mistakes and Exercises, one `### `
     per card, each holding its card; and the closing section `Recap and reference` with exactly
@@ -961,10 +1046,11 @@ def structure(chapter, body, concepts, where, failures, warnings):
         if index < concepts:
             if not SUBSECTIONS[0] <= len(names) <= SUBSECTIONS[1]:
                 problems.append(f"`{label}` has {len(names)} `### ` subsections; a concept section has {SUBSECTIONS[0]} to {SUBSECTIONS[1]}")
-            for name in names:
-                if re.sub(r"[^a-z ]", "", name.lower()).strip() in GENERIC:
-                    problems.append(f"`{label}`: `### {name}` is a generic label; title a subsection by what it teaches")
-        elif title in ("Common mistakes", "Exercises"):
+        elif title.startswith(DAY_TO_DAY) or title == "Testing it":
+            if len(names) < PARTS_AT_LEAST:
+                problems.append(f"`{label}` has {len(names)} `### ` subsections; it has at least {PARTS_AT_LEAST}: "
+                                + ("one per part of the program, then running it" if title != "Testing it" else "one per kind of test"))
+        if title in ("Common mistakes", "Exercises"):
             card = "mistake" if title == "Common mistakes" else "exercise"
             cards_of = [box for box in boxes if box.name == card and lines and lines[0][0] < box.start <= lines[-1][0] + 1]
             spans = [(sub[0][0] + 1 if sub else None, sub[-1][0] + 1 if sub else None) for _, sub in found]
@@ -973,11 +1059,33 @@ def structure(chapter, body, concepts, where, failures, warnings):
             if len(names) != len(cards_of) or loose or any(k != 1 for k in per):
                 problems.append(f"`{label}` has one `### ` subsection per :::{card} card, titled by the {card}, "
                                 f"with its card in it; found {len(names)} subsections for {len(cards_of)} cards")
+            for k, name in enumerate(names, start=1):
+                if card == "exercise" and not re.match(rf"^Exercise {k}: \S", name):
+                    problems.append(f"`{label}`: subsection {k} is titled `### Exercise {k}: <goal>`; found `### {name}`")
+                if card == "mistake":
+                    code = re.search(r"\((U\d{4}(?:, U\d{4})*)\)$", name)
+                    shown = None
+                    if chapter_dir is not None:
+                        path = os.path.join(chapter_dir, "mistakes", str(k), "expected", "diagnostics.txt")
+                        shown = set(re.findall(r"^error (U\d{4}) ", base.read(path), re.M)) if os.path.isfile(path) else set()
+                    if not code:
+                        problems.append(f"`{label}`: `### {name}` ends with its code in parentheses, such as `(U3007)` or `(U0101, U7002)`")
+                    elif shown is not None:
+                        for named in code.group(1).split(", "):
+                            if named not in shown:
+                                problems.append(f"`{label}`: `### {name}` names {named}, but mistakes/{k} reports {sorted(shown) or 'no code'}")
         elif title == "Recap and reference":
             loose = [line for n, line in subsections(lines, inside)[0][1] if line.strip()]
             if names != CLOSING or loose:
                 problems.append(f"`{label}` holds exactly `### For agents`, `### Recap` and `### Reference`, in order; "
                                 f"found {['### ' + n for n in names]}" + (" and text before them" if loose else ""))
+    # No generic title anywhere, and the closing ids only on the closing subsections.
+    for heading in heading_ids(body):
+        if heading["level"] >= 3 and generic(heading["text"]):
+            problems.append(f"`### {heading['text']}` (line {heading['line']}) is a generic label; title a subsection by what it holds")
+        if heading["base"] in RESERVED_IDS and not (heading["level"] == 3 and heading["section"] == "Recap and reference"):
+            problems.append(f"`{heading['text']}` (line {heading['line']}) takes the id `{heading['base']}`, which only the "
+                            "closing section's `### For agents`, `### Recap` and `### Reference` have")
     graced = chapter in STRUCTURE_GRACE
     if graced and problems:
         warnings.append(f"{where}: not yet on the section rules (STRUCTURE_GRACE): {len(problems)} to fix, "
@@ -1100,7 +1208,8 @@ def check_page(root, chapter, fields, body, packages, una_path, codes, failures,
         if ref.startswith("steps/") and ref not in used:
             warnings.append(f"{where}: nothing on the page includes {ref}")
     if concepts is not None:
-        structure(chapter, body, concepts, where, failures, warnings)
+        structure(chapter, body, concepts, where, failures, warnings, chapter_dir)
+    anchors(body, where, failures)
     parts = sections(body)
     _, inside = fences(body)
     by_name = {}

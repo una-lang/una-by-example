@@ -228,11 +228,17 @@ See [the errors](/docs/errors/U3007/) and [What you'll build](#what-youll-build)
 
 ## 6.4 Day-to-day: order intake
 
+### The kinds of an order
+
 ```una include="day-to-day/src/orders.una#Order" caption="the kinds" title="src/orders.una"
 ```
 
+### The report
+
 ```una include="day-to-day/src/orders.una#reason..describe" verified="check, run, test"
 ```
+
+### Running the program
 
 ```sh
 cd 06-failure/day-to-day
@@ -241,8 +247,12 @@ una run .
 
 ## 6.5 Testing it
 
+### An example per path
+
 ```una include="day-to-day/src/orders.una#L36-L38"
 ```
+
+### Running the examples
 
 ```text include="day-to-day/expected/commands/test.txt"
 ```
@@ -1042,7 +1052,7 @@ class Chapters(Base):
 
     def test_a_generic_subsection_title(self):
         edit(self.readme, "### The five clauses", "### Overview")
-        self.assertFails("`### Overview` is a generic label")
+        self.assertFails("`### Overview` (line")
 
     def test_a_mistake_without_its_subsection(self):
         edit(self.readme, "### Forgetting clause 2 (U3007)\n\n", "")
@@ -1072,6 +1082,84 @@ class Chapters(Base):
     def test_text_before_the_closing_subsections(self):
         edit(self.readme, "## 6.8 Recap and reference\n", "## 6.8 Recap and reference\n\nA few words.\n")
         self.assertFails("and text before them")
+
+    def test_a_day_to_day_with_one_subsection(self):
+        edit(self.readme, "### The report\n\n", "")
+        edit(self.readme, "### Running the program\n\n", "")
+        self.assertFails("`6.4 Day-to-day: order intake` has 1 `### ` subsections; it has at least 2")
+
+    def test_a_testing_section_with_one_subsection(self):
+        edit(self.readme, "### Running the examples\n\n", "")
+        self.assertFails("`6.5 Testing it` has 1 `### ` subsections; it has at least 2")
+
+    def test_a_generic_title_outside_the_concept_sections(self):
+        edit(self.readme, "### The report", "### Details")
+        self.assertFails("`### Details` (line")
+
+    def test_a_generic_title_with_an_article(self):
+        edit(self.readme, "### The five clauses", "### An overview")
+        self.assertFails("`### An overview` (line")
+
+    def test_a_generic_part(self):
+        edit(self.readme, "### Recovering with a default\n\n{lead}".format(lead=LOREM), "### Recovering with a default\n\n#### Summary\n\n" + LOREM)
+        self.assertFails("`### Summary` (line")
+
+    def test_an_exercise_title_out_of_order(self):
+        edit(self.readme, "### Exercise 2: extend the program", "### Exercise 7: extend the program")
+        self.assertFails("subsection 2 is titled `### Exercise 2: <goal>`; found `### Exercise 7: extend the program`")
+
+    def test_an_exercise_title_without_its_number(self):
+        edit(self.readme, "### Exercise 1: extend the program", "### Extend the program")
+        self.assertFails("subsection 1 is titled `### Exercise 1: <goal>`")
+
+    def test_a_mistake_title_without_its_code(self):
+        edit(self.readme, "### Forgetting clause 2 (U3007)", "### Forgetting clause 2")
+        self.assertFails("`### Forgetting clause 2` ends with its code in parentheses")
+
+    def test_a_mistake_title_with_two_codes(self):
+        edit(self.readme, "### Forgetting clause 3 (U3007)", "### Forgetting clause 3 (U3007, U3007)")
+        self.assertPasses()
+        edit(self.readme, "### Forgetting clause 3 (U3007, U3007)", "### Forgetting clause 3 (U3007, U7002)")
+        self.assertFails("names U7002, but mistakes/3 reports ['U3007']")
+
+    def test_headings_are_not_prose(self):
+        lines = [(0, "### A long title of many words here"), (1, "#### Another title"), (2, "Three words here.")]
+        self.assertEqual(template2.words(lines, set()), 3)
+
+    def test_a_mistake_title_with_another_code(self):
+        edit(self.readme, "### Forgetting clause 3 (U3007)", "### Forgetting clause 3 (U9999)")
+        self.assertFails("names U9999, but mistakes/3 reports ['U3007']")
+
+    # Anchors.
+
+    def test_a_dangling_link(self):
+        edit(self.readme, "(#what-youll-build)", "(#what-you-build)")
+        self.assertFails("the link #what-you-build names no heading of the chapter")
+
+    def test_links_to_a_slug_and_to_a_number(self):
+        edit(self.readme, "(#what-youll-build)", "(#forgetting-clause-2-u3007)")
+        edit(self.readme, "- One.", "- One, as in [the report](#s6-4-2) and [Testing it](#s6-5).")
+        self.assertPasses()
+
+    def test_a_repeated_slug(self):
+        edit(self.readme, "### Running the examples", "### The report")
+        self.assertFails("`The report` has the id `the-report`, as an earlier heading does")
+
+    def test_a_slug_like_a_section_number(self):
+        edit(self.readme, "### Keeping an outcome", "### S6 1")
+        self.assertFails("would take the id of a section number (`s6-1`)")
+
+    def test_a_reserved_id_outside_the_closing_section(self):
+        edit(self.readme, "### Keeping an outcome", "### Recap")
+        self.assertFails("`Recap` (line")
+        self.assertFails("takes the id `recap`")
+
+    def test_the_slug_rule(self):
+        self.assertEqual(template2.slug("Translating between layers with `error`"), "translating-between-layers-with-error")
+        self.assertEqual(template2.slug("`if none` before `if error` (U0102)"), "if-none-before-if-error-u0102")
+        self.assertEqual(template2.slug("What you'll build"), "what-youll-build")
+        self.assertEqual(template2.slug("A function that fails: `parse_quantity`"), "a-function-that-fails-parsequantity")
+        self.assertEqual(template2.slug("See [the errors](/docs/errors/U3007/) now"), "see-the-errors-now")
 
     def test_the_recap_is_counted_inside_the_closing_section(self):
         edit(self.readme, "- Five.\n", "")

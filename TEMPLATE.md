@@ -90,7 +90,7 @@ The headings are fixed. `N` is the chapter's number, and the numbered parts coun
 | | `### Recap` | 5 to 8 bullets, each a rule the reader can apply | 80–150 words |
 | | `### Reference` | Links to the construct pages, std items, error codes and specification sections, all on the site, at the release | list |
 
-Totals: 3,000 to 5,000 words of prose, 150 to 350 lines of code across all blocks, 25 to 40 minutes to read, 60 to 90 minutes with the exercises. A page longer than the site's page budget (40 KiB gzip) splits in two.
+Totals: 3,000 to 5,000 words of prose (paragraphs and list text; headings, code and `:::` lines do not count, and the same holds for each part's target), 150 to 350 lines of code across all blocks, 25 to 40 minutes to read, 60 to 90 minutes with the exercises. A page longer than the site's page budget (40 KiB gzip) splits in two.
 
 Inside each numbered part, `### ` subsections follow the rules of [Inside a section](#inside-a-section). No other `## ` heading may appear. Every heading is a `#` line at column 0, outside quotes and lists; an underlined (setext) heading fails, so put a blank line before a `---` rule.
 
@@ -107,17 +107,21 @@ The site shows each numbered section (`## N.k`) as a page of its own, and lists 
 | Section | Its `### ` subsections |
 | --- | --- |
 | Concept (`N.1` to `N.k`) | 3 to 6, each titled by what it teaches. The usual arc: the problem or idea; a first example, its include and walkthrough; the rules, how it works and its precise behavior; variations and real use; when to use it, or its pitfalls. Not every section needs every step, and a step may take two subsections. |
-| Day-to-day | One per part of the program, each module or step in the order the text builds it, then running it, then the whole program. |
-| Testing it | One per kind of test, such as the happy path, the failure paths and what must not happen, then running the examples. |
-| Common mistakes | One per mistake, titled by the mistake and its code, such as `### Forgetting the clause (U3007)`, holding that mistake's `:::mistake` card and nothing of another. |
-| Exercises | One per exercise, `### Exercise N: <goal>`, holding its `::::exercise` card. |
+| Day-to-day | At least 2: one per part of the program, each module or step in the order the text builds it, then running it, then the whole program. The whole program is optional when the text already shows each module whole. A subsection may follow the whole program when it continues the program's story, such as `### The checks before a release`. |
+| Testing it | At least 2: one per kind of test, such as the happy path, the failure paths and what must not happen, then running the examples. The rule is distinct kinds of tests, not length: a subsection may be a lead sentence and a list. |
+| Common mistakes | One per mistake, titled by the mistake and ending with its code in parentheses, or its codes (`(U0101, U7002)`), each one a code the mistake's `diagnostics.txt` reports, such as `### Forgetting the clause (U3007)`, holding that mistake's `:::mistake` card and nothing of another. |
+| Exercises | One per exercise, `### Exercise N: <goal>` with `N` its place in order, holding its `::::exercise` card. |
 | Recap and reference | Exactly `### For agents`, `### Recap` and `### Reference`, in this order, with nothing before the first. |
 
-- **Titles are specific.** A subsection's title says what it holds: `### Translating between layers with error`, not `### Overview`, `### Details`, `### Example` or `### More`. A title is short, has no final period, and reads well after its number.
+- **Titles are specific.** Every subsection's title, in every section, says what it holds: `### Translating between layers with error`, not `### Overview`, `### Details`, `### Example` or `### More`. A title is short, has no final period, and reads well after its number.
 - **Deeper parts.** A subsection may hold `#### ` parts, which the site numbers `N.k.m.1`. Use them sparingly, for two or three parts that a reader would look up one by one.
 - **Text before the first subsection.** A section may open with a sentence or two before its first `### `, such as the intro of Common mistakes. A concept section usually starts its first subsection at once.
 - **Restructuring keeps the content.** Insert headings, and move or split paragraphs; add only the bridging sentence a subsection needs to read well on its own. Includes, expected outputs and verified blocks stay as they are.
-- **Anchors.** A subsection's anchor is the slug of its English words (`#forgetting-the-clause-u3007`): lowercase, backticks and other punctuation dropped, spaces as `-`. The site also gives it the anchor of its number (`#s6-7-1`), which changes when a subsection is added before it; prefer the slug.
+- **Anchors.** A subsection's anchor is the slug of its English words (`#forgetting-the-clause-u3007`): lowercase, backticks and other punctuation dropped, spaces as `-`. The site also gives it the anchor of its number (`#s6-7-1`), which changes when a subsection is added before it; prefer the slug. So that every anchor names one heading:
+  - every heading of a chapter has its own slug (the site would give a repeated one `-1`, which no link can count on);
+  - no heading's words make the id of a section number (`### S6 1` would be `s6-1`);
+  - `for-agents`, `recap` and `reference` are the ids of the closing section's three subsections, and no other heading of the chapter takes them;
+  - every link to `#id` on the page names a heading's slug or number.
 
 ## Blocks are includes
 
@@ -180,7 +184,7 @@ Any other attribute fails the check, so a misspelt `include` does not pass unnot
 
 ## Links
 
-**Between sections, link; never write "above" or "below".** Each numbered section is a page of its own on the site, so "the table above" or "mistake 4" can name something the reader does not see. Name it, and link it: `[section 6.2](#s6-2)`, `[Common mistakes](#s6-7)`, `[the clause on the same line](#the-clause-on-the-same-line-u0101)`. Inside one subsection, "below" and "above" are fine.
+**Between sections, link; never write "above" or "below".** Each numbered section is a page of its own on the site, so "the table above" or "mistake 4" can name something the reader does not see. Name it, and link it: `[section 6.2](#s6-2)`, `[Common mistakes](#s6-7)`, `[the clause on the same line](#the-clause-on-the-same-line-u0101)`. Inside one section, which is one page, "below" and "above" are fine.
 
 Links point to the site's own pages at the release: a root-relative route such as `/docs/errors/U3007/`, or an anchor on the page such as `#what-youll-build`. An anchor names a numbered heading by its number, `#s6-1` for `## 6.1 …`, and another heading by the slug of its English words (`#what-youll-build`); a translation keeps the English page's anchors, and its headings match the English page's in number and order. A link to a file of the una-lang repositories on GitHub (`/blob/`, `/tree/`, `raw.githubusercontent.com`) fails, since those files change after the release; so does a relative link such as `../05-collections/README.md`, which resolves on GitHub but not on the site, and an `http://` link. The host is matched in any case and with any port. Other `https://` links are allowed.
 
@@ -221,7 +225,7 @@ Failures:
 2. The chapter directory holds only `README.md`, `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, laid out as above, with only the allowed files and no symbolic link.
 3. Every package and overlay has an allowed `una.toml` and the outcome in its `expected/`; its commands are allowed and print what they say; its `rendered.txt` is what `una` prints, normalized.
 4. The front matter has exactly its fields; `learn` matches the directory; `codes` are the codes the outcomes show.
-5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections; inside them, each concept section has 3 to 6 `### ` subsections, none titled by a generic label (`Overview`, `Details`, `Example` and the like), Common mistakes and Exercises have one `### ` per card with its card in it, and the closing section is `Recap and reference` with exactly `### For agents`, `### Recap` and `### Reference`. A chapter not yet restructured is listed in `STRUCTURE_GRACE` in `scripts/template2.py`: there, these subsection rules and the separate For agents, Recap and Reference sections give one warning instead of failures; a chapter leaves the list once it follows them, and the check says so. The markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
+5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections; inside them, each concept section has 3 to 6 `### ` subsections, none titled by a generic label (`Overview`, `Details`, `Example` and the like), Day-to-day and Testing it have at least 2 `### `, no subsection anywhere has a generic title, Common mistakes and Exercises have one `### ` per card with its card in it (a mistake's title ends with a code its diagnostics show, an exercise's is `Exercise k: <goal>` in order), the anchors follow the rules of Anchors in [Inside a section](#inside-a-section) (a dangling `#id` link, a repeated slug and a slug like a section number fail in every chapter), and the closing section is `Recap and reference` with exactly `### For agents`, `### Recap` and `### Reference`. A chapter not yet restructured is listed in `STRUCTURE_GRACE` in `scripts/template2.py`: there, these subsection rules and the separate For agents, Recap and Reference sections give one warning instead of failures; a chapter leaves the list once it follows them, and the check says so. The markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
 6. Every fenced block is an include (or a plain `sh` block of commands); its include resolves; its body is the included text; its attributes are quoted, known and given once; its `title` is its path; its `verified` badges hold.
 7. "What you'll build" has a block that includes exactly `day-to-day/expected/output.txt`; the page shows something of `day-to-day/`; there are at least 4 mistakes and 3 to 5 exercises; each card shows its own mistake or answer, as above.
 8. Each exercise's examples fail on `start/`; each answer checks clean, runs, and passes `una test .`.
