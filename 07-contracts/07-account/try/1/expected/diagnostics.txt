@@ -1,2 +1,0 @@
-error U5001 at src/account.una:20:5: refinement `result >= 0` is refuted
-  counterexample: amount = 1, b = 0, result = -1

@@ -1,0 +1,4 @@
+AtLocker("Station 14") AtStore(store: "Harbour Road", opens: 9) AtDoor
+code needed: true false
+Local before Abroad: true; same zone: true
+NoCarrier

@@ -1,0 +1,43 @@
+module rates
+
+--- A share in whole percent.
+kind Percent = Int in 0..100
+
+--- Why a typed rate was refused.
+kind RateError = NotANumber(raw: Text) | OutOfRange(value: Int)
+
+--- A discount rate typed into the back office. This is where text from a person becomes a
+--- `Percent`, so this is where it is checked.
+parse_rate(raw: Text) -> Percent
+  fails RateError
+=
+  let n = raw.trim.to_int()
+    if none fail NotANumber(raw)
+  if n < 0 or n > 100
+    fail OutOfRange(value: n)
+  else
+    n
+
+--- What is left of 100 percent after the rate. A `Percent` needs no second check.
+rest_of(rate: Percent) -> Percent = 100 - rate
+
+--- Why a rate was refused, for a person to read.
+explain(failure: RateError) -> Text
+=
+  when failure
+    is NotANumber(raw) -> "'{raw}' is not a number"
+    is OutOfRange(value) -> "{value} is not between 0 and 100"
+
+describe(raw: Text) -> Text
+=
+  let outcome = attempt parse_rate(raw)
+  when outcome
+    is Ok(rate) -> "{rate}% off: the customer pays {rest_of(rate)}%"
+    is Err(failure) -> explain(failure)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(describe("15"))
+  @console.print(describe("150"))
+  @console.print(describe("ten"))

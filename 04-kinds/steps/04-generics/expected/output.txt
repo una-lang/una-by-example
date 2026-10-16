@@ -1,0 +1,3 @@
+Change(before: 1790, after: 1990)
+price changed: true, name changed: false
+larger price 1990, farther zone Abroad

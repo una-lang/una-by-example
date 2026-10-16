@@ -1,0 +1,143 @@
+module billing
+
+requirement BILLING_1
+  text "A coupon or store credit never makes a customer pay less than 0 or more than the subtotal"
+  source policy "Store billing rules"
+  owner billing
+  status active
+
+requirement BILLING_2
+  text "A refund never pays back more than the customer paid"
+  source policy "Store billing rules"
+  owner billing
+  status active
+
+--- An amount of money in cents. It is never negative.
+pub kind Cents = Int where it >= 0
+
+--- A share in whole percent.
+pub kind Percent = Int in 0..100
+
+--- One line of an invoice.
+pub kind Line
+  sku: Text
+  unit_cents: Cents
+  quantity: Int in 1..99
+
+--- A coupon on the whole invoice.
+pub kind Coupon = NoCoupon | PercentOff(rate: Percent) | CentsOff(amount: Cents)
+
+--- How an invoice is paid: from store credit first, and the rest by card.
+pub kind Payment
+  credit: Cents
+  card: Cents
+
+--- Why a refund was refused.
+pub kind RefundError = | MoreThanPaid(paid: Cents)
+
+--- What one line costs. The guard states a fact the solver cannot see: its `then` branch
+--- never runs.
+pub line_total(line: Line) -> Cents
+=
+  let total = line.unit_cents * line.quantity
+  if total < 0 then 0 else total
+
+--- The sum of every line.
+pub subtotal(lines: List[Line]) -> Cents
+=
+  let edit total: Cents = 0
+  for line in lines
+    total = total + line_total(line)
+  total
+
+--- `rate` percent of `amount`, rounded down. The guard never runs, as in `line_total`.
+percent_of(amount: Cents, rate: Percent) -> Cents
+  ensures result <= amount
+=
+  let part = amount * rate / 100
+  if part < 0 or part > amount then 0 else part
+
+--- What a coupon takes off `amount`: never more than `amount`.
+pub discount(amount: Cents, coupon: Coupon) -> Cents
+  ensures result <= amount
+  derived from BILLING_1
+=
+  when coupon
+    is NoCoupon -> 0
+    is PercentOff(rate) -> percent_of(amount, rate)
+    is CentsOff(off) -> if off > amount then amount else off
+
+--- Splits `total` between store credit and card, credit first.
+pub pay(total: Cents, credit: Cents) -> Payment
+  ensures result.credit + result.card == total
+  ensures result.credit <= credit
+  derived from BILLING_1
+=
+  if credit >= total then Payment(credit: total, card: 0) else Payment(credit: credit, card: total - credit)
+
+--- What a refund pays back: what was asked, if the customer paid at least that much.
+pub refund(paid: Cents, asked: Cents) -> Cents
+  ensures result <= paid
+  fails RefundError
+  derived from BILLING_2
+=
+  if paid > asked then fail MoreThanPaid(paid) else asked
+
+--- An amount for a person to read, such as 19.90.
+pub money(cents: Cents) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
+
+--- One line of the refund report.
+pub refund_line(paid: Cents, asked: Cents) -> Text
+=
+  let outcome = attempt refund(paid, asked: asked)
+  when outcome
+    is Ok(back) -> "refund {money(back)}: paid back"
+    is Err(failure) -> "refund {money(asked)}: refused, {why(failure)}"
+
+why(failure: RefundError) -> Text
+=
+  when failure
+    is MoreThanPaid(paid) -> "only {money(paid)} was paid"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lines = [Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2), Line(sku: "DESK-02", unit_cents: 14900, quantity: 1)]
+  for line in lines
+    @console.print("{line.quantity} x {line.sku} at {money(line.unit_cents)}: {money(line_total(line))}")
+  let gross = subtotal(lines)
+  let off = discount(gross, coupon: PercentOff(rate: 10))
+  let total: Cents = gross - off
+  let payment = pay(total, credit: 5000)
+  @console.print("subtotal {money(gross)}, coupon -{money(off)}, total {money(total)}")
+  @console.print("store credit {money(payment.credit)}, card {money(payment.card)}")
+  @console.print(refund_line(total, asked: 3980))
+  @console.print(refund_line(total, asked: 20000))
+
+example "a coupon worth more than the invoice takes the whole invoice"
+  do discount(1000, coupon: CentsOff(amount: 1500))
+  expect result == 1000
+
+example "ten percent is rounded down"
+  do discount(18885, coupon: PercentOff(rate: 10))
+  expect result == 1888
+
+example "store credit pays first"
+  do pay(16992, credit: 5000)
+  expect result.credit == 5000
+  expect result.card == 11992
+
+example "credit larger than the total leaves nothing for the card"
+  do pay(1990, credit: 5000)
+  expect result.card == 0
+
+example "a refund of more than was paid is refused"
+  do refund(16992, asked: 20000)
+  expect fails MoreThanPaid
+
+example "an empty invoice costs nothing"
+  do subtotal([])
+  expect result == 0

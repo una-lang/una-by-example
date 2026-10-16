@@ -1,0 +1,27 @@
+module invoice
+
+--- An amount of money in cents. It is never negative.
+kind Cents = Int where it >= 0
+
+--- One line of an invoice.
+kind Line
+  sku: Text
+  unit_cents: Cents
+  quantity: Int in 1..99
+
+--- Loyalty points: one for each whole 1.00 spent.
+points(total: Cents) -> Int
+  ensures result >= 0
+  ensures result * 100 <= total
+=
+  total / 100
+
+--- What one line costs.
+line_total(line: Line) -> Cents = line.unit_cents * line.quantity
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let desk = Line(sku: "DESK-02", unit_cents: 14900, quantity: 2)
+  let total = line_total(desk)
+  @console.print("{total} cents, {points(total)} points")

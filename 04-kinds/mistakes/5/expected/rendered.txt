@@ -1,0 +1,12 @@
+[U2009] Error: variant `InTransit` needs its fields: `carrier`, `tracking`
+    ╭─[ src/tracking.una:52:41 ]
+    │
+ 52 │     is DeliveredOn(day) -> if status == InTransit then Delivered(day) else status
+    │                                         ────┬────
+    │                                             ╰────── variant `InTransit` needs its fields: `carrier`, `tracking`
+    │
+    │ Help: repair 1: write `status is InTransit`; edit src/tracking.una:52:31..52:50 to "status is InTransit"
+    │
+    │ Note: run `una explain U2009` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

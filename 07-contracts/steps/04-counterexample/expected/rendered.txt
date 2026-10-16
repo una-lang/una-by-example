@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `after_coupon` is refuted
+    ╭─[ src/coupons.una:12:3 ]
+    │
+  8 │   ensures result >= 0
+    │           ─────┬─────
+    │                ╰─────── ensures clause
+    │
+ 12 │   price - off
+    │   ─────┬─────
+    │        ╰─────── postcondition of `after_coupon` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 0` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-3bf1d4af758b (postcondition) is refuted: result >= 0
+    │
+    │ Note 2: counterexample: off = 1, price = 0, result = -1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

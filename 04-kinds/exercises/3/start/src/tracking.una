@@ -1,0 +1,150 @@
+module tracking
+
+--- How far a parcel travels.
+pub kind Zone = Local | National | Abroad
+
+--- A parcel ready to ship. `order` is the number on the customer's receipt.
+pub kind Parcel
+  order: Text
+  grams: Int
+  zone: Zone
+
+--- Who carries a parcel.
+pub kind Carrier = Post | Courier
+
+--- Why a parcel came back.
+pub kind ReturnReason = Damaged | WrongItem | Refused
+
+--- Where a shipment is. Each state carries what is known in that state, and nothing else.
+pub kind Status = Packed | InTransit(carrier: Carrier, tracking: Text) | Delivered(day: Int) | Returned(reason: ReturnReason, day: Int)
+
+--- What a carrier or the warehouse reports about a shipment.
+pub kind Event = PickedUp(carrier: Carrier, tracking: Text) | DeliveredOn(day: Int) | CameBack(reason: ReturnReason, day: Int)
+
+--- A value before and after something happened.
+pub kind Change[T]
+  before: T
+  after: T
+
+--- Postage in cents: a price for the zone, and a supplement for the weight.
+pub postage(parcel: Parcel) -> Int = zone_cents(parcel.zone) + weight_cents(parcel.grams)
+
+zone_cents(zone: Zone) -> Int
+=
+  when zone
+    is Local -> 300
+    is National -> 450
+    is Abroad -> 1200
+
+weight_cents(grams: Int) -> Int
+=
+  when grams
+    in 0..500 -> 0
+    in 501..2000 -> 150
+    else -> 400
+
+--- The status after an event. An event that does not fit the status changes nothing, such
+--- as a pickup scan that a carrier sends twice.
+pub apply(status: Status, event: Event) -> Status
+=
+  when event
+    is PickedUp(carrier, tracking) -> if status is Packed then InTransit(carrier, tracking) else status
+    is DeliveredOn(day) -> if status is InTransit then Delivered(day) else status
+    is CameBack(reason, day) -> if status is Delivered then Returned(reason, day) else status
+
+--- What an event does to a status: the status before it, and after it.
+pub track(status: Status, event: Event) -> Change[Status] = Change(before: status, after: apply(status, event))
+
+--- Whether something changed. Any type whose values can be compared will do.
+pub changed[T: Eq](change: Change[T]) -> Bool = change.before != change.after
+
+--- A status, for a person to read.
+pub describe(status: Status) -> Text
+=
+  when status
+    is Packed -> "packed, waiting for a carrier"
+    is InTransit(carrier, tracking) -> "with {carrier_name(carrier)}, tracking {tracking}"
+    is Delivered(day) -> "delivered on day {day}"
+    is Returned(reason, day) -> "returned on day {day}, {reason_text(reason)}"
+
+carrier_name(carrier: Carrier) -> Text
+=
+  when carrier
+    is Post -> "the post"
+    is Courier -> "the courier"
+
+reason_text(reason: ReturnReason) -> Text
+=
+  when reason
+    is Damaged -> "damaged"
+    is WrongItem -> "the wrong item"
+    is Refused -> "refused at the door"
+
+--- Whether the store owes the customer a refund: only for a parcel that came back by the
+--- store's fault.
+pub refund_due(status: Status) -> Bool
+=
+  when status
+    is Returned(reason) -> reason != Refused
+    else -> false
+
+--- One line of the tracking report.
+pub report(order: Text, change: Change[Status]) -> Text = if changed(change) then "{order}: {describe(change.after)}" else "{order}: no change, still {describe(change.after)}"
+
+--- What the store does next about a shipment. Exercise 3: declare it as a sum kind.
+pub kind Action = | Wait
+
+--- The next action for a status. Exercise 3: one action for each case.
+pub next_action(status: Status) -> Action = Wait
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Parcel(order: "A-1001", grams: 1200, zone: National)
+  @console.print("{lamp.order}: postage {postage(lamp)}")
+  let picked = track(Packed, event: PickedUp(carrier: Courier, tracking: "CX-4471"))
+  @console.print(report(lamp.order, change: picked))
+  let again = track(picked.after, event: PickedUp(carrier: Courier, tracking: "CX-4471"))
+  @console.print(report(lamp.order, change: again))
+  let arrived = track(again.after, event: DeliveredOn(day: 3))
+  @console.print(report(lamp.order, change: arrived))
+  let vase = Parcel(order: "A-1002", grams: 300, zone: Abroad)
+  @console.print("{vase.order}: postage {postage(vase)}")
+  let back = track(Delivered(day: 8), event: CameBack(reason: Damaged, day: 12))
+  @console.print("{report(vase.order, change: back)}; refund due: {refund_due(back.after)}")
+
+example "a heavy parcel abroad pays the zone and the weight"
+  do postage(Parcel(order: "A-1003", grams: 2500, zone: Abroad))
+  expect result == 1600
+
+example "a pickup moves a packed parcel into transit"
+  do apply(Packed, event: PickedUp(carrier: Post, tracking: "PO-1"))
+  expect result is InTransit
+
+example "a second pickup scan changes nothing"
+  do track(InTransit(carrier: Post, tracking: "PO-1"), event: PickedUp(carrier: Post, tracking: "PO-1"))
+  expect not changed(result)
+
+example "a parcel cannot come back before it was delivered"
+  do apply(Packed, event: CameBack(reason: Damaged, day: 2))
+  expect result is Packed
+
+example "a refused parcel is not refunded"
+  do refund_due(Returned(reason: Refused, day: 5))
+  expect result == false
+
+example "a parcel in transit sends its tracking number"
+  do next_action(InTransit(carrier: Post, tracking: "PO-7"))
+  expect result == SendTracking(tracking: "PO-7")
+
+example "a damaged parcel is refunded"
+  do next_action(Returned(reason: Damaged, day: 4))
+  expect result == Refund
+
+example "a refused parcel goes back on the shelf"
+  do next_action(Returned(reason: Refused, day: 4))
+  expect result == Restock
+
+example "a delivered parcel asks for a review"
+  do next_action(Delivered(day: 3))
+  expect result == AskForReview

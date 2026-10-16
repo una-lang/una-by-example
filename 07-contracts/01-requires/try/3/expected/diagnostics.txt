@@ -1,2 +1,0 @@
-error U5001 at src/share.una:5:41: division obligation `people != 0` is refuted
-  counterexample: people = 0

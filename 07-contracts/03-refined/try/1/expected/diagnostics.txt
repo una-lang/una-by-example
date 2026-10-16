@@ -1,2 +1,0 @@
-error U5001 at src/percent.una:8:61: refinement `result in 0..100` is refuted
-  counterexample: n = -1, result = -1

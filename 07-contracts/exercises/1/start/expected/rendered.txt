@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `shipping` is refuted
+    ╭─[ src/billing.una:92:3 ]
+    │
+ 90 │   ensures total >= 5000 implies result == 0
+    │           ────────────────┬────────────────
+    │                           ╰────────────────── ensures clause
+    │
+ 92 │   495
+    │   ─┬─
+    │    ╰─── postcondition of `shipping` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `total >= 5000 implies result == 0` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-ab82348dc0bc (postcondition) is refuted: total >= 5000 implies result == 0
+    │
+    │ Note 2: counterexample: result = 495, total = 5000
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

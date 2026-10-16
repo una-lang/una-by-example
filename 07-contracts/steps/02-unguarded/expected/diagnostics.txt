@@ -1,0 +1,2 @@
+error U5001 at src/installments.una:11:43: precondition `months >= 1` of this call is refuted
+  counterexample: months = 0

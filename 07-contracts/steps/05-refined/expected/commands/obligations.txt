@@ -1,0 +1,10 @@
+$ una obligations .
+proven   ob-91854e18e0ff refinement    src/cart.una:19:1 result >= 0
+proven   ob-993bde8df1da postcondition src/cart.una:20:11 ships_free(total) implies result == 0
+proven   ob-7cd127341d91 refinement    src/cart.una:22:17 total >= 0
+proven   ob-4fcc7418858d refinement    src/cart.una:28:37 line.unit_cents >= 0
+proven   ob-2a5905c8f53d refinement    src/cart.una:28:64 (line.quantity + 1) in 1..99
+proven   ob-7397ad5ab9ad refinement    src/cart.una:35:47 1990 >= 0
+proven   ob-827f34a7ed20 refinement    src/cart.una:35:63 2 in 1..99
+proven   ob-0ebf927b2507 refinement    src/cart.una:38:38 3980 >= 0
+proven   ob-cb89b59f2358 refinement    src/cart.una:38:61 5970 >= 0

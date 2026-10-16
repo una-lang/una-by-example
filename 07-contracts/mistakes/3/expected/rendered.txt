@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `refund` is refuted
+    ╭─[ src/billing.una:84:53 ]
+    │
+ 80 │   ensures result <= paid
+    │           ───────┬──────
+    │                  ╰──────── ensures clause
+    │
+ 84 │   if paid > asked then fail MoreThanPaid(paid) else asked
+    │                                                     ──┬──
+    │                                                       ╰──── postcondition of `refund` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result <= paid` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-ef9bbe64fc88 (postcondition) is refuted: result <= paid
+    │
+    │ Note 2: counterexample: asked = 1, paid = 0, result = 1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

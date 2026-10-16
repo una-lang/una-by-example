@@ -1,0 +1,4 @@
+$ una test .
+example coupons "a coupon worth more than the price gives 0" ... ok
+
+1 example: 1 passed, 0 failed
