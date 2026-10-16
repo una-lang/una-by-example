@@ -55,12 +55,16 @@ The price: you state your rules in a small language the solver understands, and 
 
 ## 7.1 Preconditions: `requires`
 
+### What a precondition states
+
 A precondition states what must hold of the arguments for a call to make sense. `requires count >= 1` on a function that divides by `count` says that a call with 0 is a mistake of the caller.
 
 A precondition is checked at both ends:
 
 - **At every call,** the verifier proves the precondition for the arguments given. A call it cannot prove does not check.
 - **In the body,** the precondition is a fact the verifier assumes. Here it proves that the division never divides by zero.
+
+### Each step is a package
 
 Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
 
@@ -81,6 +85,10 @@ grants = ["console"]
 una check .
 una run .
 ```
+
+### Installments that never divide by zero
+
+The step splits a total into monthly installments:
 
 :::steps
 ```una include="steps/01-requires/src/installments.una" title="steps/01-requires/src/installments.una" verified="check, run"
@@ -115,6 +123,8 @@ pub main() -> Unit
 4000 a month for 3 months
 12000 now, or 3000 a month for 4 months
 ```
+
+### A call that does not meet the precondition
 
 Remove the guard from `monthly` and call `installment` directly. `una check .` now refutes the call, and says why:
 
@@ -158,6 +168,8 @@ Remove the guard from `monthly` and call `installment` directly. `una check .` n
 
 Read the diagnostic from the top. The first line names the obligation, a precondition, and its goal, `months >= 1`, written with the caller's argument in place of `count`. The two marks show the clause that asked for it and the call that does not meet it. `Note 2` is the counterexample: with `months = 0`, the goal is false. The help lines are the ranked repairs: a stronger type for `months`, a `requires` on `monthly` that moves the obligation to its callers, a guard, and last `checked`, a test at run time that counts against a budget ([chapter 6, Failure](/learn/failure/#s6-4)).
 
+### A precondition, a guard or a kind
+
 :::decide
 **Which to use:**
 
@@ -170,7 +182,11 @@ Read the diagnostic from the top. The first line names the obligation, a precond
 
 ## 7.2 Postconditions: `ensures` and counterexamples
 
+### What a postcondition promises
+
 A postcondition states what holds of the result when the function returns. Inside the clause, `result` names the value returned. The verifier proves the clause on every path that returns, and every caller may then assume it without reading the body.
+
+### A coupon that never goes negative
 
 A coupon is a good first case. It takes some cents off a price, and two rules hold whatever the coupon: the price never becomes negative, and it never goes up.
 
@@ -262,9 +278,13 @@ Now write the body most people write first, `price - off`, and check:
 
 The diagnostic points at the returned expression, `price - off`, and at the clause it breaks, `ensures result >= 0`. The counterexample is `off = 1, price = 0, result = -1`: a coupon of 1 cent on a free item. Run the body by hand on those values and the result is −1, so the rule is broken.
 
-A counterexample gives values of the parameters, and of `result`, for which the contract breaks. When the body has no calls, as here, it is a case you can run by hand. When the body calls other functions, the verifier knows each call only by the callee's header, so a call's result in the counterexample can be any value that header allows, even one the callee never returns. Then the values are not a run, but they still point at the problem: the body relies on something the callee does not promise ([section 7.8](#s7-8), mistake 2), or it does not handle an input it should ([section 7.10](#s7-10), exercise 3).
-
 The solver often picks the smallest numbers that break the rule, such as 0 and 1, so a case that looks artificial usually stands for a real one: here, any coupon worth more than its order.
+
+### When the body calls other functions
+
+A counterexample gives values of the parameters, and of `result`, for which the contract breaks. When the body has no calls, as here, it is a case you can run by hand. When the body calls other functions, the verifier knows each call only by the callee's header, so a call's result in the counterexample can be any value that header allows, even one the callee never returns. Then the values are not a run, but they still point at the problem: the body relies on something the callee does not promise ([a caller that needs a promise the callee does not make](#a-caller-that-needs-a-promise-the-callee-does-not-make-u5001)), or it does not handle an input it should ([exercise 3](#exercise-3-a-second-refund)).
+
+### From a counterexample to an example
 
 Two things to do with a counterexample:
 
@@ -277,14 +297,22 @@ example coupons "a coupon worth more than the price gives 0" ... ok
 1 example: 1 passed, 0 failed
 ```
 
+### What `ensures` does not cover
+
 > [!NOTE]
 > `ensures` describes normal returns only. A function that fails, with `fail`, returns no value, and its postcondition says nothing about that path. Contracts also do not prove that a function ends: they hold *if* it returns.
 
 ## 7.3 Refined kinds and predicates
 
+### A rule on the kind
+
 A rule that holds of every value of a kind belongs on the kind. A refined kind is a base type with a condition: `kind Cents = Int where it >= 0` is the integers that are not negative, and `it` stands for the value. `Int in 1..99` is short for `Int where 1 <= it and it <= 99`, and `in 0..<100` would leave out 100.
 
 The verifier proves the condition at every place a value enters the kind: an argument, a returned value, a field of a record, and a `let` with the kind written. The other way needs no proof: a `Cents` goes wherever an `Int` goes.
+
+### Cents, quantities and free shipping
+
+The step's cart uses two refined kinds and a predicate:
 
 :::steps
 ```una include="steps/05-refined/src/cart.una" title="steps/05-refined/src/cart.una" verified="check, run"
@@ -342,16 +370,24 @@ pub main() -> Unit
 shipping 495, then 0
 ```
 
+### Refinements of refinements, and type arguments
+
 A refinement of a refined kind adds its condition to the first: `kind Small = Cents where it < 100` is both `>= 0` and `< 100`. The prelude already has one: `Nat`, the integers that are not negative.
 
 > [!IMPORTANT]
 > A refined kind cannot be a type argument: `List[Cents]` and `Option[Quantity]` are ill-formed (U2002). Put the refinement on a field of a record, as `Line` does with `quantity`, and use a list of the records.
 
-The condition of a refinement, and every `requires` and `ensures` clause, is written in the **refinement language**, the part of Una the solver decides: integer, boolean and text literals, parameters, `result`, `it`, fields, `.len`, `+`, `-` and unary `-`, `*` when one side is a literal, `/` and `mod` by a literal that is not zero, comparisons, `in`, `is`, `and`, `or`, `not`, `implies`, and calls of predicates. Anything else in a clause, such as the product of two parameters, is U2014 ([section 7.8](#s7-8), mistake 5).
+### The refinement language
+
+The condition of a refinement, and every `requires` and `ensures` clause, is written in the **refinement language**, the part of Una the solver decides: integer, boolean and text literals, parameters, `result`, `it`, fields, `.len`, `+`, `-` and unary `-`, `*` when one side is a literal, `/` and `mod` by a literal that is not zero, comparisons, `in`, `is`, `and`, `or`, `not`, `implies`, and calls of predicates. Anything else in a clause, such as the product of two parameters, is U2014 ([a contract outside the refinement language](#a-contract-outside-the-refinement-language-u2014)).
+
+### Opaque predicates
 
 A predicate can also be `opaque`: the verifier sees only its name. In code, a value gets its fact from `checked` at run time, or from the `ensures` of a capability operation ([chapter 8, Capabilities](/learn/capabilities/)). [Chapter 6](/learn/failure/#s6-4) uses one for the format of a SKU.
 
 ## 7.4 What the verifier proves
+
+### Obligations and `una obligations`
 
 Every contract, refinement and division becomes one or more **obligations**: a question for the solver, with an answer. `una obligations .` lists them all, each with its status, its identity, its kind, where it is, and its goal. For the cart of [section 7.3](#s7-3), where the first line is `shipping`'s result entering `Cents`, its declared type:
 
@@ -368,6 +404,8 @@ proven   ob-0ebf927b2507 refinement    src/cart.una:38:38 3980 >= 0
 proven   ob-cb89b59f2358 refinement    src/cart.una:38:61 5970 >= 0
 ```
 
+### The kinds of obligations
+
 The kinds you meet most:
 
 | Kind | Where | The goal |
@@ -378,6 +416,8 @@ The kinds you meet most:
 | `division` | Every `/` and `mod` by a value that is not a literal | The divisor is not zero |
 | `exhaustive` | A `when` with literal or range arms and no `else` | Some arm matches |
 | `overflow` | Arithmetic on a fixed-width integer, such as `U8` | The exact result fits the type |
+
+### Statuses and identities
 
 Each obligation has one of three statuses:
 
@@ -411,7 +451,9 @@ The solver decides linear arithmetic: sums, differences, products where one side
 [U5002] Error: refinement `result >= 0` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)
 ```
 
-The message names the section of the specification that defines what the solver decides (see Reference).
+The message names the section of the specification that defines what the solver decides (see [Reference](#reference)).
+
+### Proving a product with a guard
 
 U5002 is not a claim that the code is wrong: it says that the proof is missing, and una does not pass a program with a missing proof. The first help line proposes a guard:
 
@@ -460,6 +502,8 @@ pub main() -> Unit
 29800 cents, 298 points
 ```
 
+### Other sources of U5002
+
 U5002 also comes from a proof that runs out of the step budget in `verification.lock`; the reason says which. A loop gives U5002 too: it keeps, from one turn to the next, only the refinements of the bindings it updates. `let edit total: Cents = 0` keeps `total >= 0`, which is all the day-to-day program needs. For any other fact the reason says what to do: state what one iteration does as the `ensures` of a helper with an `edit` parameter ([chapter 12, Memory and concurrency](/learn/memory-and-concurrency/)).
 
 > [!TIP]
@@ -467,7 +511,11 @@ U5002 also comes from a proof that runs out of the step budget in `verification.
 
 ## 7.5 Contracts at the boundary
 
+### Where code meets code
+
 Contracts are checked where code meets code. At each call, the caller proves the callee's `requires` and gets its `ensures` in return. A refined kind is a boundary too: the value is checked once, where it enters the kind, and every function after that may rely on it.
+
+### Checking outside data once
 
 That leaves data from outside the program: text typed by a person, a line of a file, a field of a request. No proof can say what a person will type. Check it once, where it enters, and give it a refined kind there:
 
@@ -535,13 +583,19 @@ pub main() -> Unit
 > [!SECURITY]
 > A refined kind turns "every function must remember to check the rate" into "one function checks it, and the checker refuses every other way in". A new function that takes a `Percent` cannot receive 150, whoever calls it.
 
+### Rules from outside the code: `requirement`
+
 Some rules come from outside the code too: a billing policy, a regulation, a promise to customers. A `requirement` records such a rule with its source and owner, and `derived from` ties a function's contract to it. `una trace` lists the functions derived from a requirement, with their proofs, and `una report .` lists a package's requirements.
 
 ## 7.6 Day-to-day: billing
 
+### What the billing step must do
+
 Now the program from the start of the chapter. The store's billing step receives the lines of an invoice and a coupon. It must never charge a negative amount, never take off more than the invoice is worth, pay from store credit first, and never refund more than the customer paid. Each of these rules becomes a contract or a kind, and the verifier proves them all.
 
-**The rules and the kinds.** Two requirements name the store's rules. The kinds carry the facts that hold of every value: money is never negative, a rate is between 0 and 100, a line orders 1 to 99 units.
+### The rules and the kinds
+
+Two requirements name the store's rules. The kinds carry the facts that hold of every value: money is never negative, a rate is between 0 and 100, a line orders 1 to 99 units.
 
 ```una include="day-to-day/src/billing.una#BILLING_1..RefundError" title="day-to-day/src/billing.una" caption="the rules and the kinds"
 requirement BILLING_1
@@ -582,7 +636,9 @@ pub kind RefundError = | MoreThanPaid(paid: Cents)
 
 A `requirement` holds the text of a rule as its source wrote it, the source, the team that owns it, and whether it is `active` or only `proposed`. `Coupon` is a sum kind whose variants carry refined fields, so a `PercentOff(rate: 110)` does not check.
 
-**Pricing the lines.** `line_total` multiplies, with the guard from [section 7.4](#s7-4). `subtotal` sums with a loop. `total` is declared `Cents`, so every assignment to it proves the sum not negative, which holds since both sides are `Cents`.
+### Pricing the lines
+
+`line_total` multiplies, with the guard from [section 7.4](#s7-4). `subtotal` sums with a loop. `total` is declared `Cents`, so every assignment to it proves the sum not negative, which holds since both sides are `Cents`.
 
 ```una include="day-to-day/src/billing.una#line_total..subtotal" title="day-to-day/src/billing.una"
 --- What one line costs. The guard handles a case that cannot happen, since both factors
@@ -601,7 +657,9 @@ pub subtotal(lines: List[Line]) -> Cents
   total
 ```
 
-**The coupon.** `discount` promises that it never takes off more than the amount. Each arm keeps the promise: no coupon takes 0, a percentage takes part of the amount, and a coupon worth more than the amount takes all of it and no more. `percent_of` multiplies two values, so it has the guard too, and its own `ensures` gives `discount` the fact it needs about that arm.
+### The coupon
+
+`discount` promises that it never takes off more than the amount. Each arm keeps the promise: no coupon takes 0, a percentage takes part of the amount, and a coupon worth more than the amount takes all of it and no more. `percent_of` multiplies two values, so it has the guard too, and its own `ensures` gives `discount` the fact it needs about that arm.
 
 ```una include="day-to-day/src/billing.una#percent_of..discount" title="day-to-day/src/billing.una"
 --- `rate` percent of `amount`, rounded down. The guard cannot fire: both factors are at least 0, and `rate` is at most 100.
@@ -622,7 +680,9 @@ pub discount(amount: Cents, coupon: Coupon) -> Cents
     is CentsOff(off) -> if off > amount then amount else off
 ```
 
-**Paying.** `pay` splits a total between store credit and card. Its two clauses are the whole rule: the two parts add up to the total, and the credit used is never more than the customer has. The verifier proves both on both branches, and also that `total - credit` is a `Cents` where `credit < total`.
+### Paying
+
+`pay` splits a total between store credit and card. Its two clauses are the whole rule: the two parts add up to the total, and the credit used is never more than the customer has. The verifier proves both on both branches, and also that `total - credit` is a `Cents` where `credit < total`.
 
 ```una include="day-to-day/src/billing.una#pay" title="day-to-day/src/billing.una"
 --- Splits `total` between store credit and card, credit first.
@@ -634,7 +694,9 @@ pub pay(total: Cents, credit: Cents) -> Payment
   if credit >= total then Payment(credit: total, card: 0) else Payment(credit: credit, card: total - credit)
 ```
 
-**Refunding.** `refund` fails rather than break its promise. Its `ensures` covers the path that returns, and the path that fails returns nothing. The failure carries what was paid, so a message can say how much a refund may be.
+### Refunding
+
+`refund` fails rather than break its promise. Its `ensures` covers the path that returns, and the path that fails returns nothing. The failure carries what was paid, so a message can say how much a refund may be.
 
 The contracts leave some things open on purpose. `refund` does not say that it pays back exactly what was asked, and `discount` does not say how a percentage is rounded. Those are choices of the business, not rules of safety, and the examples in [section 7.7](#s7-7) pin them down. A contract states what must never break; an example states what the answer is for one case.
 
@@ -648,7 +710,9 @@ pub refund(paid: Cents, asked: Cents) -> Cents
   if asked > paid then fail MoreThanPaid(paid) else asked
 ```
 
-**Running it.** `main` prices two lines, applies a 10% coupon, and pays with 50.00 of store credit. Look at `let total: Cents = gross - off`. Subtracting two `Cents` can give a negative number, so the verifier must prove `gross - off >= 0`. It can, but only because `discount` promises `off <= gross`. Remove that `ensures` and this line no longer checks (mistake 2 shows it). Contracts compose this way: each function's promise is the next function's fact.
+### Running it
+
+`main` prices two lines, applies a 10% coupon, and pays with 50.00 of store credit. Look at `let total: Cents = gross - off`. Subtracting two `Cents` can give a negative number, so the verifier must prove `gross - off >= 0`. It can, but only because `discount` promises `off <= gross`. Remove that `ensures` and this line no longer checks ([a caller that needs a promise the callee does not make](#a-caller-that-needs-a-promise-the-callee-does-not-make-u5001) shows it). Contracts compose this way: each function's promise is the next function's fact.
 
 ```una include="day-to-day/src/billing.una#money..main" title="day-to-day/src/billing.una"
 --- An amount for a person to read, such as 19.90.
@@ -686,7 +750,9 @@ pub main() -> Unit
   @console.print(refund_line(total, asked: 20000))
 ```
 
-`una run .` prints the invoice shown under "What you'll build". The second refund asks for 200.00 of an invoice of 169.92, so `refund` fails. `refund_line` keeps the outcome with `attempt`, and `why` turns the failure into words, so the report shows every refund, paid or refused. `money` divides and takes the remainder by the literal 100, so it has no division obligation at all.
+`una run .` prints the invoice shown in [What you'll build](#what-youll-build). The second refund asks for 200.00 of an invoice of 169.92, so `refund` fails. `refund_line` keeps the outcome with `attempt`, and `why` turns the failure into words, so the report shows every refund, paid or refused. `money` divides and takes the remainder by the literal 100, so it has no division obligation at all.
+
+### Tracing a rule to its proof
 
 `una trace BILLING_2` lists the function derived from the refund rule, its contract, and the proof of each obligation:
 
@@ -704,6 +770,8 @@ billing.refund
 ```
 
 A reviewer who owns the refund policy can read this instead of the code: the rule, the function that implements it, the promise in its header, and the proof.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -855,6 +923,8 @@ example "an empty invoice costs nothing"
 
 ## 7.7 Testing it
 
+### What the examples pin down
+
 A proof covers every input, so why write examples? Because a contract states only what you wrote in it. `discount` promises `result <= amount`, and a body that always returns 0 keeps that promise too. The examples pin down the values the business expects: 10% of 188.85 is 18.88, rounded down; credit pays before the card; a refund of more than was paid is refused.
 
 ```una include="day-to-day/src/billing.una#L120-L143" title="day-to-day/src/billing.una" caption="the examples"
@@ -884,7 +954,18 @@ example "an empty invoice costs nothing"
   expect result == 0
 ```
 
+### Examples are checked like code
+
 Each example calls one function with `do` and checks the result with `expect`, or the failure with `expect fails` ([chapter 6](/learn/failure/#s6-6) explains each line). The examples are verified like the rest of the code: a `do` line that calls `pay` with `credit: -5`, or `discount` with a rate of 110, does not check, since the argument does not fit its kind.
+
+### Examples and proofs together
+
+Two habits make examples and proofs work together:
+
+- **Turn each counterexample into an example**, as in [section 7.2](#s7-2). The case that broke the code once is the case a later change is most likely to break again.
+- **Test the exact values; prove the bounds.** A contract states a range or a relation that holds for every input. An example states one exact answer that a person can check by hand.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -899,17 +980,14 @@ example billing "an empty invoice costs nothing" ... ok
 6 examples: 6 passed, 0 failed
 ```
 
-Two habits make examples and proofs work together:
-
-- **Turn each counterexample into an example**, as in [section 7.2](#s7-2). The case that broke the code once is the case a later change is most likely to break again.
-- **Test the exact values; prove the bounds.** A contract states a range or a relation that holds for every input. An example states one exact answer that a person can check by hand.
-
 ## 7.8 Common mistakes
 
 Each mistake below is a small change to `day-to-day/src/billing.una`, followed by what `una check .` reports.
 
+### A coupon that can be worth more than the order (U5001)
+
 :::mistake
-**1. A coupon that can be worth more than the order (U5001).** In `discount`, return the coupon's value without the cap:
+In `discount`, return the coupon's value without the cap:
 
 ```diff include="day-to-day..mistakes/1:src/billing.una" context="1" title="src/billing.una"
 --- a/src/billing.una
@@ -950,8 +1028,10 @@ Each mistake below is a small change to `day-to-day/src/billing.una`, followed b
 *Fix:* cap the coupon at the amount, as the day-to-day program does.
 :::
 
+### A caller that needs a promise the callee does not make (U5001)
+
 :::mistake
-**2. A caller that needs a promise the callee does not make (U5001).** Remove `ensures result <= amount` from `discount`:
+Remove `ensures result <= amount` from `discount`:
 
 ```diff include="day-to-day..mistakes/2:src/billing.una" context="1" title="src/billing.una"
 --- a/src/billing.una
@@ -972,8 +1052,10 @@ Each mistake below is a small change to `day-to-day/src/billing.una`, followed b
 *Fix:* put the clause back. When a caller needs a fact about a result, the callee's `ensures` is where it goes.
 :::
 
+### A comparison the wrong way round (U5001)
+
 :::mistake
-**3. A comparison the wrong way round (U5001).** In `refund`, swap `asked` and `paid` in the test:
+In `refund`, swap `asked` and `paid` in the test:
 
 ```diff include="day-to-day..mistakes/3:src/billing.una" context="1" title="src/billing.una"
 --- a/src/billing.una
@@ -995,8 +1077,10 @@ Each mistake below is a small change to `day-to-day/src/billing.una`, followed b
 *Fix:* `if asked > paid then fail MoreThanPaid(paid) else asked`.
 :::
 
+### A product without a guard (U5002)
+
 :::mistake
-**4. A product without a guard (U5002).** Write `line_total` as one expression:
+Write `line_total` as one expression:
 
 ```diff include="day-to-day..mistakes/4:src/billing.una" context="1" title="src/billing.una"
 --- a/src/billing.una
@@ -1020,8 +1104,10 @@ Each mistake below is a small change to `day-to-day/src/billing.una`, followed b
 *Fix:* bind the product, then guard it, as in [section 7.4](#s7-4).
 :::
 
+### A contract outside the refinement language (U2014)
+
 :::mistake
-**5. A contract outside the refinement language (U2014).** Promise the exact product in `line_total`:
+Promise the exact product in `line_total`:
 
 ```diff include="day-to-day..mistakes/5:src/billing.una" context="1" title="src/billing.una"
 --- a/src/billing.una
@@ -1041,8 +1127,10 @@ Each mistake below is a small change to `day-to-day/src/billing.una`, followed b
 *Fix:* state what the solver can decide, such as `result >= line.unit_cents`, or leave the exact value to an example.
 :::
 
+### A rate above 100 percent (U5001)
+
 :::mistake
-**6. A rate above 100 percent (U5001).** Give the coupon a rate of 110:
+Give the coupon a rate of 110:
 
 ```diff include="day-to-day..mistakes/6:src/billing.una" context="1" title="src/billing.una"
 --- a/src/billing.una
@@ -1063,24 +1151,14 @@ Each mistake below is a small change to `day-to-day/src/billing.una`, followed b
 *Fix:* a rate from 0 to 100. A rate typed by a person goes through a function such as `parse_rate` ([section 7.5](#s7-5)).
 :::
 
-## 7.9 For agents
-
-:::agents
-`una --json check .` gives each obligation that is not proven as a diagnostic with its `obligation` (id, kind, goal, status) and its `counterexample` as name and value pairs. For mistake 1:
-
-```json include="mistakes/1/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U5001","severity":"error","domain":"verification","message":"postcondition of `discount` is refuted","primary":{"file":"src/billing.una","start":{"line":68,"col":25},"end":{"line":68,"col":28}},"related":[{"file":"src/billing.una","start":{"line":62,"col":11},"end":{"line":62,"col":27},"message":"ensures clause"}],"obligation":{"id":"ob-e0a2abc0bb6a","kind":"postcondition","goal":"result <= amount","status":"refuted"},"counterexample":{"bindings":[{"name":"amount","value":0},{"name":"coupon","value":"CentsOff"},{"name":"coupon.amount","value":1},{"name":"coupon.rate","value":101},{"name":"result","value":1}]},"repairs":[{"rank":1,"escape_cost":0,"description":"add a guard or an arm so that the failing path returns a value for which `result <= amount` holds","edit":null},{"rank":2,"escape_cost":0,"description":"adjust the `ensures` clause","edit":null}],"explain":"una explain U5001"}],"fixable":0}
-```
-
-The repairs of U5001 and U5002 carry no `edit`, since only the author knows whether the code or the contract is wrong, so `una fix` leaves them. `una --json obligations .` and `una --json trace <ID>` list every obligation, proven or not. The compact rule: *every call proves the callee's `requires`, every return proves the `ensures`, every value that enters a refined kind proves its condition, and unknown is an error; clauses multiply and divide only by literals.*
-:::
-
-## 7.10 Exercises
+## 7.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples, and a stub when there is one. `una check .` or `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
 
+### Exercise 1: free shipping
+
 ::::exercise
-**Exercise 1: free shipping.** Shipping costs 4.95, and nothing from 50.00. The start package has `shipping` with its contract and a body that always charges 4.95. `una check .` refutes it:
+Shipping costs 4.95, and nothing from 50.00. The start package has `shipping` with its contract and a body that always charges 4.95. `una check .` refutes it:
 
 ```una include="exercises/1/start/src/billing.una#shipping" title="exercises/1/start/src/billing.una"
 --- What shipping costs for an invoice of `total` cents: 4.95, and nothing from 50.00.
@@ -1132,8 +1210,10 @@ Give the body a branch:
 :::
 ::::
 
+### Exercise 2: a fixed price
+
 ::::exercise
-**Exercise 2: a fixed price.** A coupon can set the price of a whole invoice, such as "everything for 150.00". Add a variant `FixedPrice(cents: Cents)` to `Coupon`, and an arm for it in `discount`: it takes off the difference when the invoice costs more than the fixed price, and nothing otherwise. The start package ends with these examples, and `una check .` reports U1001 until the variant exists:
+A coupon can set the price of a whole invoice, such as "everything for 150.00". Add a variant `FixedPrice(cents: Cents)` to `Coupon`, and an arm for it in `discount`: it takes off the difference when the invoice costs more than the fixed price, and nothing otherwise. The start package ends with these examples, and `una check .` reports U1001 until the variant exists:
 
 ```una include="exercises/2/start/src/billing.una#L145-L151" title="exercises/2/start/src/billing.una"
 example "a fixed price below the subtotal takes off the difference"
@@ -1157,7 +1237,7 @@ The first arm most people write is `amount - cents`. `una check .` refutes it:
     │ Note 2: counterexample: amount = 0, coupon = FixedPrice, coupon.amount = -1, coupon.cents = 3, coupon.rate = 101, result = -3
 ```
 
-The counterexample is a fixed price of 0.03 on an invoice of 0: the discount would be −3 cents. Only `coupon.cents` matters here, as in mistake 1: `coupon.amount = -1` is outside `Cents` because that field belongs to no value here.
+The counterexample is a fixed price of 0.03 on an invoice of 0: the discount would be −3 cents. Only `coupon.cents` matters here, as in [a coupon that can be worth more than the order](#a-coupon-that-can-be-worth-more-than-the-order-u5001): `coupon.amount = -1` is outside `Cents` because that field belongs to no value here.
 
 Check your answer with `una test .`.
 
@@ -1180,8 +1260,10 @@ Add the variant, and an arm with a guard:
 :::
 ::::
 
+### Exercise 3: a second refund
+
 ::::exercise
-**Exercise 3: a second refund.** A customer can ask for a refund in parts. Write `refund_again(paid, already, asked)`, which refunds `asked` when the refunds together stay within what was paid, and fails with `MoreThanPaid` otherwise. The start package has the header, with its contract, and a body that forgets the refunds already made. `una check .` refutes it:
+A customer can ask for a refund in parts. Write `refund_again(paid, already, asked)`, which refunds `asked` when the refunds together stay within what was paid, and fails with `MoreThanPaid` otherwise. The start package has the header, with its contract, and a body that forgets the refunds already made. `una check .` refutes it:
 
 ```una include="exercises/3/start/src/billing.una#refund_again" title="exercises/3/start/src/billing.una"
 --- A further refund, after `already` was paid back: the refunds together never pay back more
@@ -1251,7 +1333,21 @@ billing.refund_again
 :::
 ::::
 
-## 7.11 Recap
+## 7.10 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` gives each obligation that is not proven as a diagnostic with its `obligation` (id, kind, goal, status) and its `counterexample` as name and value pairs. For [a coupon that can be worth more than the order](#a-coupon-that-can-be-worth-more-than-the-order-u5001):
+
+```json include="mistakes/1/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U5001","severity":"error","domain":"verification","message":"postcondition of `discount` is refuted","primary":{"file":"src/billing.una","start":{"line":68,"col":25},"end":{"line":68,"col":28}},"related":[{"file":"src/billing.una","start":{"line":62,"col":11},"end":{"line":62,"col":27},"message":"ensures clause"}],"obligation":{"id":"ob-e0a2abc0bb6a","kind":"postcondition","goal":"result <= amount","status":"refuted"},"counterexample":{"bindings":[{"name":"amount","value":0},{"name":"coupon","value":"CentsOff"},{"name":"coupon.amount","value":1},{"name":"coupon.rate","value":101},{"name":"result","value":1}]},"repairs":[{"rank":1,"escape_cost":0,"description":"add a guard or an arm so that the failing path returns a value for which `result <= amount` holds","edit":null},{"rank":2,"escape_cost":0,"description":"adjust the `ensures` clause","edit":null}],"explain":"una explain U5001"}],"fixable":0}
+```
+
+The repairs of U5001 and U5002 carry no `edit`, since only the author knows whether the code or the contract is wrong, so `una fix` leaves them. `una --json obligations .` and `una --json trace <ID>` list every obligation, proven or not. The compact rule: *every call proves the callee's `requires`, every return proves the `ensures`, every value that enters a refined kind proves its condition, and unknown is an error; clauses multiply and divide only by literals.*
+:::
+
+### Recap
 
 :::recap
 - `requires` states what a caller must prove; the body may assume it.
@@ -1264,7 +1360,7 @@ billing.refund_again
 - Record business rules as requirements, and read their proofs with `una trace`.
 :::
 
-## 7.12 Reference
+### Reference
 
 :::reference
 - Construct pages: [`requires`](/docs/language/functions/requires/), [`ensures`](/docs/language/functions/ensures/), [`where` and refinements](/docs/language/types/where/), [`predicate`](/docs/language/types/predicate/), [`kind`](/docs/language/types/kind/), [`checked` and the escape budget](/docs/language/errors/checked/), [`requirement`](/docs/language/requirements/requirement/), [`example`](/docs/language/examples/example/), [verification](/docs/language/verification/)
