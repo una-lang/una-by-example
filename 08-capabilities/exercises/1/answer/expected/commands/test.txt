@@ -1,0 +1,11 @@
+$ una test .
+example notices "a customer who wants notices gets one" ... ok
+example notices "an unknown customer gets no mail" ... ok
+example notices "a customer who asked for no notices gets no mail" ... ok
+example notices "a directory that does not answer is DirectoryDown, and no mail is sent" ... ok
+example notices "a mail service that does not answer is MailDown" ... ok
+example notices "the batch logs every shipment, even when the mail service is down" ... ok
+example notices "a directory of one customer finds that customer" ... ok
+example notices "a directory of one customer knows no one else" ... ok
+
+8 examples: 8 passed, 0 failed

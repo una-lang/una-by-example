@@ -1,0 +1,11 @@
+[U3002] Error: `@customers` permits `find`, not `forget`
+    ╭─[ src/accounts.una:25:14 ]
+    │
+ 25 │   @customers.forget(id)
+    │              ───┬──
+    │                 ╰──── `@customers` permits `find`, not `forget`
+    │
+    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): add `forget` to the `uses` clause of `@customers`; edit src/accounts.una:22:3..22:35 to "uses @customers: Customers[find, forget]"
+    │
+    │ Note: run `una explain U3002` for an explanation
+────╯

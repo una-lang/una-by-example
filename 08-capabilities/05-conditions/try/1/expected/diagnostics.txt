@@ -1,2 +1,0 @@
-error U5001 at src/prices.una:8:3: `@console.print` may run where `not quiet` is not proven
-  counterexample: quiet = true

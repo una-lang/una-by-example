@@ -1,0 +1,1 @@
+error U4001 at src/pricing.una:10:35: the result of `margin` is `Int`, and this value is `confidential Int`: a flow from `confidential` to `public`

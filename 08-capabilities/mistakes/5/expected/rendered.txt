@@ -1,0 +1,11 @@
+[U3012] Error: `main` uses `now` of `Clock`, which `[run] grants` does not grant
+   ╭─[ src/export.una:9:3 ]
+   │
+ 9 │   uses @clock: Clock[now]
+   │   ───────────┬───────────
+   │              ╰───────────── `main` uses `now` of `Clock`, which `[run] grants` does not grant
+   │
+   │ Help: repair 1 (widens grant: the program then gets this host authority when it runs): grant `now` of `Clock` in `[run] grants` of `una.toml`, or with `--grant`
+   │
+   │ Note: run `una explain U3012` for an explanation
+───╯

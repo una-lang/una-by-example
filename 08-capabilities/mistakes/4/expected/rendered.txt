@@ -1,0 +1,9 @@
+[U3010] Error: this handler implements `Customers`, and `dispatch` needs `@mailer` to be `Mailer`
+     ╭─[ src/notices.una:112:68 ]
+     │
+ 112 │   dispatch(late) with @customers = directory(customers), @mailer = directory_down(), @log = @console
+     │                                                                    ───────┬──────
+     │                                                                           ╰──────── this handler implements `Customers`, and `dispatch` needs `@mailer` to be `Mailer`
+     │
+     │ Note: run `una explain U3010` for an explanation
+─────╯

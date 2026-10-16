@@ -1,0 +1,17 @@
+module slips
+
+--- One line of a packing slip. Pure: it has no `uses`, so all it can do is compute a value.
+slip_line(sku: Text, quantity: Int) -> Text = "{quantity} x {sku}"
+
+--- Prints one line of a packing slip. It may print, and nothing else.
+print_line(sku: Text, quantity: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(slip_line(sku, quantity: quantity))
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Packing slip for order A-1001")
+  print_line("LAMP-01", quantity: 2)
+  print_line("DESK-02", quantity: 1)

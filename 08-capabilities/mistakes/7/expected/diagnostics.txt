@@ -1,0 +1,2 @@
+error U5001 at src/restock.una:15:5: `@supplier.order` may run where `not dry_run` is not proven
+  counterexample: dry_run = true, left = 4

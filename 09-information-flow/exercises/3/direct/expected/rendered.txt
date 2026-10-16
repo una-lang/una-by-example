@@ -1,0 +1,47 @@
+[U4001] Error: the result of `notify` is `public`, and which value it returns depends on this `secret[PII]` condition: a flow from `secret[PII]` to `public`
+    ╭─[ src/notices.una:50:11 ]
+    │
+ 50 │   else if customer.email.ends_with(suffix: "@blocked.example.invalid")
+    │           ──────────────────────────────┬─────────────────────────────
+    │                                         ╰─────────────────────────────── the result of `notify` is `public`, and which value it returns depends on this `secret[PII]` condition: a flow from `secret[PII]` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯
+[U4002] Error: this `fail` depends on `secret[PII]` data, so its failure would reveal it; return a labeled value instead of failing
+    ╭─[ src/notices.una:51:5 ]
+    │
+ 50 │   else if customer.email.ends_with(suffix: "@blocked.example.invalid")
+    │           ──────────────────────────────┬─────────────────────────────
+    │                                         ╰─────────────────────────────── the labeled condition
+ 51 │     fail Blocked(id: customer.id)
+    │     ──────────────┬──────────────
+    │                   ╰──────────────── this `fail` depends on `secret[PII]` data, so its failure would reveal it; return a labeled value instead of failing
+    │
+    │ Note: run `una explain U4002` for an explanation
+────╯
+[U4002] Error: `if error fail` depends on `secret[PII]` data, so its failure would reveal it; return a labeled value instead of failing
+    ╭─[ src/notices.una:54:7 ]
+    │
+ 50 │   else if customer.email.ends_with(suffix: "@blocked.example.invalid")
+    │           ──────────────────────────────┬─────────────────────────────
+    │                                         ╰─────────────────────────────── the labeled condition
+    │
+ 54 │       if error fail MailDown
+    │       ───────────┬──────────
+    │                  ╰──────────── `if error fail` depends on `secret[PII]` data, so its failure would reveal it; return a labeled value instead of failing
+    │
+    │ Note: run `una explain U4002` for an explanation
+────╯
+[U4002] Error: policy `masked_email` lowers data to `public`, and it is called under a `secret[PII]` condition, which its result would reveal
+    ╭─[ src/notices.una:55:5 ]
+    │
+ 50 │   else if customer.email.ends_with(suffix: "@blocked.example.invalid")
+    │           ──────────────────────────────┬─────────────────────────────
+    │                                         ╰─────────────────────────────── the labeled condition
+    │
+ 55 │     masked_email(customer.email)
+    │     ──────────────┬─────────────
+    │                   ╰─────────────── policy `masked_email` lowers data to `public`, and it is called under a `secret[PII]` condition, which its result would reveal
+    │
+    │ Note: run `una explain U4002` for an explanation
+────╯

@@ -1,0 +1,13 @@
+[U4003] Error: `@console.print` accepts `public` data, and this argument is `confidential`
+    ╭─[ src/pricing.una:22:18 ]
+    │
+ 22 │   @console.print("margins: {margins}")
+    │                  ──────────┬─────────
+    │                            ╰─────────── `@console.print` accepts `public` data, and this argument is `confidential`
+    │
+    │ Help 1: repair 1: send `@console.print` only data labeled `public` or lower, or send this value to an operation that accepts `confidential`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯

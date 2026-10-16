@@ -1,0 +1,1 @@
+error U4003 at src/pricing.una:22:18: `@console.print` accepts `public` data, and this argument is `confidential`

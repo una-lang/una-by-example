@@ -1,0 +1,1 @@
+error U7005 at src/privacy.una:1:1: module `privacy` is `trusted` in its header but not listed in una.toml [trusted] modules

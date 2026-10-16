@@ -24,4 +24,4 @@ Edition `0.3` is a preview: what it adds may still change before it is stable. I
 
 ## See also
 
-- [Conditions on operations](../../08-capabilities/05-conditions/)
+- [Conditions on operations](../../08-capabilities/)

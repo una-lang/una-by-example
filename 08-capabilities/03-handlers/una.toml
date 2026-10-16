@@ -1,8 +1,0 @@
-[package]
-name = "greetings"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "greetings"
-grants = ["console"]

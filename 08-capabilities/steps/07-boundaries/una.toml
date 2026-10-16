@@ -1,0 +1,11 @@
+[package]
+name = "shelf"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "shelf"
+grants = ["console"]
+
+[boundaries]
+"barcode" = ["Console[print]"]

@@ -1,0 +1,26 @@
+[U4003] Error: `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
+    ╭─[ src/notices.una:50:18 ]
+    │
+ 50 │     @mailer.send(customer.email, subject: "Order {shipment.order} has shipped", body: notice(customer, shipment: shipment))
+    │                  ───────┬──────
+    │                         ╰──────── `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
+    │
+    │ Help 1: repair 1: send `@mailer.send` only data labeled `public` or lower, or send this value to an operation that accepts `secret[PII]`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯
+[U4003] Error: `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
+    ╭─[ src/notices.una:50:87 ]
+    │
+ 50 │     @mailer.send(customer.email, subject: "Order {shipment.order} has shipped", body: notice(customer, shipment: shipment))
+    │                                                                                       ──────────────────┬─────────────────
+    │                                                                                                         ╰─────────────────── `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
+    │
+    │ Help 1: repair 1: send `@mailer.send` only data labeled `public` or lower, or send this value to an operation that accepts `secret[PII]`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯

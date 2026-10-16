@@ -1,0 +1,13 @@
+[U7005] Error: module `privacy` is `trusted` in its header but not listed in una.toml [trusted] modules
+   ╭─[ src/privacy.una:1:1 ]
+   │
+ 1 │ trusted module privacy
+   │ ───┬───
+   │    ╰───── module `privacy` is `trusted` in its header but not listed in una.toml [trusted] modules
+   │
+   │ Help 1: repair 1: remove `trusted` from the header of `privacy`; its policies are then U4004: move them into a trusted module
+   │
+   │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): list `privacy` under `[trusted] modules` in `una.toml`
+   │
+   │ Note: run `una explain U7005` for an explanation
+───╯

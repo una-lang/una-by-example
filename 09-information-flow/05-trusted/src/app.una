@@ -1,9 +1,0 @@
-module app
-
-import redact (length_only)
-
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  let note: secret Text = "the vault code is 4321"
-  @console.print("note of {length_only(note)} characters")

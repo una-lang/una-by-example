@@ -1,0 +1,1 @@
+error U1001 at src/notices.una:3:17: module `privacy` declares no `email_domain`

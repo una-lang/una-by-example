@@ -1,0 +1,9 @@
+[U1001] Error: module `privacy` declares no `email_domain`
+   ╭─[ src/notices.una:3:17 ]
+   │
+ 3 │ import privacy (email_domain, masked_email)
+   │                 ──────┬─────
+   │                       ╰─────── module `privacy` declares no `email_domain`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯

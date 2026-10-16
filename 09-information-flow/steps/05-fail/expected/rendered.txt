@@ -1,0 +1,12 @@
+[U4002] Error: this `fail` depends on `confidential` data, so its failure would reveal it; return a labeled value instead of failing
+    ╭─[ src/shipping.una:19:5 ]
+    │
+ 18 │   if spent < 50000
+    │      ──────┬──────
+    │            ╰──────── the labeled condition
+ 19 │     fail NotEligible
+    │     ────────┬───────
+    │             ╰───────── this `fail` depends on `confidential` data, so its failure would reveal it; return a labeled value instead of failing
+    │
+    │ Note: run `una explain U4002` for an explanation
+────╯

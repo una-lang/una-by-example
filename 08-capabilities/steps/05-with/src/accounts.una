@@ -1,0 +1,41 @@
+module accounts
+
+kind Customer
+  id: Text
+  name: Text
+
+--- The customer directory. Looking a customer up and erasing one are separate operations.
+capability Customers
+  op find(id: Text) -> Option[Customer]
+  op forget(id: Text) -> Unit
+
+--- The greeting on an order page. It may look customers up, and never erase one.
+greeting(id: Text) -> Text
+  uses @customers: Customers[find]
+=
+  let customer = @customers.find(id)
+    if none use Customer(id: id, name: "guest")
+  "Welcome back, {customer.name}"
+
+--- Erases a customer at their request, and writes the request to the audit trail.
+erase(id: Text) -> Unit
+  uses @customers: Customers[forget]
+  uses @audit: Console[print]
+=
+  @customers.forget(id)
+  @audit.print("audit: erased customer {id}")
+
+--- A directory held in memory. It is a fixed value, so `forget` changes nothing here.
+handler directory(customers: Map[Text, Customer]) for Customers
+  op find(id) = customers.get(key: id)
+  op forget(id) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let customers = empty_map().with(key: "C-17", value: Customer(id: "C-17", name: "Rosa"))
+  let page = greeting("C-17") with @customers = directory(customers)
+  @console.print(page)
+  let unknown = greeting("C-99") with @customers = directory(customers)
+  @console.print(unknown)
+  erase("C-20") with @customers = directory(customers), @audit = @console

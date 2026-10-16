@@ -1,0 +1,22 @@
+module pricing
+
+--- A product of the catalog. What the store pays its supplier is confidential.
+kind Product
+  sku: Text
+  price: Int
+  cost: confidential Int
+
+--- The margin of a product, in cents. It is computed from the cost, so it is confidential too.
+margin(product: Product) -> confidential Int = product.price - product.cost
+
+--- The tag on the shelf. It reads only public fields, so it is public.
+price_tag(product: Product) -> Text = "{product.sku}: {product.price} cents"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let catalog = [Product(sku: "LAMP-01", price: 4990, cost: 2100), Product(sku: "DESK-02", price: 18900, cost: 12600)]
+  for product in catalog
+    @console.print(price_tag(product))
+  let margins = catalog.map(each: margin)
+  @console.print("margins: {margins}")
