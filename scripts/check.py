@@ -5,8 +5,10 @@ A chapter whose README.md has `template: 2` in its front matter is one page, che
 rules of template 2 (scripts/template2.py, TEMPLATE.md): its parts in order, its packages under
 steps/, day-to-day/, mistakes/ and exercises/ checked as in step 2 below, with their rendered
 diagnostics, every fenced block an include whose text is the included file's, the exercises'
-answers passing `una test`, and links to the site's own pages. Every other chapter is on
-template 1, and for each of its page directories `NN-chapter/MM-page/`:
+examples failing on start/ and passing on the answer, and links to the site's own pages. A
+chapter is on template 1 only when its README.md has no front matter and no code, and it has
+page directories and no template 2 directory; anything else that is not exactly template 2
+fails. For each page directory `NN-chapter/MM-page/` of a template 1 chapter:
 
 1. Its README.md has the front matter (`learn`, `title`, `editions`, `codes`) and the parts of
    the template in order, its `learn` number matches its path, and its `codes` are the codes its
@@ -37,6 +39,11 @@ no tracked text file, English or translated, may match it; the pattern is never 
 printed. The una release gate runs its own check, with the same dialect. With `--require-neutrality`, as the una
 release gate runs it, an unset or empty pattern is a failure; without it, the check is skipped
 and the report says so.
+
+`una` always runs with a minimal environment (`una_env`: PATH, a HOME and TMPDIR of its own, a
+fixed locale, no colors, nothing else), on a package whose una.toml stays within MANIFEST_TABLES
+and GRANT, with the commands of COMMAND only. No symbolic link in a page or package is copied
+or followed; each is a failure.
 
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's files, and
@@ -152,27 +159,106 @@ def package_files(directory):
 
 
 def copy_package(directory, to, overlay=None):
-    """Copies the package in `directory` to `to`, then the files of `overlay` over it."""
+    """Copies the package in `directory` to `to`, then the files of `overlay` over it. A
+    symbolic link is never copied or followed; `symlinks` reports it as a failure."""
     for name in package_files(directory):
-        if name == "README.md":
+        if name == "README.md" or os.path.islink(os.path.join(directory, name)):
             continue
         os.makedirs(os.path.dirname(os.path.join(to, name)) or to, exist_ok=True)
-        shutil.copyfile(os.path.join(directory, name), os.path.join(to, name))
+        shutil.copyfile(os.path.join(directory, name), os.path.join(to, name), follow_symlinks=False)
     if overlay:
         for base, dirs, files in os.walk(overlay):
             dirs[:] = sorted(d for d in dirs if not (base == overlay and d == "expected"))
             for name in sorted(files):
                 source = os.path.join(base, name)
+                if os.path.islink(source):
+                    continue
                 target = os.path.join(to, os.path.relpath(source, overlay))
                 os.makedirs(os.path.dirname(target), exist_ok=True)
-                shutil.copyfile(source, target)
+                shutil.copyfile(source, target, follow_symlinks=False)
+
+
+def symlinks(directory, where, failures):
+    """Every symbolic link under `directory`, file or directory, is a failure: una-by-example
+    holds none, and the website refuses them too."""
+    if os.path.islink(directory):
+        failures.add(where, "a symbolic link; una-by-example holds none")
+        return
+    for base, dirs, files in os.walk(directory):
+        dirs.sort()
+        for name in sorted(dirs + files):
+            if os.path.islink(os.path.join(base, name)):
+                relative = os.path.relpath(os.path.join(base, name), directory).replace(os.sep, "/")
+                failures.add(f"{where}/{relative}", "a symbolic link; una-by-example holds none")
+
+
+# The home directory `una` runs with: a directory of its own, never the user's.
+HOME = None
+
+
+def una_home():
+    global HOME
+    if HOME is None:
+        import atexit
+
+        HOME = tempfile.mkdtemp(prefix="una-by-example-home-")
+        atexit.register(shutil.rmtree, HOME, True)
+    return HOME
+
+
+def una_env():
+    """The environment `una` runs with: PATH (to find Z3 and a C toolchain), a HOME and TMPDIR
+    of its own, a fixed locale and no colors. Nothing else of the caller's environment reaches
+    it, UNA_NEUTRALITY_PATTERN and every other variable included."""
+    home = una_home()
+    return {"PATH": os.environ.get("PATH", os.defpath), "HOME": home, "TMPDIR": home,
+            "LANG": "C.UTF-8", "NO_COLOR": "1"}
 
 
 def run(una, args, cwd):
-    """Runs `una` with `args` in `cwd`."""
+    """Runs `una` with `args` in `cwd`, in the environment of `una_env`."""
     return subprocess.run(
-        [una, *args], cwd=cwd, capture_output=True, stdin=subprocess.DEVNULL, check=False
+        [una, *args], cwd=cwd, capture_output=True, stdin=subprocess.DEVNULL, env=una_env(), check=False
     )
+
+
+# What a package's una.toml may hold: these tables, and in [run] only `entry` and `grants`,
+# with these grants. No env, no network, no files outside the package's src/.
+MANIFEST_TABLES = {"package", "run", "escape_budget", "labels", "trusted", "boundaries", "contracts"}
+GRANT = re.compile(r"^(console|clock|files:src(/[A-Za-z0-9_-]+)*:(read|write|read,write))$")
+# The commands an `expected/commands/*.txt` may run, all in the package and nowhere else.
+COMMAND = re.compile(
+    r"^(--json )?(check|test|run|build|report|obligations) \.$|^fmt --check \.$|^fix --dry-run \.$"
+    r"|^(--json )?explain U\d{4}$|^(--json )?(trace|contract) [A-Za-z0-9_.]+$"
+)
+
+
+def manifest(package, where, failures):
+    """Whether the una.toml of the copy at `package` is within MANIFEST_TABLES and GRANT."""
+    import tomllib
+
+    path = os.path.join(package, "una.toml")
+    try:
+        with open(path, "rb") as handle:
+            document = tomllib.load(handle)
+    except (OSError, ValueError) as error:
+        failures.add(where, f"una.toml cannot be read: {error}")
+        return False
+    good = True
+    for table in document:
+        if table not in MANIFEST_TABLES:
+            failures.add(where, f"una.toml: no [{table}] in una-by-example; the tables are {sorted(MANIFEST_TABLES)}")
+            good = False
+    section = document.get("run", {})
+    for key in section:
+        if key not in ("entry", "grants"):
+            failures.add(where, f"una.toml: [run] holds only `entry` and `grants`, not `{key}`")
+            good = False
+    for grant in section.get("grants", []):
+        if not isinstance(grant, str) or not GRANT.match(grant) or ".." in grant:
+            failures.add(where, f"una.toml: the grant {grant!r} is not allowed; grants are console, clock and files:src[/dir]:read|write|read,write")
+            good = False
+    return good
 
 
 def diagnostics_of(una, package):
@@ -206,6 +292,8 @@ def outcome(una, package, expected, where, failures):
     if os.path.isfile(output) == os.path.isfile(listed):
         failures.add(where, "expected/ must hold exactly one of output.txt and diagnostics.txt")
         return set()
+    if not manifest(package, where, failures):
+        return set()
     lines, result = diagnostics_of(una, package)
     if lines is None:
         failures.add(where, f"`una check` printed no JSON: {result.stderr.decode(errors='replace')[:200]}")
@@ -234,9 +322,10 @@ def outcome(una, package, expected, where, failures):
     return set()
 
 
-def commands(una, package, expected, where, failures):
-    """Each `expected/commands/*.txt`: its first line is `$ una <args>`, and the rest is what
-    that command prints on stdout in the package, byte for byte."""
+def commands(una, package, expected, where, failures, fresh=None):
+    """Each `expected/commands/*.txt`: its first line is `$ una <args>`, with args one of
+    COMMAND, and the rest is what that command prints on stdout in the package, byte for byte.
+    With `fresh`, each command runs in the copy `fresh()` makes, not in `package`."""
     directory = os.path.join(expected, "commands")
     if not os.path.isdir(directory):
         return 0
@@ -247,7 +336,14 @@ def commands(una, package, expected, where, failures):
         if not first.startswith("$ una "):
             failures.add(f"{where}/commands/{name}", "the first line must be `$ una <args>`")
             continue
-        ran = run(una, first[len("$ una "):].split(" "), package)
+        if not COMMAND.match(first[len("$ una "):]):
+            failures.add(f"{where}/commands/{name}", f"`{first[2:]}` is not one of the commands una-by-example runs")
+            continue
+        cwd = fresh() if fresh else package
+        if not manifest(cwd, where, Failures()):
+            failures.add(f"{where}/commands/{name}", "not run: the package's una.toml is not allowed")
+            continue
+        ran = run(una, first[len("$ una "):].split(" "), cwd)
         if ran.stdout.decode(errors="replace") != printed:
             failures.add(f"{where}/commands/{name}", f"`{first[2:]}` prints:\n{ran.stdout.decode(errors='replace')}")
         count += 1
@@ -292,6 +388,7 @@ def check_pages(root, una, failures, scratch):
         directory = os.path.join(root, chapter, page)
         where = f"{chapter}/{page}"
         counted[0] += 1
+        symlinks(directory, where, failures)
         package = os.path.join(scratch, chapter, page, "package")
         copy_package(directory, package)
         codes = outcome(una, package, os.path.join(directory, "expected"), where, failures)
@@ -330,7 +427,10 @@ def skeleton(body):
         elif re.match(r"^\d+\. ", line) and parts:
             parts[-1][1] += 1
     # A fence's caption= is prose, which a translation translates; the rest of the fence is kept.
-    fences = [CAPTION.sub(" caption=", fence, count=1) for fence in FENCE.findall(body)]
+    fences = []
+    for fence in FENCE.findall(body):
+        opener, newline, rest = fence.partition("\n")
+        fences.append(CAPTION.sub(" caption=", opener, count=1) + newline + rest)
     rest = FENCE.sub("", body)
     spans = SPAN.findall(rest)
     kept = sorted(fences + spans + LINK.findall(rest) + REFERENCE.findall(rest) + URL.findall(rest))
@@ -396,7 +496,7 @@ def check_translations(root, failures):
                 counted[1] += 1
             import template2
 
-            template2.check_translation(fields, body, english_fields, english_body, where, failures)
+            template2.check_translation(root, path, fields, body, english_fields, english_body, where, failures)
             headings, kept, tags = skeleton(body)
             english_headings, english_kept, english_tags = skeleton(english_body)
             if headings != english_headings:
@@ -595,6 +695,18 @@ def main(argv):
 
 def check(root, una, from_binary, archive_dir, require_neutrality=False):
     failures = Failures()
+    global HOME
+    scratch = tempfile.mkdtemp(prefix="una-by-example-")
+    HOME = os.path.join(scratch, "home")
+    os.makedirs(HOME)
+    try:
+        return checked(root, una, from_binary, archive_dir, require_neutrality, failures, scratch)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+        HOME = None
+
+
+def checked(root, una, from_binary, archive_dir, require_neutrality, failures, scratch):
     version = run(una, ["--json", "--version"], root)
     try:
         found = json.loads(version.stdout)["version"]
@@ -604,23 +716,19 @@ def check(root, una, from_binary, archive_dir, require_neutrality=False):
     wanted = lock_version(root)
     if not from_binary and found != wanted:
         failures.add("una.lock", f"pins una {wanted}, but {una} is {found}")
-    scratch = tempfile.mkdtemp(prefix="una-by-example-")
-    try:
-        counted = check_pages(root, una, failures, scratch)
-        import template2
+    counted = check_pages(root, una, failures, scratch)
+    import template2
 
-        warnings = []
-        second = template2.check_chapters(root, una, failures, scratch, warnings)
-        translated, stale = check_translations(root, failures)
-        neutral = neutrality(root, failures)
-        if neutral is None and require_neutrality:
-            failures.add("neutrality", "--require-neutrality, but UNA_NEUTRALITY_PATTERN is unset or empty")
-        commits(root, failures)
-        tracked(root, failures)
-        if archive_dir:
-            archives(root, una, archive_dir, failures, scratch)
-    finally:
-        shutil.rmtree(scratch, ignore_errors=True)
+    warnings = []
+    second = template2.check_chapters(root, una, failures, scratch, warnings)
+    translated, stale = check_translations(root, failures)
+    neutral = neutrality(root, failures)
+    if neutral is None and require_neutrality:
+        failures.add("neutrality", "--require-neutrality, but UNA_NEUTRALITY_PATTERN is unset or empty")
+    commits(root, failures)
+    tracked(root, failures)
+    if archive_dir:
+        archives(root, una, archive_dir, failures, scratch)
     if failures.items:
         print("check.py: FAIL", file=sys.stderr)
         for item in failures.items:
@@ -942,4 +1050,7 @@ def read_bytes(path):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    # One instance of this module: template2.py imports it as `check`, so run that one.
+    import check
+
+    sys.exit(check.main(sys.argv[1:]))

@@ -10,6 +10,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
+import hashlib  # noqa: E402
 import io  # noqa: E402
 import os  # noqa: E402
 import shutil  # noqa: E402
@@ -24,9 +25,10 @@ import template2  # noqa: E402
 
 # A stub `una`. `--json check .` reports U3007 at each line holding `BAD`; `--color never check .`
 # renders the same on stderr, with the absolute path of the package and trailing spaces, which
-# the normalization removes; `run .` prints each `print("...")`; `test .` fails when a file holds
-# `FAILTEST`. In a template 1 page of check.py's own fixture (src/main.una), it hands over to
-# check.py's stub, `una1` beside it.
+# the normalization removes; `run .` prints each `print("...")`, prints its environment's names
+# when a file holds `PRINTENV`, and writes a failing file into src/ when one holds `WRITESRC`;
+# `test .` fails when a file holds `FAILTEST`. In a template 1 page of check.py's own fixture
+# (src/main.una), it hands over to check.py's stub, `una1` beside it.
 STUB = r'''#!/usr/bin/env python3
 import json, os, re, sys
 args = sys.argv[1:]
@@ -64,6 +66,10 @@ if args == ["--color", "never", "check", "."]:
 if args == ["fmt", "--check", "."]:
     sys.exit(0)
 if args == ["run", "."]:
+    if any("PRINTENV" in text for _, text in files):
+        print(" ".join(sorted(os.environ)))
+    if any("WRITESRC" in text for _, text in files):
+        open("src/zz.una", "w").write("FAILTEST\n")
     for _, text in files:
         for said in re.findall(r'print\("([^"]*)"\)', text):
             print(said)
@@ -119,6 +125,8 @@ example "a line is accepted"
   expect result.quantity == 2
 """
 
+OUTPUT = "ok      2 x LAMP-01\nreject  no product has the SKU CHAIR-09\n"
+
 STEP = """module {name}
 
 --- A step of the chapter.
@@ -152,7 +160,7 @@ template: 2
 :::build
 The program prints:
 
-```text include=day-to-day/expected/output.txt
+```text include="day-to-day/expected/output.txt"
 ```
 
 You will learn to:
@@ -169,44 +177,45 @@ You will learn to:
 
 ## 6.1 Declaring a failure
 
-```una title="steps/01-quantity/src/quantity.una" verified="check, run" include=steps/01-quantity/src/quantity.una
+```una title="steps/01-quantity/src/quantity.una" verified="check, run" include="steps/01-quantity/src/quantity.una"
 ```
 
 `una run .` prints:
 
-```text include=steps/01-quantity/expected/output.txt
+```text include="steps/01-quantity/expected/output.txt"
 ```
 
 ## 6.2 Handling a failure
 
-```una include=steps/02-translate/src/translate.una#translate verified=check
+```una include="steps/02-translate/src/translate.una#translate" verified="check"
 ```
 
 ## 6.3 Failures as values
 
-```diff include=steps/02-translate..steps/03-defaults:src/translate.una
+```diff include="steps/02-translate..steps/03-defaults:src/translate.una"
 ```
 
 See [the errors](/docs/errors/U3007/) and [above](#what-youll-build).
 
 ## 6.4 Day-to-day: order intake
 
-```una include=day-to-day/src/orders.una#Order caption="the kinds"
+```una include="day-to-day/src/orders.una#Order" caption="the kinds" title="src/orders.una"
 ```
 
-```una include=day-to-day/src/orders.una#reason..describe
+```una include="day-to-day/src/orders.una#reason..describe" verified="check, run, test"
 ```
 
 ```sh
+cd 06-failure/day-to-day
 una run .
 ```
 
 ## 6.5 Testing it
 
-```una include=day-to-day/src/orders.una#L36-L38 verified=test
+```una include="day-to-day/src/orders.una#L36-L38"
 ```
 
-```text include=day-to-day/expected/commands/test.txt
+```text include="day-to-day/expected/commands/test.txt"
 ```
 
 ## 6.6 Common mistakes
@@ -241,10 +250,10 @@ Run `una --json check .`.
 MISTAKE = """:::mistake
 **{n}. Forgetting the clause (U3007).**
 
-```diff include=day-to-day..mistakes/{n}:src/orders.una context=1
+```diff include="day-to-day..mistakes/{n}:src/orders.una" context="1"
 ```
 
-```text include=mistakes/{n}/expected/rendered.txt
+```text include="mistakes/{n}/expected/rendered.txt"
 ```
 
 *Fix:* add the clause.
@@ -260,7 +269,7 @@ EXERCISE = """::::exercise
 :::
 
 :::answer Answer
-```una include=exercises/{n}/answer/src/orders.una#shipped verified="check, run, test"
+```una include="exercises/{n}/answer/src/orders.una#shipped" verified="check, run, test"
 ```
 :::
 ::::
@@ -274,8 +283,8 @@ def write(path, text):
         handle.write(text)
 
 
-def package(directory, src_name, src, output):
-    write(os.path.join(directory, "una.toml"), TOML)
+def package(directory, src_name, src, output, toml=TOML):
+    write(os.path.join(directory, "una.toml"), toml)
     write(os.path.join(directory, "verification.lock"), "lock\n")
     write(os.path.join(directory, "src", src_name), src)
     write(os.path.join(directory, "expected", "output.txt"), output)
@@ -288,7 +297,7 @@ def chapter(root, mistakes=4, exercises=3):
     package(os.path.join(directory, "steps", "02-translate"), "translate.una", STEP.format(name="translate", extra="1"), "translate 1\n")
     package(os.path.join(directory, "steps", "03-defaults"), "translate.una", STEP.format(name="translate", extra="2"), "translate 2\n")
     day = os.path.join(directory, "day-to-day")
-    package(day, "orders.una", ORDERS, "ok      2 x LAMP-01\nreject  no product has the SKU CHAIR-09\n")
+    package(day, "orders.una", ORDERS, OUTPUT)
     write(os.path.join(day, "expected", "commands", "test.txt"), "$ una test .\n1 example: 1 passed, 0 failed\n")
     for n in range(1, mistakes + 1):
         mistake = os.path.join(directory, "mistakes", str(n))
@@ -303,11 +312,14 @@ def chapter(root, mistakes=4, exercises=3):
               f"    │ Note: in src/orders.una\n────╯\n")
     for n in range(1, exercises + 1):
         exercise = os.path.join(directory, "exercises", str(n))
+        wanted = f'\nexample "shipped gives {n}"\n  do shipped({n})\n  expect result == {n}\n'
         write(os.path.join(exercise, "start", "base.txt"), "day-to-day\n")
+        write(os.path.join(exercise, "start", "src", "orders.una"), ORDERS + wanted.replace("expect", "expect FAILTEST"))
+        write(os.path.join(exercise, "start", "expected", "output.txt"), OUTPUT)
         write(os.path.join(exercise, "answer", "base.txt"), "day-to-day\n")
         write(os.path.join(exercise, "answer", "src", "orders.una"),
-              ORDERS + f"\n--- How many units ship.\npub shipped(n: Int) -> Int = {n}\n")
-        write(os.path.join(exercise, "answer", "expected", "output.txt"), "ok      2 x LAMP-01\nreject  no product has the SKU CHAIR-09\n")
+              ORDERS + f"\n--- How many units ship.\npub shipped(n: Int) -> Int = {n}\n" + wanted)
+        write(os.path.join(exercise, "answer", "expected", "output.txt"), OUTPUT)
     page = PAGE.format(lead=LOREM, mistakes="".join(MISTAKE.format(n=n) for n in range(1, mistakes + 1)),
                        exercises="".join(EXERCISE.format(n=n) for n in range(1, exercises + 1)))
     write(os.path.join(directory, "README.md"), page)
@@ -374,12 +386,16 @@ class Units(unittest.TestCase):
         self.assertIn("declared 2 times", template2.select("f() -> Int = 1\nf() -> Int = 2\n", "f")[1])
         self.assertEqual(template2.declaration_name("predicate opaque well_formed(t: Text) -> Bool = true"), "well_formed")
         self.assertEqual(template2.declaration_name("handler warehouse(stock: Map[Text, Int]) for Inventory"), "warehouse")
+        self.assertEqual(template2.declaration_name("pub measure Meter"), "Meter")
         self.assertIsNone(template2.declaration_name('example "a line"'))
 
     def test_lines(self):
         self.assertEqual(template2.select("a\nb\nc\nd\n", "L2-L3")[0], "b\nc\n")
         self.assertEqual(template2.select("a\nb\nc\nd\n", "L1,L4")[0], "a\nd\n")
         self.assertIn("not within", template2.select("a\n", "L2")[1])
+        self.assertIn("ascending", template2.select("a\nb\nc\nd\n", "L3,L1")[1])
+        self.assertIn("ascending", template2.select("a\nb\nc\nd\n", "L1-L3,L2")[1])
+        self.assertIn("only on an expected/ file", template2.select("a\nb\n", "L1,L2", several=False)[1])
 
     def test_normalize(self):
         package = os.path.join(tempfile.gettempdir(), "pkg")
@@ -388,7 +404,7 @@ class Units(unittest.TestCase):
         self.assertEqual(template2.normalize("", package), "")
 
     def test_fences(self):
-        text = '````una include="a b/c.una#f" title=x verified="check, run"\n```\n````\n\nprose\n\n```sh\nuna run .\n```\n'
+        text = '````una include="a b/c.una#f" title="x" verified="check, run"\n```\n````\n\nprose\n\n```sh\nuna run .\n```\n'
         blocks, inside = template2.fences(text)
         self.assertEqual(len(blocks), 2)
         self.assertEqual(blocks[0].lang, "una")
@@ -396,7 +412,9 @@ class Units(unittest.TestCase):
         self.assertEqual(blocks[0].body, "```\n")
         self.assertEqual(blocks[1].lang, "sh")
         self.assertNotIn(4, inside)
-        self.assertEqual(template2.fences("```una include=x stray\n```\n")[0][0].stray, ["stray"])
+        self.assertEqual(template2.fences('```una include="x" stray\n```\n')[0][0].stray, ["stray"])
+        self.assertEqual(template2.fences("```una include=x\n```\n")[0][0].stray, ["include=x"])
+        self.assertEqual(template2.fences('```una verified="check" verified="test"\n```\n')[0][0].duplicates, ["verified"])
         self.assertFalse(template2.fences("```una\nno end\n")[0][0].closed)
 
     def test_links(self):
@@ -407,12 +425,34 @@ class Units(unittest.TestCase):
             ("[a](https://github.com/una-lang/una/blob/main/docs/guide/x.md)", "repositories"),
             ("see https://github.com/una-lang/una/tree/main/docs", "repositories"),
             ("[a](../05-collections/)", "relative link"),
+            ('[a](../05-collections/README.md "Collections")', "relative link"),
             ("[a](http://example.org/)", "https"),
             ("[a]: https://raw.githubusercontent.com/una-lang/una/main/x", "repositories"),
         ):
             failures = check.Failures()
             template2.links(bad, "p", failures)
             self.assertTrue(any(wants in item for item in failures.items), (bad, failures.items))
+
+    def test_markup(self):
+        def found(text):
+            failures = check.Failures()
+            template2.markup(text, "p", failures)
+            return "\n".join(failures.items)
+
+        self.assertEqual(found("Text.\n\n- a\n  - b\n\n> [!NOTE] Title.\n> Body.\n\n:::steps\n1. **x**\n   more\n:::\n\n---\n"), "")
+        self.assertIn("inside a quote", found("> [!NOTE]\n> ```una\n> BAD\n> ```\n"))
+        self.assertIn("inside a quote", found("- First:\n  - then:\n\n    ```una\n    nonsense\n    ```\n"))
+        self.assertIn("indented by 4", found("Text.\n\n    pub main() -> Unit = nonsense\n"))
+        self.assertIn("indented by 4", found("Text.\n\n\tnonsense\n"))
+        self.assertIn("setext", found("An extra part\n-------------\n"))
+        self.assertIn("setext", found("An extra part\n===\n"))
+        self.assertIn("heading", found("> ## A heading in a quote\n"))
+        self.assertIn("heading", found(" ## Indented\n"))
+        self.assertIn("raw HTML", found("Some <pre>code</pre>.\n"))
+        self.assertEqual(found("An autolink <https://example.org/> and `<T>` in code.\n"), "")
+        self.assertIn("no container :::demo", found(":::demo\nx\n:::\n"))
+        self.assertIn("no callout [!DANGER]", found("> [!DANGER]\n> x\n"))
+        self.assertIn("not closed", found(":::build\nx\n"))
 
     def test_headings(self):
         page = PAGE.format(lead="x", mistakes="", exercises="")
@@ -430,7 +470,6 @@ class Units(unittest.TestCase):
             failures = check.Failures()
             template2.headings(fields, body.replace(old, new), "p", failures)
             self.assertTrue(any(wants in item for item in failures.items), (old, failures.items))
-        # Two concept sections are too few.
         fewer = body.replace("## 6.3 Failures as values", "### Failures as values")
         for n in range(4, 11):
             fewer = fewer.replace(f"## 6.{n} ", f"## 6.{n - 1} ")
@@ -438,12 +477,67 @@ class Units(unittest.TestCase):
         template2.headings(fields, fewer, "p", failures)
         self.assertTrue(any("the parts must be" in item for item in failures.items), failures.items)
 
+    def test_caption_only_in_the_opener(self):
+        english = check.skeleton('```una\nlet caption="Total"\n```\n')
+        translated = check.skeleton('```una\nlet caption="Anything"\n```\n')
+        self.assertNotEqual(english, translated)
+        self.assertEqual(check.skeleton('```una caption="the kinds"\nx\n```\n'), check.skeleton('```una caption="os tipos"\nx\n```\n'))
+
+    def test_manifest(self):
+        base = tempfile.mkdtemp(prefix="una-by-example-manifest-")
+        try:
+            for toml, good in (
+                (TOML, True),
+                (TOML.replace('["console"]', '["console", "clock", "files:src:read,write", "files:src/data:read"]'), True),
+                (TOML.replace('["console"]', '["console", "env"]'), False),
+                (TOML.replace('["console"]', '["files:/:read,write"]'), False),
+                (TOML.replace('["console"]', '["files:src/..:read"]'), False),
+                (TOML.replace('["console"]', '["http:https://collector.example.invalid"]'), False),
+                (TOML + '\n[dependencies]\nother = { path = "../.." }\n', False),
+                (TOML.replace('[run]\n', '[run]\nflags = ["x"]\n'), False),
+            ):
+                write(os.path.join(base, "una.toml"), toml)
+                failures = check.Failures()
+                self.assertEqual(check.manifest(base, "p", failures), good, (toml, failures.items))
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
+
+    def test_commands(self):
+        for line in ("test .", "--json check .", "run .", "fmt --check .", "fix --dry-run .", "build .",
+                     "explain U5001", "trace SOLD_OUT_1"):
+            self.assertTrue(check.COMMAND.match(line), line)
+        for line in ("run . --grant env", "run . --grant files:/:read", "fmt /abs/path", "check ..", "test . extra", "run"):
+            self.assertFalse(check.COMMAND.match(line), line)
+
+    def test_environment(self):
+        base = tempfile.mkdtemp(prefix="una-by-example-env-")
+        saved = os.environ.get("UNA_NEUTRALITY_PATTERN")
+        os.environ["UNA_NEUTRALITY_PATTERN"] = "zebra-canary"
+        try:
+            write(os.path.join(base, "una"), STUB)
+            os.chmod(os.path.join(base, "una"), 0o755)
+            write(os.path.join(base, "pkg", "src", "a.una"), "-- PRINTENV\n")
+            names = set(check.run(os.path.join(base, "una"), ["run", "."], os.path.join(base, "pkg")).stdout.decode().split())
+            self.assertNotIn("UNA_NEUTRALITY_PATTERN", names)
+            self.assertTrue({"PATH", "HOME", "TMPDIR", "LANG", "NO_COLOR"} <= names, names)
+            # What Python or the system adds on its own, at most.
+            self.assertTrue(names <= {"PATH", "HOME", "TMPDIR", "LANG", "NO_COLOR", "LC_CTYPE", "__CF_USER_TEXT_ENCODING"}, names)
+            self.assertNotEqual(check.una_env()["HOME"], os.path.expanduser("~"))
+        finally:
+            os.environ.pop("UNA_NEUTRALITY_PATTERN", None)
+            if saved is not None:
+                os.environ["UNA_NEUTRALITY_PATTERN"] = saved
+            shutil.rmtree(base, ignore_errors=True)
+
 
 class Chapters(Base):
     def setUp(self):
         super().setUp()
         self.chapter = chapter(self.root)
         self.readme = os.path.join(self.chapter, "README.md")
+
+    def refill(self):
+        template2.fill(self.root)
 
     def test_a_good_chapter(self):
         items, warnings = self.run_chapters()
@@ -453,23 +547,63 @@ class Chapters(Base):
 
     def test_fill_wrote_the_blocks(self):
         text = check.read(self.readme)
-        self.assertIn("```text include=day-to-day/expected/output.txt\nok      2 x LAMP-01\n", text)
+        self.assertIn('```text include="day-to-day/expected/output.txt"\nok      2 x LAMP-01\n', text)
         self.assertIn("--- One line of an order.\npub kind Order\n  sku: Text\n  quantity: Int\n```", text)
         self.assertIn("--- a/src/translate.una\n+++ b/src/translate.una\n", text)
         changed, problems = template2.fill(self.root)
         self.assertEqual((changed, problems), ([], []))
 
+    # Blocks that are not includes, and code the check would not see (H1, M1).
+
     def test_a_free_una_block(self):
-        edit(self.readme, "```sh\nuna run .\n```", "```una\nmain()\n```")
+        edit(self.readme, "```sh\ncd 06-failure/day-to-day\nuna run .\n```", "```una\nmain()\n```")
         self.assertFails("not an include")
 
     def test_a_free_text_block(self):
-        edit(self.readme, "```sh\nuna run .\n```", "```text\nok\n```")
+        edit(self.readme, "```sh\ncd 06-failure/day-to-day\nuna run .\n```", "```text\nok\n```")
         self.assertFails("not an include")
+
+    def test_a_tilde_fence(self):
+        edit(self.readme, "```sh\ncd 06-failure/day-to-day\nuna run .\n```", "~~~una\nnonsense\n~~~")
+        self.assertFails("not an include")
+
+    def test_a_fence_in_a_callout(self):
+        edit(self.readme, "> A key idea.", "> A key idea.\n> ```una\n> pub main() -> Unit = BAD\n> ```")
+        self.assertFails("a fenced block inside a quote")
+
+    def test_a_fence_in_a_list(self):
+        edit(self.readme, "- declare an error kind.", "- First:\n  - then:\n\n    ```una\n    pub main() -> Unit = nonsense\n    ```")
+        self.assertFails("a fenced block inside a quote")
+
+    def test_indented_code(self):
+        edit(self.readme, "## 6.2 Handling a failure\n", "## 6.2 Handling a failure\n\nText.\n\n    pub main() -> Unit = nonsense\n")
+        self.assertFails("indented by 4 or more spaces")
+
+    def test_output_in_an_sh_block(self):
+        edit(self.readme, "una run .\n```", "una run .\nTotal: 4200 cents\n```")
+        self.assertFails("an `sh` block holds only commands")
+
+    def test_a_prompt_in_an_sh_block(self):
+        edit(self.readme, "una run .\n```", "$ una run .\n```")
+        self.assertFails("an `sh` block holds only commands")
+
+    def test_a_setext_heading(self):
+        edit(self.readme, "## 6.2 Handling a failure\n", "## 6.2 Handling a failure\n\nAn extra part\n-------------\n")
+        self.assertFails("a setext heading")
+
+    def test_raw_html(self):
+        edit(self.readme, "## 6.2 Handling a failure\n", "## 6.2 Handling a failure\n\n<pre>nonsense</pre>\n")
+        self.assertFails("raw HTML")
+
+    def test_an_unknown_container(self):
+        edit(self.readme, ":::agents", ":::demo")
+        self.assertFails("no container :::demo")
+
+    # Includes (H4, M4, M5, M7, L6).
 
     def test_a_block_that_differs(self):
         edit(self.readme, "  sku: Text\n  quantity: Int\n```", "  sku: Text\n  quantity: Nat\n```")
-        self.assertFails("is not the text of include=day-to-day/src/orders.una#Order")
+        self.assertFails('is not the text of include=day-to-day/src/orders.una#Order')
 
     def test_a_changed_package(self):
         edit(os.path.join(self.chapter, "steps", "01-quantity", "src", "quantity.una"), "--- A step", "--- One step")
@@ -480,20 +614,66 @@ class Chapters(Base):
         self.assertFails("no top-level declaration `explain`")
 
     def test_a_path_outside_the_packages(self):
-        edit(self.readme, "include=steps/01-quantity/expected/output.txt", "include=../../una.lock")
+        edit(self.readme, 'include="steps/01-quantity/expected/output.txt"', 'include="../../una.lock"')
         self.assertFails("is not a plain path")
-        edit(self.readme, "include=../../una.lock", "include=README.md")
+        edit(self.readme, 'include="../../una.lock"', 'include="README.md"')
         self.assertFails("is not in a package")
 
-    def test_a_symbolic_link(self):
-        target = os.path.join(self.chapter, "steps", "01-quantity", "src", "quantity.una")
-        os.remove(target)
-        os.symlink(os.path.join(self.root, "una.lock"), target)
-        self.assertFails("is a symbolic link or outside the chapter")
+    def test_a_made_up_expected_file(self):
+        write(os.path.join(self.chapter, "day-to-day", "expected", "made-up.txt"), "ok   99 x LAMP-01\n")
+        edit(self.readme, 'include="steps/01-quantity/expected/output.txt"', 'include="day-to-day/expected/made-up.txt"')
+        self.refill()
+        self.assertFails("day-to-day/expected/made-up.txt: not a file a package holds")
+        self.assertFails("a block shows una.toml, src/**/*.una or an expected/ file")
+
+    def test_a_file_outside_src(self):
+        write(os.path.join(self.chapter, "day-to-day", "notes.una"), "pub main() -> Unit = nonsense\n")
+        edit(self.readme, 'include="steps/02-translate/src/translate.una#translate"', 'include="day-to-day/notes.una"')
+        self.refill()
+        self.assertFails("day-to-day/notes.una: not a file a package holds")
+
+    def test_verified_on_an_expected_file(self):
+        edit(self.readme, '```text include="steps/01-quantity/expected/output.txt"', '```text include="steps/01-quantity/expected/output.txt" verified="check"')
+        self.assertFails("verified= goes only on a block of una.toml or a src/ file")
+
+    def test_verified_on_lines(self):
+        edit(self.readme, '#L36-L38"', '#L36-L38" verified="check"')
+        self.assertFails("verified= goes only on a block of una.toml or a src/ file")
+
+    def test_lines_out_of_order(self):
+        edit(self.readme, '#L36-L38"', '#L9,L19,L18"')
+        self.assertFails("several line ranges are allowed only on an expected/ file")
 
     def test_an_unknown_attribute(self):
         edit(self.readme, 'caption="the kinds"', 'captoin="the kinds"')
         self.assertFails("no fence attribute `captoin`")
+
+    def test_an_unquoted_attribute(self):
+        edit(self.readme, 'caption="the kinds"', "caption=kinds")
+        self.assertFails("attributes are key=\"value\", quoted")
+
+    def test_a_duplicate_attribute(self):
+        edit(self.readme, 'verified="check, run" include="steps/01-quantity', 'verified="check, run" verified="check" include="steps/01-quantity')
+        self.assertFails("the attribute `verified` is given twice")
+
+    def test_a_wrong_title(self):
+        edit(self.readme, 'title="src/orders.una"', 'title="exercises/1/answer/src/orders.una"')
+        self.assertFails("is not the included file's path")
+
+    def test_a_diff_of_a_dotted_path(self):
+        edit(self.readme, 'include="day-to-day..mistakes/1:src/orders.una"', 'include="day-to-day..mistakes/1:src/../una.toml"')
+        self.assertFails("is not a file a block may show")
+
+    def test_a_fence_the_text_would_close(self):
+        edit(os.path.join(self.chapter, "steps", "01-quantity", "expected", "output.txt"), "quantity 3\n", "quantity 3\n```\n")
+        self.refill()
+        self.assertFails("use a longer fence")
+
+    def test_a_wrong_diff(self):
+        edit(os.path.join(self.chapter, "steps", "03-defaults", "src", "translate.una"), "translate 2", "translate 3")
+        self.assertFails("is not the text of include=steps/02-translate..steps/03-defaults:src/translate.una")
+
+    # Outcomes and badges.
 
     def test_a_wrong_rendering(self):
         edit(os.path.join(self.chapter, "mistakes", "2", "expected", "rendered.txt"), "Error:", "error:")
@@ -504,43 +684,101 @@ class Chapters(Base):
         self.assertFails("06-failure/mistakes/3: `una check` reports")
 
     def test_verified_check_on_a_mistake(self):
-        edit(self.readme, "```text include=mistakes/1/expected/rendered.txt", "```una include=mistakes/1/src/orders.una#parse_order verified=check")
-        template2.fill(self.root)
+        edit(self.readme, '```text include="mistakes/1/expected/rendered.txt"\n', '```text include="mistakes/1/expected/rendered.txt"\n```\n\n```una include="mistakes/1/src/orders.una#parse_order" verified="check"\n')
+        self.refill()
         self.assertFails("verified=check, but mistakes/1 does not check clean")
 
     def test_verified_test_that_fails(self):
         edit(os.path.join(self.chapter, "day-to-day", "src", "orders.una"), "expect result.quantity == 2", "expect FAILTEST")
-        template2.fill(self.root)
+        self.refill()
         self.assertFails("verified=test, but `una test .` exits with 1 in day-to-day")
 
     def test_verified_run_without_output(self):
-        edit(self.readme, "include=steps/02-translate/src/translate.una#translate verified=check",
-             "include=mistakes/1/src/orders.una#reason verified=run")
-        template2.fill(self.root)
+        edit(self.readme, '```text include="mistakes/1/expected/rendered.txt"\n', '```text include="mistakes/1/expected/rendered.txt"\n```\n\n```una include="mistakes/1/src/orders.una#reason" verified="run"\n')
+        self.refill()
         self.assertFails("verified=run, but mistakes/1 has no expected/output.txt")
+
+    def test_a_mistake_that_checks_clean(self):
+        mistake = os.path.join(self.chapter, "mistakes", "4")
+        os.remove(os.path.join(mistake, "expected", "diagnostics.txt"))
+        write(os.path.join(mistake, "expected", "output.txt"), OUTPUT)
+        self.assertFails("a mistake has expected/diagnostics.txt")
+
+    # Exercises (L5).
 
     def test_an_answer_that_fails_its_tests(self):
         edit(os.path.join(self.chapter, "exercises", "2", "answer", "src", "orders.una"), "expect result.quantity == 2", "expect FAILTEST")
         self.assertFails("exercises/2/answer: an answer passes its tests, but `una test .` exits with 1")
 
+    def test_a_start_that_passes(self):
+        shutil.rmtree(os.path.join(self.chapter, "exercises", "2", "start", "src"))
+        shutil.rmtree(os.path.join(self.chapter, "exercises", "2", "start", "expected"))
+        self.assertFails("exercises/2/start: the exercise's examples fail on start/")
+
     def test_an_exercise_without_an_answer(self):
         shutil.rmtree(os.path.join(self.chapter, "exercises", "3", "answer"))
         self.assertFails("exercises/3: no answer/")
+
+    def test_an_exercise_without_a_start(self):
+        shutil.rmtree(os.path.join(self.chapter, "exercises", "1", "start"))
+        self.assertFails("exercises/1: no start/")
 
     def test_an_answer_that_changes_nothing(self):
         shutil.rmtree(os.path.join(self.chapter, "exercises", "1", "answer", "src"))
         shutil.rmtree(os.path.join(self.chapter, "exercises", "1", "answer", "expected"))
         self.assertFails("an answer changes something")
 
-    def test_an_exercise_without_a_start(self):
-        shutil.rmtree(os.path.join(self.chapter, "exercises", "1", "start"))
-        self.assertFails("exercises/1: no start/")
+    def test_a_run_that_writes_does_not_change_the_tests(self):
+        # The answer's `una run` writes a failing file into src/; `una test` runs on its own copy.
+        edit(os.path.join(self.chapter, "exercises", "1", "answer", "src", "orders.una"), "--- How many units ship.", "-- WRITESRC\n\n--- How many units ship.")
+        self.assertPasses()
+
+    # Cards and counts (M6, L5).
 
     def test_a_mistake_not_on_the_page(self):
         text = check.read(self.readme)
         start = text.index(":::mistake\n**4.")
         write(self.readme, text[:start] + text[text.index(":::\n\n", start) + 5:])
         self.assertFails("`Common mistakes` has 3 :::mistake blocks, but there are 4 mistakes/N")
+
+    def test_too_few_mistakes(self):
+        shutil.rmtree(self.base)
+        os.makedirs(self.root)
+        write(os.path.join(self.root, "una.lock"), 'version = "9.9.9"\n')
+        write(self.una, STUB)
+        os.chmod(self.una, 0o755)
+        chapter(self.root, mistakes=3, exercises=2)
+        self.assertFails("3 mistakes; the template asks for 4 to 8")
+        self.assertFails("2 exercises; the template asks for 3 to 5")
+
+    def test_cards_that_show_another_mistake(self):
+        text = check.read(self.readme)
+        one = text.index("```diff include=\"day-to-day..mistakes/1")
+        two = text.index("```diff include=\"day-to-day..mistakes/2")
+        end_one = text.index("*Fix:*", one)
+        end_two = text.index("*Fix:*", two)
+        first, second = text[one:end_one], text[two:end_two]
+        write(self.readme, text[:one] + second + text[end_one:two] + first + text[end_two:])
+        self.assertFails("mistake 1 shows ['mistakes/2']")
+
+    def test_a_card_without_its_diagnostic(self):
+        edit(self.readme, '```text include="mistakes/3/expected/rendered.txt"', '```text include="mistakes/3/expected/diagnostics.txt"')
+        self.refill()
+        self.assertFails("mistake 3 shows its diagnostic")
+
+    def test_an_exercise_without_its_answer_block(self):
+        edit(self.readme, 'include="exercises/2/answer/src/orders.una#shipped"', 'include="exercises/1/answer/src/orders.una#shipped"')
+        self.refill()
+        self.assertFails("exercise 2 shows ['exercises/1/answer']")
+        self.assertFails("exercise 2 has a :::answer that shows exercises/2/answer")
+
+    def test_the_build_output_by_substring(self):
+        edit(self.readme, '```text include="day-to-day/expected/output.txt"', '```text include="steps/01-quantity/expected/output.txt"')
+        edit(self.readme, "The program prints:", "The program prints `include=day-to-day/expected/output.txt`:")
+        self.refill()
+        self.assertFails("`What you'll build` shows the day-to-day program's output")
+
+    # Links, codes, layout, manifests, symbolic links (M2, M3, H3).
 
     def test_a_link_to_github_main(self):
         edit(self.readme, "(/docs/errors/U3007/)", "(https://github.com/una-lang/una/blob/main/docs/guide/errors.md)")
@@ -562,14 +800,43 @@ class Chapters(Base):
         edit(self.readme, "## 6.7 For agents", "## 6.7 For machines")
         self.assertFails("the parts must be")
 
-    def test_a_wrong_diff(self):
-        edit(os.path.join(self.chapter, "steps", "03-defaults", "src", "translate.una"), "translate 2", "translate 3")
-        self.assertFails("is not the text of include=steps/02-translate..steps/03-defaults:src/translate.una")
+    def test_a_grant_of_the_environment(self):
+        edit(os.path.join(self.chapter, "day-to-day", "una.toml"), 'grants = ["console"]', 'grants = ["console", "env"]')
+        self.assertFails("the grant 'env' is not allowed")
 
-    def test_a_fence_the_text_would_close(self):
-        edit(os.path.join(self.chapter, "steps", "01-quantity", "expected", "output.txt"), "quantity 3\n", "quantity 3\n```\n")
-        template2.fill(self.root)
-        self.assertFails("use a longer fence")
+    def test_a_command_with_a_grant(self):
+        write(os.path.join(self.chapter, "day-to-day", "expected", "commands", "env.txt"), "$ una run . --grant env\n")
+        self.assertFails("is not one of the commands una-by-example runs")
+
+    def test_a_symbolic_link(self):
+        target = os.path.join(self.chapter, "steps", "01-quantity", "src", "quantity.una")
+        os.remove(target)
+        os.symlink(os.path.join(self.root, "una.lock"), target)
+        self.assertFails("is a symbolic link or outside the chapter")
+
+    def test_a_symbolic_link_nothing_includes(self):
+        os.symlink(os.path.join(self.root, "una.lock"), os.path.join(self.chapter, "day-to-day", "src", "hosts.una"))
+        self.assertFails("06-failure/day-to-day/src/hosts.una: a symbolic link")
+
+    def test_a_blank_line_in_the_front_matter(self):
+        edit(self.readme, "time: 35\n", "time: 35\n\n")
+        edit(self.readme, "```sh\n", "```una\nnonsense\n```\n\n```sh\n")
+        self.assertFails("its front matter does not parse")
+
+    def test_another_template_value(self):
+        for value in ("template: 02", "Template: 2", 'template: "2 "'):
+            edit(self.readme, "template: 2", value)
+            self.assertFails("`template` is exactly `template: 2`")
+            edit(self.readme, value, "template: 2")
+
+    def test_carriage_returns(self):
+        write(self.readme, check.read(self.readme).replace("\n", "\r\n"))
+        self.assertFails("carriage returns")
+
+    def test_packages_without_the_template(self):
+        text = check.read(self.readme)
+        write(self.readme, "# 6 Failure\n\n" + text.split("# 6 Failure\n", 1)[1])
+        self.assertFails("a chapter with steps/, day-to-day/, mistakes/, exercises/ is on template 2")
 
     def test_template_1_rules_still_apply_elsewhere(self):
         # A template 1 chapter beside a template 2 one, checked by check.py as a whole.
@@ -582,16 +849,40 @@ class Chapters(Base):
             code = check.check(self.root, self.una, False, None)
         self.assertEqual(code, 0, out.getvalue())
         self.assertIn("check.py: PASS (1 pages, 1 changes, 0 commands", out.getvalue())
-        self.assertIn("template 2: 1 chapters, 11 packages, 1 commands", out.getvalue())
+        self.assertIn("template 2: 1 chapters, 14 packages, 1 commands", out.getvalue())
         self.assertIn("warning: 06-failure/README.md", out.getvalue())
+
+
+class TemplateOne(Base):
+    """A chapter on template 1: no front matter, no code, pages, no template 2 directories."""
+
+    def setUp(self):
+        super().setUp()
+        check.fixture(self.root)
+        self.readme = os.path.join(self.root, "01-hello", "README.md")
+
+    def test_a_template_1_chapter(self):
+        self.assertPasses()
+
+    def test_code_on_a_template_1_chapter_page(self):
+        write(self.readme, "# 1 Hello\n\n```una\nnonsense\n```\n")
+        self.assertFails("a template 1 chapter page holds no code block")
+        write(self.readme, "# 1 Hello\n\nText.\n\n    nonsense\n")
+        self.assertFails("a template 1 chapter page holds no code")
+
+    def test_front_matter_on_a_template_1_chapter_page(self):
+        write(self.readme, "---\nlearn: \"1\"\n---\n\n# 1 Hello\n")
+        self.assertFails("a template 1 chapter page has no front matter")
+
+    def test_a_chapter_without_pages(self):
+        shutil.rmtree(os.path.join(self.root, "01-hello", "01-first"))
+        self.assertFails("a chapter with no page directories is on template 2")
 
 
 class Translations(Base):
     def setUp(self):
         super().setUp()
         chapter(self.root)
-        import hashlib
-
         english = check.read(os.path.join(self.root, "06-failure", "README.md"))
         self.text = english.replace("title: Failure", "title: Falhas").replace("# 6 Failure", "# 6 Falhas").replace(
             "template: 2", f"template: 2\nsource: {hashlib.sha256(english.encode()).hexdigest()}\nstatus: approved")
@@ -604,6 +895,10 @@ class Translations(Base):
         check.check_translations(self.root, failures)
         return failures.items
 
+    def assertTranslationFails(self, text, wants):
+        items = self.failures(text)
+        self.assertTrue(any(wants in i for i in items), f"no failure with {wants!r} in:\n" + "\n".join(items))
+
     def test_a_translation(self):
         self.assertEqual(self.failures(self.text), [])
 
@@ -611,22 +906,48 @@ class Translations(Base):
         self.assertEqual(self.failures(self.text.replace('caption="the kinds"', 'caption="os tipos"')), [])
 
     def test_a_changed_include(self):
-        items = self.failures(self.text.replace("#reason..describe", "#reason"))
-        self.assertTrue(any("code and links differ" in i for i in items), items)
+        self.assertTranslationFails(self.text.replace("#reason..describe", "#reason"), "its blocks are not the English page's")
+
+    def test_a_tilde_fence(self):
+        self.assertTranslationFails(self.text.replace("Você vai aprender a:", "~~~una\npub main() -> Unit = nonsense\n~~~\n\nVocê vai aprender a:"),
+                                    "not an include")
+
+    def test_a_fence_in_a_quote(self):
+        self.assertTranslationFails(self.text.replace("> A key idea.", "> A key idea.\n> ```una\n> nonsense\n> ```"), "inside a quote")
+
+    def test_indented_code(self):
+        self.assertTranslationFails(self.text.replace("Você vai aprender a:", "Texto.\n\n    nonsense()\n\nVocê vai aprender a:"), "indented by 4")
+
+    def test_swapped_blocks(self):
+        first = self.text.index('```una include="day-to-day/src/orders.una#Order"')
+        first_end = self.text.index("```\n", self.text.index("\n", first)) + 4
+        second = self.text.index('```una include="day-to-day/src/orders.una#reason..describe"')
+        second_end = self.text.index("```\n", self.text.index("\n", second)) + 4
+        a, b = self.text[first:first_end], self.text[second:second_end]
+        swapped = self.text[:first] + b + self.text[first_end:second] + a + self.text[second_end:]
+        self.assertTranslationFails(swapped, "in the same order")
 
     def test_a_changed_number(self):
-        items = self.failures(self.text.replace("## 6.2 Handling a failure", "## 6.20 Tratando uma falha"))
-        self.assertTrue(any("numbered as the English page's" in i for i in items), items)
+        self.assertTranslationFails(self.text.replace("## 6.2 Handling a failure", "## 6.20 Tratando uma falha"), "numbered as the English page's")
 
     def test_a_changed_time(self):
-        items = self.failures(self.text.replace("time: 35", "time: 40"))
-        self.assertTrue(any("`time` is '40'" in i for i in items), items)
+        self.assertTranslationFails(self.text.replace("time: 35", "time: 40"), "`time` is '40'")
 
     def test_fill_fills_translations(self):
         write(self.path, self.text.replace("  quantity: Int\n```", "```"))
         changed, problems = template2.fill(self.root)
         self.assertEqual((changed, problems), (["translations/pt-br/06-failure/README.md"], []))
         self.assertEqual(self.failures(check.read(self.path)), [])
+
+    def test_fill_does_not_write_through_a_link(self):
+        outside = os.path.join(self.base, "outside.md")
+        write(outside, self.text.replace("  quantity: Int\n```", "```"))
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        os.symlink(outside, self.path)
+        changed, problems = template2.fill(self.root)
+        self.assertEqual(changed, [])
+        self.assertTrue(any("never written through" in p for p in problems), problems)
+        self.assertNotIn("  quantity: Int\n```", check.read(outside))
 
 
 def main():
