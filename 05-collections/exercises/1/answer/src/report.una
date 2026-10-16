@@ -175,7 +175,7 @@ example "amounts keep two digits of cents"
   do money(1205)
   expect result == "12.05"
 
---- The SKUs sold in `category`, each once, in order.
+--- The SKUs sold in `category`, each once, in SKU order.
 pub skus_in(lines: List[Line], category: Text) -> List[Text]
 =
   let matching = lines.filter(keep: fn(line) -> line.category == category)

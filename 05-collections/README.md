@@ -1101,7 +1101,7 @@ Each exercise starts from `exercises/N/start`: the day-to-day program with a stu
 **Exercise 1: the SKUs of a category.** Write `skus_in(lines, category)`, the SKUs sold in one category, each once, in SKU order. The start package ends with:
 
 ```una include="exercises/1/start/src/report.una#L178-L187" title="exercises/1/start/src/report.una"
---- The SKUs sold in `category`, each once, in order.
+--- The SKUs sold in `category`, each once, in SKU order.
 pub skus_in(lines: List[Line], category: Text) -> List[Text] = []
 
 example "each SKU of a category appears once"
@@ -1135,7 +1135,7 @@ Give `skus_in` its body:
 --- a/src/report.una
 +++ b/src/report.una
 @@ -178,3 +178,6 @@
- --- The SKUs sold in `category`, each once, in order.
+ --- The SKUs sold in `category`, each once, in SKU order.
 -pub skus_in(lines: List[Line], category: Text) -> List[Text] = []
 +pub skus_in(lines: List[Line], category: Text) -> List[Text]
 +=
@@ -1245,7 +1245,7 @@ Give `ranked` its body, and print its result in `main`:
  
 ```
 
-`-summary.cents` turns the largest revenue into the smallest key, so it comes first. Names with the same key are appended in the order of `summaries`, which `by_category` gives in name order, and the example with two categories at 500 cents checks it.
+`-summary.cents` turns the largest revenue into the smallest key, so it comes first. `main` joins the names with `let` before printing them, since a text literal such as `", "` cannot appear inside an interpolation. Names with the same key are appended in the order of `summaries`, which `by_category` gives in name order, and the example with two categories at 500 cents checks it.
 :::
 ::::
 

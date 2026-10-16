@@ -79,7 +79,7 @@ pub reason(failure: OrderError) -> Text
     is UnknownSku(sku) -> "no product has the SKU {sku}"
     is OutOfStock(sku, wanted, left) -> "{wanted} of {sku} wanted, {left} left"
     is Unavailable -> "the inventory did not answer; retry later"
-    is TooMany(sku, limit) -> "at most {limit} of {sku} per order"
+    is TooMany(sku, limit) -> "at most {limit} of {sku} per line"
 
 --- One line of the batch report.
 pub describe(outcome: Result[Order, OrderError]) -> Text

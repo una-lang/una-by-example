@@ -50,7 +50,7 @@ Una moves all of that into view. Three rules do it:
 The price is a few extra lines at each call. In return, the failure behavior of any function can be read from its header and its call sites, and the checker proves that no failure goes unhandled.
 
 > [!KEY]
-> Apart from running out of resources (U6003), host text that is not valid UTF-8 (U6005) and faults that a checked program cannot reach (U8001), nothing in Una fails at run time without the code saying so: division by zero and fixed-width overflow are ruled out by proof ([chapter 7](/learn/contracts/)), and there are no exceptions to catch.
+> Nothing in Una fails at run time without the code saying so, apart from a few aborts outside the program's logic, such as running out of call depth or memory (U6003) or host text that is not valid UTF-8 (U6005); the Reference part lists them all. Division by zero and fixed-width overflow are ruled out by proof ([chapter 7](/learn/contracts/)), and there are no exceptions to catch.
 
 ## 6.1 Declaring a failure: `fails` and `fail`
 
@@ -390,7 +390,7 @@ Some facts depend on rules the verifier cannot see inside, such as whether a tex
 Three constructs of [chapter 7](/learn/contracts/) appear here, briefly:
 
 - `kind Sku = Text where well_formed(it)` is a refined kind: a `Text` for which the condition holds, where `it` stands for the value.
-- A `predicate` is a named condition. It is `reflect`, and the verifier sees its body, or `opaque`, and the verifier does not. `checked` is the only way to establish an opaque one.
+- A `predicate` is a named condition. It is either `reflect`, when the verifier may see its body, or `opaque`, when it may not. In code, `checked` is the only place an opaque predicate runs, so it is how a program establishes one. A capability operation can also promise one in its `ensures` ([chapter 8](/learn/capabilities/)).
 - `t.slice(start: 4, end: 5)` is the text from position 4 up to, not including, position 5.
 
 > [!WARNING]
@@ -582,7 +582,7 @@ pub describe(outcome: Result[Order, OrderError]) -> Text
     is Err(failure) -> "reject  {reason(failure)}"
 ```
 
-**Running it.** In production, the `Inventory` handler would call the warehouse over the network. Here, a handler holds the stock in a map, and `main` installs it with `with`. `warehouse` takes the map as a parameter when it is installed, so each run and each example can start from the stock it needs. `offline` always fails, which is the only way to test `Unavailable` on demand.
+**Running it.** In production, the `Inventory` handler would call the warehouse over the network. Here, a handler holds the stock in a map, and `main` installs it with `with`. `warehouse` takes the map as a parameter when it is installed, so each run and each example can start from the stock it needs. `offline` always fails, so an example can reach `Unavailable` whenever it needs to.
 
 ```una include="day-to-day/src/orders.una#warehouse..main" title="day-to-day/src/orders.una"
 --- An inventory held in memory, for this example run and for tests.
@@ -1038,7 +1038,7 @@ Every diagnostic above is available as JSON with `una --json check .`. For mista
 
 ## 6.9 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's example added. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
+Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's example added, and a stub of what to write when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
 
 ::::exercise
 **Exercise 1: a per-line limit.** The store ships at most 10 units of a SKU per line. Add a variant `TooMany(sku: Text, limit: Int)` and reject larger quantities in `parse_order`, before the inventory is asked. The start package ends with this example, and `una check .` reports U1001 until the variant exists:
@@ -1082,7 +1082,7 @@ Add the variant to `OrderError`, the limit to `parse_order`, and the arm to `rea
      else
 @@ -79,2 +81,3 @@
      is Unavailable -> "the inventory did not answer; retry later"
-+    is TooMany(sku, limit) -> "at most {limit} of {sku} per order"
++    is TooMany(sku, limit) -> "at most {limit} of {sku} per line"
  
 ```
 
@@ -1178,7 +1178,7 @@ example "when neither answers, the failure is Timeout"
   expect fails Timeout
 ```
 
-A handler holds no state, so no example can make one inventory fail once and then answer. Two bindings of `Inventory`, `@inventory` and `@backup`, make each case one an example can see.
+A handler holds no state, so no example can make one inventory fail once and then answer. With two bindings of `Inventory`, `@inventory` and `@backup`, each case is one an example can set up: one fake fails and the other answers.
 
 :::hint
 *Hint:* `attempt` works on a capability operation too. Keep the first outcome, and ask `@backup` only in the `Err` arm. The backup fails with `Timeout` too, so a plain `if error pass` hands on its failure.
@@ -1227,6 +1227,6 @@ To use it in the program, call it from `check_stock` in place of `@inventory.on_
 :::reference
 - Construct pages: [`fails`](/docs/language/errors/fails/), [`fail`](/docs/language/errors/fail/), [`if error` and `if none`](/docs/language/errors/if-error/), [`attempt`](/docs/language/errors/attempt/), [`checked` and the escape budget](/docs/language/errors/checked/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`example`](/docs/language/examples/example/), [`predicate`](/docs/language/types/predicate/)
 - Prelude: [`Option`, `Result`, `to_int`, `parse_int`, `ParseError`, `is_ok`](/docs/std/)
-- Diagnostics: [U0101](/docs/errors/U0101/), [U0102](/docs/errors/U0102/), [U1001](/docs/errors/U1001/), [U2001](/docs/errors/U2001/), [U2007](/docs/errors/U2007/), [U3007](/docs/errors/U3007/), [U3008](/docs/errors/U3008/), [U3009](/docs/errors/U3009/), [U3013](/docs/errors/U3013/), and at run time [U6003](/docs/errors/U6003/), [U6005](/docs/errors/U6005/), [U8001](/docs/errors/U8001/)
+- Diagnostics: [U0101](/docs/errors/U0101/), [U0102](/docs/errors/U0102/), [U1001](/docs/errors/U1001/), [U2001](/docs/errors/U2001/), [U2007](/docs/errors/U2007/), [U3007](/docs/errors/U3007/), [U3008](/docs/errors/U3008/), [U3009](/docs/errors/U3009/), [U3013](/docs/errors/U3013/), and the stops at run time: [U6001](/docs/errors/U6001/) (`main` failed with its declared kind), [U6003](/docs/errors/U6003/) (call depth or memory), [U6004](/docs/errors/U6004/) (an HTTP header value with a control character), [U6005](/docs/errors/U6005/) (host text that is not valid UTF-8) and [U8001](/docs/errors/U8001/) (an internal error of una)
 - Specification: [errors](/docs/spec/06-errors/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [types](/docs/spec/03-types/), [text](/docs/spec/22-text/)
 :::
