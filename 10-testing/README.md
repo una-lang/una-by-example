@@ -52,13 +52,9 @@ Una takes a different route:
 
 ## 10.1 Examples: `do` and `expect`
 
-### A case, one call and what must hold
-
-An example names a case in plain words, runs one expression, and states what must hold of its result.
-
 ### A first example: adding up a cart
 
-Start with a cart that adds up its lines. Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1), and the module under `src/`. The manifest of this step names the package `cart` and runs the module `cart`:
+An example names a case in plain words, runs one expression, and states what must hold of its result. Start with a cart that adds up its lines. Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1), and the module under `src/`. The manifest of this step names the package `cart` and runs the module `cart`:
 
 ```toml include="steps/01-examples/una.toml" title="steps/01-examples/una.toml"
 [package]
@@ -369,7 +365,7 @@ example restock "forty units left mails nobody" ... ok
 
 ### What `expect performed` does not say
 
-`expect performed` says that an operation ran, not how often or with which arguments. When those matter, return them: a value the example can compare is the clearest evidence. The JSON report of [For agents](#for-agents) also lists every operation with its arguments.
+`expect performed` says that an operation ran, not how often or with which arguments. When those matter, return them: a value the example can compare is the clearest evidence. The JSON report shown in [For agents](#for-agents) also lists every operation with its arguments.
 
 ### Fakes are checked too
 
@@ -974,7 +970,7 @@ Four examples each test a failure, one for each variant of `CheckoutError`:
 
 ### What must not happen: `expect not performed`
 
-The `expect not performed` lines carry as much weight as the `expect fails` lines. A checkout that charged the card before it reserved the stock would still fail with `OutOfStock` for the fourth example, but `expect not performed @payments.charge` would catch the charge.
+The `expect not performed` lines carry as much weight as the `expect fails` lines. A checkout that charged the card before it reserved the stock would still fail with `OutOfStock` for the example of a cart the warehouse cannot hold, but `expect not performed @payments.charge` would catch the charge.
 
 ### Two habits that keep examples useful
 

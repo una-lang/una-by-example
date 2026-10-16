@@ -305,7 +305,7 @@ Three ways compete for a function that turns one value into another:
 | To change a value only when the whole update succeeds | An `edit` parameter and `fails`: a failure leaves the argument as it was |
 :::
 
-### Passing such a function as a value (U2021)
+### Passing an `edit` or `take` function as a value (U2021)
 
 A function with an `edit` or `take` parameter cannot be used as a value, for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [Reaching `apply` through a copy](#reaching-apply-through-a-copy), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
 
@@ -845,27 +845,20 @@ example "closing every day at once gives the reports in site order"
   expect result == [close_day(north_day()), close_day(south_day())]
 ```
 
-Each example checks one fact of the chapter.
+### What each example checks
 
-### A movement that applies
+Each example checks one fact of the chapter:
 
-**"a sale lowers the count of its SKU"** checks `apply` through `applied`: the count and the number of applied movements.
+- **"a sale lowers the count of its SKU"** checks `apply` through `applied`: the count and the number of applied movements.
+- **"selling more than is counted is Oversold"** expects the failure with `expect fails Oversold`. `applied` passes the failure on with `if error pass`, so the example sees it.
+- **"a rejected movement leaves the counts as they were"** closes a day whose only movement fails, and checks that the closing counts are the opening counts.
+- **"closing every day at once gives the reports in site order"** compares `close_all` with closing the days one after another. This is the guarantee of `together for`, stated as an example.
 
-### A movement that fails: `expect fails`
-
-**"selling more than is counted is Oversold"** expects the failure with `expect fails Oversold`. `applied` passes the failure on with `if error pass`, so the example sees it.
-
-### A rejected movement inside a day
-
-**"a rejected movement leaves the counts as they were"** closes a day whose only movement fails, and checks that the closing counts are the opening counts.
-
-### Concurrent tasks against a sequential run
-
-**"closing every day at once gives the reports in site order"** compares `close_all` with closing the days one after another. This is the guarantee of `together for`, stated as an example.
-
-### Running the examples
+### No fakes needed
 
 None of the examples needs a fake service: the program has no capability but the console, and the console is used only in `main`. Every function under test takes its input as values and returns its result, which is what makes each one easy to check on its own.
+
+### Running the examples
 
 `una test .` prints:
 

@@ -158,7 +158,7 @@ What `una fix` applies is narrow on purpose:
 | Edits that keep what the code may do | An edit that adds a `uses`, makes a declaration `pub` or adds a grant |
 | Formatting of every file that parses | A repair marked as an escape, such as `checked` |
 
-`una fix --dry-run .` names each repair it skips and why, as [A capability that is not there](#a-capability-that-is-not-there-u3001), in Common mistakes, shows for a repair that would widen what a function may do.
+`una fix --dry-run .` names each repair it skips and why: [A capability that is not there](#a-capability-that-is-not-there-u3001), in Common mistakes, shows it for a repair that would widen what a function may do.
 
 ### In an editor: `una lsp`
 

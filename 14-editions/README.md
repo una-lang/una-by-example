@@ -644,7 +644,7 @@ example "a run prints a label for each line with stock"
   expect performed @printer.print_label
 ```
 
-### What the runs check: `expect performed`
+### A plain `dry_run` and the calls `silent` records
 
 The examples pass `dry_run` as a plain `true` or `false`. A caller has nothing to prove about it: the condition is proven once, inside `print_labels`, for every value of `dry_run`, so the examples only check behavior. `silent` answers every `print_label` with `unit`, and the trace of each example records the calls, which `expect performed` and `expect not performed` read.
 

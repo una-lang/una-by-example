@@ -671,7 +671,7 @@ An example sits in the module whose function it tests, so it can call the module
 
 ### A shared fake: the catalog's handler
 
-The invoice's examples look products up in an in-memory catalog:
+Two of the invoice's examples look products up in an in-memory catalog:
 
 ```una include="day-to-day/src/store/invoice.una#L30-L42" title="day-to-day/src/store/invoice.una" caption="the invoice's examples"
 example "a known SKU is found"
