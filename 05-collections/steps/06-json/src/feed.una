@@ -1,0 +1,29 @@
+module feed
+
+--- The price in a product record of the catalog feed, or `None` when it has none.
+price(record: Json) -> Option[Int]
+=
+  when record
+    is Object(fields) ->
+      let cents = fields.get(key: "cents").or_else(default: Null)
+      when cents
+        is Number(value) -> Some(value)
+        else -> None
+    else -> None
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let text = "\{\"sku\": \"LAMP-01\", \"cents\": 1990, \"tags\": [\"new\"]\}"
+  let record = text.parse_json()
+    if error use Null
+  @console.print("{record}")
+  @console.print("{price(record)}")
+  let broken = "\{\"sku\": \"LAMP-01\",\}".parse_json()
+    if error use Null
+  @console.print("{price(broken)}")
+  let edit fields: Map[Text, Json] = empty_map()
+  edit fields.set(key: "sku", value: Str(value: "LAMP-01"))
+  edit fields.set(key: "in_stock", value: Boolean(value: true))
+  edit fields.set(key: "cents", value: Number(value: 1990))
+  @console.print(Object(fields).to_json())

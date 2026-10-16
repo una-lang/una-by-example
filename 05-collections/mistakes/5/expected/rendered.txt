@@ -1,0 +1,9 @@
+[U2025] Error: `sort` needs its type parameter `T` to satisfy `Ord`, and `Line` does not
+     ╭─[ src/report.una:137:15 ]
+     │
+ 137 │   let lines = read_all(export).sort()
+     │               ───────────┬───────────
+     │                          ╰───────────── `sort` needs its type parameter `T` to satisfy `Ord`, and `Line` does not
+     │
+     │ Note: run `una explain U2025` for an explanation
+─────╯

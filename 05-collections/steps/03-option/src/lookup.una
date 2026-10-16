@@ -1,0 +1,35 @@
+module lookup
+
+--- A product the store sells, with the price of one unit in cents.
+kind Product
+  sku: Text
+  cents: Int
+
+--- The price of `sku`, or `None` when the catalog does not list it.
+price_of(catalog: List[Product], sku: Text) -> Option[Int]
+=
+  let found = catalog.first_where(keep: fn(product) -> product.sku == sku)
+  when found
+    is Some(product) -> Some(product.cents)
+    is None -> None
+
+--- What a product page shows for `sku`.
+label(catalog: List[Product], sku: Text) -> Text
+=
+  let price = price_of(catalog, sku: sku)
+  when price
+    is Some(cents) -> "{sku}: {cents} cents"
+    is None -> "{sku}: not sold here"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Product(sku: "LAMP-01", cents: 1990)
+  let desk = Product(sku: "DESK-02", cents: 15900)
+  let catalog = [lamp, desk]
+  @console.print(label(catalog, sku: "DESK-02"))
+  @console.print(label(catalog, sku: "CHAIR-09"))
+  let missing = price_of(catalog, sku: "CHAIR-09")
+  @console.print("{missing} or {missing.or_else(default: 0)}")
+  let typed = "3".to_int()
+  @console.print("{typed} and {catalog.at(index: 5)}")

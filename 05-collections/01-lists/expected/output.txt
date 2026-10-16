@@ -1,3 +1,0 @@
-4 then 5
-has 5: true
-total: 28

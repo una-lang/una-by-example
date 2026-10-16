@@ -1,0 +1,9 @@
+[U3013] Error: `parse_order` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
+    ╭─[ src/orders.una:56:15 ]
+    │
+ 56 │   check_stock(parse_order(line))
+    │               ────────┬────────
+    │                       ╰────────── `parse_order` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
+    │
+    │ Note: run `una explain U3013` for an explanation
+────╯

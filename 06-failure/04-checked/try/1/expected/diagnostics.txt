@@ -1,1 +1,0 @@
-error U7003 at src/phones.una:15:3: module `phones` uses `checked` 1 time, and `[escape_budget] checked_per_module` allows 0

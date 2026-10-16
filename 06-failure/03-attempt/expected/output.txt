@@ -1,2 +1,0 @@
-a number: 42
-not a number: forty-two

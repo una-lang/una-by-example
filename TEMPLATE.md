@@ -160,7 +160,7 @@ Any other attribute fails the check, so a misspelt `include` does not pass unnot
 
 ## Links
 
-Links point to the site's own pages at the release: a root-relative route such as `/docs/errors/U3007/`, or an anchor on the page such as `#what-youll-build`. A link to a file of the una-lang repositories on GitHub (`/blob/`, `/tree/`, `raw.githubusercontent.com`) fails, since those files change after the release; so does a relative link such as `../05-collections/README.md`, which resolves on GitHub but not on the site, and an `http://` link. The host is matched in any case and with any port. Other `https://` links are allowed.
+Links point to the site's own pages at the release: a root-relative route such as `/docs/errors/U3007/`, or an anchor on the page such as `#what-youll-build`. An anchor names a numbered heading by its number, `#s6-1` for `## 6.1 …`, and another heading by the slug of its English words (`#what-youll-build`); a translation keeps the English page's anchors, and its headings match the English page's in number and order. A link to a file of the una-lang repositories on GitHub (`/blob/`, `/tree/`, `raw.githubusercontent.com`) fails, since those files change after the release; so does a relative link such as `../05-collections/README.md`, which resolves on GitHub but not on the site, and an `http://` link. The host is matched in any case and with any port. Other `https://` links are allowed.
 
 ## Components
 

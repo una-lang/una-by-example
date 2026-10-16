@@ -1,1 +1,0 @@
-error U2001 at src/lists.una:7:23: expected `Int`, found `Text`

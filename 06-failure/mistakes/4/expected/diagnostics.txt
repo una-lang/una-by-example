@@ -1,0 +1,5 @@
+error U3009 at src/orders.una:24:10: this code declares no error kind, so it cannot fail with `Malformed`; declare `fails` in its header
+error U3009 at src/orders.una:27:20: this code declares no error kind, so it cannot fail with `Malformed`; declare `fails` in its header
+error U3009 at src/orders.una:29:20: this code declares no error kind, so it cannot fail with `Malformed`; declare `fails` in its header
+error U3009 at src/orders.una:31:20: this code declares no error kind, so it cannot fail with `BadQuantity`; declare `fails` in its header
+error U3009 at src/orders.una:33:12: this code declares no error kind, so it cannot fail with `BadQuantity`; declare `fails` in its header

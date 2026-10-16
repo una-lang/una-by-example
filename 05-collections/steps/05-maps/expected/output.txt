@@ -1,0 +1,5 @@
+{"DESK-02": 1, "LAMP-01": 4} and {"DESK-02": 1, "LAMP-01": 4, "RUG-07": 9}
+Some(4) None
+["DESK-02", "LAMP-01", "RUG-07"]
+lighting: 5
+textiles: 1

@@ -1,0 +1,4 @@
+$ una contract quantity.parse_quantity
+--- The quantity typed into an order form: a whole number from 1 to 99.
+parse_quantity(raw: Text) -> Int
+  fails QuantityError -- inferred

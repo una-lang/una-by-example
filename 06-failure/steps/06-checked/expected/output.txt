@@ -1,0 +1,2 @@
+sku LAMP-01
+not a sku: lamp 1

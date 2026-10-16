@@ -1,0 +1,9 @@
+[U2001] Error: an operand of `+` must be `Int`, found `Option[Int]`
+    ╭─[ src/report.una:85:42 ]
+    │
+ 85 │     edit units.set(key: line.sku, value: before + line.quantity)
+    │                                          ───┬──
+    │                                             ╰──── an operand of `+` must be `Int`, found `Option[Int]`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

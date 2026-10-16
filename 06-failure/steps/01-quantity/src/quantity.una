@@ -1,0 +1,26 @@
+module quantity
+
+--- Why a quantity was rejected. Each variant carries what the user needs to fix it.
+kind QuantityError = NotANumber(raw: Text) | TooSmall(value: Int) | TooLarge(value: Int)
+
+--- The quantity typed into an order form: a whole number from 1 to 99.
+parse_quantity(raw: Text) -> Int
+  fails QuantityError
+=
+  let n = raw.trim.to_int()
+    if none fail NotANumber(raw)
+  if n < 1
+    fail TooSmall(value: n)
+  else if n > 99
+    fail TooLarge(value: n)
+  else
+    n
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let typed = parse_quantity(" 3 ")
+    if error use 0
+  let spelled = parse_quantity("three")
+    if error use 0
+  @console.print("{typed} and {spelled}")
