@@ -1,6 +1,6 @@
 module catalog
 
---- The SKU as labels print it: without the spaces around it, in capital letters.
+--- The SKU as labels print it: without the white space around it, in capital letters.
 pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
 
 --- Prints what the prelude's text functions do to a SKU and a product name.

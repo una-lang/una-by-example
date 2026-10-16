@@ -166,7 +166,7 @@ The prelude, the set of functions every module has without an import, gives text
 ```una include="steps/03-text/src/catalog.una" title="src/catalog.una" verified="check, run"
 module catalog
 
---- The SKU as labels print it: without the spaces around it, in capital letters.
+--- The SKU as labels print it: without the white space around it, in capital letters.
 pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
 
 --- Prints what the prelude's text functions do to a SKU and a product name.
@@ -186,8 +186,8 @@ pub main() -> Unit
   @console.print("a quote \" and a brace \{ in a text")
 ```
 
-1. **`raw.trim.to_upper`.** Two calls in a row: `trim` removes the spaces at both ends, and `to_upper` writes the letters in capitals. Each returns a new text; `raw` itself does not change.
-2. **`sku.len`.** The number of characters. `"Café table, oak"` has 15, since `é` counts as one character, not as the two bytes UTF-8 needs for it.
+1. **`raw.trim.to_upper`.** Two calls in a row: `trim` removes the white space at both ends, and `to_upper` writes the letters in capitals. Each returns a new text; `raw` itself does not change.
+2. **`sku.len`.** The number of characters, counted as Unicode scalar values. `"Café table, oak"` has 15: the `é` here is one, not the two bytes UTF-8 needs for it.
 3. **`let prefix = "LAMP-"`, then `starts_with(prefix: prefix)`.** A text literal cannot appear inside the braces of another text, so the prefix gets a name first.
 4. **`contains_text(part: wood)` and `replace(pattern: wood, by: walnut)`.** A search, and a replacement of every occurrence.
 5. **`"a quote \" and a brace \{ in a text"`.** Two escapes.
@@ -205,8 +205,8 @@ a quote " and a brace { in a text
 
 | Function | Gives | Notes |
 | --- | --- | --- |
-| `t.len` | `Int` | the number of characters |
-| `t.trim`, `t.trim_start`, `t.trim_end` | `Text` | without the spaces at both ends, or one end |
+| `t.len` | `Int` | the number of characters, as Unicode scalar values |
+| `t.trim`, `t.trim_start`, `t.trim_end` | `Text` | without the white space (spaces, tabs, new lines) at both ends, or one end |
 | `t.to_upper`, `t.to_lower` | `Text` | changes the letters `a` to `z` and `A` to `Z` only |
 | `t.starts_with(prefix: p)`, `t.ends_with(suffix: s)` | `Bool` | |
 | `t.contains_text(part: p)` | `Bool` | |
@@ -404,7 +404,7 @@ The program follows the data. Each fix to a value is a small function with a doc
 **Cleaning the values.** Three functions turn raw values into what a label prints:
 
 ```una include="day-to-day/src/labels.una#clean_sku..money" title="day-to-day/src/labels.una" caption="clean, fit, format"
---- The SKU as labels print it: without the spaces around it, in capital letters.
+--- The SKU as labels print it: without the white space around it, in capital letters.
 pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
 
 --- A product name cut to the 24 characters a label has room for.
@@ -496,7 +496,7 @@ module labels
 -- Shelf labels: one line for each product, as the label printer prints it, and how many
 -- copies of the labels to print.
 
---- The SKU as labels print it: without the spaces around it, in capital letters.
+--- The SKU as labels print it: without the white space around it, in capital letters.
 pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
 
 --- A product name cut to the 24 characters a label has room for.
@@ -761,7 +761,7 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 
 *Why:* the braces of an interpolation cannot hold a text literal. una reports each of the two.
 
-*Fix:* print the label itself, `@console.print(label(…))`, or name the texts with `let` first, as the message says. See [U0006](/docs/errors/U0006/).
+*Fix:* print the label itself, `@console.print(regular_label(…))`, or name the texts with `let` first, as the message says. See [U0006](/docs/errors/U0006/).
 :::
 
 :::mistake
@@ -811,12 +811,12 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 ## 2.9 For agents
 
 :::agents
-`una --json check .` reports each diagnostic with its `code`, `message` and `primary` span. A refuted obligation, U5001, also carries a `counterexample` with one binding for each value, and repairs ranked from the guard to the escape. The repairs of U2001, U2019 and U2022 are descriptions, since the right type or value is the author's choice. The compact rule: *money is `Int` cents; join text with interpolation, never `+`; a name that changes is `let edit`; a division by a parameter or a `slice` at computed positions needs a `requires` or a guard; fixed-width arithmetic needs a proof that it fits.*
+`una --json check .` reports each diagnostic with its `code`, `message` and `primary` span. A refuted obligation, U5001, also carries a `counterexample` with one binding for each value, and repairs ranked from the guard to the escape. U2001, U2019 and U2022 carry no repair, since the right type or value is the author's choice. The compact rule: *money is `Int` cents; join text with interpolation, never `+`; a name that changes is `let edit`; a division by a parameter or a `slice` at computed positions needs a `requires` or a guard; fixed-width arithmetic needs a proof that it fits.*
 :::
 
 ## 2.10 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
+Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
 ::::exercise
 **Exercise 1: sales tax.** Write `with_tax(cents, percent)`, the price with a sales tax of `percent` added, rounded to the nearest cent, with half a cent rounding up. The start package ends with:

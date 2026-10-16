@@ -29,7 +29,7 @@ This needs Python 3 and the `una` of `una.lock`, with Z3 at the version its `ver
 
 ## Translations
 
-Pages are translated into Brazilian Portuguese (`pt-br`) and Spanish (`es`) under `translations/<locale>/`, at the path of the English page: `translations/pt-br/01-hello/README.md` translates `01-hello/README.md`. A translated page points to the same package: the code is never copied. The downloads stay in English.
+Pages may be translated, into Brazilian Portuguese (`pt-br`) or Spanish (`es`), under `translations/<locale>/`, at the path of the English page: `translations/pt-br/01-hello/README.md` translates `01-hello/README.md`. A translated page points to the same package: the code is never copied. When a chapter moves to template 2, its template 1 translations are removed, and a new translation starts from the new page. The downloads stay in English.
 
 A translation's front matter keeps the English page's `learn`, `editions` and `codes`, translates its `title`, and adds two fields:
 

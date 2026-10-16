@@ -3,7 +3,7 @@ module labels
 -- Shelf labels: one line for each product, as the label printer prints it, and how many
 -- copies of the labels to print.
 
---- The SKU as labels print it: without the spaces around it, in capital letters.
+--- The SKU as labels print it: without the white space around it, in capital letters.
 pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
 
 --- A product name cut to the 24 characters a label has room for.

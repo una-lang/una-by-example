@@ -45,7 +45,7 @@ Una moves these questions to the moment you check the code:
 :::steps
 1. **One command checks everything.** `una check` reads the whole package and reports the problems it finds, each with a code, a place and a message, before anything runs. `una run` refuses to start a package that does not check.
 2. **A header says what a function may do.** `uses @console: Console[print]` in the header of `main` says that `main` may print on the console, and nothing else. A public function whose header has no `uses` cannot print at all. A private one may leave the line out, and the checker works it out and shows it, as [chapter 3](/learn/functions/) explains.
-3. **The package says what the program gets.** `una.toml` grants the console to the program. The code asks for an authority, and the manifest gives it: both are written down, and a reviewer can read both.
+3. **The run says what the program gets.** `una.toml` grants the console to the program, and `una run` can grant more with a `--grant` flag. The code asks for an authority, and the run gives it: both are written down, and a reviewer can read both.
 4. **Tests live next to the code.** An `example` calls a function and states what it returns, and `una test` runs every example.
 :::
 
@@ -54,7 +54,7 @@ Una moves these questions to the moment you check the code:
 
 ## 1.1 A first package
 
-To follow this chapter you need `una` and the solver it uses, Z3. The [install page](/docs/install/) installs both, at the versions that go together, and says how to put `una` on your path. Run `una --version` to see that it works: it prints the version of `una`, the editions it supports and the version of Z3 it expects.
+To follow this chapter you need `una` and the solver it uses, Z3. The [install page](/docs/install/) installs both, at the versions that go together, and says how to put `una` on your path. Run `una --version` to see that it works: it prints the version of `una`, the editions it supports and the version of Z3 it expects. Then run `z3 --version`, which must report that same version. The programs of this chapter need no proof, so they run without Z3, but from [chapter 2](/learn/values/) on, `una check` cannot prove anything without it.
 
 A Una program is a **package**: a directory with a manifest, `una.toml`, a lock file, `verification.lock`, and the code under `src/`. Make the directory and its `src/` from an empty directory:
 
@@ -88,7 +88,7 @@ step_budget      = 5000000
 random_seed      = 0
 ```
 
-`una explain U7004` prints these lines too, so you can copy the lock from your terminal at any time.
+`una explain U7004` prints these lines too, under "Fixed example", so you can copy the lock from your terminal at any time. Take that one: the lock it shows first, under "Failing example", is the broken one.
 
 Now the code. A source file holds one **module**, and its name is the name of the file: `src/hello.una` holds the module `hello`.
 
@@ -181,9 +181,9 @@ Each diagnostic has the same parts, in the same order:
 
 ## 1.3 Printing and the console
 
-A program talks to the world only through **capabilities**: named sets of operations, such as `Console` with its operation `print`, that a function must ask for in its header. The host, the program that runs yours, provides a few of them: the console, the clock, files and others. Every one must be asked for in the code and granted in the manifest.
+A program talks to the world only through **capabilities**: named sets of operations, such as `Console` with its operation `print`, that a function must ask for in its header. The host, the program that runs yours, provides a few of them: the console, the clock, files and others. Every one must be asked for in the code, and granted when the program runs: in `[run] grants` of `una.toml`, or by a `--grant` flag of `una run`.
 
-This program prints the store's opening hours:
+Each section from here on has a program of its own, and each program is a package of its own. Make a directory next to `store`, such as `opening/`, with its `src/`, copy `verification.lock` into it, and write the manifest and the module shown. This program prints the store's opening hours:
 
 :::steps
 ```una include="steps/03-printing/src/opening.una" title="src/opening.una" verified="check, run"
@@ -203,11 +203,11 @@ pub main() -> Unit
 
 1. **`let opens = 9`.** `let` gives a name to a value. The name holds that one value from then on. [Chapter 2, Values](/learn/values/), covers names and values in full.
 2. **`let hours = closes - opens`.** A computed value. `Int`, the type of `9` and `18`, is a whole number.
-3. **`"Open today from {opens}:00 to {closes}:00"`.** A text with **interpolations**: a name in braces puts its value into the text. Any value can go in braces, whatever its type.
+3. **`"Open today from {opens}:00 to {closes}:00"`.** A text with **interpolations**: a name in braces puts its value into the text. Most values can go in braces: numbers, texts, `true` and `false`, and the lists of [chapter 5](/learn/collections/).
 4. **Three `print` calls.** Each prints one line, in order.
 :::
 
-Its manifest grants the console, as the first package's did:
+Its manifest names the package and its module `opening`, and grants the console, as the first package's did:
 
 ```toml include="steps/03-printing/una.toml" title="una.toml"
 [package]
@@ -228,12 +228,12 @@ That is 9 hours of trading
 Orders placed before 18:00 ship today
 ```
 
-The two halves work together. The `uses` line of `main` is a promise to callers and reviewers: this function prints, and does nothing else outside the program. The `grants` line of `una.toml` is the decision of whoever runs the program. If you remove `console` from the grants, `una check .` still passes, since the code is right, but `una run .` refuses to start: it reports U3012, "`main` uses `print` of `Console`, which neither `[run] grants` nor a `--grant` flag grants".
+The two halves work together. The `uses` line of `main` is a promise to callers and reviewers: this function prints, and does nothing else outside the program. The `grants` line of `una.toml` is the decision of whoever runs the program, and so is a `--grant` flag of `una run`, which adds to it for one run. If you remove `console` from the grants, `una check .` still passes, since the code is right, but `una run .` refuses to start: it reports U3012, "`main` uses `print` of `Console`, which neither `[run] grants` nor a `--grant` flag grants".
 
 `print` takes a `Text` and nothing else. To print a number, put it in a text with braces, as `"{hours} hours"` does. [Common mistakes](#s1-8) shows what the checker says when you pass the number itself.
 
 > [!TIP]
-> A brace in a text always starts an interpolation. To print a brace itself, write `\{` or `\}`.
+> `{` in a text starts an interpolation, and a lone `}` is an error. To print a brace itself, write `\{` or `\}`.
 
 ## 1.4 Functions and comments
 
@@ -265,12 +265,25 @@ pub main() -> Unit
   @console.print(cutoff_line(hour))
 ```
 
-1. **`pub closing_hour() -> Int = 18`.** A function of no parameters that returns an `Int`. A function with no clauses whose body is one expression is written on one line, after `=`. This is its **short form**.
+1. **`pub closing_hour() -> Int = 18`.** A function of no parameters that returns an `Int`. A function with no clauses whose body is one line is written on one line, after `=`. This is its **short form**.
 2. **`pub cutoff_line(hour: Int) -> Text`.** One parameter, `hour`, of type `Int`, and a `Text` result. The body is a text that puts `hour` in its place.
 3. **`let hour = closing_hour()`.** A call. The parentheses are needed even when there are no arguments.
 4. **`cutoff_line(hour)`.** A call with one argument. The value of `hour` becomes the parameter `hour` inside the function.
 5. **`-- Ask for the hour, then build the line from it.`** A plain comment, inside a body.
 :::
+
+Its package is a directory `notice/`, made as in [section 1.3](#s1-3), and its manifest names the module `notice`:
+
+```toml include="steps/04-functions/una.toml" title="una.toml"
+[package]
+name = "notice"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "notice"
+grants = ["console"]
+```
 
 `una run .` prints:
 
@@ -359,7 +372,7 @@ A good example states one fact, in its name and in its `expect` lines. When it f
 
 A packing slip goes into every box the store ships. It names the order and the customer, lists each line of the order with its quantity, counts the units, and gives the total paid. The warehouse prints it as the box is packed.
 
-The design follows from the job. Each line of the slip comes from its own function, which takes the values the line shows and returns its text. Those functions have no `uses` line, so they cannot print, and an example can test each one by its result. `main` holds the sample order's values, calls the functions, and prints what they return, line by line. The program is one module, `slip`, and its manifest grants the console:
+The design follows from the job. Each line of the slip comes from its own function, which takes the values the line shows and returns its text. Those functions have no `uses` line, so they cannot print, and an example can test each one by its result. `main` holds the sample order's values, calls the functions, and prints what they return, line by line. The program is one module, `slip`, in a package of its own: make a directory `day-to-day/` with its `src/`, copy `verification.lock` into it, and write this manifest, which grants the console:
 
 ```toml include="day-to-day/una.toml" title="day-to-day/una.toml"
 [package]
@@ -425,7 +438,7 @@ The order of declarations in a module is free: `main` calls functions declared a
 
 The calls with more than one argument name every argument after the first: `line_cents(lamps, cents: 1990)`, `item(lamps, sku: "LAMP-01", name: "Desk lamp, brass")`. The first argument may go without its name. Every other one carries the name of its parameter, so a call reads the same a year from now, without a look at the header. The checker holds you to it, and [chapter 3](/learn/functions/) explains the rule.
 
-Each `@console.print` call is a line of its own. In Una, a call that prints, or does anything else outside the program, is always the whole of its line, never hidden inside another expression. A reader who scans the left edge of `main` sees every effect it has, in the order it has them.
+Each `@console.print` call is a line of its own. In Una, a call that prints, or does anything else outside the program, is always a statement of its own, or the whole value of a `let`, never hidden inside another expression. A reader who scans the left edge of `main` sees every effect it has, in the order it has them.
 
 The whole file, to read in one piece or to copy:
 
@@ -506,7 +519,7 @@ Why so many small functions for a program this size? Each one is a line of the s
 In the package's directory, `una run .` prints the slip shown under "What you'll build": the order and the customer, two item lines, three units in two lines, and a total of 8480 cents, which is 2 times 1990 plus 4500.
 
 > [!SECURITY]
-> The slip's functions have no `uses` line, so the checker proves they cannot print, read files or reach the network. Only `main` touches the console, and only because both its header and `una.toml` say so. When this program grows, a new effect in any function shows up in that function's header, where a reviewer sees it.
+> The slip's functions have no `uses` line, so the checker proves they cannot print, read files or reach the network. Only `main` touches the console, and only because its header says so and the run grants it, here through `una.toml`. When this program grows, a new effect in any function shows up in that function's header, where a reviewer sees it.
 
 ## 1.7 Testing it
 
@@ -706,12 +719,12 @@ Each mistake below is a small change to `day-to-day/src/slip.una`, followed by w
 ## 1.9 For agents
 
 :::agents
-Every command takes `--json` before its name and then prints one JSON document on stdout. `una --json check .` gives each diagnostic with its `code`, `message`, `primary` span and `repairs`, and `una --json test .` gives each example with its outcome. The diagnostics of this chapter are of two kinds. U0003 and U1008 carry exact edits, which `una fix .` applies. U0001, U0101, U2001 and U3004 depend on intent, so their repairs, when they have one, are descriptions only. The compact rule: *a package is `una.toml`, `verification.lock` and `src/<module>.una` with a matching `module` line; a function that prints declares `uses @console: Console[print]`, and `una.toml` grants `console`.*
+Every command takes `--json` before its name and then prints one JSON document on stdout. `una --json check .` gives each diagnostic with its `code`, `message`, `primary` span and `repairs`, and `una --json test .` gives each example with its outcome. The diagnostics of this chapter are of two kinds. U0003 and U1008 carry exact edits, which `una fix .` applies. U0001, U0101, U2001 and U3004 depend on intent, so their repairs, when they have one, are descriptions only. The compact rule: *a package is `una.toml`, `verification.lock` and `src/<module>.una` with a matching `module` line; a function that prints declares `uses @console: Console[print]`, and the run grants `console`, in `una.toml` or with `--grant`.*
 :::
 
 ## 1.10 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of each function to write, which returns a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
+Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of each function to write, which returns a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
 ::::exercise
 **Exercise 1: the weight of the parcel.** The warehouse wants the weight on the slip, in kilograms and grams. Write `weight_line(grams)`, which turns 2350 into `Parcel weight: 2 kg 350 g`. The start package ends with:
@@ -877,8 +890,8 @@ Give `amount` its body, and use it in `total_line` and its example:
 :::recap
 - A package is a directory with `una.toml`, `verification.lock` and its modules under `src/`. The file `src/slip.una` holds the module `slip`.
 - `una check .` reports every problem with a code, a place and a message, and prints nothing when all is well. `una run .` and `una test .` check first.
-- `una explain` prints what a code means, and `una fmt .` puts code in canonical form.
-- A function that prints says so in its header, `uses @console: Console[print]`, and `una.toml` grants `console`. A public function without `uses` cannot print.
+- `una explain` prints what a code means; `una fmt .` writes canonical form.
+- A function that prints says so in its header, `uses @console: Console[print]`, and the run grants `console`. A public function without `uses` cannot print.
 - `print` takes a `Text`. Put any value into a text with braces, `"{units} units"`.
 - Comments start with `--`, and doc comments with `---`. A doc comment belongs to the declaration below it, and `una contract` prints it.
 - Keep the logic in functions without `uses`, and test each one with an `example`: `do` a call, `expect` a fact about `result`.

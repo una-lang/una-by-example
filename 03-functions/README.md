@@ -293,7 +293,7 @@ show(sku: Text, units: Int) -> Unit
   uses @console: Console[print] -- inferred
 ```
 
-The inference saves lines inside a module, where every caller is in view, and the `-- inferred` mark keeps it visible to a reviewer and to the build report. At the boundary of a module, nothing is inferred: a `pub` function that prints without `uses` does not check, as [Common mistakes](#s3-8) shows. Types are never inferred, for any function: every parameter and every result is written.
+The inference saves lines inside a module, where every caller is in view, and the `-- inferred` mark keeps it visible to a reviewer and to the build report. At the boundary of a module, nothing is inferred: a `pub` function that prints without `uses` does not check, as [Common mistakes](#s3-8) shows. Types are never inferred in a header, for any declared function: every parameter and every result is written.
 
 The build report lists the authority of every function, declared or inferred, so a reviewer can read the effects of a whole package in one place. For this package, the authority part of `una report .` lists `restock.main` as public and `restock.show` as private and inferred, each with `@console: Console[print]`.
 
@@ -411,7 +411,7 @@ pub quote(goods: Int, grams: Int, zone: Int) -> Int
   if ships_free(goods, zone) then 0 else base_rate(grams) + zone_surcharge(zone)
 ```
 
-`ships_free(goods, zone)` uses two punned arguments, since the names match the parameters. `quote` repeats the preconditions of the functions it calls, since its callers must provide the weight and the zone. Its `ensures result >= 0` follows from the two postconditions above it: 0 when the order ships free, at least 450 plus at least 0 otherwise.
+`ships_free(goods, zone)` passes `goods` first, and `zone` punned, since the name matches the parameter. `quote` repeats the preconditions of the functions it calls, since its callers must provide the weight and the zone. Its `ensures result >= 0` follows from the two postconditions above it: 0 when the order ships free, at least 450 plus at least 0 otherwise.
 
 **Promotions as values.** A promotion is any function from a charge to a charge. `promoted` applies one, and its header guarantees that the customer never pays more than the charge, and never less than nothing, whatever the promotion computes:
 
@@ -834,7 +834,7 @@ Each mistake below is a small change to `day-to-day/src/shipping.una`, followed 
 
 ## 3.10 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
+Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
 ::::exercise
 **Exercise 1: delivery days.** Write `delivery_days(zone)`: 2 days within the home country, 4 in the neighboring countries, and 9 in the rest of the world. The start package ends with:
