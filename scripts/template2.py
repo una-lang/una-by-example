@@ -29,8 +29,7 @@ See INCLUDES below.
 
 Inside each `## N.k` section, `structure` checks the subsections: 3 to 6 `### ` in a concept
 section, one `### ` per card in Common mistakes and Exercises, and the closing section
-`Recap and reference` with `### For agents`, `### Recap` and `### Reference`. A chapter of
-STRUCTURE_GRACE, not yet restructured, only warns.
+`Recap and reference` with `### For agents`, `### Recap` and `### Reference`; a breach fails.
 
 Standard library only.
 """
@@ -89,13 +88,8 @@ RESERVED_IDS = {"for-agents", "recap", "reference"}
 # Day-to-day and Testing it have at least this many `### ` subsections.
 PARTS_AT_LEAST = 2
 # The tail before the section rules: For agents, Recap and Reference as sections of their own.
+# headings() reads it so that structure() can say how to merge it; it always fails.
 LEGACY_TAIL = ["Testing it", "Common mistakes", "For agents", "Exercises", "Recap", "Reference"]
-# Chapters not yet restructured to the section rules: a breach of them there is a warning, not a
-# failure. A chapter leaves this list once it is restructured, and every new chapter follows the
-# rules from the start.
-STRUCTURE_GRACE = {"01-hello", "02-values", "03-functions", "04-kinds", "05-collections", "07-contracts",
-                   "08-capabilities", "09-information-flow", "10-testing", "11-packages",
-                   "12-memory-and-concurrency", "13-tools", "14-editions"}
 GROUPS = ("steps", "day-to-day", "mistakes", "exercises")
 ENTRIES = {"README.md", *GROUPS}
 STEP = re.compile(r"^(\d\d)-[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -133,7 +127,7 @@ AUTOLINK = re.compile(r"<(https?://|mailto:)[^>\s]*>")
 # Word targets per part: outside them is a warning.
 TARGETS = {
     "lead": (60, 120), "build": (80, 150), "why": (150, 300), "concept": (300, 700),
-    "day-to-day": (600, 1200), "testing": (200, 400), "agents": (60, 120), "recap": (80, 150),
+    "day-to-day": (500, 1200), "testing": (200, 400), "agents": (60, 120), "recap": (80, 150),
     "page": (3000, 5000),
 }
 # Counts: mistakes and exercises fail outside (low, high), except that more than 8 mistakes is
@@ -911,7 +905,7 @@ def headings(fields, body, where, failures):
     shape = (f"`## What you'll build`, `## Why it works this way`, then `## {number}.1 <concept>` to "
              f"`## {number}.k <concept>` (k from {CONCEPTS[0]} to {CONCEPTS[1]}), then `## {number}.k+1 {DAY_TO_DAY}<program>`, "
              + ", ".join(f"`## {number}.k+{i} {t}`" for i, t in enumerate(TAIL, start=2)))
-    # LEGACY_TAIL passes here; structure() reports it outside STRUCTURE_GRACE.
+    # LEGACY_TAIL passes here; structure() fails it with how to merge it.
     if found[:2] != FIXED:
         failures.add(where, f"the parts must be {shape}; found {found}")
         return None
@@ -1024,12 +1018,11 @@ def anchors(body, where, failures):
     return found
 
 
-def structure(chapter, body, concepts, where, failures, warnings, chapter_dir=None):
+def structure(body, concepts, where, failures, chapter_dir=None):
     """The rules inside a section (TEMPLATE.md, "Inside a section"): 3 to 6 `### ` subsections
     with specific titles in each concept section; in Common mistakes and Exercises, one `### `
     per card, each holding its card; and the closing section `Recap and reference` with exactly
-    `### For agents`, `### Recap` and `### Reference`. In a chapter of STRUCTURE_GRACE a breach
-    is a warning; elsewhere it fails. Returns the breaches."""
+    `### For agents`, `### Recap` and `### Reference`. Every breach fails. Returns the breaches."""
     _, inside = fences(body)
     boxes = containers(body)
     numbered = [(h, lines) for h, lines in sections(body) if h and re.match(r"^## \d+\.\d+ ", h)]
@@ -1086,14 +1079,8 @@ def structure(chapter, body, concepts, where, failures, warnings, chapter_dir=No
         if heading["base"] in RESERVED_IDS and not (heading["level"] == 3 and heading["section"] == "Recap and reference"):
             problems.append(f"`{heading['text']}` (line {heading['line']}) takes the id `{heading['base']}`, which only the "
                             "closing section's `### For agents`, `### Recap` and `### Reference` have")
-    graced = chapter in STRUCTURE_GRACE
-    if graced and problems:
-        warnings.append(f"{where}: not yet on the section rules (STRUCTURE_GRACE): {len(problems)} to fix, "
-                        f"the first: {problems[0]}")
-    for problem in [] if graced else problems:
+    for problem in problems:
         failures.add(where, problem)
-    if graced and not problems:
-        warnings.append(f"{where}: the chapter follows the section rules; take it out of STRUCTURE_GRACE")
     return problems
 
 
@@ -1208,7 +1195,7 @@ def check_page(root, chapter, fields, body, packages, una_path, codes, failures,
         if ref.startswith("steps/") and ref not in used:
             warnings.append(f"{where}: nothing on the page includes {ref}")
     if concepts is not None:
-        structure(chapter, body, concepts, where, failures, warnings, chapter_dir)
+        structure(body, concepts, where, failures, chapter_dir)
     anchors(body, where, failures)
     parts = sections(body)
     _, inside = fences(body)

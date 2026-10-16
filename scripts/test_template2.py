@@ -16,7 +16,6 @@ import os  # noqa: E402
 import shutil  # noqa: E402
 import tempfile  # noqa: E402
 import unittest  # noqa: E402
-from unittest import mock  # noqa: E402
 from contextlib import redirect_stderr, redirect_stdout  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -530,16 +529,16 @@ class Units(unittest.TestCase):
     def test_structure(self):
         page = PAGE.format(lead="x", mistakes="", exercises="")
         fields, body = check.front_matter(page)
-        failures, warnings = check.Failures(), []
-        self.assertEqual(template2.structure("06-failure", body, 3, "p", failures, warnings), [])
+        failures = check.Failures()
+        self.assertEqual(template2.structure(body, 3, "p", failures), [])
         # A `### ` line inside a fenced block is code, not a subsection.
         fenced = body.replace("### How `fail` ends a function\n", '```text include="steps/01-quantity/expected/output.txt"\n### How `fail` ends a function\n```\n')
-        problems = template2.structure("06-failure", fenced, 3, "p", failures, warnings)
+        problems = template2.structure(fenced, 3, "p", failures)
         self.assertEqual(problems, ["`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 6"])
         self.assertEqual(failures.items, ["p: " + problems[0]])
         # A `#### ` part does not count as a subsection.
         deeper = body.replace("### How `fail` ends a function", "#### How `fail` ends a function")
-        self.assertEqual(len(template2.structure("06-failure", deeper, 3, "p", check.Failures(), [])), 1)
+        self.assertEqual(len(template2.structure(deeper, 3, "p", check.Failures())), 1)
 
     def test_caption_only_in_the_opener(self):
         english = check.skeleton('```una\nlet caption="Total"\n```\n')
@@ -1009,7 +1008,7 @@ class Chapters(Base):
         edit(self.readme, "## 6.8 Recap and reference", "## 6.8 Recap")
         self.assertFails("the parts must be")
 
-    # Inside a section: subsections, one per card, the closing section, and the grace list.
+    # Inside a section: subsections, one per card, and the closing section.
 
     def legacy(self):
         """The fixture's page with the tail before the section rules: For agents, Recap and
@@ -1024,22 +1023,9 @@ class Chapters(Base):
                 + "## 6.9 Recap\n\n" + recap + "## 6.10 Reference\n\n" + reference)
         write(self.readme, text[:text.index("## 6.7 Exercises\n")] + tail)
 
-    def test_the_old_tail_fails_outside_the_grace_list(self):
+    def test_the_old_tail_fails(self):
         self.legacy()
         self.assertFails("For agents, Recap and Reference are one closing section, `## 6.8 Recap and reference`")
-
-    def test_the_old_tail_warns_in_the_grace_list(self):
-        self.legacy()
-        with mock.patch.object(template2, "STRUCTURE_GRACE", {"06-failure"}):
-            items, warnings = self.run_chapters()
-        self.assertEqual(items, [])
-        self.assertTrue(any("not yet on the section rules (STRUCTURE_GRACE)" in w for w in warnings), warnings)
-
-    def test_a_graced_chapter_that_follows_the_rules(self):
-        with mock.patch.object(template2, "STRUCTURE_GRACE", {"06-failure"}):
-            items, warnings = self.run_chapters()
-        self.assertEqual(items, [])
-        self.assertTrue(any("take it out of STRUCTURE_GRACE" in w for w in warnings), warnings)
 
     def test_a_concept_section_with_two_subsections(self):
         edit(self.readme, "### How `fail` ends a function\n\n", "")
