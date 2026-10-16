@@ -58,7 +58,11 @@ The price is that two parts of a program never share a changing value: one of th
 
 ## 12.1 Values, not references
 
+### One shelf, copied and changed
+
 Start with one shelf of the store. Its record holds a SKU and the units on it. The program takes a copy at the start of the day, changes the shelf twice, and keeps a snapshot between the changes.
+
+### Each step is a package
 
 Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): `una.toml`, `verification.lock` and the module under `src/`. Every package of this chapter uses edition `0.2`, which the manifest names:
 
@@ -79,6 +83,10 @@ grants = ["console"]
 una check .
 una run .
 ```
+
+### Editable bindings and a snapshot
+
+The module declares the shelf's kind, then copies, changes and prints it in `main`:
 
 :::steps
 ```una include="steps/01-values/src/shelf.una" title="steps/01-values/src/shelf.una" verified="check, run"
@@ -121,16 +129,26 @@ counts [4, 12, 7]
 Shelf(sku: "LAMP-01", units: 7)
 ```
 
+### Printing what each binding holds
+
 The three numbers on the first line are three values: the opening count, the snapshot and the shelf now. The last line interpolates the whole record. In edition `0.2`, any value that `==` compares can be interpolated, a record, a list or a map included, but not a `Hashed`. This chapter uses that to print what each binding holds.
+
+### Copies at run time
 
 > [!NOTE] Copies are cheap.
 > A copy need not duplicate the shelf's memory when the program runs. The backends of una share a value until one binding changes it, and change it in place when nothing else holds it. None of this is observable: the output is the output of the copies.
+
+### No `+=` and no `while`
 
 There are no compound assignments such as `+=`, and no `while` loop: a `for` loop, or recursion, does the repeating ([chapter 5, Collections](/learn/collections/), shows `for`).
 
 ## 12.2 Passing a value in and out: `edit`
 
+### Parameters passed in and out
+
 A function that changes a value it receives must say so. A parameter declared `edit` is passed in and out: the function receives the caller's value, works on it as on a `let edit` binding, and when it returns, the caller's binding receives the final value. The caller writes `edit` at the call too, so the change is visible where it happens.
+
+### Reserving units on a shelf
 
 This step sets units of a shelf aside for orders. A reservation that asks for more units than are free fails, and the shelf must then stay as it was:
 
@@ -183,10 +201,14 @@ Walkthrough:
 2 of 5 reserved
 ```
 
+### A failed call changes nothing
+
 Two units are reserved, not eleven. The failed call changed nothing: a call that fails leaves every `edit` argument with the value it had before the call. The function's own assignments are discarded with its failure, so a half-done update never reaches the caller.
 
 > [!IMPORTANT]
 > Effects are not rolled back. If a function prints, sends a message or writes a file and then fails, those operations stay performed. Only the `edit` arguments go back to their old values.
+
+### The rules of an `edit` argument
 
 An `edit` argument has three rules, each with its own code:
 
@@ -196,11 +218,17 @@ An `edit` argument has three rules, each with its own code:
 | The argument is a place: an editable binding or a field of one, such as `ledger` or `cart.skus` | U2019 when the binding is not editable |
 | No other argument of the same call uses the same binding, even another field of it | U2018 |
 
-A call with an `edit` or `take` argument is also the whole expression of its statement or `let`, as a call that can fail is ([chapter 6, Failure](/learn/failure/)). So it cannot be nested in another call, and it cannot be wrapped in `attempt`. Section [12.8](#s12-8) shows the diagnostic.
+A call with an `edit` or `take` argument is also the whole expression of its statement or `let`, as a call that can fail is ([chapter 6, Failure](/learn/failure/)). So it cannot be nested in another call, and it cannot be wrapped in `attempt`. [Wrapping an `edit` call in `attempt`](#wrapping-an-edit-call-in-attempt-u3013) shows the diagnostic.
 
 ## 12.3 Giving a value up: `take`
 
+### Values that must not be used again
+
 Some values must not be used after a point. A cart that has been checked out should not take more items, or the order and the cart disagree. A parameter declared `take` consumes its argument: after the call, the caller cannot use the binding, and every use of it is U2017.
+
+### Checking out a cart
+
+This step adds items to a cart through an `edit` parameter, then turns the cart into an order with `take`:
 
 :::steps
 ```una include="steps/03-take/src/checkout.una" title="steps/03-take/src/checkout.una" verified="check, run"
@@ -256,9 +284,13 @@ order 1001: 2 lines, 14890 cents
 the new cart has 0 lines
 ```
 
+### How the checker follows a taken binding
+
 The checker follows a taken binding through the program. A binding taken in one branch of an `if` or a `when` counts as taken after it. A binding taken inside a loop body must get a new value before the body ends, or be declared inside it, since the next iteration would use it again.
 
 `take` also tells the backend that the value is not needed after the call, so it can reuse the value's memory instead of keeping a copy. The program behaves the same either way.
+
+### Choosing between a plain parameter, `edit` and `take`
 
 Three ways compete for a function that turns one value into another:
 
@@ -273,11 +305,17 @@ Three ways compete for a function that turns one value into another:
 | To change a value only when the whole update succeeds | An `edit` parameter and `fails`: a failure leaves the argument as it was |
 :::
 
-A function with an `edit` or `take` parameter cannot be used as a value, for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [section 12.7](#s12-7), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
+### Passing an `edit` or `take` function as a value (U2021)
+
+A function with an `edit` or `take` parameter cannot be used as a value, for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [Reaching `apply` through a copy](#reaching-apply-through-a-copy), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
 
 ## 12.4 Running work at the same time: `together`
 
+### Independent work at the same time
+
 Asking two warehouses how many units they hold takes two round trips. They do not depend on each other, so they can happen at the same time. A `together` block runs its branches as concurrent tasks, and `together for` runs one task per element of a list. Every task ends before the block does, so no task outlives the code that started it.
+
+### Asking two warehouses at once
 
 This step uses a capability, as in [chapter 8, Capabilities](/learn/capabilities/): `Inventory` is a warehouse's stock service, and each warehouse is a binding of it, `@north` and `@south`. The handler `shelves` answers from a map, and `offline` always fails.
 
@@ -376,14 +414,22 @@ The result of a `together` block is the result of evaluating its tasks one after
 3. **The trace is in task order.** The operations the tasks perform are recorded task by task, in index order, whatever the interleaving. Only the moment each effect reaches the outside world, such as the order of two printed lines, depends on timing.
 :::
 
+### The interpreter and the executable
+
 `una run` runs the tasks one after another, in index order: the interpreter is the reference, and it stays deterministic. An executable built by `una build` runs each task on its own operating-system thread, with its own memory, and copies the values a task reads when it starts and its result when it ends ([chapter 13, Tools](/learn/tools/), shows `una build`). Both give the same result.
+
+### What `together` leaves out
 
 > [!NOTE]
 > A `together` block has at least two branches, and only `let` branches (U2024). There are no task values, no detached tasks, no timeouts and no channels: `async` and `await` are not part of Una.
 
 ## 12.5 Limits: call depth and memory
 
+### Two limits, one code: U6003
+
 Every run has two limits, and crossing either stops the run with U6003. The call depth counts the calls in progress: functions, lambdas, predicates, policies and handler operations. It is 10,000 by default. The memory budget is the memory a run holds beyond what it held at the start, 4096 MiB by default. Both can be changed for one run, with `--max-depth <n>` and `--max-memory <MiB>` on `una run`, `una test` and a built executable.
+
+### A loop is not a call
 
 A loop's iterations are not calls. This step builds 20,000 shelf labels with a `for` loop, and runs with the default depth:
 
@@ -413,6 +459,8 @@ pub main() -> Unit
 ```text include="steps/05-loop/expected/output.txt"
 20000 labels, the last SKU-20000
 ```
+
+### Recursion that goes too deep
 
 The same labels built by recursion need one call in progress per label. The program still checks, since the checker does not count calls, but the run stops:
 
@@ -452,7 +500,11 @@ una explain U6003
 
 It explains both limits, and ends with a failing and a fixed example.
 
+### The memory budget
+
 The memory budget is checked at each call and at each iteration of a loop. A run over it stops with U6003 too, and the message names the limit in MiB. Where exactly the memory runs out depends on the machine, so a test should not rely on it. The depth limit is exact.
+
+### Why the checker cannot see the limits
 
 The checker cannot see either limit: how deep a recursion goes, and how much a run holds, depend on the values the program meets when it runs. So U6003 is never a diagnostic of `una check`. Under `una test`, an example whose `do` line crosses a limit fails, and its report says that the `do` line aborted.
 
@@ -461,9 +513,13 @@ The checker cannot see either limit: how deep a recursion goes, and how much a r
 
 ## 12.6 Day-to-day: an end-of-day stock count
 
+### What the program must do
+
 Now the program from the start of the chapter. Two sites close their day. Each has the counts it opened with and the movements its tills recorded: sales, which lower a count, and deliveries, which raise it. A movement for a SKU the site does not stock, or a sale of more units than are counted, is rejected and reported, and must leave the count as it was. The sites are independent, so they are closed at the same time.
 
 The design follows from that. One `Ledger` per site holds the running counts, and one function applies a movement to it through an `edit` parameter. When the day is done, the ledger is closed into a `Report` with `take`, and `together for` closes every site at once.
+
+### The kinds
 
 ```una include="day-to-day/src/stockcount.una#L1-L27" title="day-to-day/src/stockcount.una" caption="the kinds"
 module stockcount
@@ -497,7 +553,9 @@ pub kind Report
 
 A `Movement` holds a signed change, so a sale and a delivery are one kind. `CountError` carries what a person needs to correct the count: the SKU, and for an oversold item the units sold and counted. `Report` keeps the closing counts as a map, which [chapter 5, Collections](/learn/collections/), introduced.
 
-**Applying one movement.** `apply` takes the ledger with `edit` and fails with `CountError`. Its `ensures` promises one more applied movement, which holds only when it returns: a rejected movement is a failure, and then the ledger is left as it was.
+### Applying one movement
+
+`apply` takes the ledger with `edit` and fails with `CountError`. Its `ensures` promises one more applied movement, which holds only when it returns: a rejected movement is a failure, and then the ledger is left as it was.
 
 ```una include="day-to-day/src/stockcount.una#apply" title="day-to-day/src/stockcount.una"
 --- Applies one movement to the ledger. On failure the ledger is left as it was.
@@ -517,7 +575,9 @@ pub apply(edit ledger: Ledger, movement: Movement) -> Text
 
 The function changes two fields, `counts` and `applied`, and returns a line for the report, such as `LAMP-01 4 -> 3`. The checks come first, so a movement that fails changes nothing, but the guarantee does not depend on that order: a failure after the assignments would discard them too.
 
-**Replaying a day.** `close_day` keeps the ledger and the report's lines in two `let edit` bindings, and replays the movements in order. A rejected movement becomes a line of its own: `if error use` gives the statement's value when the call fails, and `error` is the `CountError` that `reason` turns into words.
+### Replaying a day
+
+`close_day` keeps the ledger and the report's lines in two `let edit` bindings, and replays the movements in order. A rejected movement becomes a line of its own: `if error use` gives the statement's value when the call fails, and `error` is the `CountError` that `reason` turns into words.
 
 ```una include="day-to-day/src/stockcount.una#reason..close_day" title="day-to-day/src/stockcount.una"
 --- What a person reads for a movement that was not applied.
@@ -546,13 +606,17 @@ pub close_day(day: Day) -> Report
   close(take ledger, lines: lines)
 ```
 
-`close` takes the ledger. After `close(take ledger, lines: lines)`, no later line of `close_day` can apply another movement to a closed day: the checker would report U2017 (section [12.8](#s12-8) shows it). The number of rejected movements is the number of lines minus the applied ones, since every movement gives one line.
+`close` takes the ledger. After `close(take ledger, lines: lines)`, no later line of `close_day` can apply another movement to a closed day: the checker would report U2017 ([Using a value after `take`](#using-a-value-after-take-u2017) shows it). The number of rejected movements is the number of lines minus the applied ones, since every movement gives one line.
+
+### Why an `edit` parameter, not a new ledger
 
 Why an `edit` parameter, and not a function that returns a new ledger? Both would work. A function `apply(ledger: Ledger, movement: Movement) -> Ledger` would need a second result for the report's line, and every call would have to rebind the ledger by hand: `ledger = apply(ledger, …)`. Forgetting the rebinding would silently drop the movement. With `edit`, the call cannot forget, the line is the result, and the `ensures` clause can compare the ledger before and after with `old`.
 
 `close_day` itself takes a plain `Day`. It builds its own ledger from the day's opening counts, so a caller's `Day` is never changed, and two calls with the same day give the same report. That is what lets `close_all` run the days as separate tasks.
 
-**Closing every site at once.** One task per day. Each task builds its own ledger inside `close_day`, so the tasks share nothing that changes, and the reports come back in the order of `days`.
+### Closing every site at once
+
+One task per day. Each task builds its own ledger inside `close_day`, so the tasks share nothing that changes, and the reports come back in the order of `days`.
 
 ```una include="day-to-day/src/stockcount.una#close_all" title="day-to-day/src/stockcount.una"
 --- Closes every site's day at once, one task per site. The reports come back in site order.
@@ -562,7 +626,9 @@ pub close_all(days: List[Day]) -> List[Report]
     close_day(day)
 ```
 
-**The days, and running it.** `sale` and `delivery` make movements with readable names. `north_day` and `south_day` hold the sample data, and `main` prints each report.
+### The sample days
+
+`sale` and `delivery` make movements with readable names. `north_day` and `south_day` hold the sample data, and `main` prints each report.
 
 ```una include="day-to-day/src/stockcount.una#sale..main" title="day-to-day/src/stockcount.una"
 --- A sale of `units` units: a negative movement.
@@ -596,9 +662,13 @@ pub main() -> Unit
     @console.print("  closing {report.closing}")
 ```
 
-`una run .` prints the report shown under "What you'll build". The north site rejects a sale of two desks with one counted, and the south site rejects a SKU it does not stock. Each closing map is the count after the movements that were applied, in SKU order, since a map keeps its keys in order.
+### Running it
+
+`una run .` prints the report shown in [What you'll build](#what-youll-build). The north site rejects a sale of two desks with one counted, and the south site rejects a SKU it does not stock. Each closing map is the count after the movements that were applied, in SKU order, since a map keeps its keys in order.
 
 Built with `una build`, the same program closes the two sites on two threads. The report is the same, line for line, because `main` prints only after `close_all` has returned every report, in site order.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -739,6 +809,8 @@ example "closing every day at once gives the reports in site order"
 
 ## 12.7 Testing it
 
+### Reaching `apply` through a copy
+
 An example's `do` line cannot pass `edit`: it is not a statement, and it has no editable binding of its own. So the examples reach `apply` through a small private function, `applied`, which copies the ledger into a `let edit` binding, applies the movement and returns the copy. `lamps` builds the ledger the examples start from.
 
 ```una include="day-to-day/src/stockcount.una#L104-L132" title="day-to-day/src/stockcount.una" caption="the examples"
@@ -773,6 +845,8 @@ example "closing every day at once gives the reports in site order"
   expect result == [close_day(north_day()), close_day(south_day())]
 ```
 
+### What each example checks
+
 Each example checks one fact of the chapter:
 
 - **"a sale lowers the count of its SKU"** checks `apply` through `applied`: the count and the number of applied movements.
@@ -780,7 +854,11 @@ Each example checks one fact of the chapter:
 - **"a rejected movement leaves the counts as they were"** closes a day whose only movement fails, and checks that the closing counts are the opening counts.
 - **"closing every day at once gives the reports in site order"** compares `close_all` with closing the days one after another. This is the guarantee of `together for`, stated as an example.
 
+### No fakes needed
+
 None of the examples needs a fake service: the program has no capability but the console, and the console is used only in `main`. Every function under test takes its input as values and returns its result, which is what makes each one easy to check on its own.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -797,8 +875,10 @@ example stockcount "closing every day at once gives the reports in site order" .
 
 Each mistake below is a small change to `day-to-day/src/stockcount.una`, followed by what `una check .` reports.
 
+### Leaving out `edit` at the call (U2020)
+
 :::mistake
-**1. Leaving out `edit` at the call (U2020).** Write `apply(ledger, …)` in `close_day`:
+Write `apply(ledger, …)` in `close_day`:
 
 ```diff include="day-to-day..mistakes/1:src/stockcount.una" context="1" title="src/stockcount.una"
 --- a/src/stockcount.una
@@ -822,8 +902,10 @@ Each mistake below is a small change to `day-to-day/src/stockcount.una`, followe
 See [U2020](/docs/errors/U2020/).
 :::
 
+### Passing a plain `let` as `edit` (U2019)
+
 :::mistake
-**2. Passing a plain `let` as `edit` (U2019).** Declare the ledger with `let` instead of `let edit`:
+Declare the ledger with `let` instead of `let edit`:
 
 ```diff include="day-to-day..mistakes/2:src/stockcount.una" context="1" title="src/stockcount.una"
 --- a/src/stockcount.una
@@ -846,8 +928,10 @@ See [U2020](/docs/errors/U2020/).
 See [U2019](/docs/errors/U2019/).
 :::
 
+### Using a value after `take` (U2017)
+
 :::mistake
-**3. Using a value after `take` (U2017).** Read the ledger's counts after closing it:
+Read the ledger's counts after closing it:
 
 ```diff include="day-to-day..mistakes/3:src/stockcount.una" context="1" title="src/stockcount.una"
 --- a/src/stockcount.una
@@ -882,8 +966,10 @@ See [U2019](/docs/errors/U2019/).
 See [U2017](/docs/errors/U2017/).
 :::
 
+### Wrapping an `edit` call in `attempt` (U3013)
+
 :::mistake
-**4. Wrapping an `edit` call in `attempt` (U3013).** Keep the outcome of `apply` as a `Result`:
+Keep the outcome of `apply` as a `Result`:
 
 ```diff include="day-to-day..mistakes/4:src/stockcount.una" context="1" title="src/stockcount.una"
 --- a/src/stockcount.una
@@ -908,8 +994,10 @@ See [U2017](/docs/errors/U2017/).
 See [U3013](/docs/errors/U3013/).
 :::
 
+### Counting in a shared binding inside `together` (U2023)
+
 :::mistake
-**5. Counting in a shared binding inside `together` (U2023).** Count the closed days in an outer `let edit`:
+Count the closed days in an outer `let edit`:
 
 ```diff include="day-to-day..mistakes/5:src/stockcount.una" context="1" title="src/stockcount.una"
 --- a/src/stockcount.una
@@ -933,8 +1021,10 @@ See [U3013](/docs/errors/U3013/).
 See [U2023](/docs/errors/U2023/).
 :::
 
+### `old` outside `ensures` (U2012)
+
 :::mistake
-**6. `old` outside `ensures` (U2012).** Use `old(ledger)` in the body of `apply`:
+Use `old(ledger)` in the body of `apply`:
 
 ```diff include="day-to-day..mistakes/6:src/stockcount.una" context="1" title="src/stockcount.una"
 --- a/src/stockcount.una
@@ -957,24 +1047,14 @@ See [U2023](/docs/errors/U2023/).
 See [U2012](/docs/errors/U2012/).
 :::
 
-## 12.9 For agents
-
-:::agents
-`una --json check .` gives each diagnostic of this chapter with its code and exact place. For mistake 1:
-
-```json include="mistakes/1/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2020","severity":"error","domain":"types","message":"parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`","primary":{"file":"src/stockcount.una","start":{"line":63,"col":22},"end":{"line":63,"col":28}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `edit ledger`","edit":{"file":"src/stockcount.una","start":{"line":63,"col":22},"end":{"line":63,"col":28},"replacement":"edit ledger"}}],"explain":"una explain U2020"}],"fixable":1}
-```
-
-The repair carries an `edit` that `una fix .` applies, so the document reports `"fixable":1`. U2017, U2019 and U2023 carry no edit: the right change depends on intent. `una --json run .` reports U6003 with `"status":"aborted"`, as in [section 12.5](#s12-5). The compact rule: *a call that changes a binding names it with `edit`, on a line of its own; a binding given with `take` is not used again until it is assigned; a `together` task returns its result and never assigns what is outside it.*
-:::
-
-## 12.10 Exercises
+## 12.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's example added, and a stub of what to write. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
+### Exercise 1: a recount
+
 ::::exercise
-**Exercise 1: a recount.** A stocktake finds 7 lamps on the shelf where the ledger says 4. Write the body of `recount`, which sets the count of a SKU to what was counted. A recount is not a movement, so `applied` does not change, and the header promises it. The start package has the stub, a function for the example, and the example:
+A stocktake finds 7 lamps on the shelf where the ledger says 4. Write the body of `recount`, which sets the count of a SKU to what was counted. A recount is not a movement, so `applied` does not change, and the header promises it. The start package has the stub, a function for the example, and the example:
 
 ```una include="exercises/1/start/src/stockcount.una#recount..recounted" title="exercises/1/start/src/stockcount.una"
 --- A stocktake correction: sets the count of `sku` to the `units` counted on the shelf.
@@ -1033,8 +1113,10 @@ Replace the body:
 :::
 ::::
 
+### Exercise 2: a delivery note, all or nothing
+
 ::::exercise
-**Exercise 2: a delivery note, all or nothing.** A delivery note lists several movements, and the warehouse accepts it whole or not at all. Write the body of `apply_note`, which applies every movement of a note to the ledger and gives one line per movement, and fails when any movement fails. The start package has the stub, a function for the examples, and two examples:
+A delivery note lists several movements, and the warehouse accepts it whole or not at all. Write the body of `apply_note`, which applies every movement of a note to the ledger and gives one line per movement, and fails when any movement fails. The start package has the stub, a function for the examples, and two examples:
 
 ```una include="exercises/2/start/src/stockcount.una#apply_note..after_note" title="exercises/2/start/src/stockcount.una"
 --- Applies a delivery note, every movement or none, and gives one line per movement.
@@ -1099,8 +1181,10 @@ A movement that fails ends the loop and the function. The ledger the loop change
 :::
 ::::
 
+### Exercise 3: a strict close
+
 ::::exercise
-**Exercise 3: a strict close.** Head office wants a stricter close: every movement of every site must apply, or the close fails and names the first site, in list order, that did not add up. The start package has `strict_day`, which fails at a site's first bad movement, a kind for the failure, a stub of `close_strict`, and `blamed`, which runs `close_strict` and names the site it blames, or `none` when it does not fail:
+Head office wants a stricter close: every movement of every site must apply, or the close fails and names the first site, in list order, that did not add up. The start package has `strict_day`, which fails at a site's first bad movement, a kind for the failure, a stub of `close_strict`, and `blamed`, which runs `close_strict` and names the site it blames, or `none` when it does not fail:
 
 ```una include="exercises/3/start/src/stockcount.una#CloseError..site_of" title="exercises/3/start/src/stockcount.una"
 --- Why a strict close failed: the first site, in list order, with a movement that did not apply.
@@ -1180,7 +1264,21 @@ Two tasks fail, and the block fails with the failure of the lowest-indexed one, 
 :::
 ::::
 
-## 12.11 Recap
+## 12.10 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` gives each diagnostic of this chapter with its code and exact place. For [Leaving out `edit` at the call](#leaving-out-edit-at-the-call-u2020):
+
+```json include="mistakes/1/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2020","severity":"error","domain":"types","message":"parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`","primary":{"file":"src/stockcount.una","start":{"line":63,"col":22},"end":{"line":63,"col":28}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `edit ledger`","edit":{"file":"src/stockcount.una","start":{"line":63,"col":22},"end":{"line":63,"col":28},"replacement":"edit ledger"}}],"explain":"una explain U2020"}],"fixable":1}
+```
+
+The repair carries an `edit` that `una fix .` applies, so the document reports `"fixable":1`. U2017, U2019 and U2023 carry no edit: the right change depends on intent. `una --json run .` reports U6003 with `"status":"aborted"`, as in [section 12.5](#s12-5). The compact rule: *a call that changes a binding names it with `edit`, on a line of its own; a binding given with `take` is not used again until it is assigned; a `together` task returns its result and never assigns what is outside it.*
+:::
+
+### Recap
 
 :::recap
 - A `let` binding is a value, and a copy is a value of its own.
@@ -1193,7 +1291,7 @@ Two tasks fail, and the block fails with the failure of the lowest-indexed one, 
 - U6003 stops a run at the call depth or the memory budget. Build long lists with loops.
 :::
 
-## 12.12 Reference
+### Reference
 
 :::reference
 - Construct pages: [`let edit` and `edit` parameters](/docs/language/control-flow/let-edit/), [`take`](/docs/language/control-flow/take/), [`together`](/docs/language/control-flow/together/), [`for`](/docs/language/control-flow/for/), [`ensures`](/docs/language/functions/ensures/), [`attempt`](/docs/language/errors/attempt/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`example`](/docs/language/examples/example/)

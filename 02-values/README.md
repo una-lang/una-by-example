@@ -53,7 +53,11 @@ Una makes each of these a rule that the checker enforces:
 
 ## 2.1 Numbers: `Int`
 
+### Whole numbers of any size
+
 An `Int` is a whole number, positive, zero or negative, with no limit on its size. You write it in decimal, and you may group the digits with `_`, as `1_990` or `10_000`. The usual operators work on it: `+`, `-`, `*`, `/` for division and `mod` for the remainder, with the usual precedence, and parentheses to group.
+
+### Money as `Int` cents
 
 Money is an `Int` of cents, in this chapter and in every chapter of this tutorial. A price never needs a fraction, so it never needs rounding until the code chooses one:
 
@@ -93,9 +97,15 @@ refund: -13 and 95
 no overflow: 9223372036854775808
 ```
 
-Two lines need a closer look. The last one shows that `Int` has no 64-bit limit: the sum is exact. Many languages would print a large negative number there, or stop with an error.
+### No 64-bit limit
+
+The last line shows that `Int` has no 64-bit limit: the sum is exact. Many languages would print a large negative number there, or stop with an error.
+
+### Euclidean division
 
 The refund line shows how Una divides. Division and `mod` are **Euclidean**: the remainder is never negative, and the quotient is chosen to make that true. So `-1205 / 100` is `-13` and `-1205 mod 100` is `95`, since `-13 * 100 + 95` is `-1205`. Languages that round toward zero give `-12` and `-5` instead. For amounts that are not negative, both rules agree, and that is why the money functions of this chapter state that they take an amount that is not negative.
+
+### Division by zero, a proof obligation
 
 A division by a value that may be zero does not check. `una check` turns each division into a **proof obligation**, a fact the verifier must prove before the program may run: here, that the divisor is not zero. A literal such as `100` proves itself. For a divisor that comes from a parameter, the function must say why it cannot be zero, and [section 2.6](#s2-6) shows how.
 
@@ -104,7 +114,13 @@ A division by a value that may be zero does not check. `una check` turns each di
 
 ## 2.2 Conditions: `Bool`
 
-A `Bool` is `true` or `false`. Comparisons give one: `==` and `!=` for equal and not equal, and `<`, `<=`, `>` and `>=` for order. `and`, `or` and `not` combine them. Store rules are full of conditions like these, so they make good functions:
+### `true`, `false` and the operators
+
+A `Bool` is `true` or `false`. Comparisons give one: `==` and `!=` for equal and not equal, and `<`, `<=`, `>` and `>=` for order. `and`, `or` and `not` combine them.
+
+### Store rules that return a `Bool`
+
+Store rules are full of conditions like these, so they make good functions:
 
 :::steps
 ```una include="steps/02-bool/src/rules.una" title="src/rules.una" verified="check, run"
@@ -148,17 +164,25 @@ a small order pays shipping: true
 same SKU: true, different SKUs: true
 ```
 
+### The checker's rules for conditions
+
 A `Bool` prints as `true` or `false`. Everything else about `Bool` is a rule of the checker:
 
 - A condition must be a `Bool`. An `if` over an `Int`, such as `if percent then …`, does not check, and neither does `quantity and true`. A number is not true or false in Una, and neither is a text.
 - `==` compares two values of the same type. Comparing an `Int` with a `Text` is a type error, never a quiet `false`.
 - Comparisons do not chain. `1 <= percent <= 90` does not check: write `percent >= 1 and percent <= 90`, which says the same thing in a way no reader can misread.
 
+### One function per rule
+
 A rule that the store applies in more than one place deserves a function that returns a `Bool`, named after the question it answers: `ships_free`, `needs_signature`, `on_sale`. The call then reads as the rule, `if ships_free(cents, domestic: domestic)`, and the rule lives in one place, with its own examples. When the free-shipping threshold changes, one line changes, and one example tells you whether the new rule is the one you meant.
 
 ## 2.3 Text
 
+### Characters, UTF-8 and escapes
+
 A `Text` is a sequence of characters, written between double quotes on one line. It may hold the characters of any language, since its encoding is UTF-8. A few characters need an escape inside the quotes: `\"` for a quote, `\\` for a backslash, `\n` for a new line, `\t` for a tab, and `\{` and `\}` for braces, since a brace starts an interpolation.
+
+### The prelude's text functions
 
 The prelude, the set of functions every module has without an import, gives text most of what a program needs. You call them with **method syntax**: `raw.trim` is the call `trim(raw)`, and `sku.starts_with(prefix: prefix)` is `starts_with(sku, prefix: prefix)`. A call that takes nothing but its receiver may leave out the parentheses, as `raw.trim` and `sku.len` do.
 
@@ -203,6 +227,10 @@ Café table, walnut
 a quote " and a brace { in a text
 ```
 
+### The text functions at a glance
+
+The table lists the prelude's main functions on a text `t`:
+
 | Function | Gives | Notes |
 | --- | --- | --- |
 | `t.len` | `Int` | the number of characters, as Unicode scalar values |
@@ -216,7 +244,9 @@ a quote " and a brace { in a text
 
 `to_upper` changes only the 26 letters of the English alphabet, so `é` stays `é`: the result is the same on every machine, whatever its language settings. Two texts are joined with an interpolation, `"{first}{second}"`. Una has no `+` for text, and [Common mistakes](#s2-8) shows what the checker says to it.
 
-**Cutting a text, and the proof it takes.** A label has room for 24 characters, so a longer name must be cut. `slice` cuts, and it **requires** its positions to lie inside the text: a requirement that the verifier proves at every call, before the program runs.
+### Cutting a text, and the proof it takes
+
+A label has room for 24 characters, so a longer name must be cut. `slice` cuts, and it **requires** its positions to lie inside the text: a requirement that the verifier proves at every call, before the program runs.
 
 :::steps
 ```una include="steps/04-slice/src/names.una" title="src/names.una" verified="check, run"
@@ -244,6 +274,8 @@ pub main() -> Unit
 [Wool rug, 120 by 180 cm,]
 ```
 
+### When the proof fails: a counterexample
+
 Without the `if`, nothing says the name is long enough:
 
 ```diff include="steps/04-slice..steps/05-unguarded:src/names.una" title="src/names.una" context="0"
@@ -263,6 +295,8 @@ Without the `if`, nothing says the name is long enough:
 The **counterexample** is the case that breaks the requirement: an empty name, whose length is 0. A text in a counterexample is shown by a placeholder, `Text#0`, followed by the facts about it that matter. Where another language would fail at run time on a short name, or cut it silently, Una refuses the program and names the input that would break it.
 
 ## 2.4 Names: `let` and `let edit`
+
+### A running total at the till
 
 `let` gives a name to a value, and the name holds that value until the end of its block. A name cannot be bound twice in one block, and it cannot be assigned. When a value must change, as a running total does, you declare the name with `let edit`, and assign it new values with `=`:
 
@@ -305,7 +339,11 @@ pub main() -> Unit
 LAMP-01, LAMP-01, RUG-07
 ```
 
+### No assignment and no shadowing
+
 A name declared with `let` cannot change, and the checker holds you to it. An assignment to it is a type error, U2019, whose message tells you to declare it `let edit`. Binding the same name a second time in one block, `let total = 3` and then `let total = 4`, is a different error: Una has no shadowing within a block, so a name means one thing from its line to the end of its block.
+
+### Choosing between `let` and `let edit`
 
 :::decide
 **Which to use:**
@@ -325,9 +363,17 @@ Prefer `let`. A name that cannot change is one less thing a reader must track, a
 
 ## 2.5 Fixed-width integers
 
+### When a width matters
+
 `Int` fits nearly every number in a store's code. Some places need an exact width instead: a byte in a protocol, a field of a file format, a count that a device reads as one byte. For these, Una has the unsigned types `U8`, `U16`, `U32` and `U64`, from 0 up to 255, 65535 and so on, and the signed types `I8`, `I16`, `I32` and `I64`, which also hold negative values. Each is its own type, distinct from `Int` and from the others.
 
+### A proof for every operation
+
 A fixed-width value never wraps around. Every `+`, `-`, `*`, `/` and `mod` on one is a proof obligation: the verifier must prove that the exact result fits the type.
+
+### Label copies as one byte: `U8`
+
+The module `printer` counts the copies of a shelf label in a `U8`, and a roll of labels in a `U16`:
 
 :::steps
 ```una include="steps/07-fixed-width/src/printer.una" title="src/printer.una" verified="check, run"
@@ -370,6 +416,8 @@ pub main() -> Unit
 0 left on a roll of 1000 after 1200
 ```
 
+### When the result may not fit: overflow
+
 Remove the precondition, and the verifier finds the one value that breaks the addition:
 
 ```diff include="steps/07-fixed-width..steps/08-overflow:src/printer.una" title="src/printer.una" context="0"
@@ -393,15 +441,21 @@ Remove the precondition, and the verifier finds the one value that breaks the ad
 
 The repairs list the three honest choices: check the range first, use a wider type, or say that wrapping or saturating is what you mean. Each makes the behavior at the edge of the range visible in the code.
 
+### Conversions between integer types
+
 Conversions are explicit in both directions. `to_int()` widens and never fails. `to_u8()`, `to_u16()` and the others narrow, and each narrowing is a proof obligation that the value fits. Operands of two different integer types, such as a `U8` and an `Int`, do not mix: convert one of them first.
 
 ## 2.6 Day-to-day: shelf labels
+
+### What the program must do
 
 Every product on a shelf has a label: its SKU, its name, and its price. The labels change every week, as prices change and sales start and end, so the store prints them from its catalog. The data is messy in the usual ways. SKUs arrive with stray spaces and in small letters, some names are longer than the label, and a product sold by weight must show its price per kilogram as well.
 
 The program follows the data. Each fix to a value is a small function with a doc comment and an example: clean the SKU, fit the name, write the price. Each kind of label is a function built from those. `main` prints the labels of four products and counts the copies to print.
 
-**Cleaning the values.** Three functions turn raw values into what a label prints:
+### Cleaning the values
+
+Three functions turn raw values into what a label prints:
 
 ```una include="day-to-day/src/labels.una#clean_sku..money" title="day-to-day/src/labels.una" caption="clean, fit, format"
 --- The SKU as labels print it: without the white space around it, in capital letters.
@@ -414,9 +468,11 @@ pub fit_name(name: Text) -> Text = if name.len > 24 then name.slice(start: 0, en
 pub money(cents: Int) -> Text = "{cents / 100}.{cents mod 100 / 10}{cents mod 10}"
 ```
 
-`money` writes the two digits of the cents one by one, as in the last exercise of [chapter 1](/learn/hello/#s1-10), so 1205 is `12.05` and never `12.5`. Its doc comment states that it is for amounts that are not negative, since a refund would need the Euclidean rule of [section 2.1](#s2-1) in mind.
+`money` writes the two digits of the cents one by one, as in the last exercise of [chapter 1](/learn/hello/#exercise-3-amounts-with-two-decimals), so 1205 is `12.05` and never `12.5`. Its doc comment states that it is for amounts that are not negative, since a refund would need the rule of [Euclidean division](#euclidean-division), in section 2.1.
 
-**Prices.** A sale price and a price per kilogram, each rounded down to a whole cent:
+### Sale prices and prices per kilogram
+
+A sale price and a price per kilogram, each rounded down to a whole cent:
 
 ```una include="day-to-day/src/labels.una#on_sale..per_kilo" title="day-to-day/src/labels.una" caption="the prices"
 --- Whether a discount is one the store runs: from 1 to 90 percent off.
@@ -434,7 +490,9 @@ pub per_kilo(cents: Int, grams: Int) -> Int
 
 `on_sale` turns a store rule into a `Bool`: a discount from 1 to 90 percent is one the store runs. `sale_cents` multiplies before it divides, so a 15 percent discount on 1999 cents gives 1699, the price rounded down. `per_kilo` divides by `grams`, a parameter, so it needs a reason why `grams` is not zero. Its precondition, `requires grams > 0`, is that reason. The verifier then proves the division, and every caller must prove `grams > 0` in turn.
 
-**The labels.** Three kinds of label, each a line of text:
+### Three kinds of label
+
+Three kinds of label, each a line of text:
 
 ```una include="day-to-day/src/labels.una#regular_label..weight_label" title="day-to-day/src/labels.una" caption="three kinds of label"
 --- The label of a product at its regular price.
@@ -458,7 +516,9 @@ pub weight_label(sku: Text, name: Text, cents: Int, grams: Int) -> Text
 
 `sale_label` names two values with `let`, then chooses between two texts with `if`: the sale label when `on_sale(percent)` holds, and the regular label otherwise. A discount of 95 percent is more likely a typing mistake than a sale, so the label then shows the regular price. `weight_label` repeats its callee's precondition, `requires grams > 0`, since it passes `grams` on to `per_kilo`, and a precondition must be proved at every call.
 
-**Copies, and the run.** `copies` gives the count the printer reads, as in [section 2.5](#s2-5). `main` prints each label and adds its copies to a running total, which is a `let edit` name:
+### Copies, and `main`
+
+`copies` gives the count the printer reads, as in [section 2.5](#s2-5). `main` prints each label and adds its copies to a running total, which is a `let edit` name:
 
 ```una include="day-to-day/src/labels.una#copies..main" title="day-to-day/src/labels.una"
 --- How many copies of a label to print: one for each facing on the shelf, and one spare.
@@ -487,6 +547,15 @@ pub main() -> Unit
 `copies(4)` passes a literal, which takes the type `U8` from the parameter. `copies(4).to_int()` converts the result before it is added to `printed`, an `Int`, since the two types do not mix. The verifier proves the precondition of each call, `4 < 255` and the others, from the literals. It also proves `500 > 0` for the call of `weight_label`.
 
 The two kinds of integer meet only at that one conversion. `copies` speaks the printer's language, a byte, because that is what the printer reads; `printed` is an `Int`, because a total has no reason to stop at 255. Converting at the boundary keeps each type where it belongs.
+
+### Running it
+
+`una run .` prints the labels shown in [What you'll build](#what-youll-build). The rug's name is cut to 24 characters, which ends it on a comma: the rule is simple, and the label shows it. The SKUs come out clean, the coffee shows 25.00 per kilogram for a 500 g pack at 12.50, and the copies add up to 23: 5, 3, 13 and 2.
+
+> [!TIP]
+> When a function divides by a parameter or cuts a text at a computed position, write the precondition first, then the body. The verifier tells you at once whether the precondition is enough, and each caller learns what it must provide.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -594,12 +663,9 @@ example "a shelf with four facings gets five labels"
   expect result == 5
 ```
 
-`una run .` prints the labels shown under "What you'll build". The rug's name is cut to 24 characters, which ends it on a comma: the rule is simple, and the label shows it. The SKUs come out clean, the coffee shows 25.00 per kilogram for a 500 g pack at 12.50, and the copies add up to 23: 5, 3, 13 and 2.
-
-> [!TIP]
-> When a function divides by a parameter or cuts a text at a computed position, write the precondition first, then the body. The verifier tells you at once whether the precondition is enough, and each caller learns what it must provide.
-
 ## 2.7 Testing it
+
+### Examples at the edges
 
 Every function of the program but `main` is pure, with no `uses` line, so each one gets examples that give it values and check what it returns. The examples aim at the edges, where values go wrong:
 
@@ -641,6 +707,8 @@ example "a shelf with four facings gets five labels"
   expect result == 5
 ```
 
+### What each example covers
+
 Each one covers a rule that the sample run alone would hide:
 
 - "a long name is cut to 24 characters" checks the length of the result, `result.len`, not its text: the fact that matters is the width.
@@ -648,6 +716,8 @@ Each one covers a rule that the sample run alone would hide:
 - "a discount rounds down to a whole cent" fixes the rounding: 1999 cents at 15 percent off is 1699.15, and the store charges 1699.
 - "a discount over 90 percent is not a sale" checks the store rule at a value outside it.
 - "a shelf with four facings gets five labels" checks a `U8` result against a literal, which takes the type `U8` from the other side of `==`.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -665,14 +735,18 @@ example labels "a shelf with four facings gets five labels" ... ok
 9 examples: 9 passed, 0 failed
 ```
 
+### The case no example needs: zero grams
+
 No example tests what happens when `grams` is 0, and none can: an example is code, and `una check .` proves the precondition of every call in it as in any other code. A call `per_kilo(1250, grams: 0)` in an example is refuted before the example runs, which is the strongest test of that case there is.
 
 ## 2.8 Common mistakes
 
 Each mistake below is a small change to `day-to-day/src/labels.una`, followed by what `una check .` reports.
 
+### Joining texts with `+` (U2001)
+
 :::mistake
-**1. Joining texts with `+` (U2001).** Building the weight label with `+`, as many languages allow:
+Build the weight label with `+`, as many languages allow:
 
 ```diff include="day-to-day..mistakes/1:src/labels.una" context="1"
 --- a/src/labels.una
@@ -693,8 +767,10 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 *Fix:* join texts with an interpolation, `"{regular_label(sku, name: name, cents: cents)} ({money(kilo)} per kg)"`. See [U2001](/docs/errors/U2001/).
 :::
 
+### Assigning a plain `let` (U2019)
+
 :::mistake
-**2. Assigning a plain `let` (U2019).** Declaring the running total with `let`:
+Declare the running total with `let`:
 
 ```diff include="day-to-day..mistakes/2:src/labels.una" context="1"
 --- a/src/labels.una
@@ -715,8 +791,10 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 *Fix:* `let edit printed = 0`, as the message says. See [U2019](/docs/errors/U2019/).
 :::
 
+### Dividing by a parameter (U5001)
+
 :::mistake
-**3. Dividing by a parameter (U5001).** Removing the precondition of `per_kilo`, which canonical form then writes on one line:
+Remove the precondition of `per_kilo`, which canonical form then writes on one line:
 
 ```diff include="day-to-day..mistakes/3:src/labels.una" context="1"
 --- a/src/labels.una
@@ -742,8 +820,10 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 *Fix:* put back `requires grams > 0`, so that each caller proves it, or guard the division as the `Help` line says. See [U5001](/docs/errors/U5001/).
 :::
 
+### A text inside an interpolation (U0006)
+
 :::mistake
-**4. A text inside an interpolation (U0006).** Printing a label through an interpolation, with its arguments written in place:
+Print a label through an interpolation, with its arguments written in place:
 
 ```diff include="day-to-day..mistakes/4:src/labels.una" context="1"
 --- a/src/labels.una
@@ -764,8 +844,10 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 *Fix:* print the label itself, `@console.print(regular_label(…))`, or name the texts with `let` first, as the message says. See [U0006](/docs/errors/U0006/).
 :::
 
+### A literal out of range (U2022)
+
 :::mistake
-**5. A literal out of range (U2022).** Giving a shelf 300 facings:
+Give a shelf 300 facings:
 
 ```diff include="day-to-day..mistakes/5:src/labels.una" context="1"
 --- a/src/labels.una
@@ -786,8 +868,10 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 *Fix:* a value that fits, or a wider type for the parameter if the printer accepts one. See [U2022](/docs/errors/U2022/).
 :::
 
+### A number as a condition (U2001)
+
 :::mistake
-**6. A number as a condition (U2001).** Testing the discount itself, as if a number could be true:
+Test the discount itself, as if a number could be true:
 
 ```diff include="day-to-day..mistakes/6:src/labels.una" context="1"
 --- a/src/labels.una
@@ -808,18 +892,14 @@ Each mistake below is a small change to `day-to-day/src/labels.una`, followed by
 *Fix:* say the rule: `if on_sale(percent)`, or `if percent > 0`. See [U2001](/docs/errors/U2001/).
 :::
 
-## 2.9 For agents
-
-:::agents
-`una --json check .` reports each diagnostic with its `code`, `message` and `primary` span. A refuted obligation, U5001, also carries a `counterexample` with one binding for each value, and repairs ranked from the guard to the escape. U2001, U2019 and U2022 carry no repair, since the right type or value is the author's choice. The compact rule: *money is `Int` cents; join text with interpolation, never `+`; a name that changes is `let edit`; a division by a parameter or a `slice` at computed positions needs a `requires` or a guard; fixed-width arithmetic needs a proof that it fits.*
-:::
-
-## 2.10 Exercises
+## 2.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
+### Exercise 1: sales tax
+
 ::::exercise
-**Exercise 1: sales tax.** Write `with_tax(cents, percent)`, the price with a sales tax of `percent` added, rounded to the nearest cent, with half a cent rounding up. The start package ends with:
+Write `with_tax(cents, percent)`, the price with a sales tax of `percent` added, rounded to the nearest cent, with half a cent rounding up. The start package ends with:
 
 ```una include="exercises/1/start/src/labels.una#L103-L113" title="exercises/1/start/src/labels.una"
 --- The price with `percent` of sales tax added, rounded to the nearest cent; half a cent
@@ -869,8 +949,10 @@ Give `with_tax` its body:
 :::
 ::::
 
+### Exercise 2: the price of one unit in a pack
+
 ::::exercise
-**Exercise 2: the price of one unit in a pack.** A pack of olive soap holds six bars. Write `pack_label(sku, name, cents, units)`, the regular label followed by the price of one unit, and print the label of the soap in `main`, with three copies. The start package ends with:
+A pack of olive soap holds six bars. Write `pack_label(sku, name, cents, units)`, the regular label followed by the price of one unit, and print the label of the soap in `main`, with three copies. The start package ends with:
 
 ```una include="exercises/2/start/src/labels.una#L103-L108" title="exercises/2/start/src/labels.una"
 --- The label of a pack of several units, with the price of one unit.
@@ -913,8 +995,10 @@ Without `requires units > 0`, `una check .` reports U5001 for the division, with
 :::
 ::::
 
+### Exercise 3: labels left on the roll
+
 ::::exercise
-**Exercise 3: labels left on the roll.** The label printer counts the labels left on its roll as a `U16`. Write `labels_left(roll, printed)`, which subtracts what was printed, and gives 0 when more was printed than the roll held. The start package ends with:
+The label printer counts the labels left on its roll as a `U16`. Write `labels_left(roll, printed)`, which subtracts what was printed, and gives 0 when more was printed than the roll held. The start package ends with:
 
 ```una include="exercises/3/start/src/labels.una#L103-L113" title="exercises/3/start/src/labels.una"
 --- How many labels are left on a roll after `printed` of them. A roll holds at most a few
@@ -953,7 +1037,15 @@ Give `labels_left` its body:
 :::
 ::::
 
-## 2.11 Recap
+## 2.10 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` reports each diagnostic with its `code`, `message` and `primary` span. A refuted obligation, U5001, also carries a `counterexample` with one binding for each value, and repairs ranked from the guard to the escape. U2001, U2019 and U2022 carry no repair, since the right type or value is the author's choice. The compact rule: *money is `Int` cents; join text with interpolation, never `+`; a name that changes is `let edit`; a division by a parameter or a `slice` at computed positions needs a `requires` or a guard; fixed-width arithmetic needs a proof that it fits.*
+:::
+
+### Recap
 
 :::recap
 - `Int` has no bound, so its arithmetic is exact. Keep money in whole cents.
@@ -965,7 +1057,7 @@ Give `labels_left` its body:
 - Use a fixed-width type only where a width is required. Its arithmetic is proved to fit, and conversions are explicit.
 :::
 
-## 2.12 Reference
+### Reference
 
 :::reference
 - Construct pages: [literals and operators](/docs/language/lexical-structure/), [built-in types](/docs/language/types/), [`let` and `if`](/docs/language/control-flow/), [`let edit`](/docs/language/control-flow/let-edit/), [`requires`](/docs/language/functions/requires/)

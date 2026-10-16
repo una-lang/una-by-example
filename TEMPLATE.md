@@ -81,23 +81,47 @@ The headings are fixed. `N` is the chapter's number, and the numbered parts coun
 | 2 | `## What you'll build` | The day-to-day program's output, included from `day-to-day/expected/output.txt`, and 3 to 5 "you will learn" bullets | 80–150 words |
 | 3 | `## Why it works this way` | The motivation: what goes wrong in languages without this, what Una guarantees instead, stated concretely and without polemic | 150–300 words |
 | 4 | `## N.1 <concept>` to `## N.k <concept>`, k from 3 to 6 | One idea per section: explanation, then a step package with a walkthrough, then its output. Examples grow in difficulty: a minimal use, then a second use of the same idea in context. A decision table where alternatives exist | 300–700 words each, 1 to 3 blocks each |
-| 5 | `## N.k+1 Day-to-day: <program>` | The program in the shared store domain, 80 to 200 lines. Shown in parts with walkthroughs, then whole (collapsed), then run, then tested | 600–1,200 words |
+| 5 | `## N.k+1 Day-to-day: <program>` | The program in the shared store domain, 80 to 200 lines. Shown in parts with walkthroughs, then whole (collapsed), then run, then tested | 500–1,200 words |
 | 6 | `## N.k+2 Testing it` | The chapter's idea under `una test`: examples, fakes, the failure paths | 200–400 words |
 | 7 | `## N.k+3 Common mistakes` | 4 to 8 items: the wrong code (a diff), the real diagnostic, why it happens, the fix, and a link to the code's page | 60–120 words each |
-| 8 | `## N.k+4 For agents` | 3 to 6 lines: the JSON shape of this chapter's diagnostics, the repairs `una fix` can apply, the compact rule | 60–120 words |
-| 9 | `## N.k+5 Exercises` | 3 to 5: one direct, one that extends the day-to-day program, one stretch. Each has a goal, a hint, a collapsed answer, and the command that checks it | 80–200 words each |
-| 10 | `## N.k+6 Recap` | 5 to 8 bullets, each a rule the reader can apply | 80–150 words |
-| 11 | `## N.k+7 Reference` | Links to the construct pages, std items, error codes and specification sections, all on the site, at the release | list |
+| 8 | `## N.k+4 Exercises` | 3 to 5: one direct, one that extends the day-to-day program, one stretch. Each has a goal, a hint, a collapsed answer, and the command that checks it | 80–200 words each |
+| 9 | `## N.k+5 Recap and reference` | Three subsections, in this order: | |
+| | `### For agents` | 3 to 6 lines: the JSON shape of this chapter's diagnostics, the repairs `una fix` can apply, the compact rule | 60–120 words |
+| | `### Recap` | 5 to 8 bullets, each a rule the reader can apply | 80–150 words |
+| | `### Reference` | Links to the construct pages, std items, error codes and specification sections, all on the site, at the release | list |
 
-Totals: 3,000 to 5,000 words of prose, 150 to 350 lines of code across all blocks, 25 to 40 minutes to read, 60 to 90 minutes with the exercises. A page longer than the site's page budget (40 KiB gzip) splits in two.
+Totals: 3,000 to 5,000 words of prose (paragraphs and list text; headings, code and `:::` lines do not count, and the same holds for each part's target), 150 to 350 lines of code across all blocks, 25 to 40 minutes to read, 60 to 90 minutes with the exercises. A page longer than the site's page budget (40 KiB gzip) splits in two.
 
-`### ` headings may be used inside any part. No other `## ` heading may appear. Every heading is a `#` line at column 0, outside quotes and lists; an underlined (setext) heading fails, so put a blank line before a `---` rule.
+Inside each numbered part, `### ` subsections follow the rules of [Inside a section](#inside-a-section). No other `## ` heading may appear. Every heading is a `#` line at column 0, outside quotes and lists; an underlined (setext) heading fails, so put a blank line before a `---` rule.
 
 Rules:
 
 - Every output, diagnostic and number shown comes from an `expected/` file.
 - Identifiers are real words from the domain. Never `demo`, `foo`, `A`, `B` or `Oops`.
 - The prose never cites a specification section inline. Citations go in Reference.
+
+## Inside a section
+
+The site shows each numbered section (`## N.k`) as a page of its own, and lists the section's `### ` subsections in "On this page", numbered `N.k.1`, `N.k.2` and so on. A section's subsections are its outline: a reader scans them to find a rule again, and a link can name each one. Every numbered section therefore has an internal structure:
+
+| Section | Its `### ` subsections |
+| --- | --- |
+| Concept (`N.1` to `N.k`) | 3 to 6, each titled by what it teaches. The usual arc: the problem or idea; a first example, its include and walkthrough; the rules, how it works and its precise behavior; variations and real use; when to use it, or its pitfalls. Not every section needs every step, and a step may take two subsections. |
+| Day-to-day | At least 2: one per part of the program, each module or step in the order the text builds it, then running it, then the whole program. The whole program is optional when the text already shows each module whole. A subsection may follow the whole program when it continues the program's story, such as `### The checks before a release`. |
+| Testing it | At least 2: one per kind of test, such as the happy path, the failure paths and what must not happen, then running the examples. The rule is distinct kinds of tests, not length: a subsection may be a lead sentence and a list. |
+| Common mistakes | One per mistake, titled by the mistake and ending with its code in parentheses, or its codes (`(U0101, U7002)`), each one a code the mistake's `diagnostics.txt` reports, such as `### Forgetting the clause (U3007)`, holding that mistake's `:::mistake` card and nothing of another. |
+| Exercises | One per exercise, `### Exercise N: <goal>` with `N` its place in order, holding its `::::exercise` card. |
+| Recap and reference | Exactly `### For agents`, `### Recap` and `### Reference`, in this order, with nothing before the first. |
+
+- **Titles are specific.** Every subsection's title, in every section, says what it holds: `### Translating between layers with error`, not `### Overview`, `### Details`, `### Example` or `### More`. A title is short, has no final period, and reads well after its number.
+- **Deeper parts.** A subsection may hold `#### ` parts, which the site numbers `N.k.m.1`. Use them sparingly, for two or three parts that a reader would look up one by one.
+- **Text before the first subsection.** A section may open with a sentence or two before its first `### `, such as the intro of Common mistakes. A concept section usually starts its first subsection at once.
+- **Restructuring keeps the content.** Insert headings, and move or split paragraphs; add only the bridging sentence a subsection needs to read well on its own. Includes, expected outputs and verified blocks stay as they are.
+- **Anchors.** A subsection's anchor is the slug of its English words (`#forgetting-the-clause-u3007`): lowercase, backticks and other punctuation dropped, spaces as `-`. The site also gives it the anchor of its number (`#s6-7-1`), which changes when a subsection is added before it; prefer the slug. So that every anchor names one heading:
+  - every heading of a chapter has its own slug (the site would give a repeated one `-1`, which no link can count on);
+  - no heading's words make the id of a section number (`### S6 1` would be `s6-1`);
+  - `for-agents`, `recap` and `reference` are the ids of the closing section's three subsections, and no other heading of the chapter takes them;
+  - every link to `#id` on the page names a heading's slug or number.
 
 ## Blocks are includes
 
@@ -154,11 +178,13 @@ Any other attribute fails the check, so a misspelt `include` does not pass unnot
 
 ## Mistakes and exercises
 
-- A chapter has at least 4 `mistakes/N` (more than 8 is reported), numbered from 1. Each has `expected/diagnostics.txt` and `expected/rendered.txt`. The Common mistakes part has one `:::mistake` card per directory, in order: card `k` shows `mistakes/k/expected/rendered.txt` (whole or by lines), usually a diff from its base, and nothing of another mistake.
-- A chapter has 3 to 5 `exercises/N`, numbered from 1, each with `start/` and `answer/`. The Exercises part has one `::::exercise` card per directory, in order: card `k` holds a `:::answer` with a block of `exercises/k/answer`, and nothing of another exercise.
+- A chapter has at least 4 `mistakes/N` (more than 8 is reported), numbered from 1. Each has `expected/diagnostics.txt` and `expected/rendered.txt`. The Common mistakes part has one `### ` subsection and one `:::mistake` card per directory, in order: card `k` shows `mistakes/k/expected/rendered.txt` (whole or by lines), usually a diff from its base, and nothing of another mistake.
+- A chapter has 3 to 5 `exercises/N`, numbered from 1, each with `start/` and `answer/`. The Exercises part has one `### ` subsection and one `::::exercise` card per directory, in order: card `k` holds a `:::answer` with a block of `exercises/k/answer`, and nothing of another exercise.
 - `start/` holds the exercise's example, and `una test .` fails on it: that is what tells the reader the exercise is not done yet. It is usually an overlay of the day-to-day program with the example added. An answer changes something (it is not only a `base.txt`), checks clean, prints its `expected/output.txt` under `una run`, and passes `una test .`.
 
 ## Links
+
+**Between sections, link; never write "above" or "below".** Each numbered section is a page of its own on the site, so "the table above" or "mistake 4" can name something the reader does not see. Name it, and link it: `[section 6.2](#s6-2)`, `[Common mistakes](#s6-7)`, `[the clause on the same line](#the-clause-on-the-same-line-u0101)`. Inside one section, which is one page, "below" and "above" are fine.
 
 Links point to the site's own pages at the release: a root-relative route such as `/docs/errors/U3007/`, or an anchor on the page such as `#what-youll-build`. An anchor names a numbered heading by its number, `#s6-1` for `## 6.1 …`, and another heading by the slug of its English words (`#what-youll-build`); a translation keeps the English page's anchors, and its headings match the English page's in number and order. A link to a file of the una-lang repositories on GitHub (`/blob/`, `/tree/`, `raw.githubusercontent.com`) fails, since those files change after the release; so does a relative link such as `../05-collections/README.md`, which resolves on GitHub but not on the site, and an `http://` link. The host is matched in any case and with any port. Other `https://` links are allowed.
 
@@ -176,15 +202,15 @@ The page uses Markdown and a small set of markers that the site renders. Raw HTM
 | `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!SECURITY]`, with an optional title after the marker | a callout with an icon, a color and a title line | 4, 5 |
 | ```` ```una include="…" title="…" caption="…" verified="check, run" ```` | a code block with a header: path, caption, check badges, language and Copy | 4, 5, 6 |
 | ```` ```text include="…/expected/output.txt" ```` | output in a terminal look | 2, 4, 6 |
-| ```` ```text include="…/expected/rendered.txt" ```` | a diagnostic: accent color, linked code, Help and Note lines | 7, 9 |
+| ```` ```text include="…/expected/rendered.txt" ```` | a diagnostic: accent color, linked code, Help and Note lines | 7, 8 |
 | `:::decide` around `**Which to use:**` and a table | a decision table, read as "want → use" | 4 |
-| `:::mistake` | a mistake card: the bold lead is its title, then the diagnostic, then the rows | 7 |
-| `*Why:*`, `*Fix:*`, `*Hint:*` opening a paragraph | a labeled row | 7, 9 |
+| `### <mistake>` then `:::mistake` | a mistake card under its subsection: the change, the diagnostic, then the rows. The `### ` heading is its title, so the card opens with plain text, not a bold lead | 7 |
+| `*Why:*`, `*Fix:*`, `*Hint:*` opening a paragraph | a labeled row | 7, 8 |
 | `:::pair` around blocks with `mistake="wrong"` and `mistake="right"` | before and after, side by side | 7 |
-| `:::agents` | the machine panel | 8 |
-| `::::exercise` holding `:::hint` and `:::answer <summary>` | an exercise card, a hint box, and a collapsed answer | 9 |
-| `:::recap` | a checklist of rules | 10 |
-| `:::reference` | a quiet index list | 11 |
+| `:::agents` | the machine panel, under `### For agents` | 9 |
+| `### Exercise N: <goal>` then `::::exercise` holding `:::hint` and `:::answer <summary>` | an exercise card under its subsection, a hint box, and a collapsed answer; the card opens with the goal in plain text | 8 |
+| `:::recap` | a checklist of rules, under `### Recap` | 9 |
+| `:::reference` | a quiet index list, under `### Reference` | 9 |
 | `` `code` `` | a chip, colored by what it holds: keyword, kind, capability, command or path | all |
 | `U1234`, in text or in backticks | a chip linked to the code's page | all |
 | `[[Ctrl]]` | a keyboard key | all |
@@ -199,7 +225,7 @@ Failures:
 2. The chapter directory holds only `README.md`, `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, laid out as above, with only the allowed files and no symbolic link.
 3. Every package and overlay has an allowed `una.toml` and the outcome in its `expected/`; its commands are allowed and print what they say; its `rendered.txt` is what `una` prints, normalized.
 4. The front matter has exactly its fields; `learn` matches the directory; `codes` are the codes the outcomes show.
-5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections, and the markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
+5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections; inside them, each concept section has 3 to 6 `### ` subsections, none titled by a generic label (`Overview`, `Details`, `Example` and the like), Day-to-day and Testing it have at least 2 `### `, no subsection anywhere has a generic title, Common mistakes and Exercises have one `### ` per card with its card in it (a mistake's title ends with a code its diagnostics show, an exercise's is `Exercise k: <goal>` in order), the anchors follow the rules of Anchors in [Inside a section](#inside-a-section) (a dangling `#id` link, a repeated slug and a slug like a section number fail in every chapter), and the closing section is `Recap and reference` with exactly `### For agents`, `### Recap` and `### Reference`. The markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
 6. Every fenced block is an include (or a plain `sh` block of commands); its include resolves; its body is the included text; its attributes are quoted, known and given once; its `title` is its path; its `verified` badges hold.
 7. "What you'll build" has a block that includes exactly `day-to-day/expected/output.txt`; the page shows something of `day-to-day/`; there are at least 4 mistakes and 3 to 5 exercises; each card shows its own mistake or answer, as above.
 8. Each exercise's examples fail on `start/`; each answer checks clean, runs, and passes `una test .`.
@@ -212,7 +238,7 @@ Warnings, which do not fail the check but are listed in its report: a part outsi
 
 - **Voice.** Second person, present tense, active. "You declare", not "one declares" and not "we will declare".
 - **One idea per section.** Define a term on first use. Never use a term before its chapter without a one-clause gloss.
-- **Order inside a section.** Problem, then the construct, then a minimal example, then a second use in context, then pitfalls.
+- **Order inside a section.** Problem, then the construct, then a minimal example, then a second use in context, then pitfalls, each step a `### ` subsection as in [Inside a section](#inside-a-section).
 - **Names.** The store domain throughout: SKU, order, inventory, catalog, customer, payment, shipment, cents. Never `demo`, `foo`, `A`, `B` or `Oops`. Example values are fictional and clearly so, such as `example.invalid` addresses.
 - **Code.** Canonical form, always (the check enforces it). Comments only where they add what the prose does not. Doc comments (`---`) on every public item, since they are part of the API story.
 - **Outputs and diagnostics** come only from `expected/` files. Quote a diagnostic's message line in prose exactly.
@@ -238,4 +264,5 @@ Warnings, which do not fail the check but are listed in its report: a part outsi
 - [ ] Links point to site routes at the release, not to GitHub.
 - [ ] Neutral text: no names, roles, internal ids, issue or decision-record numbers.
 - [ ] Every fact is in prose (translatable), headings are from the fixed set, and the length is within target.
+- [ ] Every section has its subsections: 3 to 6 specific `### ` titles in each concept section, one per mistake and per exercise, and the closing `Recap and reference`; no "above" or "below" across sections.
 - [ ] The page is within the site's page budget (40 KiB gzip). Otherwise, split it.

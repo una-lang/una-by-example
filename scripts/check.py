@@ -2,7 +2,8 @@
 """Checks every example of Una by Example against a `una` binary.
 
 A chapter whose README.md has `template: 2` in its front matter is one page, checked by the
-rules of template 2 (scripts/template2.py, TEMPLATE.md): its parts in order, its packages under
+rules of template 2 (scripts/template2.py, TEMPLATE.md): its parts in order, the subsections
+inside its sections (template2.structure), its packages under
 steps/, day-to-day/, mistakes/ and exercises/ checked as in step 2 below, with their rendered
 diagnostics, every fenced block an include whose text is the included file's, the exercises'
 examples failing on start/ and passing on the answer, and links to the site's own pages. A

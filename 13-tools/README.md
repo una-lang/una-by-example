@@ -52,7 +52,11 @@ The checks also give more than a yes or a no. The verifier's obligations, a func
 
 ## 13.1 Check, format and fix
 
+### The check loop and its tiers
+
 The loop you run most is `una check .`. It checks the package in tiers: tier 0 is the syntax, the names, the types, the capabilities and the labels, and tier 1 adds the verifier, which proves the contracts with Z3. `una check --tier 0 .` stops after tier 0, for a quick answer while you type. Diagnostics go to stderr, and the exit code is 1 when there is at least one error.
+
+### A receipt line with two problems
 
 Start with a receipt line written by someone used to another language: an `=` at the end of the header, as some languages open a body, and a second argument without its label.
 
@@ -103,6 +107,8 @@ una check .
 
 The checker reports one problem, the syntax error. A file that does not parse cannot be checked further, so the missing label is not reported yet. The diagnostic's `Help` line holds a repair with an exact edit, and the last line counts the diagnostics that `una fix` can repair.
 
+### Previewing and applying the repairs
+
 `una fix --dry-run .` shows what `una fix .` would change, without writing anything:
 
 ```sh
@@ -141,6 +147,8 @@ It works in rounds. Round one applies the syntax repair, the file then parses, a
 
 The function whose body is one line ends on the header line: that is canonical form, which `una fmt .` writes and `una fmt --check .` checks. A file that is not in canonical form is U7001, an error like any other, so every Una file in a package reads the same way.
 
+### What `una fix` applies, and what it leaves to you
+
 What `una fix` applies is narrow on purpose:
 
 | `una fix` applies | `una fix` leaves to you |
@@ -150,12 +158,16 @@ What `una fix` applies is narrow on purpose:
 | Edits that keep what the code may do | An edit that adds a `uses`, makes a declaration `pub` or adds a grant |
 | Formatting of every file that parses | A repair marked as an escape, such as `checked` |
 
-`una fix --dry-run .` names each repair it skips and why, as [section 13.8](#s13-8) shows for a repair that would widen what a function may do.
+`una fix --dry-run .` names each repair it skips and why: [A capability that is not there](#a-capability-that-is-not-there-u3001), in Common mistakes, shows it for a repair that would widen what a function may do.
+
+### In an editor: `una lsp`
 
 > [!TIP] In an editor.
 > `una lsp` is a language server: it speaks the Language Server Protocol over stdin and stdout, so any editor with a client for it shows the diagnostics of `una check` as you type. It also offers the repairs with edits as quick fixes, formats a file, and answers hover, go to definition and the outline of a file. It checks and proves, and it never runs a program.
 
 ## 13.2 Reading a diagnostic
+
+### A sale price with one wrong word
 
 A diagnostic that the verifier reports has the most parts. This step computes a sale price that must never fall below cost, from a price, a cost and a percent off. It has a requirement it is derived from, and a private function that reads a typed percent. The body has one wrong word: on line 24, on the path where the discount goes below cost, it returns `price` instead of `cost`.
 
@@ -213,6 +225,8 @@ example "a typed percent above 90 is OutOfRange"
   expect fails OutOfRange
 ```
 
+### The parts of a refuted proof
+
 `una check .` reports:
 
 ```text include="steps/03-refuted/expected/rendered.txt"
@@ -250,6 +264,8 @@ Read it from the top:
 6. **`Note 3`.** Where to read more.
 :::
 
+### An explanation for every code: `una explain`
+
 Every code has an explanation in the binary, which prints a paragraph, then a failing example and a fixed one. The first lines of the one for the missing label of [section 13.1](#s13-1):
 
 ```text include="steps/01-fix/expected/commands/explain.txt#L1-L4"
@@ -258,6 +274,8 @@ $ una explain U2004
 
 A call with two or more arguments may omit the label of its first argument only; every other argument names its parameter, as in `max(x, b: 10)`, or is a bare name equal to the parameter's name, which counts as labeled (`spec/04 §3`). A constructor with two or more fields labels every argument, the first included. The diagnostic carries an edit that labels the argument with the parameter at its position.
 ```
+
+### The same diagnostic as JSON
 
 The same diagnostic, for a program, is one line of JSON:
 
@@ -273,7 +291,9 @@ Every field of the text is a key. `primary` and `related` hold the exact places,
 
 ## 13.3 What was proven: obligations, contracts and traces
 
-A package that checks clean is proven, but "proven" covers many small facts. The verifier turns every promise into **obligations**: each `ensures`, each `requires` at each call, each refined value, each division. This step is the fixed price. The fix is the one word that 13.2 found:
+### From promises to obligations
+
+A package that checks clean is proven, but "proven" covers many small facts. The verifier turns every promise into **obligations**: each `ensures`, each `requires` at each call, each refined value, each division. This step is the fixed price. The fix is the one word that [section 13.2](#s13-2) found:
 
 ```diff include="steps/03-refuted..steps/04-proven:src/discount.una" context="1" title="src/discount.una"
 --- a/src/discount.una
@@ -341,6 +361,8 @@ example "a typed percent above 90 is OutOfRange"
   expect fails OutOfRange
 ```
 
+### Every obligation and its status: `una obligations`
+
 `una obligations .` lists every obligation with its status:
 
 ```text include="steps/04-proven/expected/commands/obligations.txt"
@@ -360,6 +382,8 @@ proven   ob-effe966d12dd refinement    src/discount.una:46:40 30 in 0..90
 ```
 
 Each line is a status, an identifier, a kind, a place and a goal. Most are `refinement`: each literal passed as `Cents` must be at least 0, and each `off` passed as `Percent` must be in `0..90`. The line at `27:1` is the result of `parse_percent`, which must be a `Percent`. After a first check, a result the proof cache already holds is marked `(cached)`. The command exits with code 1 when any obligation is not proven, so a script can rely on it.
+
+### A function's full header: `una contract`
 
 `una contract` prints a function's full header, as a caller relies on it, with its doc comments. For a private function it shows what the checker inferred:
 
@@ -381,6 +405,8 @@ pub sale_price(price: Cents, cost: Cents, off: Percent) -> Cents
 -- requirement PRICING_1 (active): "A sale price is never below what the store paid for the product"
 ```
 
+### From a requirement to the code: `una trace`
+
 `una trace` goes the other way, from a requirement to the code. It prints the requirement, every function derived from it with the clauses that carry it, and the obligations that prove them:
 
 ```text include="steps/04-proven/expected/commands/trace.txt"
@@ -397,9 +423,13 @@ discount.sale_price
 
 A reviewer who asks "where is this rule enforced, and is it proven?" gets the answer from one command ([chapter 10, Testing](/learn/testing/), introduced requirements).
 
+### How the three commands name things
+
 The three commands name things the same way. An obligation's identifier, such as `ob-8a05af02a5f7`, is the one a U5001 diagnostic prints in its `Note 1`, so a refuted proof can be found in the listing. An id is computed from the declaration, the kind and the goal, so it survives edits elsewhere, and two identical obligations in one function share one, as the two `off in 0..90` lines do. A function is named by its module and its name, `discount.sale_price`. `una contract` checks the package without the solver, since a header does not depend on the proofs, and reports the package's diagnostics instead when there are any. With `--json`, `una obligations .` also lists, for each obligation, the hypotheses the solver could assume, which helps to see why a goal could not be proven.
 
 ## 13.4 The build report
+
+### One page for a reviewer: `una report`
 
 `una report .` checks the package and prints what a reviewer needs to know about it, on one page:
 
@@ -429,6 +459,8 @@ native: aarch64-apple-darwin
 out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks
 ```
 
+### The sections of the report
+
 The sections, in order:
 
 - **`lock`, `proven`, `obligations`.** The solver and a digest of `verification.lock`, then the counts of obligations by status. `security and authority by typing` means that information flow and capabilities need no solver: the checker proves them by their types.
@@ -441,12 +473,16 @@ The sections, in order:
 
 The report exits with code 1 when an obligation is not proven. With `--json` it is the document `una.report/2`, which a release script can compare between two versions of a package.
 
+### Reading the report as a review checklist
+
 Read the report as a review checklist. A pull request that adds a line under `authority`, a module under `trusted modules`, or a count under `escapes` changes what the package may do or what its proofs rest on, even when its diff of the code looks small. `coverage` also counts `trivial ensures`, a promise the solver proves with no hypothesis at all, such as `ensures true`: it is reported as missing, since it promises nothing.
 
 > [!NOTE]
 > The `native` line names the machine `una` runs on, such as `aarch64-apple-darwin`, so the report of the same package differs between a Mac and a Linux machine in that line only.
 
 ## 13.5 Running, testing and building
+
+### Running and testing: `una run` and `una test`
 
 Three commands run the code. `una run .` runs `main` of the module that `[run] entry` names, with the grants of `[run] grants`. `una test .` runs every example and prints one line for each:
 
@@ -460,6 +496,8 @@ example discount "a typed percent above 90 is OutOfRange" ... ok
 
 It exits with code 1 when an example fails. Both commands check the package first, and run nothing when the check reports an error.
 
+### A run as data: `--json` and the trace
+
 With `--json`, `una run .` prints the run as one document: the status, the lines printed, the failure if any, and the trace, every operation the run performed:
 
 ```text include="steps/04-proven/expected/commands/run.txt"
@@ -470,6 +508,8 @@ $ una --json run .
 The trace is what the program asked of the outside world, in order, with the arguments and the outcome of each operation. `una run --grant <spec> .` adds a grant for one run, such as `--grant clock`, on top of the grants of `una.toml`.
 
 `status` is `ok` for a run that returned, `failed` when `main` failed with its error kind, `aborted` when a limit stopped it ([chapter 12, Memory and concurrency](/learn/memory-and-concurrency/), shows one), and `rejected` when the checks failed and nothing ran.
+
+### A native executable: `una build`
 
 `una build .` compiles the package into a native executable, after the same checks:
 
@@ -483,6 +523,10 @@ built target/una/discount
 ```
 
 The executable is written under the package, at `target/una/<name>`, with `<name>` from `[package] name`. It runs `main` with the grants of `una.toml` built in, takes further `--grant` flags, and prints what `una run .` prints (for concurrent tasks, see [chapter 12](/learn/memory-and-concurrency/#s12-4)). Building needs a C compiler on the path, `cc`, to link, and builds for the machine it runs on.
+
+### Choosing a command
+
+The table matches each question of this chapter to the command that answers it:
 
 :::decide
 **Which to use:**
@@ -500,9 +544,13 @@ The executable is written under the package, at `target/una/<name>`, with `<name
 
 ## 13.6 Day-to-day: price tags for a sale
 
+### What the program must do
+
 Now the program from the start of the chapter, and the checks it goes through before a release. The store runs a sale of 30 percent. Each shelf gets a tag with the price and the sale price, which a requirement says must never be below what the store paid. The prices come from the store's catalog, a capability, so the tags can be tested with a catalog held in memory.
 
-**The requirement and the kinds.** The requirement records the rule in words. `Cents` and `Percent` are refined kinds ([chapter 7, Contracts and the verifier](/learn/contracts/)), so a negative price or a discount of 95 percent cannot reach the functions below.
+### The requirement and the kinds
+
+The requirement records the rule in words. `Cents` and `Percent` are refined kinds ([chapter 7, Contracts and the verifier](/learn/contracts/)), so a negative price or a discount of 95 percent cannot reach the functions of [The price](#the-price) and [The tag](#the-tag).
 
 ```una include="day-to-day/src/pricetags.una#L1-L24" title="day-to-day/src/pricetags.una" caption="the requirement, the kinds and the catalog"
 module pricetags
@@ -531,7 +579,9 @@ pub capability Catalog
 
 ```
 
-**The price.** `sale_price` promises `result >= product.cost` and names the requirement it is derived from. The verifier proves the promise on both paths of the `if`.
+### The price
+
+`sale_price` promises `result >= product.cost` and names the requirement it is derived from. The verifier proves the promise on both paths of the `if`.
 
 ```una include="day-to-day/src/pricetags.una#sale_price" title="day-to-day/src/pricetags.una"
 --- The price after `off` percent, never below cost.
@@ -543,7 +593,9 @@ pub sale_price(product: Product, off: Percent) -> Cents
   if discounted < product.cost then product.cost else discounted
 ```
 
-**The tag.** `shown` writes cents as a person reads them, with `mod` for the remainder. `tag` asks the catalog, the only thing it may do, as its `uses` clause says, and handles a SKU the catalog does not list.
+### The tag
+
+`shown` writes cents as a person reads them, with `mod` for the remainder. `tag` asks the catalog, the only thing it may do, as its `uses` clause says, and handles a SKU the catalog does not list.
 
 ```una include="day-to-day/src/pricetags.una#shown..tag" title="day-to-day/src/pricetags.una"
 --- Cents as a person reads them, such as 19.90.
@@ -565,7 +617,9 @@ pub tag(sku: Text, off: Percent) -> Text
 
 `when found` takes the catalog's answer apart. With `Some(product)`, the tag shows the price and the sale price, each through `shown`. With `None`, it says that the catalog does not list the SKU. Both arms give a `Text`, and `tag` cannot fail: a missing product is an ordinary answer of the catalog, not a failure.
 
-**Running it.** `listed` is a catalog held in a map, and `main` installs it for each tag with `with`:
+### Running it
+
+`listed` is a catalog held in a map, and `main` installs it for each tag with `with`:
 
 ```una include="day-to-day/src/pricetags.una#listed..main" title="day-to-day/src/pricetags.una"
 --- A catalog held in memory, for this run and for tests.
@@ -589,7 +643,9 @@ pub main() -> Unit
 
 `sample` holds the two products of this run. In production, the handler would read the store's database, and nothing else of the program would change: `tag` knows only the capability.
 
-`una run .` prints the tags shown under "What you'll build". The lamp loses 30 percent, from 19.90 to 13.93. The desk would fall to 90.30, below its cost of 110.00, so its sale price stops at cost. The chair is not in the catalog.
+`una run .` prints the tags shown in [What you'll build](#what-youll-build). The lamp loses 30 percent, from 19.90 to 13.93. The desk would fall to 90.30, below its cost of 110.00, so its sale price stops at cost. The chair is not in the catalog.
+
+### The whole program
 
 The whole file:
 
@@ -736,6 +792,8 @@ Every one of these commands exits with code 0 on this package, so a release scri
 
 ## 13.7 Testing it
 
+### Values worked out by hand
+
 The examples cover the price and the tag: a normal discount, the stop at cost, the formatting of cents, and a SKU the catalog does not list, each with a value worked out by hand. The last one installs the catalog with `given`, as `main` does with `with`.
 
 ```una include="day-to-day/src/pricetags.una#L67-L82" title="day-to-day/src/pricetags.una" caption="the examples"
@@ -757,6 +815,16 @@ example "a SKU the catalog does not list gets no price"
   expect result == "CHAIR-09  not in the catalog"
 ```
 
+### Only the handlers an example installs
+
+`una test .` runs each example in turn, with only the handlers its `given` lines install: an example can never reach the real catalog, or the console, by accident. With `--json`, each example in the document also carries its trace, the operations its `do` line performed, which `expect performed` checks one at a time.
+
+### What an example checks that a proof does not
+
+An example and a proof check different things. The verifier proves that `sale_price` is never below cost, for every product and every percent. The examples check that the numbers are the ones a person expects: that 30 percent off 19.90 is 13.93, which no `ensures` clause states. A proof says "never below cost"; an example says "13.93". A function with a contract still needs an example of its ordinary case, and a function whose result has no rule to prove, such as `shown`, needs examples for its edge cases, such as a price with fewer than 10 cents.
+
+### Running the examples
+
 `una test .` prints:
 
 ```text include="day-to-day/expected/commands/test.txt#L2-L7"
@@ -768,16 +836,14 @@ example pricetags "a SKU the catalog does not list gets no price" ... ok
 4 examples: 4 passed, 0 failed
 ```
 
-`una test .` runs each example in turn, with only the handlers its `given` lines install: an example can never reach the real catalog, or the console, by accident. With `--json`, each example in the document also carries its trace, the operations its `do` line performed, which `expect performed` checks one at a time.
-
-An example and a proof check different things. The verifier proves that `sale_price` is never below cost, for every product and every percent. The examples check that the numbers are the ones a person expects: that 30 percent off 19.90 is 13.93, which no `ensures` clause states. A proof says "never below cost"; an example says "13.93". A function with a contract still needs an example of its ordinary case, and a function whose result has no rule to prove, such as `shown`, needs examples for its edge cases, such as a price with fewer than 10 cents.
-
 ## 13.8 Common mistakes
 
 Each mistake below is a small change to `day-to-day/src/pricetags.una`, followed by what `una check .` reports, and which tool repairs it.
 
+### A layout of your own (U7001)
+
 :::mistake
-**1. A layout of your own (U7001).** Put the body of the handler's operation on its own line:
+Put the body of the handler's operation on its own line:
 
 ```diff include="day-to-day..mistakes/1:src/pricetags.una" context="1" title="src/pricetags.una"
 --- a/src/pricetags.una
@@ -811,8 +877,10 @@ Each mistake below is a small change to `day-to-day/src/pricetags.una`, followed
 *Fix:* `una fmt .`, or `una fix .`, which formats too. See [U7001](/docs/errors/U7001/).
 :::
 
+### A missing label (U2004)
+
 :::mistake
-**2. A missing label (U2004).** Leave out `off:` in the first example:
+Leave out `off:` in the first example:
 
 ```diff include="day-to-day..mistakes/2:src/pricetags.una" context="1" title="src/pricetags.una"
 --- a/src/pricetags.una
@@ -841,8 +909,10 @@ fixed src/pricetags.una:68:67 U2004 label it `off`
 See [U2004](/docs/errors/U2004/).
 :::
 
+### A promise the code breaks (U5001)
+
 :::mistake
-**3. A promise the code breaks (U5001).** Return `product.price` where the price falls below cost:
+Return `product.price` where the price falls below cost:
 
 ```diff include="day-to-day..mistakes/3:src/pricetags.una" context="1" title="src/pricetags.una"
 --- a/src/pricetags.una
@@ -864,8 +934,10 @@ See [U2004](/docs/errors/U2004/).
 *Fix:* read the counterexample into the code, and return `product.cost` on that path. `una fix` has nothing to apply: the repairs have no edit. See [U5001](/docs/errors/U5001/).
 :::
 
+### A requirement that does not exist (U1006)
+
 :::mistake
-**4. A requirement that does not exist (U1006).** Mistype the requirement's name:
+Mistype the requirement's name:
 
 ```diff include="day-to-day..mistakes/4:src/pricetags.una" context="1" title="src/pricetags.una"
 --- a/src/pricetags.una
@@ -886,8 +958,10 @@ See [U2004](/docs/errors/U2004/).
 *Fix:* correct the name, or declare the requirement. See [U1006](/docs/errors/U1006/).
 :::
 
+### A capability that is not there (U3001)
+
 :::mistake
-**5. A capability that is not there (U3001).** Call `tag` in `main` without installing a catalog:
+Call `tag` in `main` without installing a catalog:
 
 ```diff include="day-to-day..mistakes/5:src/pricetags.una" context="1" title="src/pricetags.una"
 --- a/src/pricetags.una
@@ -916,24 +990,14 @@ skipped src/pricetags.una:61:32 U3001 declare `uses @catalog: Catalog[product]` 
 *Fix:* install a handler for the call with `with @catalog = listed(sample())`, as the program does. See [U3001](/docs/errors/U3001/).
 :::
 
-## 13.9 For agents
-
-:::agents
-Every command prints one JSON document with `--json`, its `schema` key first. The run of the day-to-day program, with its trace:
-
-```json include="day-to-day/expected/commands/run.txt#L2"
-{"schema":"una.run/1","tier":1,"status":"ok","output":["LAMP-01  19.90 now 13.93","DESK-02  129.00 now 110.00","CHAIR-09  not in the catalog"],"failure":null,"diagnostics":[],"trace":[{"seq":1,"instance":"with:listed#1","capability":"Catalog","op":"product","args":{"sku":"\"LAMP-01\""},"outcome":{"kind":"ok","value":"Some(Product(sku: \"LAMP-01\", price: 1990, cost: 1200))"}},{"seq":2,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"LAMP-01  19.90 now 13.93\""},"outcome":{"kind":"ok","value":"unit"}},{"seq":3,"instance":"with:listed#2","capability":"Catalog","op":"product","args":{"sku":"\"DESK-02\""},"outcome":{"kind":"ok","value":"Some(Product(sku: \"DESK-02\", price: 12900, cost: 11000))"}},{"seq":4,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"DESK-02  129.00 now 110.00\""},"outcome":{"kind":"ok","value":"unit"}},{"seq":5,"instance":"with:listed#3","capability":"Catalog","op":"product","args":{"sku":"\"CHAIR-09\""},"outcome":{"kind":"ok","value":"None"}},{"seq":6,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"CHAIR-09  not in the catalog\""},"outcome":{"kind":"ok","value":"unit"}}]}
-```
-
-Each event names the handler instance that answered, such as `with:listed#1`, so an agent can check what a run asked of each service. The loop for an agent: `una --json check .`, apply what `una fix .` applies, read the remaining repairs by `rank` and `escape_cost`, then `una --json test .`. `una fix` never widens authority, never edits `una.toml`, and never applies an escape.
-:::
-
-## 13.10 Exercises
+## 13.9 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's function and example added. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
 
+### Exercise 1: a clearance price
+
 ::::exercise
-**Exercise 1: a clearance price.** A clearance takes 5.00 off, never below cost. The start package has a first attempt, which `una check .` rejects, and an example:
+A clearance takes 5.00 off, never below cost. The start package has a first attempt, which `una check .` rejects, and an example:
 
 ```una include="exercises/1/start/src/pricetags.una#clearance_price" title="exercises/1/start/src/pricetags.una"
 --- The price of a product on clearance: 5.00 off, never below cost. Exercise 1: make the
@@ -987,8 +1051,10 @@ Compare the discounted price with the cost, not the price:
 :::
 ::::
 
+### Exercise 2: a basket
+
 ::::exercise
-**Exercise 2: a basket.** The till needs the total of a basket during the sale. Write the body of `basket_total`, which asks the catalog for each SKU and adds up the sale prices; a SKU the catalog does not list adds nothing. The start package has the stub and an example:
+The till needs the total of a basket during the sale. Write the body of `basket_total`, which asks the catalog for each SKU and adds up the sale prices; a SKU the catalog does not list adds nothing. The start package has the stub and an example:
 
 ```una include="exercises/2/start/src/pricetags.una#basket_total" title="exercises/2/start/src/pricetags.una"
 --- The total of a basket during a sale of `off` percent. A SKU the catalog does not list
@@ -1056,8 +1122,10 @@ pub basket_total(skus: List[Text], off: Percent) -> Cents
 :::
 ::::
 
+### Exercise 3: two requirements
+
 ::::exercise
-**Exercise 3: two requirements.** The store adds a second rule: a member never pays more than the shelf price. `member_price` takes 1.00 off and is derived from both requirements. The start package adds the requirement, the function and two examples:
+The store adds a second rule: a member never pays more than the shelf price. `member_price` takes 1.00 off and is derived from both requirements. The start package adds the requirement, the function and two examples:
 
 ```una include="exercises/3/start/src/pricetags.una#L84-L105" title="exercises/3/start/src/pricetags.una"
 requirement PRICING_2
@@ -1134,7 +1202,21 @@ pricetags.member_price
 :::
 ::::
 
-## 13.11 Recap
+## 13.10 Recap and reference
+
+### For agents
+
+:::agents
+Every command prints one JSON document with `--json`, its `schema` key first. The run of the day-to-day program, with its trace:
+
+```json include="day-to-day/expected/commands/run.txt#L2"
+{"schema":"una.run/1","tier":1,"status":"ok","output":["LAMP-01  19.90 now 13.93","DESK-02  129.00 now 110.00","CHAIR-09  not in the catalog"],"failure":null,"diagnostics":[],"trace":[{"seq":1,"instance":"with:listed#1","capability":"Catalog","op":"product","args":{"sku":"\"LAMP-01\""},"outcome":{"kind":"ok","value":"Some(Product(sku: \"LAMP-01\", price: 1990, cost: 1200))"}},{"seq":2,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"LAMP-01  19.90 now 13.93\""},"outcome":{"kind":"ok","value":"unit"}},{"seq":3,"instance":"with:listed#2","capability":"Catalog","op":"product","args":{"sku":"\"DESK-02\""},"outcome":{"kind":"ok","value":"Some(Product(sku: \"DESK-02\", price: 12900, cost: 11000))"}},{"seq":4,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"DESK-02  129.00 now 110.00\""},"outcome":{"kind":"ok","value":"unit"}},{"seq":5,"instance":"with:listed#3","capability":"Catalog","op":"product","args":{"sku":"\"CHAIR-09\""},"outcome":{"kind":"ok","value":"None"}},{"seq":6,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"CHAIR-09  not in the catalog\""},"outcome":{"kind":"ok","value":"unit"}}]}
+```
+
+Each event names the handler instance that answered, such as `with:listed#1`, so an agent can check what a run asked of each service. The loop for an agent: `una --json check .`, apply what `una fix .` applies, read the remaining repairs by `rank` and `escape_cost`, then `una --json test .`. `una fix` never widens authority, never edits `una.toml`, and never applies an escape.
+:::
+
+### Recap
 
 :::recap
 - `una check .` is the loop. `--tier 0` skips the proofs for a quick answer.
@@ -1146,7 +1228,7 @@ pricetags.member_price
 - `una run`, `una test` and `una build` check first, and run nothing that does not check.
 :::
 
-## 13.12 Reference
+### Reference
 
 :::reference
 - Command line: [all commands](/docs/cli/), [`una check`](/docs/cli/check/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/), [`una obligations`](/docs/cli/obligations/), [`una contract`](/docs/cli/contract/), [`una trace`](/docs/cli/trace/), [`una report`](/docs/cli/report/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una build`](/docs/cli/build/), [`una lsp`](/docs/cli/lsp/)
