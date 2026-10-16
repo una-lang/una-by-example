@@ -1,0 +1,18 @@
+[U3014] Error: `dispatch` needs `@log: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`
+     ╭─[ src/notices.una:151:6 ]
+     │
+ 151 │   do dispatch([Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida")])
+     │      ─────────────────────────────────────┬────────────────────────────────────
+     │                                           ╰────────────────────────────────────── `dispatch` needs `@log: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`
+     │
+     │ Note: run `una explain U3014` for an explanation
+─────╯
+[U3001] Error: no `given` line binds `@log`
+     ╭─[ src/notices.una:152:20 ]
+     │
+ 152 │   expect performed @log.print
+     │                    ──┬─
+     │                      ╰─── no `given` line binds `@log`
+     │
+     │ Note: run `una explain U3001` for an explanation
+─────╯

@@ -1,8 +1,0 @@
-[package]
-name = "rebinding"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "rebinding"
-grants = ["console"]

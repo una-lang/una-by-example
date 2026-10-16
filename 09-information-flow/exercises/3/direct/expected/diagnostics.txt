@@ -1,0 +1,4 @@
+error U4001 at src/notices.una:50:11: the result of `notify` is `public`, and which value it returns depends on this `secret[PII]` condition: a flow from `secret[PII]` to `public`
+error U4002 at src/notices.una:51:5: this `fail` depends on `secret[PII]` data, so its failure would reveal it; return a labeled value instead of failing
+error U4002 at src/notices.una:54:7: `if error fail` depends on `secret[PII]` data, so its failure would reveal it; return a labeled value instead of failing
+error U4002 at src/notices.una:55:5: policy `masked_email` lowers data to `public`, and it is called under a `secret[PII]` condition, which its result would reveal

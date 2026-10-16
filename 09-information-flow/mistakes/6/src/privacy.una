@@ -1,0 +1,19 @@
+trusted module privacy
+
+--- Releases what a log may show of an email address: its first letter and its domain.
+pub policy masked_email
+  from secret[PII] Text
+  to public Text
+  via mask_email
+  purpose "show in the dispatch log which address a notice went to"
+  owner support
+
+pub mask_email(address: secret[PII] Text) -> public Text
+=
+  let parts = address.split(on: "@")
+  if parts.len != 2 or address.len < 3
+    "(hidden)"
+  else
+    let domain = parts.at(index: 1)
+      if none use ""
+    "{address.slice(start: 0, end: 1)}***@{domain}"

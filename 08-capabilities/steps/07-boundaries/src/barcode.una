@@ -1,0 +1,8 @@
+module barcode
+
+--- Prints a shelf label with the SKU spelled out for a barcode font. This module is code from
+--- outside the store, so `una.toml` lists it as a boundary.
+pub print_label(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("*{sku.to_upper}*")

@@ -1,1 +1,0 @@
-error U4003 at src/notes.una:14:18: `@console.print` accepts `public` data, and this argument is `internal`

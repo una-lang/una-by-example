@@ -1,0 +1,9 @@
+[U4001] Error: the result of `margin` is `Int`, and this value is `confidential Int`: a flow from `confidential` to `public`
+    ╭─[ src/pricing.una:10:35 ]
+    │
+ 10 │ margin(product: Product) -> Int = product.price - product.cost
+    │                                   ──────────────┬─────────────
+    │                                                 ╰─────────────── the result of `margin` is `Int`, and this value is `confidential Int`: a flow from `confidential` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯

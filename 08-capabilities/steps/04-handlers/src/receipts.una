@@ -1,0 +1,34 @@
+module receipts
+
+--- How the mail service can fail.
+kind MailError = Bounced(address: Text) | Timeout
+
+--- The mail service: what it can do, with no code.
+capability Mailer
+  op send(to: Text, subject: Text) -> Unit
+    fails MailError
+
+--- Emails the receipt of an order. It may send mail, and nothing else.
+send_receipt(to: Text, order: Text) -> Unit
+  uses @mailer: Mailer[send]
+  fails MailError
+=
+  @mailer.send(to, subject: "Receipt for order {order}")
+    if error pass
+
+--- A mail service for a developer's machine: it prints each message instead of sending it.
+handler printed(prefix: Text) for Mailer
+  uses @console: Console[print]
+  op send(to, subject) = @console.print("{prefix} to {to}: {subject}")
+
+--- A mail service that refuses every address.
+handler bouncing() for Mailer
+  op send(to, subject) = fail Bounced(address: to)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  send_receipt("rosa@example.invalid", order: "A-1001") with @mailer = printed("[mail]")
+    if error use unit
+  let outcome = attempt send_receipt("tomas@example.invalid", order: "A-1002") with @mailer = bouncing()
+  @console.print("second receipt: {outcome}")

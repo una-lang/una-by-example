@@ -1,1 +1,0 @@
-error U3020 at src/app.una:10:3: `shout` is in the boundary `plugin` and needs `@console: Console[print]`, which a call into it grants only with `with`

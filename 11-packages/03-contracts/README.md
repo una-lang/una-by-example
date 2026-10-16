@@ -24,4 +24,4 @@ A condition in a header protects only while it stays there, and an edit could de
 
 ## See also
 
-- [Conditions on operations](../../08-capabilities/05-conditions/)
+- [Conditions on operations](../../08-capabilities/#s8-5)

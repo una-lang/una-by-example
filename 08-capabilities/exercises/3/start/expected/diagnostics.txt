@@ -1,0 +1,2 @@
+error U5001 at src/notices.una:84:3: `@mailer.send` may run where `not dry_run` is not proven
+  counterexample: dry_run = true

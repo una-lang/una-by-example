@@ -1,0 +1,1 @@
+error U3004 at src/notices.una:35:3: `@log` is used here, but this code declares no `uses`, so it is pure

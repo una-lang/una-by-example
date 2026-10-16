@@ -1,0 +1,13 @@
+$ una test .
+example notices "a customer who wants notices gets one" ... ok
+example notices "an unknown customer gets no mail" ... ok
+example notices "a customer who asked for no notices gets no mail" ... ok
+example notices "a directory that does not answer is DirectoryDown, and no mail is sent" ... ok
+example notices "a mail service that does not answer is MailDown" ... ok
+example notices "the batch logs every shipment, even when the mail service is down" ... ok
+example notices "the log shows the first letter and the domain of an address" ... ok
+example notices "an address the mask cannot read is hidden" ... ok
+example notices "the domain of an address" ... ok
+example notices "an address with no domain has none" ... ok
+
+10 examples: 10 passed, 0 failed

@@ -1,0 +1,11 @@
+[package]
+name = "notices"
+version = "0.1.0"
+edition = "0.2"
+
+[labels]
+categories = ["PII"]
+
+[run]
+entry = "notices"
+grants = ["console"]

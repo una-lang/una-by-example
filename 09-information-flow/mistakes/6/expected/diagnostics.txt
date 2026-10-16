@@ -1,0 +1,1 @@
+error U4005 at src/privacy.una:7:7: the `via` function of a policy is private to its trusted module, and `mask_email` is not; remove its `pub`, or declare it in this module

@@ -1,0 +1,2 @@
+error U4003 at src/notices.una:50:18: `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
+error U4003 at src/notices.una:50:87: `@mailer.send` accepts `public` data, and this argument is `secret[PII]`

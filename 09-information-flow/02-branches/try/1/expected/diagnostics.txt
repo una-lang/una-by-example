@@ -1,1 +1,0 @@
-error U4001 at src/bonus.una:5:44: the result of `gets_bonus` is `public`, and which value it returns depends on this `secret` condition: a flow from `secret` to `public`

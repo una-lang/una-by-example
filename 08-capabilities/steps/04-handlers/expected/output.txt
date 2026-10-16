@@ -1,0 +1,2 @@
+[mail] to rosa@example.invalid: Receipt for order A-1001
+second receipt: Err(Bounced("tomas@example.invalid"))

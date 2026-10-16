@@ -1,1 +1,0 @@
-error U4001 at src/salary.una:8:44: the result of `headcount` is `Int`, and this value is `secret Int`: a flow from `secret` to `public`

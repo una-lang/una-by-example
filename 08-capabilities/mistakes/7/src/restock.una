@@ -1,0 +1,27 @@
+module restock
+
+--- The supplier's ordering service.
+capability Supplier
+  op order(sku: Text, units: Int) -> Unit
+
+--- Reorders a SKU that runs low. A dry run only says what it would order.
+reorder(sku: Text, left: Int, dry_run: Bool) -> Unit
+  uses @supplier: Supplier[order where not dry_run]
+  uses @console: Console[print]
+=
+  if left >= 5
+    unit
+  else
+    @supplier.order(sku, units: 20)
+
+--- A supplier on a developer's machine: it prints each order instead of placing it.
+handler printed() for Supplier
+  uses @console: Console[print]
+  op order(sku, units) = @console.print("ordered {units} x {sku}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  reorder("LAMP-01", left: 2, dry_run: true) with @supplier = printed()
+  reorder("LAMP-01", left: 2, dry_run: false) with @supplier = printed()
+  reorder("DESK-02", left: 9, dry_run: false) with @supplier = printed()

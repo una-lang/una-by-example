@@ -1,0 +1,18 @@
+module export
+
+--- The stock to export, one `SKU,units` line each.
+stock_lines() -> List[Text] = ["LAMP-01,4", "DESK-02,1", "CHAIR-09,0"]
+
+--- Writes the end-of-day stock export, stamped with the time it was taken.
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @clock: Clock[now]
+  uses @files: Files[write]
+=
+  let taken = @clock.now()
+  let body = stock_lines().join(separator: "\n")
+  let content = "taken at {taken}\n{body}\n"
+  let outcome = attempt @files.write("stock-export.csv", content: content)
+  when outcome
+    is Ok -> @console.print("export written: {stock_lines().len} lines")
+    is Err(failure) -> @console.print("export failed: {failure}")

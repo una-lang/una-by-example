@@ -1,0 +1,1 @@
+error U4002 at src/shipping.una:19:5: this `fail` depends on `confidential` data, so its failure would reveal it; return a labeled value instead of failing

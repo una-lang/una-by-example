@@ -1,0 +1,2 @@
+error U3014 at src/notices.una:151:6: `dispatch` needs `@log: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`
+error U3001 at src/notices.una:152:20: no `given` line binds `@log`

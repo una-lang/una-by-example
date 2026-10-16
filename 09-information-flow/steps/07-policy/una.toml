@@ -1,0 +1,11 @@
+[package]
+name = "reorder"
+version = "0.1.0"
+edition = "0.2"
+
+[trusted]
+modules = ["release"]
+
+[run]
+entry = "reorder"
+grants = ["console", "files:src:read,write"]

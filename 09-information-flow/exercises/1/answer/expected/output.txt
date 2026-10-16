@@ -1,0 +1,5 @@
+sent     A-1001 to r***@example.invalid
+sent     A-1002 to t***@example.invalid
+skipped  A-1003: no customer has the id C-99
+skipped  A-1004: customer C-21 asked for no notices
+skipped  A-1005: the mail service did not answer; retry later

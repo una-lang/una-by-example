@@ -1,2 +1,0 @@
-error U3001 at src/report.una:13:3: `line` needs `@out: Console[print]`, which is not in scope here
-error U3001 at src/report.una:14:3: `line` needs `@out: Console[print]`, which is not in scope here
