@@ -51,9 +51,13 @@ Una keeps the structure small and visible:
 
 ## 11.1 Modules: one file each
 
+### A package is a directory of modules
+
 A package is a directory with `una.toml`, `verification.lock` and `src/`, as in [chapter 1, Hello, Una](/learn/hello/#s1-1). Each file under `src/` is a module, and its name is its path: `src/store/money.una` is `store.money`, and its first line must say so. A directory under `src/` only groups modules. It is not a module itself.
 
 There is no list of modules to keep up to date. `una check .` reads every `.una` file under `src/`, checks all of them together, and reports each diagnostic with its file, so a new file is part of the package as soon as it exists. `una run .` starts at one module, the entry, and `una test .` runs the examples of every module.
+
+### Two modules: `store.money` and `store.app`
 
 This first step has two modules. `store.money`, in `src/store/money.una`, formats an amount, and `store.app`, in `src/store/app.una`, prints with it:
 
@@ -79,11 +83,13 @@ pub main() -> Unit
 ```
 
 :::steps
-1. **`module store.money`.** The header names the module. A file whose header does not match its path is U1008 (mistake 1 shows it).
+1. **`module store.money`.** The header names the module. A file whose header does not match its path is U1008 ([A module header that does not match its path](#a-module-header-that-does-not-match-its-path-u1008) shows it).
 2. **`pub format(...)`.** `pub` makes `format` part of the module's interface. Without it, no other module could import it.
 3. **`import store.money (format)`.** An import names a module of the package, then, in parentheses, each declaration it takes. In the importing module, `format` is then a plain name.
 4. **`cents mod 100`.** `mod` is the remainder of a division, as `/` is its quotient.
 :::
+
+### The entry module in `una.toml`
 
 `una.toml` says which module `una run` starts: `[run] entry` is a module path, here `store.app`, and that module has the `pub main`.
 
@@ -104,11 +110,15 @@ grants = ["console"]
 a lamp costs 19.90, a desk 249.05
 ```
 
+### Grouping and moving modules
+
 Group modules by what they are about, not by what kind of declaration they hold: `store.money` keeps the type of an amount, its formatting and its tests together. A reader who wants to know how amounts are printed then opens one file.
 
 A module path follows the file system, so moving a file renames its module. The checker then reports the header that no longer matches, and every import of the old name, so nothing is left pointing at a module that is gone.
 
 ## 11.2 `pub` and `import`
+
+### What `pub` marks, and what an import brings
 
 `pub` goes on a function, a kind, a capability, a handler, a predicate or a policy. An `example` or a `requirement` is never `pub`. What an import brings in depends on what it names:
 
@@ -116,6 +126,8 @@ A module path follows the file system, so moving a file renames its module. The 
 - **A record kind** brings its type and its constructor: `Product(sku: …, name: …, cents: …)` works in the importing module, and so do its fields.
 - **A sum kind** brings its variants with it: importing `InvoiceError` lets the module write `fail UnknownSku(…)`. A `when` needs no import to match a variant, since its arms take the variants of the value's type.
 - **A capability** brings the name a `uses` clause needs. Its operations come with it.
+
+### Sharing a kind, a capability and a handler
 
 This step adds a kind for amounts to `store.money`, and a catalog module with a record, a capability and a handler, all `pub`. The kind `Cents`, an `Int` that is never below zero, is a refined kind of [chapter 7, Contracts and the verifier](/learn/contracts/), and `store.catalog` imports it from `store.money` like any other declaration:
 
@@ -146,6 +158,8 @@ pub handler listed(products: List[Product]) for Catalog
 4. **`pub handler listed(...)`.** A handler is shared like a function, so every module and every example can run against the same in-memory catalog.
 :::
 
+### A private helper next to a public function
+
 The money module now keeps a private helper, `digits`, next to its public `format`:
 
 ```una include="steps/02-imports/src/store/money.una" title="steps/02-imports/src/store/money.una" verified="check"
@@ -164,7 +178,9 @@ digits(cents: Int) -> Text
   if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
 ```
 
-And the app takes what it needs, one name at a time:
+### Importing one name at a time
+
+The app takes what it needs from the two modules, one name at a time:
 
 ```una include="steps/02-imports/src/store/app.una" title="steps/02-imports/src/store/app.una" verified="check, run"
 module store.app
@@ -220,6 +236,10 @@ Try to import `digits`:
 
 The checker offers the repair, adding `pub`, but it marks the repair as one that widens visibility. `una fix .` does not apply such a repair by itself: making a helper public is a decision about the module's interface, and you take it by editing the declaration, with a doc comment for its new callers.
 
+### Choosing what to share and what to import
+
+The table sums up what to write in each case:
+
 :::decide
 **Which to use:**
 
@@ -233,6 +253,8 @@ The checker offers the repair, adding `pub`, but it marks the repair as one that
 
 ## 11.3 The manifest and the lock
 
+### The tables of `una.toml`
+
 `una.toml` describes the package. In edition `0.2` it has five tables, and no others:
 
 | Table | Keys | What it says |
@@ -242,6 +264,8 @@ The checker offers the repair, adding `pub`, but it marks the repair as one that
 | `[labels]` | `categories` | The categories that labels may name ([chapter 9, Information flow](/learn/information-flow/)). |
 | `[trusted]` | `modules` | The modules that may declare policies, each also marked `trusted module` in its header. |
 | `[escape_budget]` | `checked_per_module` | How many uses of `checked` each module may have, 0 by default ([chapter 6, Failure](/learn/failure/)). |
+
+### A manifest, table by table
 
 Here is a manifest that uses four of them, with a comment on each. TOML comments start with `#`:
 
@@ -266,7 +290,7 @@ categories = ["PII"]
 checked_per_module = 0
 ```
 
-The package still runs as before. A table or key that is not in this list is U7002, with the line of the manifest: mistake 6 shows one.
+The package still runs as before. A table or key that is not in this list is U7002, with the line of the manifest: [A `0.3` table in an edition `0.2` package](#a-03-table-in-an-edition-02-package-u7002) shows one.
 
 ### No dependencies on other packages yet
 
@@ -283,6 +307,8 @@ So everything a package runs is in its own `src/`, the prelude, or the host capa
 `verification.lock` is the other file at the root of every package. It pins the verifier: the encoding of the queries, the solver and its version (`z3`, `5.1.0`), their logic, a step budget and a random seed. With the same sources, `una.toml` and lock, `una check` gives the same diagnostics and the same proofs on every machine. A missing or invalid lock is U7004, and a solver of another version is U5003. You rarely edit it: copy it from an existing package, and change it only to adopt a new solver, in a change of its own.
 
 ## 11.4 Locks in edition `0.3`: `[contracts]` and `[boundaries]`
+
+### Two tables that move decisions into the manifest
 
 Edition `0.3` is a preview ([chapter 14, Editions](/learn/editions/)), and it adds two tables to `una.toml`. Both move a decision out of the code and into the manifest, where it is reviewed apart.
 
@@ -347,7 +373,11 @@ set LAMP-01 to 1791
 the sale applied 1791
 ```
 
+### The rules of a lock
+
 Each key of `[contracts]` is the qualified name of a public function, its module path then its name. Each value lists `uses` clauses, written as a header writes them. The header must grant no more than its lock. It may grant less, with a stronger condition or fewer operations, since that only narrows what the function may do. A binding that the lock does not name, or an operation it does not list, is U3023 as well.
+
+### Weakening a locked header (U3023)
 
 The lock and the body are checked separately. The verifier proves that the body keeps its header, as [chapter 8](/learn/capabilities/#s8-5) showed: without `if not dry_run`, `set_price` could run on a dry run, and the check fails. The lock adds one more proof, that the header keeps the lock. Now delete the condition from the header:
 
@@ -428,10 +458,14 @@ A call into the boundary takes nothing by name. The caller grants each capabilit
 [LAMP-01 | 19.90]
 ```
 
+### Only in edition `0.3`
+
 > [!WARNING]
 > `[contracts]` and `[boundaries]` exist only in edition `0.3`. In a package of edition `0.2`, each is an unknown table, U7002. Since `0.3` is a preview, a later release may add obligations or errors to an edition `0.3` package.
 
 ## 11.5 Day-to-day: the store's invoice
+
+### Five modules, one job each
 
 Now the program from the start of the chapter. An order is a list of SKUs with quantities. The invoice looks each SKU up in the catalog, prices the line, shows what a member would pay for one unit, and names the SKUs the catalog does not list. Five modules under `src/store/` share the work:
 
@@ -441,13 +475,19 @@ Now the program from the start of the chapter. An order is a list of SKUs with q
 - `invoice.una`: order lines, lookups, and the text of each line;
 - `app.una`: `main`, the entry of the package.
 
-The imports form a graph with no cycle: `money` imports nothing, `catalog` and `pricing` import `money`, `invoice` imports the three, and `app` imports `catalog` and `invoice`. An import cycle is U1003 (mistake 4).
+### The import graph
+
+The imports form a graph with no cycle: `money` imports nothing, `catalog` and `pricing` import `money`, `invoice` imports the three, and `app` imports `catalog` and `invoice`. An import cycle is U1003 ([An import cycle](#an-import-cycle-u1003)).
 
 Each import goes from a module that knows more to one that knows less. `money` knows nothing of products, and `pricing` takes amounts, not products, so a price rule can be tested without a catalog. Only `invoice` puts a product, its price and its text together, and only `app` decides which catalog the program runs against.
 
+### The interface of each module
+
 The `pub` lines are the interface of each module. `money` shares `Cents` and `format`. `catalog` shares all it declares. `pricing` shares `line_cents` and `member_price`, and keeps `discount`. `invoice` shares its two kinds and its two functions. `app` shares only `main`, which `una run` needs, since the entry's `main` must be `pub`.
 
-**Money.** The same module as in [section 11.2](#s11-2), with its examples. `format` handles a negative amount, for a refund, and its private helper handles the digits:
+### Money
+
+The same module as in [section 11.2](#s11-2), with its examples. `format` handles a negative amount, for a refund, and its private helper handles the digits:
 
 ```una include="day-to-day/src/store/money.una" title="day-to-day/src/store/money.una" verified="check"
 module store.money
@@ -477,7 +517,9 @@ example "a refund keeps its sign"
   expect result == "-1.50"
 ```
 
-**The catalog.** Unchanged from [section 11.2](#s11-2): the record, the service, and a handler that holds the products in a list. `listed` takes the products as a parameter where it is installed, so the app and each example choose the catalog they need, and the module keeps no product list of its own.
+### The catalog
+
+Unchanged from [section 11.2](#s11-2): the record, the service, and a handler that holds the products in a list. `listed` takes the products as a parameter where it is installed, so the app and each example choose the catalog they need, and the module keeps no product list of its own.
 
 ```una include="day-to-day/src/store/catalog.una" title="day-to-day/src/store/catalog.una" verified="check"
 module store.catalog
@@ -499,7 +541,9 @@ pub handler listed(products: List[Product]) for Catalog
   op find(sku) = products.first_where(keep: fn(product) -> product.sku == sku)
 ```
 
-**Pricing.** Two public functions and one private helper:
+### Pricing
+
+Two public functions and one private helper:
 
 ```una include="day-to-day/src/store/pricing.una" title="day-to-day/src/store/pricing.una" verified="check, test"
 module store.pricing
@@ -532,9 +576,11 @@ example "the discount rounds down"
 
 `line_cents` returns a plain `Int`, not a `Cents`. `quantity` is any `Int`, so a line of -1 units gives a negative total, and a `Cents` result is refuted (U5001, with `quantity = -1`). Even with a quantity of 0 or more, the verifier leaves the product of two values uninterpreted, so it could not prove the result is 0 or more (U5002). `format` takes any `Int` for that reason.
 
-`member_price` promises that a member never pays more than the price, nor less than 0. The verifier proves that promise from `discount`'s header, not from its body, so `discount` states its own bounds in `ensures`. Both take a `Cents`, so neither can be called with a negative price. `discount` stays private: the invoice shows what a member pays, not how the discount is computed. Exercise 2 changes that decision on purpose.
+`member_price` promises that a member never pays more than the price, nor less than 0. The verifier proves that promise from `discount`'s header, not from its body, so `discount` states its own bounds in `ensures`. Both take a `Cents`, so neither can be called with a negative price. `discount` stays private: the invoice shows what a member pays, not how the discount is computed. [Exercise 2](#exercise-2-show-what-a-member-saves) changes that decision on purpose.
 
-**The invoice.** It imports from three modules, and is the only module that knows how an invoice line reads:
+### The invoice
+
+It imports from three modules, and is the only module that knows how an invoice line reads:
 
 ```una include="day-to-day/src/store/invoice.una#L1-L28" title="day-to-day/src/store/invoice.una"
 module store.invoice
@@ -569,7 +615,9 @@ pub describe(line: OrderLine, product: Product) -> Text
 
 `product_of` turns a missing product into its own failure, `UnknownSku`, with the SKU. `describe` is pure, so a test can call it with any product, without a catalog. It uses three imported functions, `line_cents`, `member_price` and `format`, and the import lines at the top of the file name each of them, so a reader knows where to look for each one.
 
-**The app.** It runs the order against an in-memory catalog. `attempt` keeps each lookup's outcome, so an unknown SKU becomes a line of the invoice instead of stopping it:
+### The app
+
+It runs the order against an in-memory catalog. `attempt` keeps each lookup's outcome, so an unknown SKU becomes a line of the invoice instead of stopping it:
 
 ```una include="day-to-day/src/store/app.una" title="day-to-day/src/store/app.una" verified="check, run"
 module store.app
@@ -593,9 +641,13 @@ pub main() -> Unit
 
 `main` installs `listed(products)` for each lookup with `with`. In a real store, a handler that calls the catalog service would take its place, and no other module would change: `invoice` names the `Catalog` capability, never a handler.
 
-The whole package checks, runs and passes its tests. `una run .` prints the invoice shown under "What you'll build".
+### Running it
+
+The whole package checks, runs and passes its tests. `una run .` prints the invoice shown in [What you'll build](#what-youll-build).
 
 ## 11.6 Testing it
+
+### One command for every module
 
 Each module carries the examples of its own functions, and `una test .` runs every example of every module, module by module. It checks the whole package first: when any module has a diagnostic, it reports them all and runs no example, since the package as a whole is what the examples test.
 
@@ -613,7 +665,13 @@ example store.pricing "the discount rounds down" ... ok
 8 examples: 8 passed, 0 failed
 ```
 
+### Examples of private functions
+
 An example sits in the module whose function it tests, so it can call the module's private functions too: `"the discount rounds down"` tests `discount`, which no other module can see.
+
+### A shared fake: the catalog's handler
+
+Two of the invoice's examples look products up in an in-memory catalog:
 
 ```una include="day-to-day/src/store/invoice.una#L30-L42" title="day-to-day/src/store/invoice.una" caption="the invoice's examples"
 example "a known SKU is found"
@@ -633,14 +691,18 @@ example "an unknown SKU is UnknownSku"
 
 The invoice's examples use the catalog's public handler, `listed`, imported like any other declaration. A fake shared this way stays the same for every module that tests against it. Each example names a case within its module, and two modules may use the same example name, since `una test` prints the module with each one.
 
-`store.app` has no examples of its own. Everything it does is a call to a function that another module tests. An example could still run `main` with a fake console (`given @console = …`, [chapter 10, Testing](/learn/testing/#s10-7), mistake 1), but it would only show that something was printed. Keep an entry module this thin: wiring services to functions, and printing what they return. The less it decides, the less goes untested.
+### An entry module with no examples
+
+`store.app` has no examples of its own. Everything it does is a call to a function that another module tests. An example could still run `main` with a fake console (`given @console = …`, [Testing `main`](/learn/testing/#testing-main-u3014) in chapter 10), but it would only show that something was printed. Keep an entry module this thin: wiring services to functions, and printing what they return. The less it decides, the less goes untested.
 
 ## 11.7 Common mistakes
 
 Each mistake below is a small change to the day-to-day package, followed by what `una check .` reports.
 
+### A module header that does not match its path (U1008)
+
 :::mistake
-**1. A module header that does not match its path (U1008).** Add `src/store/shipping.una`, and name the module after the file alone:
+Add `src/store/shipping.una`, and name the module after the file alone:
 
 ```una include="mistakes/1/src/store/shipping.una" title="mistakes/1/src/store/shipping.una"
 module shipping
@@ -658,8 +720,10 @@ pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 *Fix:* write `module store.shipping`.
 :::
 
+### Using a name you did not import (U1001)
+
 :::mistake
-**2. Using a name you did not import (U1001).** Drop `member_price` from the invoice's import, and keep the call:
+Drop `member_price` from the invoice's import, and keep the call:
 
 ```diff include="day-to-day..mistakes/2:src/store/invoice.una" context="1" title="src/store/invoice.una"
 --- a/src/store/invoice.una
@@ -680,8 +744,10 @@ pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 *Fix:* add the name to the import of `store.pricing`.
 :::
 
+### An import that clashes with a declaration (U1002)
+
 :::mistake
-**3. An import that clashes with a declaration (U1002).** Declare a private `format` in the invoice, next to the imported one:
+Declare a private `format` in the invoice, next to the imported one:
 
 ```diff include="day-to-day..mistakes/3:src/store/invoice.una" context="1" title="src/store/invoice.una"
 --- a/src/store/invoice.una
@@ -703,8 +769,10 @@ pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 *Fix:* rename the new function, for example `quantity_text`.
 :::
 
+### An import cycle (U1003)
+
 :::mistake
-**4. An import cycle (U1003).** Add a helper for members' prices to `store.money`, which then imports `store.pricing`, which imports `store.money`:
+Add a helper for members' prices to `store.money`, which then imports `store.pricing`, which imports `store.money`:
 
 ```diff include="day-to-day..mistakes/4:src/store/money.una" context="1" title="src/store/money.una"
 --- a/src/store/money.una
@@ -731,8 +799,10 @@ pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 *Fix:* put the helper where both of its parts are visible, such as `store.pricing` or `store.invoice`.
 :::
 
+### Imports out of order (U7001)
+
 :::mistake
-**5. Imports out of order (U7001).** Put `store.money` before `store.catalog`:
+Put `store.money` before `store.catalog`:
 
 ```diff include="day-to-day..mistakes/5:src/store/invoice.una" context="1" title="src/store/invoice.una"
 --- a/src/store/invoice.una
@@ -754,8 +824,10 @@ pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 *Fix:* `una fmt .` sorts them.
 :::
 
+### A `0.3` table in an edition `0.2` package (U7002)
+
 :::mistake
-**6. A `0.3` table in an edition `0.2` package (U7002).** Lock the catalog lookup in the day-to-day manifest:
+Lock the catalog lookup in the day-to-day manifest:
 
 ```diff include="day-to-day..mistakes/6:una.toml" context="1" title="una.toml"
 --- a/una.toml
@@ -776,31 +848,14 @@ pub fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 *Fix:* set `edition = "0.3"` if you want the preview's rules, or remove the table.
 :::
 
-## 11.8 For agents
-
-:::agents
-A diagnostic about an import carries the place of the declaration as a related span, and its repair. For [section 11.2](#s11-2):
-
-```json include="steps/03-private/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1004","severity":"error","domain":"names","message":"function `digits` is private to module `store.money`","primary":{"file":"src/store/app.una","start":{"line":4,"col":21},"end":{"line":4,"col":27}},"related":[{"file":"src/store/money.una","start":{"line":10,"col":1},"end":{"line":10,"col":7},"message":"declared here without `pub`"}],"repairs":[{"rank":1,"escape_cost":0,"widens":{"kind":"visibility","cost":"every module may then call it: check that it belongs to the module's interface"},"description":"declare `digits` with `pub`","edit":{"file":"src/store/money.una","start":{"line":10,"col":1},"end":{"line":10,"col":1},"replacement":"pub "}}],"explain":"una explain U1004"}],"fixable":0}
-```
-
-The repair has `escape_cost` 0, but `widens` names the visibility it would open, so `una fix` skips it. It gives the reason `widens authority` for every repair that widens what code may reach, visibility included:
-
-```text include="steps/03-private/expected/commands/fix.txt"
-$ una fix --dry-run .
-skipped src/store/money.una:10:1 U1004 declare `digits` with `pub`: widens authority
-```
-
-The compact rule: *one module per file, named by its path; take each declaration you use with a named import; make a declaration `pub` only on purpose, with its whole header written.*
-:::
-
-## 11.9 Exercises
+## 11.8 Exercises
 
 Each exercise starts from `exercises/N/start`: a package of this chapter with the exercise's examples added, and a stub of what to write when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`.
 
+### Exercise 1: a module for shipping
+
 ::::exercise
-**Exercise 1: a module for shipping.** The invoice gains a total with shipping, 4.90 below 50.00 and nothing from 50.00 on. It imports `shipping_fee` from `store.shipping`, a module that does not exist yet:
+The invoice gains a total with shipping, 4.90 below 50.00 and nothing from 50.00 on. It imports `shipping_fee` from `store.shipping`, a module that does not exist yet:
 
 ```una include="exercises/1/start/src/store/invoice.una#L31-L32" title="exercises/1/start/src/store/invoice.una"
 --- What an order costs with shipping. Exercise 1: write `store.shipping`.
@@ -842,8 +897,10 @@ pub shipping_fee(subtotal: Int) -> Int = if subtotal >= 5000 then 0 else 490
 :::
 ::::
 
+### Exercise 2: show what a member saves
+
 ::::exercise
-**Exercise 2: show what a member saves.** The invoice wants a note with the discount on one unit, such as `members save 1.99`. The start package has `saving_note` with an empty text, and this example:
+The invoice wants a note with the discount on one unit, such as `members save 1.99`. The start package has `saving_note` with an empty text, and this example:
 
 ```una include="exercises/2/start/src/store/invoice.una#L47-L49" title="exercises/2/start/src/store/invoice.una"
 example "a note says what a member saves on one unit"
@@ -897,8 +954,10 @@ Then import it in the invoice, and use it:
 :::
 ::::
 
+### Exercise 3: honor a lock
+
 ::::exercise
-**Exercise 3: honor a lock.** This exercise starts from the sale package of [section 11.4](#s11-4), in edition `0.3`. It adds `end_sale`, which puts a product's old price back, and a lock for it in `una.toml`:
+This exercise starts from the sale package of [section 11.4](#s11-4), in edition `0.3`. It adds `end_sale`, which puts a product's old price back, and a lock for it in `una.toml`:
 
 ```toml include="exercises/3/start/una.toml" title="exercises/3/start/una.toml"
 [package]
@@ -978,7 +1037,28 @@ Write the locked condition in the header, and guard the operation to match it:
 :::
 ::::
 
-## 11.10 Recap
+## 11.9 Recap and reference
+
+### For agents
+
+:::agents
+A diagnostic about an import carries the place of the declaration as a related span, and its repair. For [Private stays private](#private-stays-private):
+
+```json include="steps/03-private/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1004","severity":"error","domain":"names","message":"function `digits` is private to module `store.money`","primary":{"file":"src/store/app.una","start":{"line":4,"col":21},"end":{"line":4,"col":27}},"related":[{"file":"src/store/money.una","start":{"line":10,"col":1},"end":{"line":10,"col":7},"message":"declared here without `pub`"}],"repairs":[{"rank":1,"escape_cost":0,"widens":{"kind":"visibility","cost":"every module may then call it: check that it belongs to the module's interface"},"description":"declare `digits` with `pub`","edit":{"file":"src/store/money.una","start":{"line":10,"col":1},"end":{"line":10,"col":1},"replacement":"pub "}}],"explain":"una explain U1004"}],"fixable":0}
+```
+
+The repair has `escape_cost` 0, but `widens` names the visibility it would open, so `una fix` skips it. It gives the reason `widens authority` for every repair that widens what code may reach, visibility included:
+
+```text include="steps/03-private/expected/commands/fix.txt"
+$ una fix --dry-run .
+skipped src/store/money.una:10:1 U1004 declare `digits` with `pub`: widens authority
+```
+
+The compact rule: *one module per file, named by its path; take each declaration you use with a named import; make a declaration `pub` only on purpose, with its whole header written.*
+:::
+
+### Recap
 
 :::recap
 - One file is one module, and its header names its path under `src/`: `src/store/money.una` is `module store.money`.
@@ -990,7 +1070,7 @@ Write the locked condition in the header, and guard the operation to match it:
 - In edition `0.3`, lock the `uses` of a public function in `[contracts]`, and give a supplier's module a ceiling in `[boundaries]`.
 :::
 
-## 11.11 Reference
+### Reference
 
 :::reference
 - Construct and configuration pages: [modules and imports](/docs/language/modules/), [`kind`](/docs/language/types/kind/), [`where`](/docs/language/types/where/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`uses`](/docs/language/capabilities/uses/), [`example`](/docs/language/examples/example/), [canonical form](/docs/language/canonical-form/), [`una.toml`](/docs/configure/), [`[package] name`](/docs/configure/package/name/), [`[package] version`](/docs/configure/package/version/), [`[package] edition`](/docs/configure/package/edition/), [`[run] entry`](/docs/configure/run/entry/), [`[run] grants`](/docs/configure/run/grants/), [`[labels] categories`](/docs/configure/labels/categories/), [`[trusted] modules`](/docs/configure/trusted/modules/), [`[escape_budget] checked_per_module`](/docs/configure/escape-budget/checked-per-module/), [`[boundaries]`](/docs/configure/boundaries/), [`verification.lock`](/docs/configure/verification-lock/)
