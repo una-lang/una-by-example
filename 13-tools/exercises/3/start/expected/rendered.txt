@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `member_price` is refuted
+    ╭─[ src/pricetags.una:97:46 ]
+    │
+ 94 │   ensures result <= product.price
+    │           ───────────┬───────────
+    │                      ╰───────────── ensures clause
+    │
+ 97 │   if product.price - 100 < product.cost then product.cost else product.price - 100
+    │                                              ──────┬─────
+    │                                                    ╰─────── postcondition of `member_price` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result <= product.price` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-592d56ba992b (postcondition) is refuted: result <= product.price
+    │
+    │ Note 2: counterexample: product = Product#0, product.cost = 1, product.price = 0, result = 1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

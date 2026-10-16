@@ -1,2 +1,0 @@
-$ una fix --dry-run .
-fixed src/area.una:10:33 U2004 label it `height`

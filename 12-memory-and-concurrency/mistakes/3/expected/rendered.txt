@@ -1,0 +1,12 @@
+[U2017] Error: `ledger` was passed by `take`, so it cannot be used afterwards
+    ╭─[ src/stockcount.una:67:65 ]
+    │
+ 66 │   let report = close(take ledger, lines: lines)
+    │                           ───┬──
+    │                              ╰──── passed by `take` here
+ 67 │   Report(summary: report.summary, lines: report.lines, closing: ledger.counts)
+    │                                                                 ───┬──
+    │                                                                    ╰──── `ledger` was passed by `take`, so it cannot be used afterwards
+    │
+    │ Note: run `una explain U2017` for an explanation
+────╯

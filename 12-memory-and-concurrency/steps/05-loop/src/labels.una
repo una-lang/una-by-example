@@ -1,0 +1,18 @@
+module labels
+
+--- The shelf labels SKU-1 to SKU-`count`. A loop builds them: its iterations are not calls,
+--- so the call depth stays the same however many labels there are.
+labels(count: Int) -> List[Text]
+=
+  let edit made: List[Text] = []
+  for n in 1..count
+    made = made.append(item: "SKU-{n}")
+  made
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let printed = labels(20000)
+  let last = printed.at(index: 19999)
+    if none use "none"
+  @console.print("{printed.len} labels, the last {last}")

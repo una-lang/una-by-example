@@ -1,0 +1,5 @@
+$ una contract pricetags.basket_total
+--- The total of a basket during a sale of `off` percent. A SKU the catalog does not list
+--- adds nothing.
+pub basket_total(skus: List[Text], off: Percent) -> Cents
+  uses @catalog: Catalog[product]

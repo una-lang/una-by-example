@@ -35,9 +35,9 @@ Every package and every overlay with files of its own has `expected/`, checked a
 | File | What it holds |
 | --- | --- |
 | `expected/output.txt` | What `una run .` prints, byte for byte. The package then also checks clean at tier 1 and is in canonical form (`una fmt --check`). |
-| `expected/diagnostics.txt` | Instead of `output.txt`: the lines `una check` reports, `error <code> at <file>:<line>:<col>: <message>`, each followed by its counterexample line when it has one. |
+| `expected/diagnostics.txt` | Instead of `output.txt`: the lines `una check` reports, `error <code> at <file>:<line>:<col>: <message>`, each followed by its counterexample line when it has one. An empty file states that the package checks clean and is not run; use it when a command file shows what running it does, such as an abort. An empty file with no command file fails the check. |
 | `expected/rendered.txt` | What `una --color never check .` prints on stderr, as a reader sees it in a terminal, after the normalization below. Every mistake has one. |
-| `expected/commands/<name>.txt` | A further command: `$ una <args>` on the first line, then what it prints on stdout, byte for byte. `<name>` is lowercase letters, digits and dashes. |
+| `expected/commands/<name>.txt` | A further command: `$ una <args>` on the first line, then what it prints on stdout, byte for byte. `<name>` is lowercase letters, digits and dashes. In the output of `report .`, the `native:` line compares equal for the two targets una builds for, `aarch64-apple-darwin` and `x86_64-unknown-linux-gnu`, so a report checks on either host. |
 
 **Commands.** A command is one of: `check .`, `test .`, `run .`, `build .`, `report .` and `obligations .` (each optionally after `--json`), `fmt --check .`, `fix --dry-run .`, `explain U1234`, `trace NAME` and `contract NAME` (optionally after `--json`). No other argument, no `--grant`, and no path but `.`.
 

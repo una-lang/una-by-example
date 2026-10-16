@@ -44,7 +44,7 @@ In many languages a collection is a shared, mutable object. You pass a list to a
 Una makes each of these visible:
 
 :::steps
-1. **Collections are values.** `append` returns a new list, and `with` returns a new map. A function that receives a list cannot change the caller's list, unless the call marks the argument `edit` ([`edit` parameters](/learn/memory-and-concurrency/edit-and-take/), in chapter 12).
+1. **Collections are values.** `append` returns a new list, and `with` returns a new map. A function that receives a list cannot change the caller's list, unless the call marks the argument `edit` ([`edit` parameters](/learn/memory-and-concurrency/#s12-2), in chapter 12).
 2. **A change is marked where it happens.** A binding that changes is declared `let edit`, and a call that updates a map in place is written `edit stock.set(...)`.
 3. **Absence is a type.** `first`, `at`, `get` and `first_where` return an `Option`. To use the value inside, you write a `when` that also says what happens when there is none, and the checker holds you to it.
 4. **JSON is a sum kind.** A parsed value is a `Json`, with one variant for each kind of JSON value. Reading a field is a `get`, which gives an `Option`, and a `when`. A misspelt field name is still `None` at run time, since no checker knows which fields a text will hold, but the code must say on that line what a missing field means.

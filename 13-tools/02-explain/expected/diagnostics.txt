@@ -1,2 +1,0 @@
-error U5001 at src/ratio.una:5:32: division obligation `b != 0` is refuted
-  counterexample: b = 0

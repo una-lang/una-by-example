@@ -1,1 +1,0 @@
-error U2020 at src/tally.una:23:5: parameter `t` of `record` is declared `edit`, so the call is written `edit t.record`

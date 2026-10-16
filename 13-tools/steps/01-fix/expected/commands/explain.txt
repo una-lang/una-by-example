@@ -1,0 +1,20 @@
+$ una explain U2004
+# U2004: Missing argument label
+
+A call with two or more arguments may omit the label of its first argument only; every other argument names its parameter, as in `max(x, b: 10)`, or is a bare name equal to the parameter's name, which counts as labeled (`spec/04 §3`). A constructor with two or more fields labels every argument, the first included. The diagnostic carries an edit that labels the argument with the parameter at its position.
+
+## Failing example
+
+```una
+module demo
+
+pub larger(x: Int) -> Int = max(x, 10)
+```
+
+## Fixed example
+
+```una
+module demo
+
+pub larger(x: Int) -> Int = max(x, b: 10)
+```

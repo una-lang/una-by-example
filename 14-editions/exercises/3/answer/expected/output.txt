@@ -1,0 +1,6 @@
+2 labels
+dry run: 2 labels
+[LAMP-01 | 4 on hand]
+[SHELF-03 | 12 on hand]
+2 labels
+printed 2 labels

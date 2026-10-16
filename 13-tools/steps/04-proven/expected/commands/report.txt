@@ -1,0 +1,23 @@
+$ una report .
+package discount 0.1.0
+lock: z3 5.1.0, sha256 3ae01f54b3b40760c00b7537ac3ba510a2288a5a4dd42a583dab76ea66719c3c
+proven: 12 semantic obligations; security and authority by typing
+obligations: 12 proven, 0 refuted, 0 unknown; 0 cached
+authority:
+  discount.main (pub): @console: Console[print]
+handler authority:
+information:
+escapes:
+assumptions:
+tcb:
+  trusted modules: 
+  host capabilities: Console
+  solver: z3 5.1.0
+  proof cache: .una/cache/
+  proof cache key: ~/.una/proof-cache.key
+requirements:
+  PRICING_1 (active): discount.sale_price
+coverage: 2 pub functions, 1 with ensures, 1 with derived from, 0 trivial ensures
+native: aarch64-apple-darwin
+  arbitrary precision: discount.sale_price.price, discount.sale_price.cost, discount.sale_price.result
+out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks

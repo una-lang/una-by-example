@@ -1,0 +1,12 @@
+[U0101] Error: unexpected end of line, expected an expression
+   ╭─[ src/receipt.una:4:55 ]
+   │
+ 4 │ line_text(units: Int, sku: Text, cents: Int) -> Text =
+   │                                                       ┬
+   │                                                       ╰── unexpected end of line, expected an expression
+   │
+   │ Help: repair 1: put `=` on a line of its own: a function whose body is a block has the long form, the header, `=`, then the indented body; edit src/receipt.una:4:1..5:1 to "line_text(units: Int, sku: Text, cents: Int) -> Text\n=\n"
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

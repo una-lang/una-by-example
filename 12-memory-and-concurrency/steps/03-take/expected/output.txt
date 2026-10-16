@@ -1,0 +1,2 @@
+order 1001: 2 lines, 14890 cents
+the new cart has 0 lines

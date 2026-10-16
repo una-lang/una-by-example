@@ -1,0 +1,8 @@
+$ una test .
+example stockcount "a sale lowers the count of its SKU" ... ok
+example stockcount "selling more than is counted is Oversold" ... ok
+example stockcount "a rejected movement leaves the counts as they were" ... ok
+example stockcount "closing every day at once gives the reports in site order" ... ok
+example stockcount "a recount sets the count and is not a movement" ... ok
+
+5 examples: 5 passed, 0 failed

@@ -1,0 +1,2 @@
+$ una --json run .
+{"schema":"una.run/1","tier":1,"status":"aborted","output":[],"failure":null,"diagnostics":[{"schema":"una.diagnostic/1","code":"U6003","severity":"error","domain":"runtime","message":"this call exceeds the maximum call depth of 10000","primary":{"file":"src/labels.una","start":{"line":4,"col":63},"end":{"line":4,"col":80}},"related":[],"repairs":[],"explain":"una explain U6003"}],"trace":[]}

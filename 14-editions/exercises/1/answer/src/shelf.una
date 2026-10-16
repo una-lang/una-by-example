@@ -1,0 +1,28 @@
+module shelf
+
+--- A line of a stock list: a SKU and the units on hand.
+kind Line
+  sku: Text
+  units: Int
+
+--- The units of every line, added up.
+total(lines: List[Line]) -> Int = lines.fold(initial: 0, step: fn(sum, line) -> sum + line.units)
+
+--- The SKUs of the lines with fewer than `limit` units, in the order of the list.
+low_stock(lines: List[Line], limit: Int) -> List[Text]
+=
+  let edit found: List[Text] = []
+  for line in lines
+    if line.units < limit
+      found = found.append(item: line.sku)
+  found
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lines = [Line(sku: "LAMP-01", units: 4), Line(sku: "DESK-02", units: 1)]
+  @console.print("{lines.len} lines, {total(lines)} units")
+
+example "the lines below the limit are low on stock"
+  do low_stock([Line(sku: "LAMP-01", units: 4), Line(sku: "DESK-02", units: 1)], limit: 2)
+  expect result == ["DESK-02"]

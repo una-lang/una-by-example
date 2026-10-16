@@ -1,0 +1,2 @@
+$ una build .
+built target/una/pricetags

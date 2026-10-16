@@ -1,0 +1,9 @@
+[U2001] Error: interpolation converts `Int`, `Bool` and `Text` to text, and this value is `List[Line]`
+    ╭─[ src/shelf.una:16:20 ]
+    │
+ 16 │   @console.print("{lines}")
+    │                    ──┬──
+    │                      ╰──── interpolation converts `Int`, `Bool` and `Text` to text, and this value is `List[Line]`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

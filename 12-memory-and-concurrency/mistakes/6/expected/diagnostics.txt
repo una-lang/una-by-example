@@ -1,0 +1,1 @@
+error U2012 at src/stockcount.una:40:20: `old` is allowed only in `ensures` clauses

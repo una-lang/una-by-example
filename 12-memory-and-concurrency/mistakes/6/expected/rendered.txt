@@ -1,0 +1,9 @@
+[U2012] Error: `old` is allowed only in `ensures` clauses
+    ╭─[ src/stockcount.una:40:20 ]
+    │
+ 40 │   ledger.applied = old(ledger).applied + 1
+    │                    ─────┬─────
+    │                         ╰─────── `old` is allowed only in `ensures` clauses
+    │
+    │ Note: run `una explain U2012` for an explanation
+────╯

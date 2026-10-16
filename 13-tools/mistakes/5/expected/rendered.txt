@@ -1,0 +1,11 @@
+[U3001] Error: `tag` needs `@catalog: Catalog[product]`, which is not in scope here
+    ╭─[ src/pricetags.una:64:16 ]
+    │
+ 64 │     let line = tag(sku, off: 30)
+    │                ────────┬────────
+    │                        ╰────────── `tag` needs `@catalog: Catalog[product]`, which is not in scope here
+    │
+    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @catalog: Catalog[product]` in the header; edit src/pricetags.una:61:32..61:32 to "\n  uses @catalog: Catalog[product]"
+    │
+    │ Note: run `una explain U3001` for an explanation
+────╯

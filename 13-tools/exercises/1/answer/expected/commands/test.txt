@@ -1,0 +1,8 @@
+$ una test .
+example pricetags "a sale takes the percent off the price" ... ok
+example pricetags "a sale price stops at cost" ... ok
+example pricetags "cents are shown with two digits" ... ok
+example pricetags "a SKU the catalog does not list gets no price" ... ok
+example pricetags "a clearance takes 5.00 off, but stops at cost" ... ok
+
+5 examples: 5 passed, 0 failed

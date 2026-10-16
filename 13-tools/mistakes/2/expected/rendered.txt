@@ -1,0 +1,12 @@
+[U2004] Error: argument 2 of `sale_price` needs a label; only the first argument may go without one
+    ╭─[ src/pricetags.una:68:67 ]
+    │
+ 68 │   do sale_price(Product(sku: "LAMP-01", price: 1990, cost: 1200), 30)
+    │                                                                   ─┬
+    │                                                                    ╰── argument 2 of `sale_price` needs a label; only the first argument may go without one
+    │
+    │ Help: repair 1: label it `off`; edit src/pricetags.una:68:67..68:69 to "off: 30"
+    │
+    │ Note: run `una explain U2004` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

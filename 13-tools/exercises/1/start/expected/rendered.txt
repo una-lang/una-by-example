@@ -1,0 +1,42 @@
+[U5001] Error: refinement `result >= 0` is refuted
+    ╭─[ src/pricetags.una:90:40 ]
+    │
+ 10 │ pub kind Cents = Int where it >= 0
+    │                            ───┬───
+    │                               ╰───── where clause
+    │
+ 90 │   if product.price > product.cost then product.price - 500 else product.cost
+    │                                        ─────────┬─────────
+    │                                                 ╰─────────── refinement `result >= 0` is refuted
+    │
+    │ Help 1: repair 1: add a guard (`if` or a `when` arm) that handles the values where `result >= 0` does not hold
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, result >= 0) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-30db409f316c (refinement) is refuted: result >= 0
+    │
+    │ Note 2: counterexample: product = Product#0, product.cost = 0, product.price = 1, result = -499
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯
+[U5001] Error: postcondition of `clearance_price` is refuted
+    ╭─[ src/pricetags.una:90:40 ]
+    │
+ 87 │   ensures result >= product.cost
+    │           ───────────┬──────────
+    │                      ╰──────────── ensures clause
+    │
+ 90 │   if product.price > product.cost then product.price - 500 else product.cost
+    │                                        ─────────┬─────────
+    │                                                 ╰─────────── postcondition of `clearance_price` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= product.cost` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-3061c3340bfd (postcondition) is refuted: result >= product.cost
+    │
+    │ Note 2: counterexample: product = Product#0, product.cost = 0, product.price = 1, result = -499
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

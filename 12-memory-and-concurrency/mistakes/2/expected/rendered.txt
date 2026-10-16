@@ -1,0 +1,9 @@
+[U2019] Error: `ledger` is not editable; declare it `let edit ledger`, or the parameter `edit ledger`
+    ╭─[ src/stockcount.una:63:27 ]
+    │
+ 63 │     let line = apply(edit ledger, movement: movement)
+    │                           ───┬──
+    │                              ╰──── `ledger` is not editable; declare it `let edit ledger`, or the parameter `edit ledger`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯

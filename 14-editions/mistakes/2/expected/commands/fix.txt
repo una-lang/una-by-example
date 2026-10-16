@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+fixed src/shelf.una:11:7 U0103 rename it to `the_edit`

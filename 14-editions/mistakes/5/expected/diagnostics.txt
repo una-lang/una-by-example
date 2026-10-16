@@ -1,0 +1,2 @@
+error U3023 at src/labels.una:41:26: the header of `print_labels` lets `@printer.print_label` run where `not dry_run` does not hold, which `una.toml` locks
+  counterexample: dry_run = true

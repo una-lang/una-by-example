@@ -1,0 +1,2 @@
+error U5001 at src/pricetags.una:97:46: postcondition of `member_price` is refuted
+  counterexample: product = "Product#0", product.cost = 1, product.price = 0, result = 1

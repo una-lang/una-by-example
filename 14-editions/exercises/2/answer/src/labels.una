@@ -1,0 +1,111 @@
+module labels
+
+--- A line of a stock list: a SKU and the units on hand.
+pub kind Line
+  sku: Text
+  units: Int
+
+--- Why a line of a stock export was rejected.
+pub kind LineError = Malformed(text: Text) | BadUnits(text: Text)
+
+--- The shelf-label printer.
+pub capability Printer
+  op print_label(sku: Text, units: Int) -> Unit
+
+--- Reads `"SKU, units"`.
+pub parse_line(text: Text) -> Line
+  fails LineError
+=
+  let parts = text.split(on: ",")
+  let sku = parts.at(index: 0)
+    if none fail Malformed(text)
+  let raw = parts.at(index: 1)
+    if none fail Malformed(text)
+  let units = raw.trim.to_int()
+    if none fail BadUnits(text)
+  Line(sku: sku.trim, units: units)
+
+--- Reads every line of an export; a line that does not parse is left out.
+pub read_lines(export: List[Text]) -> List[Line]
+=
+  let edit lines: List[Line] = []
+  for text in export
+    let outcome = attempt parse_line(text)
+    lines = when outcome
+      is Ok(line) -> lines.append(item: line)
+      is Err -> lines
+  lines
+
+--- Prints a label for every line with stock, and gives how many. A dry run prints nothing.
+pub print_labels(lines: List[Line], dry_run: Bool) -> Int
+  uses @printer: Printer[print_label where not dry_run]
+=
+  let edit printed = 0
+  for line in lines
+    if line.units > 0
+      if not dry_run
+        @printer.print_label(line.sku, units: line.units)
+      printed = printed + 1
+  printed
+
+--- A printer that writes each label to the console.
+handler on_console() for Printer
+  uses @console: Console[print]
+  op print_label(sku, units) = @console.print("[{sku} | {units} on hand]")
+
+--- A printer that prints nothing, for the examples.
+handler silent() for Printer
+  op print_label(sku, units) = unit
+
+--- The stock export of this run: one line has no stock, and one does not parse.
+export() -> List[Text] = ["LAMP-01, 4", "DESK-02, 0", "CHAIR-09, two", "SHELF-03, 12"]
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lines = read_lines(export())
+  let planned = print_labels(lines, dry_run: true) with @printer = on_console()
+  @console.print("dry run: {planned} labels")
+  let printed = print_labels(lines, dry_run: false) with @printer = on_console()
+  @console.print("printed {printed} labels")
+
+example "a line that does not parse is left out"
+  do read_lines(export()).len
+  expect result == 3
+
+example "a dry run counts the labels and prints none"
+  given @printer = silent()
+  do print_labels(read_lines(export()), dry_run: true)
+  expect result == 2
+  expect not performed @printer.print_label
+
+example "a run prints a label for each line with stock"
+  given @printer = silent()
+  do print_labels(read_lines(export()), dry_run: false)
+  expect result == 2
+  expect performed @printer.print_label
+
+--- Prints a label for every line with fewer than `limit` units, and gives how many, for a
+--- restock run. A dry run prints nothing.
+pub print_low(lines: List[Line], limit: Int, dry_run: Bool) -> Int
+  uses @printer: Printer[print_label where not dry_run]
+=
+  let edit printed = 0
+  for line in lines
+    if line.units < limit
+      if not dry_run
+        @printer.print_label(line.sku, units: line.units)
+      printed = printed + 1
+  printed
+
+example "a restock run prints the lines below the limit"
+  given @printer = silent()
+  do print_low(read_lines(export()), limit: 5, dry_run: false)
+  expect result == 2
+  expect performed @printer.print_label
+
+example "a restock dry run prints nothing"
+  given @printer = silent()
+  do print_low(read_lines(export()), limit: 5, dry_run: true)
+  expect result == 2
+  expect not performed @printer.print_label

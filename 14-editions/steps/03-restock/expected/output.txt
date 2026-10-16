@@ -1,0 +1,4 @@
+LAMP-01: order 6
+SHELF-03: enough
+DESK-02: order 1
+7 units to order

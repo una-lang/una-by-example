@@ -1,0 +1,2 @@
+error U5001 at src/pricetags.una:31:37: postcondition of `sale_price` is refuted
+  counterexample: off = 0, product = "Product#0", product.cost = 1, product.price = 0, result = 0

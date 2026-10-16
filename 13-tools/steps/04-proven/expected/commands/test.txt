@@ -1,0 +1,5 @@
+$ una test .
+example discount "30 percent off a lamp" ... ok
+example discount "a typed percent above 90 is OutOfRange" ... ok
+
+2 examples: 2 passed, 0 failed

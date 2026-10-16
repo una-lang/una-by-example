@@ -1,0 +1,3 @@
+LAMP-01  19.90 now 13.93
+DESK-02  129.00 now 110.00
+CHAIR-09  not in the catalog

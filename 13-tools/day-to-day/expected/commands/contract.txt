@@ -1,0 +1,4 @@
+$ una contract pricetags.tag
+--- The tag printed on the shelf for `sku` during a sale of `off` percent.
+pub tag(sku: Text, off: Percent) -> Text
+  uses @catalog: Catalog[product]

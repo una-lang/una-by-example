@@ -1,0 +1,35 @@
+module checkout
+
+--- A customer's cart: the SKUs in it and their total in cents.
+kind Cart
+  customer: Text
+  skus: List[Text]
+  cents: Int
+
+--- An order, made from a cart at checkout.
+kind Order
+  number: Int
+  customer: Text
+  lines: Int
+  cents: Int
+
+--- Puts one unit of `sku` in the cart.
+add(edit cart: Cart, sku: Text, cents: Int) -> Unit
+  ensures cart.skus.len == old(cart).skus.len + 1
+=
+  cart.skus = cart.skus.append(item: sku)
+  cart.cents = cart.cents + cents
+
+--- Turns the cart into an order. It takes the cart, so nothing can add to it afterwards.
+checkout(take cart: Cart, number: Int) -> Order = Order(number: number, customer: cart.customer, lines: cart.skus.len, cents: cart.cents)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit cart = Cart(customer: "C-1042", skus: [], cents: 0)
+  edit cart.add(sku: "LAMP-01", cents: 1990)
+  edit cart.add(sku: "DESK-02", cents: 12900)
+  let order = checkout(take cart, number: 1001)
+  cart = Cart(customer: "C-1042", skus: [], cents: 0)
+  @console.print("order {order.number}: {order.lines} lines, {order.cents} cents")
+  @console.print("the new cart has {cart.skus.len} lines")

@@ -1,0 +1,2 @@
+2 lines, 5 units
+[Line(sku: "LAMP-01", units: 4), Line(sku: "DESK-02", units: 1)]

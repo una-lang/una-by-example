@@ -1,0 +1,10 @@
+$ una test .
+example pricetags "a sale takes the percent off the price" ... ok
+example pricetags "a sale price stops at cost" ... ok
+example pricetags "cents are shown with two digits" ... ok
+example pricetags "a SKU the catalog does not list gets no price" ... ok
+example pricetags "a basket adds the sale prices of the products it lists" ... FAILED
+  src/pricetags.una:94: expect result == 12393
+  it is false, with `result` = `0`
+
+5 examples: 4 passed, 1 failed

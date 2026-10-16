@@ -1,0 +1,12 @@
+module labels
+
+--- The shelf labels SKU-1 to SKU-`count`, built by recursion: one call in progress per label.
+labels(count: Int) -> List[Text] = if count == 0 then [] else labels(count - 1).append(item: "SKU-{count}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let printed = labels(20000)
+  let last = printed.at(index: 19999)
+    if none use "none"
+  @console.print("{printed.len} labels, the last {last}")

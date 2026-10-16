@@ -1,0 +1,4 @@
+$ una test .
+example shelf "the lines below the limit are low on stock" ... ok
+
+1 example: 1 passed, 0 failed

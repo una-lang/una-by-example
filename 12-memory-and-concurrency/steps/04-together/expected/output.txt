@@ -1,0 +1,3 @@
+LAMP-01: 6 units
+DESK-02: 3 units
+CHAIR-09: 0 units

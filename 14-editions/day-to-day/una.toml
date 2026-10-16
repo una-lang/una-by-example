@@ -1,0 +1,11 @@
+[package]
+name = "labels"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "labels"
+grants = ["console"]
+
+[contracts]
+"labels.print_labels" = ["@printer: Printer[print_label where not dry_run]"]
