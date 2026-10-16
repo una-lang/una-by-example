@@ -1,0 +1,12 @@
+$ una test .
+example tracking "a heavy parcel abroad pays the zone and the weight" ... ok
+example tracking "a pickup moves a packed parcel into transit" ... ok
+example tracking "a second pickup scan changes nothing" ... ok
+example tracking "a parcel cannot come back before it was delivered" ... ok
+example tracking "a refused parcel is not refunded" ... ok
+example tracking "a parcel in transit sends its tracking number" ... ok
+example tracking "a damaged parcel is refunded" ... ok
+example tracking "a refused parcel goes back on the shelf" ... ok
+example tracking "a delivered parcel asks for a review" ... ok
+
+9 examples: 9 passed, 0 failed

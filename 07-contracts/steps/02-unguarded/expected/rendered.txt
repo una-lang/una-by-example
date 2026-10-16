@@ -1,0 +1,25 @@
+[U5001] Error: precondition `months >= 1` of this call is refuted
+    ╭─[ src/installments.una:11:43 ]
+    │
+  5 │   requires count >= 1
+    │            ─────┬────
+    │                 ╰────── requires clause
+    │
+ 11 │ monthly(total: Int, months: Int) -> Int = installment(total, count: months)
+    │                                           ────────────────┬────────────────
+    │                                                           ╰────────────────── precondition `months >= 1` of this call is refuted
+    │
+    │ Help 1: repair 1: strengthen the type of the parameter `months` to a refined kind that implies `months >= 1`
+    │
+    │ Help 2: repair 2: add `requires months >= 1` to the enclosing function; its callers then prove it
+    │
+    │ Help 3: repair 3: add a guard (`if` or a `when` arm) that handles the values where `months >= 1` does not hold
+    │
+    │ Help 4: repair 4 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, months >= 1) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-b0ef023087ff (precondition) is refuted: months >= 1
+    │
+    │ Note 2: counterexample: months = 0
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

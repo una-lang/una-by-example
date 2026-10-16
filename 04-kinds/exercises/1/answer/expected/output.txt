@@ -1,0 +1,6 @@
+A-1001: postage 600
+A-1001: with the courier, tracking CX-4471
+A-1001: no change, still with the courier, tracking CX-4471
+A-1001: delivered on day 3
+A-1002: postage 1200
+A-1002: returned on day 12, damaged; refund due: true

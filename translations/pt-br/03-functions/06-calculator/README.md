@@ -3,7 +3,7 @@ learn: "3.6"
 title: "Caso de estudo: uma pequena calculadora"
 editions: ["0.2"]
 codes: [U5001]
-source: 32c3bdd5a78e54dc70a2fdd8a84f4e9a05bc11efa22f3820fa0835b37d683421
+source: d5be5c7cd9495606df13c836406ee53257ffcd2523818fe7f66c703833ff1f90
 status: draft
 ---
 
@@ -25,4 +25,4 @@ Esta página junta o que o capítulo mostrou: funções com parâmetros rotulado
 
 ## Veja também
 
-- [Transbordamento e divisão, provados](../../07-contracts/06-arithmetic/)
+- [Contratos e o verificador](../../07-contracts/#s7-1)

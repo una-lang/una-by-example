@@ -1,0 +1,2 @@
+error U5001 at src/coupons.una:12:3: postcondition of `after_coupon` is refuted
+  counterexample: off = 1, price = 0, result = -1

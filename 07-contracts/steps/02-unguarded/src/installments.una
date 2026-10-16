@@ -1,0 +1,17 @@
+module installments
+
+--- One of `count` equal monthly installments of `total` cents, rounded down.
+installment(total: Int, count: Int) -> Int
+  requires count >= 1
+=
+  total / count
+
+--- What the customer pays each month. The checkout form allows 0 months, which means
+--- paying everything now.
+monthly(total: Int, months: Int) -> Int = installment(total, count: months)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{installment(12000, count: 3)} a month for 3 months")
+  @console.print("{monthly(12000, months: 0)} now, or {monthly(12000, months: 4)} a month for 4 months")

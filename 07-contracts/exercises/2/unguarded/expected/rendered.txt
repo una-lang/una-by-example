@@ -1,0 +1,21 @@
+[U5001] Error: refinement `result >= 0` is refuted
+    ╭─[ src/billing.una:69:29 ]
+    │
+ 16 │ pub kind Cents = Int where it >= 0
+    │                            ───┬───
+    │                               ╰───── where clause
+    │
+ 69 │     is FixedPrice(cents) -> amount - cents
+    │                             ───────┬──────
+    │                                    ╰──────── refinement `result >= 0` is refuted
+    │
+    │ Help 1: repair 1: add a guard (`if` or a `when` arm) that handles the values where `result >= 0` does not hold
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, result >= 0) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-478843cfd1ac (refinement) is refuted: result >= 0
+    │
+    │ Note 2: counterexample: amount = 0, coupon = FixedPrice, coupon.amount = -1, coupon.cents = 3, coupon.rate = 101, result = -3
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

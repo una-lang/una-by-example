@@ -1,0 +1,9 @@
+[U2014] Error: `*` of two operands that are not literals is outside the refinement language
+    ╭─[ src/billing.una:41:21 ]
+    │
+ 41 │   ensures result == line.unit_cents * line.quantity
+    │                     ───────────────┬───────────────
+    │                                    ╰───────────────── `*` of two operands that are not literals is outside the refinement language
+    │
+    │ Note: run `una explain U2014` for an explanation
+────╯

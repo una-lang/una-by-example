@@ -1,0 +1,15 @@
+[U5001] Error: exhaustiveness of this `when`, `grams in 0..500 or grams in 501..2000 or grams in 2001..30000`, is refuted
+    ╭─[ src/tracking.una:41:3 ]
+    │
+ 41 │   when grams
+    │   ──┬─
+    │     ╰─── exhaustiveness of this `when`, `grams in 0..500 or grams in 501..2000 or grams in 2001..30000`, is refuted
+    │
+    │ Help: repair 1: add an `else` arm, or arms for the values the others miss
+    │
+    │ Note 1: obligation ob-31ae02a5c7a2 (exhaustive) is refuted: grams in 0..500 or grams in 501..2000 or grams in 2001..30000
+    │
+    │ Note 2: counterexample: grams = -1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

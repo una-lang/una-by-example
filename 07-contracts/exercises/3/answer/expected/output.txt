@@ -1,0 +1,6 @@
+2 x LAMP-01 at 19.90: 39.80
+1 x DESK-02 at 149.00: 149.00
+subtotal 188.80, coupon -18.88, total 169.92
+store credit 50.00, card 119.92
+refund 39.80: paid back
+refund 200.00: refused, only 169.92 was paid

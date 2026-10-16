@@ -23,4 +23,4 @@ This page combines what the chapter showed: functions with labeled parameters, `
 
 ## See also
 
-- [Overflow and division, proven](../../07-contracts/06-arithmetic/)
+- [Contracts and the verifier](../../07-contracts/#s7-1)

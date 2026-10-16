@@ -1,1 +1,0 @@
-error U2009 at src/variants.una:13:22: variant `Circle` needs its fields: `radius`

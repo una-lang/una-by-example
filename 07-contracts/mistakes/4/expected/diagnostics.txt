@@ -1,0 +1,1 @@
+error U5002 at src/billing.una:40:39: refinement `result >= 0` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)

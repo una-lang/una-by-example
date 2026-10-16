@@ -1,0 +1,38 @@
+module cart
+
+--- An amount of money in cents. It is never negative.
+kind Cents = Int where it >= 0
+
+--- How many units of one SKU a line may order.
+kind Quantity = Int in 1..99
+
+--- One line of a cart.
+kind Line
+  sku: Text
+  unit_cents: Cents
+  quantity: Quantity
+
+--- An order ships free from 50.00.
+predicate reflect ships_free(total: Cents) -> Bool = total >= 5000
+
+--- What shipping costs for an order of `total` cents.
+shipping(total: Cents) -> Cents
+  ensures ships_free(total) implies result == 0
+=
+  if ships_free(total) then 0 else 495
+
+--- The line with one more unit, up to the limit of a line.
+one_more(line: Line) -> Line
+=
+  if line.quantity < 99
+    Line(sku: line.sku, unit_cents: line.unit_cents, quantity: line.quantity + 1)
+  else
+    line
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2)
+  let more = one_more(lamp)
+  @console.print("{more.quantity} x {more.sku}")
+  @console.print("shipping {shipping(3980)}, then {shipping(5970)}")
