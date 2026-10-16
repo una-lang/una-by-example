@@ -69,11 +69,11 @@ nav: ["fails and fail", "The five handling clauses", "attempt and Result", "chec
 - `prerequisites` lists the numbers of earlier chapters the reader needs.
 - `template: 2` turns on the rules of this document.
 - `nav` gives the site's sidebar a short label for each numbered section, `N.1` to the last one, in order; the sidebar shows `N.k <label>`. When it is present:
-  - It has one label per numbered section, no more and no fewer.
+  - It has one label per numbered section, whatever the page's count of numbered sections is: no more and no fewer.
   - Each label is in double quotes, and the labels are separated by commas. A label may hold a comma, but no double quote.
   - Each label is plain text of 1 to 32 characters, with no space at its ends, no backtick, tilde, `<` or `>` (the front matter holds none), no section number of its own, and no control or invisible character.
   - A label names what the section teaches, briefly: `fails and fail`, not `Declaring a failure: fails and fail`. Code names are written plainly, without backticks.
-  - The fixed parts keep their headings (`Testing it`, `Common mistakes`, `For agents`, `Exercises`, `Recap`, `Reference`), and the day-to-day label is `Day-to-day: <program>`, shortened to fit.
+  - The fixed parts of the table below keep their headings as labels, and the day-to-day label is `Day-to-day: <program>`, shortened to fit.
 
 A translation keeps `learn`, `editions`, `codes`, `template`, `time` and `prerequisites`, translates `title` and `builds`, and adds `source` and `status` as in template 1. It translates `nav` when the English page has one, by the same rules and with one label per section, and has no `nav` when the English page has none.
 
