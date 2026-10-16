@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Checks every example of Una by Example against a `una` binary.
 
-For each page directory `NN-chapter/MM-page/`:
+A chapter whose README.md has `template: 2` in its front matter is one page, checked by the
+rules of template 2 (scripts/template2.py, TEMPLATE.md): its parts in order, its packages under
+steps/, day-to-day/, mistakes/ and exercises/ checked as in step 2 below, with their rendered
+diagnostics, every fenced block an include whose text is the included file's, the exercises'
+answers passing `una test`, and links to the site's own pages. Every other chapter is on
+template 1, and for each of its page directories `NN-chapter/MM-page/`:
 
 1. Its README.md has the front matter (`learn`, `title`, `editions`, `codes`) and the parts of
    the template in order, its `learn` number matches its path, and its `codes` are the codes its
@@ -39,7 +44,11 @@ pass step 2 as unpacked.
 
 Usage:
   check.py --una PATH [--una-version-from-binary] [--archives DIR] [--require-neutrality]
+  check.py --fill
   check.py --self-test
+
+`--fill` rewrites the body of every include block of the template 2 pages, English and
+translated, from the packages, and needs no `una`.
 
 `una.lock` names the release the examples are checked against; `--una-version-from-binary`
 checks against the given binary's version instead, as the una release gate does for a release
@@ -76,6 +85,7 @@ LINK = re.compile(r"\]\(([^)\s]+)\)")
 URL = re.compile(r"https?://[^\s)>\]]+")
 REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
 TAG = re.compile(r"<[A-Za-z/][^>\n]*>?")
+CAPTION = re.compile(r'\scaption=("[^"]*"|\S+)')
 NOREPLY = re.compile(r"^(\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$")
 
 
@@ -319,7 +329,8 @@ def skeleton(body):
             parts.append([line.split(" ", 1)[0], 0])
         elif re.match(r"^\d+\. ", line) and parts:
             parts[-1][1] += 1
-    fences = FENCE.findall(body)
+    # A fence's caption= is prose, which a translation translates; the rest of the fence is kept.
+    fences = [CAPTION.sub(" caption=", fence, count=1) for fence in FENCE.findall(body)]
     rest = FENCE.sub("", body)
     spans = SPAN.findall(rest)
     kept = sorted(fences + spans + LINK.findall(rest) + REFERENCE.findall(rest) + URL.findall(rest))
@@ -383,6 +394,9 @@ def check_translations(root, failures):
                     stale.append(where)
             if status == "approved":
                 counted[1] += 1
+            import template2
+
+            template2.check_translation(fields, body, english_fields, english_body, where, failures)
             headings, kept, tags = skeleton(body)
             english_headings, english_kept, english_tags = skeleton(english_body)
             if headings != english_headings:
@@ -546,6 +560,15 @@ def lock_version(root):
 def main(argv):
     if argv == ["--self-test"]:
         return self_test()
+    if argv == ["--fill"]:
+        import template2
+
+        changed, problems = template2.fill(ROOT)
+        for path in changed:
+            print(f"check.py: filled {path}")
+        for problem in problems:
+            print(f"check.py: {problem}", file=sys.stderr)
+        return 1 if problems else 0
     una = None
     from_binary = False
     archive_dir = None
@@ -584,6 +607,10 @@ def check(root, una, from_binary, archive_dir, require_neutrality=False):
     scratch = tempfile.mkdtemp(prefix="una-by-example-")
     try:
         counted = check_pages(root, una, failures, scratch)
+        import template2
+
+        warnings = []
+        second = template2.check_chapters(root, una, failures, scratch, warnings)
         translated, stale = check_translations(root, failures)
         neutral = neutrality(root, failures)
         if neutral is None and require_neutrality:
@@ -603,7 +630,10 @@ def check(root, una, from_binary, archive_dir, require_neutrality=False):
         f"check.py: PASS ({counted[0]} pages, {counted[1]} changes, {counted[2]} commands, "
         f"{translated[0]} translations ({translated[1]} approved), una {found})"
     )
+    print(f"  template 2: {second[0]} chapters, {second[1]} packages, {second[2]} commands")
     print(f"  neutrality: {'skipped (UNA_NEUTRALITY_PATTERN unset)' if neutral is None else f'PASS ({neutral} files)'}")
+    for warning in warnings:
+        print(f"  warning: {warning}")
     for where in stale:
         print(f"  out of date, a draft: {where}")
     return 0
@@ -892,12 +922,17 @@ def self_test():
                 failed.append(f"two builds of {name} differ")
     finally:
         shutil.rmtree(base, ignore_errors=True)
+    # The rules of template 2 have their own tests, with their own stub.
+    import test_template2
+
+    if test_template2.main() != 0:
+        failed.append("template 2: scripts/test_template2.py failed")
     if failed:
         print("check.py: self-test FAIL", file=sys.stderr)
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (42 cases, archives reproducible)")
+    print("check.py: self-test PASS (42 cases, archives reproducible, and the template 2 tests)")
     return 0
 
 

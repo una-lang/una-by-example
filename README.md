@@ -15,13 +15,15 @@ Every example is checked against the una release that `una.lock` names. `expecte
 - `NN-chapter/README.md`: the chapter's page.
 - `NN-chapter/MM-page/`: a page. It holds `README.md` (the page's text), `una.toml`, `verification.lock` and `src/`, the package. It also holds `expected/` and `try/`, which the checks use and `una` never reads.
 
+A chapter whose `README.md` says `template: 2` in its front matter is a single long page instead, with its packages under `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, and every block on the page included from them. `TEMPLATE.md` describes it: the parts, the includes, the components, the style guide and the review checklist. The other chapters keep the layout above until they are rewritten.
+
 ## Checking
 
 ```sh
 python3 -B scripts/check.py --una "$(command -v una)"
 ```
 
-This needs Python 3 and the `una` of `una.lock`, with Z3 at the version its `verification.lock` pins on the path. `python3 -B scripts/check.py --self-test` checks the script itself and needs neither.
+This needs Python 3 and the `una` of `una.lock`, with Z3 at the version its `verification.lock` pins on the path. `python3 -B scripts/check.py --self-test` checks the script itself and needs neither; `python3 -B scripts/test_template2.py` runs only the tests of the template 2 rules. `python3 -B scripts/check.py --fill` writes the included text into the blocks of the template 2 pages, and needs no `una`.
 
 ## Translations
 
