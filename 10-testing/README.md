@@ -52,7 +52,13 @@ Una takes a different route:
 
 ## 10.1 Examples: `do` and `expect`
 
-An example names a case in plain words, runs one expression, and states what must hold of its result. Start with a cart that adds up its lines. Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1), and the module under `src/`. The manifest of this step names the package `cart` and runs the module `cart`:
+### A case, one call and what must hold
+
+An example names a case in plain words, runs one expression, and states what must hold of its result.
+
+### A first example: adding up a cart
+
+Start with a cart that adds up its lines. Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1), and the module under `src/`. The manifest of this step names the package `cart` and runs the module `cart`:
 
 ```toml include="steps/01-examples/una.toml" title="steps/01-examples/una.toml"
 [package]
@@ -113,6 +119,8 @@ example "an empty cart holds nothing"
 4. **`expect result == Summary(units: 0, cents: 0)`.** Records compare field by field, so one line can state a whole value.
 :::
 
+### Running the examples with `una test`
+
 `una run .` runs `main` only, and ignores the examples:
 
 ```text include="steps/01-examples/expected/output.txt"
@@ -161,12 +169,18 @@ example cart "an empty cart holds nothing" ... ok
 
 The report names the example, the file and line of the `expect` that did not hold, and the value of `result`. `una test` exits with code 1 when any example fails, so a build script or a continuous-integration job stops there.
 
+### Examples can reach private functions
+
 > [!TIP]
 > An example may call the module's private functions, such as a helper you want to pin down on its own. Examples are part of the module, not callers from outside it.
 
 ## 10.2 Testing failures: `expect fails`
 
+### Every failure path needs an example
+
 A function that can fail ([chapter 6, Failure](/learn/failure/)) needs an example for each way it can fail, as much as for its happy path. `expect fails V` holds when the `do` line failed with the variant `V`. The `do` line itself needs no handling clause: whatever it fails with, the example catches.
+
+### The failure paths of a coupon
 
 This step applies a coupon code to a cart. A code can be unknown, and a coupon needs a cart of at least 20.00:
 
@@ -263,14 +277,20 @@ example coupons "WINTER5 takes 5 percent off" ... FAILED
 - **`expect fails`, and the call succeeded.** The report gives the value it returned instead: `4500`. A cart of 50.00 meets the minimum, so the example was wrong, not the code.
 - **`expect result`, and the call failed.** There is no `result` to compare, and the report gives the failure: `Unknown("WINTER5")`.
 
-A third rule closes the gap between them. When the `do` line fails and no `expect fails` line expects it, the example fails, even if every other line held. A failure is never silently accepted.
+### A failure no `expect fails` line expects
+
+A third rule closes the gap between those two mistakes. When the `do` line fails and no `expect fails` line expects it, the example fails, even if every other line held. A failure is never silently accepted.
 
 > [!NOTE]
-> An `expect` line that does not mention `result`, such as `expect performed @mail.send` in the next section, still runs after a failed `do` line. That is how an example checks what a failing call did before it failed.
+> An `expect` line that does not mention `result`, such as `expect performed @mail.send` in [section 10.3](#s10-3), still runs after a failed `do` line. That is how an example checks what a failing call did before it failed.
 
 ## 10.3 Fakes: `given`, `expect performed` and `expect not performed`
 
+### A service in an example is a fake
+
 Most code worth testing talks to something: a warehouse, a card processor, a mail service. In Una that something is a capability ([chapter 8, Capabilities](/learn/capabilities/)), and an example gives it a handler with a `given` line. The handler is the fake. It is ordinary Una code, so you write the fake you need: one that answers, one that refuses, one that never answers.
+
+### Faking the warehouse and the mail service
 
 This step mails the buyer when a SKU runs low. The warehouse promises, in the `ensures` of its operation, that it never reports fewer than 0 units:
 
@@ -347,7 +367,9 @@ example restock "forty units left mails nobody" ... ok
 2 examples: 2 passed, 0 failed
 ```
 
-`expect performed` says that an operation ran, not how often or with which arguments. When those matter, return them: a value the example can compare is the clearest evidence. The JSON report of [section 10.8](#s10-8) also lists every operation with its arguments.
+### What `expect performed` does not say
+
+`expect performed` says that an operation ran, not how often or with which arguments. When those matter, return them: a value the example can compare is the clearest evidence. The JSON report of [For agents](#for-agents) also lists every operation with its arguments.
 
 ### Fakes are checked too
 
@@ -370,10 +392,14 @@ A fake is a handler, and the verifier checks every handler against the operation
 
 The counterexample, `units = -1`, is a warehouse no real store has. A test that passed against it would prove nothing about the real one. Una rejects the fake before any example runs, so every fake keeps the promises that the code under test relies on.
 
+### A fake holds no state
+
 > [!NOTE]
 > A handler holds no state between operations: `outbox` cannot count the messages it was given, and a fake cannot fail once and then answer. Each example also runs in a fresh machine, so no example sees what another did.
 
 ## 10.4 What the verifier proves, and what examples show
+
+### A rule with a contract and two examples
 
 Contracts and examples answer different questions. Take the store's shipping fee: 4.90, and free from 50.00 on. The rule comes from the store's terms, so the code records it as a requirement, and the contract that implements it says where it came from:
 
@@ -415,6 +441,8 @@ example "an order of exactly 50.00 ships for free"
 4. **The examples.** Two chosen cases, one on each side of the threshold.
 :::
 
+### Tracing a requirement with `una trace`
+
 `una trace` follows the requirement to the contracts derived from it, and to the status of each proof:
 
 ```sh
@@ -434,6 +462,8 @@ shipping.shipping_fee
   proven   ob-93e87c6acd5e postcondition subtotal >= 5000 implies result == 0
 ```
 
+### A bug the verifier catches: off by one
+
 Now compare two bugs. In the first, the threshold is off by one, `>` instead of `>=`:
 
 ```diff include="steps/07-contracts..steps/08-off-by-one:src/shipping.una" context="0" title="src/shipping.una"
@@ -449,7 +479,11 @@ error U5001 at src/shipping.una:15:34: postcondition of `shipping_fee` is refute
   counterexample: result = 490, subtotal = 5000
 ```
 
-The verifier rejects it before anything runs, and its counterexample, `subtotal = 5000`, is exactly the order the bug charges. In the second bug, a zero is missing from the fee:
+The verifier rejects it before anything runs, and its counterexample, `subtotal = 5000`, is exactly the order the bug charges.
+
+### A bug only an example catches: a dropped zero
+
+In the second bug, a zero is missing from the fee:
 
 ```diff include="steps/07-contracts..steps/09-dropped-zero:src/shipping.una" context="0" title="src/shipping.una"
 --- a/src/shipping.una
@@ -473,6 +507,10 @@ example shipping "an order of exactly 50.00 ships for free" ... ok
 
 The contract states a range, and the example states one exact value. Neither replaces the other.
 
+### Choosing a contract or an example
+
+The table sums up which construct answers which question:
+
 :::decide
 **Which to use:**
 
@@ -488,7 +526,11 @@ The contract states a range, and the example states one exact value. Neither rep
 
 ## 10.5 Day-to-day: checkout
 
+### What the checkout must do
+
 Now the program from the start of the chapter. A checkout takes a cart and an email address. It reserves the units of every line in the warehouse, charges the card for the total, and mails a receipt. Three services, each a capability, and each step can fail.
+
+### The kinds and the services
 
 ```una include="day-to-day/src/checkout.una#L1-L27" title="day-to-day/src/checkout.una" caption="the kinds and the services"
 module checkout
@@ -524,7 +566,9 @@ pub capability Mail
 
 `reserve` returns a `Bool` instead of failing. A warehouse that says "not enough units" has answered the question, and the checkout decides what that means for the order. A failure is kept for the case where a service cannot answer at all, as `Unreachable` is for the card processor. Each service is its own capability, so each example can fake one of them without touching the others, and a header shows which of them a function needs.
 
-**The total, a pure step.** `shipping_fee` is the function of [section 10.4](#s10-4), with its contract. `total` adds the lines and the fee. It performs no operation, so its examples need no fakes.
+### The total, a pure step
+
+`shipping_fee` is the function of [section 10.4](#a-rule-with-a-contract-and-two-examples), with its contract. `total` adds the lines and the fee. It performs no operation, so its examples need no fakes.
 
 ```una include="day-to-day/src/checkout.una#shipping_fee..total" title="day-to-day/src/checkout.una"
 --- The shipping fee in cents: 4.90, and nothing from 50.00 on.
@@ -543,7 +587,9 @@ pub total(lines: List[Line]) -> Int
   subtotal + shipping_fee(subtotal)
 ```
 
-**Reserving and releasing.** Two private helpers, one for each direction. `reserve_all` fails at the first line the warehouse cannot hold. Private functions may leave their `uses` and `fails` to inference, but these two declare them, so each helper's effects can be read where it is defined.
+### Reserving and releasing
+
+Two private helpers, one for each direction. `reserve_all` fails at the first line the warehouse cannot hold. Private functions may leave their `uses` and `fails` to inference, but these two declare them, so each helper's effects can be read where it is defined.
 
 ```una include="day-to-day/src/checkout.una#reserve_all..release_all" title="day-to-day/src/checkout.una"
 --- Reserves the units of every line, and fails at the first line the warehouse cannot hold.
@@ -564,7 +610,9 @@ release_all(lines: List[Line]) -> Unit
     @inventory.release(line.sku, quantity: line.quantity)
 ```
 
-**The checkout.** An empty cart fails before any service is asked. Then the stock is reserved, and `attempt` keeps the outcome of the charge as a value, so the checkout can clean up before it fails: when the card is refused or the processor does not answer, the units go back to the warehouse.
+### The checkout
+
+An empty cart fails before any service is asked. Then the stock is reserved, and `attempt` keeps the outcome of the charge as a value, so the checkout can clean up before it fails: when the card is refused or the processor does not answer, the units go back to the warehouse.
 
 ```una include="day-to-day/src/checkout.una#checkout" title="day-to-day/src/checkout.una"
 --- Reserves the cart, charges the card, and mails a receipt. Gives the payment's reference.
@@ -601,7 +649,9 @@ Step by step:
 
 The order of the statements is the order of the effects: reserve, charge, then mail. The examples in [section 10.6](#s10-6) pin that order down.
 
-**The log.** `describe` turns an outcome into a line of the store's log, and `reason` gives each failure its words. Neither performs an operation.
+### The log
+
+`describe` turns an outcome into a line of the store's log, and `reason` gives each failure its words. Neither performs an operation.
 
 ```una include="day-to-day/src/checkout.una#describe..reason" title="day-to-day/src/checkout.una"
 --- What the store's log says about a checkout.
@@ -620,7 +670,9 @@ reason(problem: CheckoutError) -> Text
     is PaymentDown -> "the card processor did not answer"
 ```
 
-**The fakes.** One handler per behavior a test needs: a warehouse with a given stock, a card processor with a limit, one that never answers, and a mail service that accepts everything. Each fits on a line or two. The parameters choose the case: `card(limit: 10000)` approves a cart of 44.70 and refuses one of 249.00, so one handler covers both outcomes, and each example shows its limit next to its cart.
+### The fakes
+
+One handler per behavior a test needs: a warehouse with a given stock, a card processor with a limit, one that never answers, and a mail service that accepts everything. Each fits on a line or two. The parameters choose the case: `card(limit: 10000)` approves a cart of 44.70 and refuses one of 249.00, so one handler covers both outcomes, and each example shows its limit next to its cart.
 
 ```una include="day-to-day/src/checkout.una#shelf..outbox" title="day-to-day/src/checkout.una"
 --- A fake warehouse that holds the units in `stock`.
@@ -641,7 +693,9 @@ handler outbox() for Mail
   op send(to, body) = unit
 ```
 
-**Running it.** `main` installs the same fakes with `with`, and runs four carts: two lamps, two desks when one is in stock, one desk over the card's limit, and an empty cart. In a real store, the handlers would call the warehouse, the card processor and the mail server; the checkout itself would not change.
+### Running it
+
+`main` installs the same fakes with `with`, and runs four carts: two lamps, two desks when one is in stock, one desk over the card's limit, and an empty cart. In a real store, the handlers would call the warehouse, the card processor and the mail server; the checkout itself would not change.
 
 ```una include="day-to-day/src/checkout.una#main" title="day-to-day/src/checkout.una"
 pub main() -> Unit
@@ -659,10 +713,12 @@ pub main() -> Unit
 
 One `with` clause binds the three services, separated by commas, for the call it ends. `main` itself holds only `@console`, so the checkout can reach no other service than the ones installed there.
 
-`una run .` prints the log shown under "What you'll build".
+`una run .` prints the log shown in [What you'll build](#what-youll-build).
 
 > [!WARNING]
-> One path is still wrong. When the first line of a cart is reserved and the second is out of stock, the checkout fails without releasing the first. No example covers that case yet, so `una test .` passes. Exercise 3 writes the example that exposes it, then fixes the code.
+> One path is still wrong. When the first line of a cart is reserved and the second is out of stock, the checkout fails without releasing the first. No example covers that case yet, so `una test .` passes. [Exercise 3](#exercise-3-put-back-what-was-reserved) writes the example that exposes it, then fixes the code.
+
+### The whole program
 
 The whole file, to read in one piece or to copy:
 
@@ -845,6 +901,8 @@ example "a card processor that does not answer is PaymentDown"
 
 ## 10.6 Testing it
 
+### One example per path
+
 Each example covers one path through `checkout`, and each states both the outcome and the effects that matter for that path:
 
 ```una include="day-to-day/src/checkout.una#L129-L174" title="day-to-day/src/checkout.una" caption="the examples"
@@ -896,14 +954,33 @@ example "a card processor that does not answer is PaymentDown"
   expect performed @inventory.release
 ```
 
-Read them as a specification of the checkout:
+Read them as a specification of the checkout.
+
+### The total and the happy path
+
+Two examples test paths on which nothing fails:
 
 - **The total.** A cart under 50.00 pays 4.90 of shipping: 49.99 plus 4.90 is 54.89.
 - **The happy path.** Two lamps cost 44.70 with shipping, the processor's reference comes back, and a receipt is sent.
+
+### The failure paths: `expect fails`
+
+Four examples each test a failure, one for each variant of `CheckoutError`:
+
 - **An empty cart** fails with `EmptyCart`, and none of the three services is asked anything.
 - **A cart the warehouse cannot hold** fails with `OutOfStock`, and the card is never charged.
 - **A declined card** fails with `Declined`, the stock is released, and no receipt goes out.
 - **A processor that does not answer** fails with `PaymentDown`, and the stock is released too.
+
+### What must not happen: `expect not performed`
+
+The `expect not performed` lines carry as much weight as the `expect fails` lines. A checkout that charged the card before it reserved the stock would still fail with `OutOfStock` for the fourth example, but `expect not performed @payments.charge` would catch the charge.
+
+### Two habits that keep examples useful
+
+Two habits keep a set of examples like this one useful. First, each example states the effects that matter for its path and no more: the happy path checks that a receipt was sent, and leaves the stock to the paths where it can go wrong. Second, when a bug turns up, the first change is an example that fails because of it. [Exercise 3](#exercise-3-put-back-what-was-reserved) does exactly that for the gap in the reservations, so the fix comes with the evidence that it works.
+
+### Running the examples
 
 `una test .` prints:
 
@@ -919,16 +996,14 @@ example checkout "a card processor that does not answer is PaymentDown" ... ok
 6 examples: 6 passed, 0 failed
 ```
 
-The `expect not performed` lines carry as much weight as the `expect fails` lines. A checkout that charged the card before it reserved the stock would still fail with `OutOfStock` for the fourth example, but `expect not performed @payments.charge` would catch the charge.
-
-Two habits keep a set of examples like this one useful. First, each example states the effects that matter for its path and no more: the happy path checks that a receipt was sent, and leaves the stock to the paths where it can go wrong. Second, when a bug turns up, the first change is an example that fails because of it. Exercise 3 does exactly that for the gap in the reservations, so the fix comes with the evidence that it works.
-
 ## 10.7 Common mistakes
 
 Each mistake below is a small change to `day-to-day/src/checkout.una`, followed by what `una check .` reports. `una test .` reports the same diagnostics and runs nothing, since a package that does not check has no examples to run.
 
+### Testing `main` (U3014)
+
 :::mistake
-**1. Testing `main` (U3014).** Add an example that runs the whole program:
+Add an example that runs the whole program:
 
 ```diff include="day-to-day..mistakes/1:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
@@ -950,8 +1025,10 @@ Each mistake below is a small change to `day-to-day/src/checkout.una`, followed 
 *Fix:* give `@console` a handler of your own, as the help says: `handler quiet() for Console` with `op print(line) = unit`, then `given @console = quiet()` in the example. Better, test the functions `main` calls, `checkout` and `describe`, whose results an example can compare. A fake console holds no state, so it cannot show what was printed.
 :::
 
+### A service with no `given` (U3001)
+
 :::mistake
-**2. A service with no `given` (U3001).** Leave out the card processor in the happy-path example:
+Leave out the card processor in the happy-path example:
 
 ```diff include="day-to-day..mistakes/2:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
@@ -971,8 +1048,10 @@ Each mistake below is a small change to `day-to-day/src/checkout.una`, followed 
 *Fix:* add `given @payments = card(limit: 10000)`.
 :::
 
+### A misspelt operation (U1001)
+
 :::mistake
-**3. A misspelt operation (U1001).** Write `@mail.sent` for `@mail.send`:
+Write `@mail.sent` for `@mail.send`:
 
 ```diff include="day-to-day..mistakes/3:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
@@ -994,8 +1073,10 @@ Each mistake below is a small change to `day-to-day/src/checkout.una`, followed 
 *Fix:* `una fix .` applies the repair shown.
 :::
 
+### Expecting the service's failure (U1001)
+
 :::mistake
-**4. Expecting the service's failure (U1001).** Expect `Refused`, what the card processor says, instead of `Declined`, what the checkout says:
+Expect `Refused`, what the card processor says, instead of `Declined`, what the checkout says:
 
 ```diff include="day-to-day..mistakes/4:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
@@ -1016,8 +1097,10 @@ Each mistake below is a small change to `day-to-day/src/checkout.una`, followed 
 *Fix:* expect the caller's variant, `Declined`.
 :::
 
+### Copying an example and keeping its name (U1002)
+
 :::mistake
-**5. Copying an example and keeping its name (U1002).** Copy the first example and change only its body:
+Copy the first example and change only its body:
 
 ```diff include="day-to-day..mistakes/5:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
@@ -1040,8 +1123,10 @@ Each mistake below is a small change to `day-to-day/src/checkout.una`, followed 
 *Fix:* name the case the new example covers, such as `"two lamps pay shipping"`.
 :::
 
+### Installing a fake with `with` on a `do` line (U0101)
+
 :::mistake
-**6. Installing a fake with `with` on a `do` line (U0101).** Move the card processor from a `given` line to the `do` line:
+Move the card processor from a `given` line to the `do` line:
 
 ```diff include="day-to-day..mistakes/6:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
@@ -1064,30 +1149,14 @@ Each mistake below is a small change to `day-to-day/src/checkout.una`, followed 
 *Fix:* write `given @payments = offline()` above the `do` line.
 :::
 
-## 10.8 For agents
-
-:::agents
-`una --json check .` reports example mistakes in the same shape as any other. For mistake 3, with its exact edit:
-
-```json include="mistakes/3/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1001","severity":"error","domain":"names","message":"capability `Mail` has no operation `sent`","primary":{"file":"src/checkout.una","start":{"line":139,"col":26},"end":{"line":139,"col":30}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `send`","edit":{"file":"src/checkout.una","start":{"line":139,"col":26},"end":{"line":139,"col":30},"replacement":"send"}}],"explain":"una explain U1001"}],"fixable":1}
-```
-
-`una --json test .` prints `una.test/1`. Each example has `outcome`, `reason`, the `expectation` that failed with its file and line, the `result`, and the `trace`. Each event of a trace has `seq`, `instance`, `capability`, `op`, `args` and `outcome`, so an agent can check arguments that `expect performed` does not. For the dropped zero of [section 10.4](#s10-4):
-
-```json include="steps/09-dropped-zero/expected/commands/json-test.txt#L2"
-{"schema":"una.test/1","tier":1,"redacted":false,"diagnostics":[],"examples":[{"module":"shipping","name":"an order of 49.99 pays 4.90","outcome":"fail","reason":"it is false, with `result` = `49`","expectation":{"file":"src/shipping.una","line":24,"text":"expect result == 490"},"result":{"kind":"ok","value":"49"},"trace":[]},{"module":"shipping","name":"an order of exactly 50.00 ships for free","outcome":"pass","reason":null,"expectation":null,"result":{"kind":"ok","value":"0"},"trace":[]}],"passed":1,"failed":1}
-```
-
-The compact rule: *an example has `given` lines for every capability its `do` line needs, one `do` line, and one or more `expect` lines; it never uses a host capability.*
-:::
-
-## 10.9 Exercises
+## 10.8 Exercises
 
 Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`, since the check also requires canonical form.
 
+### Exercise 1: a card that refuses everything
+
 ::::exercise
-**Exercise 1: a card that refuses everything.** The start package has an example that needs a fake card processor which refuses every charge, whatever the amount:
+The start package has an example that needs a fake card processor which refuses every charge, whatever the amount:
 
 ```una include="exercises/1/start/src/checkout.una#L176-L182" title="exercises/1/start/src/checkout.una"
 example "a card that refuses every charge is Declined"
@@ -1128,8 +1197,10 @@ Add the handler next to the other fakes:
 :::
 ::::
 
+### Exercise 2: tell the customer
+
 ::::exercise
-**Exercise 2: tell the customer.** When the card is declined, the store wants to mail the customer, so that they can try another card. The start package has this example:
+When the card is declined, the store wants to mail the customer, so that they can try another card. The start package has this example:
 
 ```una include="exercises/2/start/src/checkout.una#L176-L182" title="exercises/2/start/src/checkout.una"
 example "a declined card mails the customer"
@@ -1183,8 +1254,10 @@ Mail the customer in the `Refused` arm, and update the example that said no mail
 :::
 ::::
 
+### Exercise 3: put back what was reserved
+
 ::::exercise
-**Exercise 3: put back what was reserved.** Fix the gap named in [section 10.5](#s10-5). The start package has two examples. The first fails: a cart whose second line is out of stock must release the first. The second passes, and must keep passing: a cart whose first line is out of stock has nothing to release.
+Fix the gap named in [section 10.5](#running-it). The start package has two examples. The first fails: a cart whose second line is out of stock must release the first. The second passes, and must keep passing: a cart whose first line is out of stock has nothing to release.
 
 ```una include="exercises/3/start/src/checkout.una#L176-L190" title="exercises/3/start/src/checkout.una"
 example "a line out of stock releases the lines reserved before it"
@@ -1247,7 +1320,27 @@ Track the reserved lines, and release them at the first line that cannot be held
 :::
 ::::
 
-## 10.10 Recap
+## 10.9 Recap and reference
+
+### For agents
+
+:::agents
+`una --json check .` reports example mistakes in the same shape as any other. For [a misspelt operation](#a-misspelt-operation-u1001), with its exact edit:
+
+```json include="mistakes/3/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1001","severity":"error","domain":"names","message":"capability `Mail` has no operation `sent`","primary":{"file":"src/checkout.una","start":{"line":139,"col":26},"end":{"line":139,"col":30}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `send`","edit":{"file":"src/checkout.una","start":{"line":139,"col":26},"end":{"line":139,"col":30},"replacement":"send"}}],"explain":"una explain U1001"}],"fixable":1}
+```
+
+`una --json test .` prints `una.test/1`. Each example has `outcome`, `reason`, the `expectation` that failed with its file and line, the `result`, and the `trace`. Each event of a trace has `seq`, `instance`, `capability`, `op`, `args` and `outcome`, so an agent can check arguments that `expect performed` does not. For [the dropped zero](#a-bug-only-an-example-catches-a-dropped-zero) of section 10.4:
+
+```json include="steps/09-dropped-zero/expected/commands/json-test.txt#L2"
+{"schema":"una.test/1","tier":1,"redacted":false,"diagnostics":[],"examples":[{"module":"shipping","name":"an order of 49.99 pays 4.90","outcome":"fail","reason":"it is false, with `result` = `49`","expectation":{"file":"src/shipping.una","line":24,"text":"expect result == 490"},"result":{"kind":"ok","value":"49"},"trace":[]},{"module":"shipping","name":"an order of exactly 50.00 ships for free","outcome":"pass","reason":null,"expectation":null,"result":{"kind":"ok","value":"0"},"trace":[]}],"passed":1,"failed":1}
+```
+
+The compact rule: *an example has `given` lines for every capability its `do` line needs, one `do` line, and one or more `expect` lines; it never uses a host capability.*
+:::
+
+### Recap
 
 :::recap
 - Write an `example` next to the code: a name a reader understands, one `do` line, and `expect` lines that must hold.
@@ -1259,7 +1352,7 @@ Track the reserved lines, and release them at the first line that cannot be held
 - Prove in `ensures` what must hold for every input; pin exact values and effects with examples. Trace rules to contracts with `requirement`, `derived from` and `una trace`.
 :::
 
-## 10.11 Reference
+### Reference
 
 :::reference
 - Construct pages: [`example`](/docs/language/examples/example/), [`requirement` and `derived from`](/docs/language/requirements/requirement/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`capability` and `op`](/docs/language/capabilities/capability/), [`ensures`](/docs/language/functions/ensures/), [`attempt`](/docs/language/errors/attempt/)
