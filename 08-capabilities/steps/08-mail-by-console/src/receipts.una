@@ -1,0 +1,13 @@
+module receipts
+
+--- Emails the receipt of an order. For now it prints the message, since the store has no mail
+--- service yet.
+send_receipt(to: Text, order: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("to {to}: Receipt for order {order}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  send_receipt("rosa@example.invalid", order: "A-1001")

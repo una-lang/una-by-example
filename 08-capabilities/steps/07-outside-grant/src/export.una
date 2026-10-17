@@ -1,0 +1,24 @@
+module export
+
+--- Writes one line to `path`, and says what happened.
+try_write(path: Text) -> Text
+  uses @files: Files[write]
+=
+  let outcome = attempt @files.write(path, content: "LAMP-01,4\n")
+  when outcome
+    is Ok -> "{path}: written"
+    is Err(failure) -> "{path}: {failure}"
+
+--- Tries four paths against a grant of `src/`.
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[write]
+=
+  let inside = try_write("stock-export.csv")
+  @console.print(inside)
+  let above = try_write("../stock-export.csv")
+  @console.print(above)
+  let absolute = try_write("/tmp/stock-export.csv")
+  @console.print(absolute)
+  let around = try_write("reports/../stock-export.csv")
+  @console.print(around)

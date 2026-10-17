@@ -1,0 +1,17 @@
+[U5002] Error: postcondition of `units_of` could not be proven (the loop forgets every fact about `total` but the refinements of its type, so the counterexample sets `total` freely; state what one iteration does as the `ensures` of a helper with an `edit` parameter, and call the helper in the loop)
+   ╭─[ src/units.una:5:11 ]
+   │
+ 5 │   ensures result >= 0
+   │           ─────┬─────
+   │                ╰─────── postcondition of `units_of` could not be proven (the loop forgets every fact about `total` but the refinements of its type, so the counterexample sets `total` freely; state what one iteration does as the `ensures` of a helper with an `edit` parameter, and call the helper in the loop)
+   │                │
+   │                ╰─────── ensures clause
+   │
+   │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 0` holds
+   │
+   │ Help 2: repair 2: adjust the `ensures` clause
+   │
+   │ Note 1: obligation ob-1d1ce32b4dba (postcondition) is unknown: result >= 0
+   │
+   │ Note 2: run `una explain U5002` for an explanation
+───╯

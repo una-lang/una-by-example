@@ -1,0 +1,15 @@
+module scales
+
+--- The scale at the packing desk: it weighs, and it can be set to zero.
+capability Scale
+  op weigh(sku: Text) -> Int
+  op tare() -> Unit
+
+--- A scale that only weighs.
+handler fixed(grams: Int) for Scale
+  op weigh(sku) = grams
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("scales")

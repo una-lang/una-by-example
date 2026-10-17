@@ -1,0 +1,7 @@
+restocked [LAMP-01]
+restocked [DESK-02]
+restocked [RUG-07]
+saved the count of LAMP-01
+copied the count
+restocked [RUG-07]
+saved the count of RUG-07

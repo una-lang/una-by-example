@@ -1,0 +1,10 @@
+$ una trace REFUND_1
+requirement REFUND_1 (active)
+  text "A refund never pays back more than the customer paid"
+  source policy "Store billing rules"
+  owner billing
+refunds.refund
+  requires asked <= paid
+  ensures result <= paid
+  proven   ob-0b48412701fd refinement    result >= 0
+  proven   ob-0ac4aeb885fd postcondition result <= paid

@@ -1,0 +1,2 @@
+guard: Ok(15) Err(OutOfRange(150))
+checked: Ok(15) Err(OutOfRange(-5))

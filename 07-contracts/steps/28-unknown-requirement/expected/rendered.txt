@@ -1,0 +1,9 @@
+[U1006] Error: requirement `REFUND_4` is not declared in this package
+    ╭─[ src/refunds.una:41:16 ]
+    │
+ 41 │   derived from REFUND_4
+    │                ────┬───
+    │                    ╰───── requirement `REFUND_4` is not declared in this package
+    │
+    │ Note: run `una explain U1006` for an explanation
+────╯

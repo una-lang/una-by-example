@@ -1,0 +1,35 @@
+module scales
+
+--- How the scale can fail.
+kind ScaleError = | NotOnScale
+
+--- The scale at the packing desk. The clauses of `weigh` are its contract: a caller passes a
+--- SKU of at least four characters, and gets a weight of at least 1 gram back.
+capability Scale
+  op weigh(sku: Text) -> Int
+    requires sku.len >= 4
+    ensures result >= 1
+    fails ScaleError
+
+--- A parcel's weight in grams: the item, and a box of 150 grams.
+parcel_grams(sku: Text) -> Int
+  requires sku.len >= 4
+  ensures result >= 151
+  uses @scale: Scale[weigh]
+  fails ScaleError
+=
+  let grams = @scale.weigh(sku)
+    if error pass
+  grams + 150
+
+--- A scale on a developer's machine: it weighs every item at the same weight.
+handler fixed(grams: Int) for Scale
+  op weigh(sku) = if grams < 1 then fail NotOnScale else grams
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weighed = attempt parcel_grams("LAMP-01") with @scale = fixed(850)
+  @console.print("{weighed}")
+  let empty = attempt parcel_grams("LAMP-01") with @scale = fixed(0)
+  @console.print("{empty}")

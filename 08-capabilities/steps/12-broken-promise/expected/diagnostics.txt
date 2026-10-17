@@ -1,0 +1,2 @@
+error U5001 at src/scales.una:27:19: postcondition of `weigh` is refuted
+  counterexample: grams = 0, result = 0, sku = "Text#0", sku.len = 4

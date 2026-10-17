@@ -1,0 +1,19 @@
+[U5002] Error: postcondition of `area` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)
+   ╭─[ src/shelves.una:7:3 ]
+   │
+ 5 │   ensures result >= 1
+   │           ─────┬─────
+   │                ╰─────── ensures clause
+   │
+ 7 │   width * depth
+   │   ──────┬──────
+   │         ╰──────── postcondition of `area` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)
+   │
+   │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 1` holds
+   │
+   │ Help 2: repair 2: adjust the `ensures` clause
+   │
+   │ Note 1: obligation ob-6b3f4a8c6cba (postcondition) is unknown: result >= 1
+   │
+   │ Note 2: run `una explain U5002` for an explanation
+───╯

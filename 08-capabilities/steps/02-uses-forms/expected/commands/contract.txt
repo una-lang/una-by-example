@@ -1,0 +1,6 @@
+$ una contract backroom.close_shelf
+--- Closes a shelf for the night. It writes no `uses`, so una infers them.
+close_shelf(sku: Text, units: Int) -> Unit
+  uses @console: Console[print] -- inferred
+  uses @files: Files[write] -- inferred
+  fails FileError -- inferred

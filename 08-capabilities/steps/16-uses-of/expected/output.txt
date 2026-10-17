@@ -1,0 +1,3 @@
+label LAMP-01
+label DESK-02
+saved: Ok(unit)

@@ -1,0 +1,13 @@
+module shelf
+
+--- Runs `action` once for each SKU of a shelf. Its parameter's type says nothing about
+--- effects, so `action` must be pure.
+pub each_sku(skus: List[Text], action: fn(Text) -> Unit) -> Unit
+=
+  for sku in skus
+    action(sku)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  each_sku(["LAMP-01", "DESK-02"], action: fn(sku) -> @console.print("label {sku}"))

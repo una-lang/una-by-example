@@ -1,0 +1,2 @@
+error U5001 at src/rates.una:16:3: refinement `result in 0..100` is refuted
+  counterexample: raw = "Text#1", raw.len = 0, result = 101
