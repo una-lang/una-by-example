@@ -1,0 +1,9 @@
+[U1002] Error: `Map` is a built-in type of maps from edition 0.2, so a kind cannot take its name
+   ╭─[ src/shelf.una:4:6 ]
+   │
+ 4 │ kind Map
+   │      ─┬─
+   │       ╰─── `Map` is a built-in type of maps from edition 0.2, so a kind cannot take its name
+   │
+   │ Note: run `una explain U1002` for an explanation
+───╯

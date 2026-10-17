@@ -1,0 +1,34 @@
+[U0103] Error: `take` is reserved for v0.2 (memory model)
+   ╭─[ src/shelf.una:4:18 ]
+   │
+ 4 │ left(units: Int, take: Int) -> Int = units - take
+   │                  ──┬─
+   │                    ╰─── `take` is reserved for v0.2 (memory model)
+   │
+   │ Help: repair 1: rename it to `the_take`; edit src/shelf.una:4:18..4:22 to "the_take"
+   │
+   │ Note: run `una explain U0103` for an explanation
+───╯
+[U0103] Error: `take` is reserved for v0.2 (memory model)
+   ╭─[ src/shelf.una:4:46 ]
+   │
+ 4 │ left(units: Int, take: Int) -> Int = units - take
+   │                                              ──┬─
+   │                                                ╰─── `take` is reserved for v0.2 (memory model)
+   │
+   │ Help: repair 1: rename it to `the_take`; edit src/shelf.una:4:46..4:50 to "the_take"
+   │
+   │ Note: run `una explain U0103` for an explanation
+───╯
+[U0103] Error: `take` is reserved for v0.2 (memory model)
+   ╭─[ src/shelf.una:9:29 ]
+   │
+ 9 │   @console.print("{left(10, take: 3)} left")
+   │                             ──┬─
+   │                               ╰─── `take` is reserved for v0.2 (memory model)
+   │
+   │ Help: repair 1: rename it to `the_take`; edit src/shelf.una:9:29..9:33 to "the_take"
+   │
+   │ Note: run `una explain U0103` for an explanation
+───╯
+3 of 3 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

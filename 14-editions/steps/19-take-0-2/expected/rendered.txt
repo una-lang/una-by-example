@@ -1,0 +1,18 @@
+[U0101] Error: unexpected `:`, expected a parameter name
+   ╭─[ src/shelf.una:4:22 ]
+   │
+ 4 │ left(units: Int, take: Int) -> Int = units - take
+   │                      ┬
+   │                      ╰── unexpected `:`, expected a parameter name
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+[U0101] Error: unexpected `:`, expected an expression
+   ╭─[ src/shelf.una:9:33 ]
+   │
+ 9 │   @console.print("{left(10, take: 3)} left")
+   │                                 ┬
+   │                                 ╰── unexpected `:`, expected an expression
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯

@@ -1,0 +1,7 @@
+$ una test .
+example discount "30 percent off a lamp" ... FAILED
+  src/discount.una:47: expect result == 1390
+  it is false, with `result` = `1393`
+example discount "a typed percent above 90 is OutOfRange" ... ok
+
+2 examples: 1 passed, 1 failed

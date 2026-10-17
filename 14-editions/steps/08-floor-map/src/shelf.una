@@ -1,0 +1,12 @@
+module shelf
+
+--- A floor map of the store: the aisle of a department.
+kind Map
+  department: Text
+  aisle: Int
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = Map(department: "lamps", aisle: 4)
+  @console.print("{lamps.department} in aisle {lamps.aisle}")

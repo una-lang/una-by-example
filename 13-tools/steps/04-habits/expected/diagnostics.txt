@@ -1,0 +1,3 @@
+error U0101 at src/receipt.una:9:29: unexpected end of line, expected `else`
+error U0001 at src/receipt.una:15:7: invalid character `_`; names start with a letter
+error U0001 at src/receipt.una:16:36: invalid character `_`; names start with a letter

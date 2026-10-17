@@ -1,0 +1,2 @@
+$ una --json check .
+{"schema":"una.diagnostics/1","diagnostics":[],"fixable":0}

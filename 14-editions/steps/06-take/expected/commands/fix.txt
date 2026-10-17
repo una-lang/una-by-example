@@ -1,0 +1,4 @@
+$ una fix --dry-run .
+fixed src/shelf.una:4:18 U0103 rename it to `the_take`
+fixed src/shelf.una:4:46 U0103 rename it to `the_take`
+fixed src/shelf.una:9:29 U0103 rename it to `the_take`

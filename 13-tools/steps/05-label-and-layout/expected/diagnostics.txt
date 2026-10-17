@@ -1,0 +1,2 @@
+error U7001 at src/receipt.una:4:1: lines 4 to 6 are not in canonical form
+error U2004 at src/receipt.una:11:31: argument 2 of `line_text` needs a label; only the first argument may go without one

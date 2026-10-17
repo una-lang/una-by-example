@@ -1,0 +1,12 @@
+module discount
+
+--- An amount of money in cents, never negative.
+pub kind Cents = Int where it >= 0
+
+--- Half of a price typed at the till, for a two-for-one offer.
+half_price(typed: Int) -> Cents = typed / 2
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{half_price(1990)}")

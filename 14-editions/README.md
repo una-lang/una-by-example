@@ -2,8 +2,8 @@
 learn: "14"
 title: Editions
 editions: ["0.1", "0.2", "0.3"]
-codes: [U0101, U0103, U2001, U3023, U3025, U3026, U5001, U7002]
-time: 30
+codes: [U0101, U0103, U1002, U2001, U2002, U2028, U3023, U3025, U3026, U5001, U7002]
+time: 40
 builds: A shelf-label printer on the edition 0.3 preview, with a dry run the checker enforces
 prerequisites: ["6", "8", "11", "12", "13"]
 template: 2
@@ -12,12 +12,12 @@ nav: ["An edition per package", "What edition 0.2 adds", "Edition 0.3, a preview
 
 # 14 Editions
 
-A language that grows has to add keywords and tighten rules, and a program written last year must still mean what it meant. Una does this with editions: each package names the edition of the language it is written in, and every release of `una` keeps each stable edition it serves as it was. This chapter shows what an edition is, what editions `0.2` and `0.3` add, and how to move a package from one edition to the next, letting the checker and `una fix` find what has to change.
+A language that grows has to add keywords and tighten rules, and a program written last year must still mean what it meant. Una does this with editions: each package names the edition of the language it is written in, and every release of `una` keeps each stable edition it serves, one whose rules are final, as it was. This chapter shows what an edition is, what editions `0.2` and `0.3` add, and how to move a package from one edition to the next, letting the checker and `una fix` find what has to change.
 
 ## What you'll build
 
 :::build
-A shelf-label printer for a store, on edition `0.3`. It reads a stock export, prints a label for every line with stock, and has a dry run that counts the labels without printing any. The dry run is not a convention: the checker proves that no label is printed when `dry_run` is true. `main` makes a dry run, then a real one:
+A shelf-label printer for a store, on edition `0.3`. It reads a stock export, the list of stock lines that another system of the store writes out, prints a label for every line with stock, and has a dry run that counts the labels without printing any. The dry run is not a convention: the checker proves that no label is printed when `dry_run` is true. `main` makes a dry run, then a real one:
 
 ```text include="day-to-day/expected/output.txt"
 dry run: 2 labels
@@ -37,32 +37,181 @@ You will learn to:
 
 ## Why it works this way
 
-Languages that grow without editions face a choice. Either a new keyword breaks every program that used the word as a name, or the language never adds one. A rule that becomes stricter, such as one that rejects code that can never run, breaks programs that passed yesterday, and the team that maintains them finds out on the day a compiler is upgraded.
+Languages that grow without editions face a choice. Either a new keyword, a word the language keeps for itself, breaks every program that used the word as a name, or the language never adds one. A rule that becomes stricter, such as one that rejects code that can never run, breaks programs that passed yesterday, and the team that maintains them finds out on the day a compiler is upgraded.
 
 Una separates the two things a release changes:
 
 :::steps
 1. **The compiler improves for every edition.** A new release fixes bugs, adds explanations and makes the tools better, for every package.
 2. **The language changes only in a new edition.** New keywords, new constructs and stricter rules come with an edition, and a package gets them only when its `una.toml` names that edition.
-3. **Editions are cumulative.** Edition `0.3` has every construct and rule of `0.2`, and `0.2` has every construct of `0.1`. Moving a package forward never removes a construct; it can only reject code that a stricter rule no longer allows.
+3. **Editions are cumulative.** Edition `0.3` has every construct and rule of `0.2`, and `0.2` has every construct of `0.1`. Moving a package forward never removes a construct. It can reject code that a stricter rule no longer allows or a name that became a keyword, and a few prelude functions and reports change too ([section 14.2](#s14-2)).
 :::
 
-So upgrading `una` never changes what a stable edition accepts or rejects, except to fix a soundness or security error. Moving a package to a new edition is a separate step, a change to one line of `una.toml`, which you make when you are ready and review like any other change.
+So upgrading `una` never changes what a stable edition accepts or rejects, except to fix a soundness or security error: a bug that let the checker accept a program it should have rejected. Moving a package to a new edition is a separate step, a change to one line of `una.toml`, which you make when you are ready and review like any other change.
 
 > [!KEY]
 > A package's edition is a line of `una.toml`. Upgrading `una` keeps the meaning of every stable edition, and a later edition only adds constructs and tightens rules.
 
 ## 14.1 An edition is part of the package
 
-### The edition line of `una.toml`
+### What an edition is
 
-`[package] edition` names the edition. It is a required key of `una.toml`, with `name` and `version`, and leaving it out is U7002. A single `.una` file checked on its own, outside a package, has edition `0.1`.
+A board game sold for many years often comes in editions. The second edition adds new cards and fixes a rule that players found unfair, and the box says which edition it is. Friends who own the first edition still play by its rules, and their game still works; nobody comes to their house to change the cards.
+
+Una works the same way, with two words that are easy to mix up:
+
+- A **release** is a version of the `una` program itself, such as una 0.3.15. You install a release, and a newer one replaces it.
+- An **edition** is a version of the Una language: its keywords, its constructs and its rules. Una has three, `0.1`, `0.2` and `0.3`.
+
+A **keyword** is a word the language keeps for itself, such as `if`, `for` or `uses`: it starts a piece of syntax, so it cannot name a value, a parameter or a field. A **construct** is one form of code with its own syntax and meaning, such as a `for` loop, a kind or a `uses` clause.
+
+Each package names its edition in `una.toml`, and a release checks each package by the rules of the edition it names. One release serves several editions at once, so installing a newer release does not change the language your packages are written in. Only you change that, by editing one line.
+
+### Each step is a package
+
+Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1), with the `verification.lock` of chapter 1, or whole from the chapter's download, `14-editions.tar.gz`. In the package's directory:
+
+```sh
+una check .
+una run .
+```
+
+### Why a language needs editions
+
+Here is a small package in edition `0.1`. It counts how many units arrived on a shelf, and names its parameters `old` and `new`:
+
+```toml include="steps/01-arrived/una.toml" title="steps/01-arrived/una.toml"
+[package]
+name = "restock"
+version = "0.1.0"
+edition = "0.1"
+
+[run]
+entry = "restock"
+grants = ["console"]
+```
+
+```una include="steps/01-arrived/src/restock.una" title="steps/01-arrived/src/restock.una" verified="check, run"
+module restock
+
+--- How many units arrived: the count `new` on the shelf now, less the count `old` from before.
+arrived(old: Int, new: Int) -> Int = new - old
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{arrived(4, new: 10)} units arrived")
+```
+
+```text include="steps/01-arrived/expected/output.txt"
+6 units arrived
+```
+
+In edition `0.1`, `old` is an ordinary word. Edition `0.2` made it a keyword: inside an `ensures` clause, `old(x)` names the value an `edit` parameter had when the call began ([chapter 7](/learn/contracts/#s7-2)). Check the same code under edition `0.2`, with only the edition line changed:
+
+```diff include="steps/01-arrived..steps/02-arrived-0-2:una.toml" title="una.toml"
+--- a/una.toml
++++ b/una.toml
+@@ -1,7 +1,7 @@
+ [package]
+ name = "restock"
+ version = "0.1.0"
+-edition = "0.1"
++edition = "0.2"
+ 
+ [run]
+ entry = "restock"
+```
+
+```text include="steps/02-arrived-0-2/expected/rendered.txt"
+[U0101] Error: `old` is a reserved keyword, so it cannot name a binding
+   ╭─[ src/restock.una:4:9 ]
+   │
+ 4 │ arrived(old: Int, new: Int) -> Int = new - old
+   │         ─┬─
+   │          ╰─── `old` is a reserved keyword, so it cannot name a binding
+   │
+   │ Help: repair 1: choose another name, such as `old_value`
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+```
+
+U0101: a keyword cannot name a binding. The code did not change; the language did. In a language without editions, that would happen to this package on the day una was upgraded, whether or not anyone was ready.
+
+With editions, nothing happens to it. The package says `edition = "0.1"`, and every release that serves edition `0.1` checks it by the rules of `0.1`, where `old` is a name. It moves to `0.2` only when someone changes that line, and [section 14.4](#s14-4) shows how.
+
+### How to write the edition
+
+`[package] edition` names the edition, as a text in quotes. It is a required key of `una.toml`, with `name` and `version`.
+
+#### `edition = "0.1"`, `"0.2"` or `"0.3"`
+
+Each of the three editions is written the same way:
+
+- `edition = "0.1"` is the first edition. It has kinds, functions, lists, contracts, capabilities and labels.
+- `edition = "0.2"` is the edition of most of this tutorial. It adds loops, the `edit` and `take` parameter modes ([chapter 12](/learn/memory-and-concurrency/#s12-2) teaches `edit`, and [section 12.3](/learn/memory-and-concurrency/#s12-3) `take`), `together`, maps and more ([section 14.2](#s14-2)).
+- `edition = "0.3"` is a preview, with stricter rules and a few constructs that narrow what a program may do ([section 14.3](#s14-3)).
+
+#### An edition una does not know
+
+An edition this release does not serve is U7002, the code for a problem in `una.toml`:
+
+```diff include="steps/01-arrived..steps/03-edition-unknown:una.toml" title="una.toml"
+--- a/una.toml
++++ b/una.toml
+@@ -1,7 +1,7 @@
+ [package]
+ name = "restock"
+ version = "0.1.0"
+-edition = "0.1"
++edition = "0.4"
+ 
+ [run]
+ entry = "restock"
+```
+
+```text include="steps/03-edition-unknown/expected/rendered.txt"
+[U7002] Error: edition `0.4` is not supported; the editions are "0.1", "0.2" and "0.3"
+   ╭─[ una.toml:4:11 ]
+   │
+ 4 │ edition = "0.4"
+   │           ──┬──
+   │             ╰──── edition `0.4` is not supported; the editions are "0.1", "0.2" and "0.3"
+   │
+   │ Note: run `una explain U7002` for an explanation
+───╯
+```
+
+The mark is on the value, and the message lists the editions this release serves.
+
+#### A manifest without an edition
+
+Leaving the line out is U7002 too, at the `[package]` table that lacks it:
+
+```text include="steps/04-no-edition/expected/rendered.txt"
+[U7002] Error: [package] has no `edition`
+   ╭─[ una.toml:1:2 ]
+   │
+ 1 │ [package]
+   │  ───┬───
+   │     ╰───── [package] has no `edition`
+   │
+   │ Note: run `una explain U7002` for an explanation
+───╯
+```
+
+A package has no default edition: its manifest must state one.
+
+#### A single file
+
+A single `.una` file checked on its own, outside a package, as in `una check shelf.una`, has no `una.toml`. It has edition `0.1`.
 
 ### A stock list in edition `0.1`
 
-This step is a stock list in edition `0.1`, the first edition. It has kinds, functions and lists, and its loops are written with `fold`:
+This step is a stock list in edition `0.1`. It has a record kind, a function and a list, and its total is computed with `fold` ([chapter 5](/learn/collections/#s5-4)), since edition `0.1` has no loops:
 
-```toml include="steps/01-edition-0-1/una.toml" title="steps/01-edition-0-1/una.toml"
+```toml include="steps/05-edition-0-1/una.toml" title="steps/05-edition-0-1/una.toml"
 [package]
 name = "shelf"
 version = "0.1.0"
@@ -73,7 +222,7 @@ entry = "shelf"
 grants = ["console"]
 ```
 
-```una include="steps/01-edition-0-1/src/shelf.una" title="steps/01-edition-0-1/src/shelf.una" verified="check, run"
+```una include="steps/05-edition-0-1/src/shelf.una" title="steps/05-edition-0-1/src/shelf.una" verified="check, run"
 module shelf
 
 --- A line of a stock list: a SKU and the units on hand.
@@ -91,24 +240,19 @@ pub main() -> Unit
   @console.print("{lines.len} lines, {total(lines)} units")
 ```
 
-Each step is a package, as in [chapter 1](/learn/hello/#s1-1), with the `verification.lock` of chapter 1, or whole from the chapter's download, `14-editions.tar.gz`. In the package's directory:
-
-```sh
-una check .
-una run .
-```
-
 `una run .` prints:
 
-```text include="steps/01-edition-0-1/expected/output.txt"
+```text include="steps/05-edition-0-1/expected/output.txt"
 2 lines, 5 units
 ```
 
-### One binary serves every edition
+### How editions behave
 
-`una --version` prints the version of `una` and the editions it serves, one line each: at this release, `editions: 0.1, 0.2, 0.3`. Every one of them is checked by the same binary, so one machine can build packages of different editions side by side.
+#### One binary serves every edition
 
-### Stable editions and previews
+`una --version` prints three lines: the version of `una`, the editions it serves, and the version of Z3 that its default lock pins. At this release it lists the editions `0.1`, `0.2` and `0.3`. Every one of them is checked by the same binary, so one machine can check, test and build packages of different editions side by side.
+
+#### Stable editions and previews
 
 An edition is either **stable** or a **preview**:
 
@@ -116,21 +260,80 @@ An edition is either **stable** or a **preview**:
 | --- | --- | --- |
 | `0.1` | Stable | A later release does not change what it accepts or rejects, except to fix a soundness or security error |
 | `0.2` | Stable | The same promise |
-| `0.3` | Preview | It may still get stricter in a later `0.3.x` release, never looser |
+| `0.3` | Preview | It may still get stricter in a later `0.3.x` release, never looser for the programs `0.2` can express |
 
-A package on a stable edition can stay there for as long as it likes. In edition `0.1`, the words that later editions use, such as `edit`, `take` and `together`, are reserved: using one gives a diagnostic that names the edition that has it.
+A package on a stable edition can stay there for as long as it likes.
 
-### What an edition fixes, and what improves with every release
+#### Words reserved for later editions
 
-What an edition fixes is the language a package is written in: its keywords, its constructs, its rules and the signatures of the prelude. For example, `min`, `max` and `sum` work on `Int` in edition `0.1`, and a later release keeps those signatures for it, while edition `0.2` makes them generic over constrained types. What improves with every release, for every edition, is everything around the language: the wording of messages, the explanations of `una explain`, the repairs, the speed of the checks and the tools of [chapter 13](/learn/tools/).
+Some words were set aside before the editions that use them existed. In edition `0.1`, `edit`, `take` and `together` are **reserved**: not keywords yet, and not names either. Using one gives U0103, whose message names the edition that has it, written with a `v`, such as `` `edit` is reserved for v0.2 (memory model) ``. Reserving a word early keeps it free: no `0.1` package can use `edit` as a name, so no `0.1` package breaks when `0.2` makes it a keyword. `old` was not reserved in `0.1`, which is why the package of [Why a language needs editions](#why-a-language-needs-editions) could use it.
+
+#### What an edition fixes, and what improves with every release
+
+What an edition fixes is the language a package is written in: its keywords, its constructs, its rules and the headers of the prelude, the functions every module has without an import ([chapter 2](/learn/values/)). For example, `min`, `max` and `sum` work on `Int` in edition `0.1`, and a later release keeps those headers for it, while edition `0.2` makes them generic: they work on any type with the right constraint, such as `Ord` for `min` ([chapter 4](/learn/kinds/#s4-4)). What improves with every release, for every edition, is everything around the language: the wording of messages, the explanations of `una explain`, the repairs, the speed of the checks and the tools of [chapter 13](/learn/tools/).
+
+### Check yourself: a word reserved for later
+
+This package is in edition `0.1`, and names a parameter `take`:
+
+```una include="steps/06-take/src/shelf.una" title="steps/06-take/src/shelf.una"
+module shelf
+
+--- The units left after a customer takes `take` of `units`.
+left(units: Int, take: Int) -> Int = units - take
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{left(10, take: 3)} left")
+```
+
+Does it check? If not, what does `una fix --dry-run .` offer?
+
+:::answer Show the answer
+It does not check. `take` is reserved in edition `0.1`, so each of its three uses is U0103; the first:
+
+```text include="steps/06-take/expected/rendered.txt#L1-L10"
+[U0103] Error: `take` is reserved for v0.2 (memory model)
+   ╭─[ src/shelf.una:4:18 ]
+   │
+ 4 │ left(units: Int, take: Int) -> Int = units - take
+   │                  ──┬─
+   │                    ╰─── `take` is reserved for v0.2 (memory model)
+   │
+   │ Help: repair 1: rename it to `the_take`; edit src/shelf.una:4:18..4:22 to "the_take"
+   │
+   │ Note: run `una explain U0103` for an explanation
+```
+
+`una fix --dry-run .` would rename every use:
+
+```text include="steps/06-take/expected/commands/fix.txt"
+$ una fix --dry-run .
+fixed src/shelf.una:4:18 U0103 rename it to `the_take`
+fixed src/shelf.una:4:46 U0103 rename it to `the_take`
+fixed src/shelf.una:9:29 U0103 rename it to `the_take`
+```
+
+Here the rename is right, since `take` is meant as a name: `the_take` works, and a better name, such as `taken`, works too. When a reserved word is meant as the construct of a later edition, the rename is wrong; [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows that case.
+:::
 
 ## 14.2 What edition `0.2` adds
 
+### What changes from `0.1` to `0.2`
+
+Edition `0.2` changes four things, each of which this section shows. Every rule this section states for `0.2` holds in `0.3` too, since editions are cumulative:
+
+- **Constructs.** New ways to write code, such as `for` loops and `let edit`.
+- **Keywords.** Words that become part of the language: `edit`, `take`, `old` and `together`.
+- **Rules.** A few rules that are stricter or different, such as the names a kind may take.
+- **The prelude.** The functions every module has without an import, some of which become generic.
+
 ### Moving the stock list to `0.2`
 
-Edition `0.2` is the edition of most of this tutorial. Move the stock list to it, and two things that `0.1` rejects become possible: a `for` loop with a `let edit` binding, and the interpolation of a whole list.
+Move the stock list of [section 14.1](#s14-1) to `0.2`, and two things that `0.1` rejects become possible: a `for` loop with a `let edit` binding, and the interpolation of a whole list.
 
-```diff include="steps/01-edition-0-1..steps/02-edition-0-2:una.toml" title="una.toml"
+```diff include="steps/05-edition-0-1..steps/07-edition-0-2:una.toml" title="una.toml"
 --- a/una.toml
 +++ b/una.toml
 @@ -1,7 +1,7 @@
@@ -144,7 +347,7 @@ Edition `0.2` is the edition of most of this tutorial. Move the stock list to it
  entry = "shelf"
 ```
 
-```diff include="steps/01-edition-0-1..steps/02-edition-0-2:src/shelf.una" title="src/shelf.una"
+```diff include="steps/05-edition-0-1..steps/07-edition-0-2:src/shelf.una" title="src/shelf.una"
 --- a/src/shelf.una
 +++ b/src/shelf.una
 @@ -5,11 +5,17 @@
@@ -171,12 +374,12 @@ Edition `0.2` is the edition of most of this tutorial. Move the stock list to it
 
 `una run .` prints:
 
-```text include="steps/02-edition-0-2/expected/output.txt"
+```text include="steps/07-edition-0-2/expected/output.txt"
 2 lines, 5 units
 [Line(sku: "LAMP-01", units: 4), Line(sku: "DESK-02", units: 1)]
 ```
 
-The code of [section 14.1](#s14-1) also checks, unchanged, with only the edition line moved to `0.2`: moving forward did not require touching it. The changes to the code above are ones the new edition allows. `fold` is still there, and still right; the loop is simply easier to read for some code.
+The code of [section 14.1](#s14-1) also checks, unchanged, with only the edition line moved to `0.2`: moving forward did not require touching it. The changes to the code are ones the new edition allows. `fold` is still there, and still right; the loop is simply easier to read for some code.
 
 ### The constructs `0.2` adds
 
@@ -189,36 +392,222 @@ Edition `0.2` adds, among others:
 | `Map`, the text functions and `ParseError`, `Json` | [Collections](/learn/collections/), [Failure](/learn/failure/) |
 | Fixed-width integers such as `U8` and `I64`, with proven overflow | [Values](/learn/values/#s2-5) |
 | Constraints on generics such as `T: Ord`, and `sort` | [Kinds](/learn/kinds/#s4-4) |
-| `uses of` and `fails of` for function parameters | [`uses`](/docs/language/capabilities/uses/) |
-| The interpolation of any value that `==` compares, except a `Hashed` | [Values](/learn/values/) |
+| `uses of p` and `fails of p`, header clauses for a function that takes another function as its parameter `p`: the function passed in may then use capabilities and fail, and the caller handles it | [`uses`](/docs/language/capabilities/uses/) |
+| The interpolation of any value that `==` compares, except a `Hashed`, a fingerprint of secret data that only a host capability computes and that a program cannot read | [Values](/learn/values/) |
 | The `Http` capability | [HTTP in the standard library](/docs/std/http/) |
+
+### The keywords `0.2` adds
+
+Edition `0.2` makes four words keywords: `edit`, `take`, `old` and `together`. Each one starts a construct, so in `0.2` none of them can name a binding, a parameter or a field. `edit`, `take` and `together` were reserved in `0.1` already, so no `0.1` package uses them as names. `old` was not, so a `0.1` package may use it, and must rename it to move, as [Why a language needs editions](#why-a-language-needs-editions) showed.
+
+One word goes the other way. `with` is a keyword in every edition, for `with @catalog = …` ([chapter 8](/learn/capabilities/#s8-4)). From edition `0.2` on, `with` right after a `.` is a name, the method of a map that adds an entry: `prices.with(key: sku, value: 1990)`.
 
 ### The rules that changed
 
-Some rules changed with it too. In edition `0.2`, a kind cannot take the name of a built-in type such as `Text` or `List`, and `una test` shows labeled values in full in a failed example's report.
+A few rules of `0.2` differ from `0.1`:
+
+- **Built-in type names.** A kind, a variant or a capability cannot take the name of a built-in type such as `Text`, `List`, `Map` or `U8` (U1002). `0.1` has fewer built-in types, so some of those names were free there.
+- **Equality on type parameters.** A public generic function that compares two values of a type parameter `T` must write the constraint `[T: Eq]` (U2026, [chapter 4](/learn/kinds/#s4-4)); `0.1` inferred it.
+- **The prelude.** `min`, `max`, `sum` and `contains` become generic over constrained types, and `sort`, `set` and `empty_map` are new.
+- **Recursive kinds,** kinds with a field of their own kind ([chapter 4](/learn/kinds/)), no longer need that field inside a `List` or an `Option`, but must be able to end: some variant, such as a `Lit(value: Int)` in an expression kind, holds no value of the kind itself.
+- **Test reports.** In `0.2`, a failed example's report shows labeled values, data marked secret or internal ([chapter 9](/learn/information-flow/)), in full, where `0.1` hides them.
 
 ### What a move from `0.1` can need
 
-So moving a `0.1` package to `0.2` can still need changes, in three places: a name that became a keyword, such as a binding called `edit`, `take`, `old` or `together`; a kind named like a built-in type, which is U1002 in `0.2`; and a call that relied on a prelude signature of `0.1`, since `min`, `max`, `sum` and `contains` became generic over constrained types. The checker reports each one at its place, with the code and a repair, so the move is a list of small, local changes rather than a search through the package.
+So moving a `0.1` package to `0.2` can still need changes, in four places: a name that became a keyword, such as a binding called `old`; a kind named like a built-in type, which is U1002 in `0.2`; a public generic function that compares values of a type parameter without `[T: Eq]`, which is U2026; and a call that relied on a prelude header of `0.1`. The checker reports each one at its place, with the code and a repair, so the move is a list of small, local changes rather than a search through the package.
+
+### Check yourself: a kind named `Map`
+
+This package is in edition `0.1`. It declares a record named `Map`, for a floor map of the store, and it checks and runs:
+
+```una include="steps/08-floor-map/src/shelf.una" title="steps/08-floor-map/src/shelf.una" verified="check, run"
+module shelf
+
+--- A floor map of the store: the aisle of a department.
+kind Map
+  department: Text
+  aisle: Int
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = Map(department: "lamps", aisle: 4)
+  @console.print("{lamps.department} in aisle {lamps.aisle}")
+```
+
+```text include="steps/08-floor-map/expected/output.txt"
+lamps in aisle 4
+```
+
+Change only its edition to `0.2`. Does it still check?
+
+:::answer Show the answer
+No. From edition `0.2` on, `Map` is the built-in type of maps, and a kind cannot take its name:
+
+```text include="steps/09-floor-map-0-2/expected/rendered.txt"
+[U1002] Error: `Map` is a built-in type of maps from edition 0.2, so a kind cannot take its name
+   ╭─[ src/shelf.una:4:6 ]
+   │
+ 4 │ kind Map
+   │      ─┬─
+   │       ╰─── `Map` is a built-in type of maps from edition 0.2, so a kind cannot take its name
+   │
+   │ Note: run `una explain U1002` for an explanation
+───╯
+```
+
+The mark is on the name in the declaration. Rename the kind, such as to `FloorMap`, and every use of it, and the package checks in `0.2`. The diagnostic has no exact edit, since the new name is a choice.
+:::
 
 ## 14.3 Edition `0.3`, a preview
+
+### What a preview is
+
+A **preview** is an edition that is still being completed. Its rules arrive one by one, release after release, until every rule planned for it has landed. You can use it today, and in exchange you accept that a later `0.3.x` release may reject code it accepts now.
+
+### Why a preview exists
+
+Some rules are worth having before all of their companions are ready. A dry run that the checker proves, as the day-to-day program of this chapter has, is useful the day it lands. A preview lets a package opt into those rules early, and lets the rules be tried on real code before the edition becomes stable. A package that does not opt in sees none of it: edition `0.2` keeps its promise.
 
 ### What edition `0.3` adds
 
 Edition `0.3` adds constructs that narrow what a program may do, and rules that reject code that can never run:
 
-- **Conditions on operations.** `uses @printer: Printer[print_label where not dry_run]` lets the function print a label only where the condition holds, and the verifier proves it at every call of the operation ([chapter 8, Capabilities](/learn/capabilities/#s8-5)).
-- **Locked contracts.** `[contracts]` in `una.toml` locks the `uses` of a public function: its header may grant less, never more ([chapter 11, Packages and modules](/learn/packages/)).
-- **Boundaries.** `[boundaries]` in `una.toml` gives a module a ceiling of operations that the code calling into it may grant ([chapter 8, Capabilities](/learn/capabilities/#s8-5)).
+- **Conditions on operations.** `uses @printer: Printer[print_label where not dry_run]` lets the function print a label only where the condition holds, and the verifier proves it at every call of the operation ([chapter 8](/learn/capabilities/#s8-5)).
+- **Locked contracts.** `[contracts]` in `una.toml` locks the `uses` of a public function: its header may grant less, never more ([chapter 11](/learn/packages/#s11-4)).
+- **Boundaries.** `[boundaries]` in `una.toml` lists the most a module may ever be given: a call into it may grant only the operations its ceiling names ([chapter 11](/learn/packages/#s11-5)).
 - **No dead failure handling.** An `if error` clause under a call that cannot fail is U3025, and `attempt` of a call that cannot fail is U3026.
+- **Units of measure.** `measure Gram` declares a unit, and `Int of Gram` is a number of grams, which cannot be mixed with a plain `Int` or with another unit except through an explicit conversion.
+- **Refined type arguments.** A refined kind may be the type of a list's elements, as in `List[Units]` with `Units = Int in 0..100`.
 
-The day-to-day program of this chapter uses the first two. This section shows the last one, since it is the rule a package meets when it moves to `0.3`.
+The day-to-day program uses the first two. The rest of this section shows the last three.
+
+### Units of measure
+
+A number alone does not say what it counts. 1200 can be grams, cents or units on a shelf, and adding grams to cents is a mistake that no type of `0.2` catches. In `0.3`, a unit is part of the type.
+
+#### A base unit: `measure Gram`
+
+```una include="steps/10-parcel/src/parcel.una" title="steps/10-parcel/src/parcel.una" verified="check, run"
+module parcel
+
+--- A unit of weight.
+measure Gram
+
+--- What one lamp weighs.
+lamp_weight() -> Int of Gram = 1200
+
+--- The weight of a parcel of `units` lamps.
+parcel_weight(units: Int) -> Int of Gram = units * lamp_weight()
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weight = parcel_weight(3)
+  let limit: Int of Gram = 5000
+  @console.print("{weight} grams, within the limit: {weight <= limit}")
+```
+
+```text include="steps/10-parcel/expected/output.txt"
+3600 grams, within the limit: true
+```
+
+:::steps
+1. **`measure Gram`.** Declares a **base unit**, one that is not defined from another, at the top level of a module.
+2. **`-> Int of Gram`.** `of` after an integer type gives it a unit. `Int of Gram` is a type of its own: neither `Int` nor any other unit.
+3. **`= 1200`.** A literal number takes the unit its place expects, so `1200` here is 1200 grams.
+4. **`units * lamp_weight()`.** `*` multiplies the units: a plain count times grams is grams. `+`, `-`, `mod` and the comparisons need the same unit on both sides.
+:::
+
+Units exist only while the package is checked: the program prints a plain number, and a unit costs nothing when the program runs.
+
+#### A derived unit, and changing a unit: `convert`, `measured`, `magnitude`
+
+A **derived unit** is defined from units already declared, with a whole-number factor: `measure Kilogram = 1000 * Gram` is a kilogram, a thousand grams, and `measure Milligram = Gram / 1000` would be a thousandth of a gram. A value never changes its unit by itself. Three methods change it, each where you write it, and they are the only ways:
+
+```una include="steps/11-parcel-units/src/parcel.una" title="steps/11-parcel-units/src/parcel.una" verified="check, run"
+module parcel
+
+--- A unit of weight.
+measure Gram
+
+--- A thousand grams.
+measure Kilogram = 1000 * Gram
+
+--- The most a parcel may weigh, as the carrier states it.
+parcel_limit() -> Int of Kilogram = 5
+
+--- A scale's reading, a plain number of grams, as a weight.
+from_scale(reading: Int) -> Int of Gram = reading.measured()
+
+--- The postage in cents, from a price list of plain numbers: 1 cent for every 10 grams.
+postage(grams: Int) -> Int = grams / 10
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weight = from_scale(3650)
+  let limit: Int of Gram = parcel_limit().convert()
+  @console.print("{weight} grams, limit {limit} grams, within: {weight <= limit}")
+  @console.print("postage: {postage(weight.magnitude())} cents")
+```
+
+```text include="steps/11-parcel-units/expected/output.txt"
+3650 grams, limit 5000 grams, within: true
+postage: 365 cents
+```
+
+:::steps
+1. **`reading.measured()`.** Gives a plain number the unit that its place expects: here the result type, `Int of Gram`. Use it where a number enters the program without a unit, such as a scale's reading.
+2. **`parcel_limit().convert()`.** Changes a value to the unit its place expects, of the same kind of quantity: from kilograms to grams, it multiplies by 1000, the exact ratio. The place must say which unit it expects, here the type of `limit`.
+3. **`weight.magnitude()`.** Gives the plain number without its unit, for code that takes a plain `Int`, such as `postage`.
+:::
+
+`convert()` works only when the ratio from the value's unit to the expected one is a whole number, as kilograms to grams is. Grams to kilograms would divide, and lose the grams below a thousand, so una rejects it with U2030 rather than round. `measured()` with no expected unit, or `convert()` between units of different quantities, such as grams and meters, is U2030 too.
+
+### Refined type arguments
+
+The type in brackets after a generic type, such as `Int` in `List[Int]`, is a **type argument**: it fills the generic type's type parameter ([chapter 4](/learn/kinds/#s4-4)). In editions `0.1` and `0.2`, a type argument cannot be a refined kind, so a list cannot say that its elements keep a rule: the elements of a `List[Int]` carry no facts. In `0.3` it can:
+
+```una include="steps/12-shelf-counts/src/shelves.una" title="steps/12-shelf-counts/src/shelves.una" verified="check, run"
+module shelves
+
+--- Units on a shelf, which holds at most 100.
+kind Units = Int in 0..100
+
+--- The counts of this morning's shelves, each a `Units`.
+counts() -> List[Units] = [4, 12, 9]
+
+--- The largest count, which is a `Units` too, or 0 for no shelf.
+fullest(shelves: List[Units]) -> Units
+=
+  let edit top: Units = 0
+  for units in shelves
+    if units > top
+      top = units
+  top
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("fullest shelf: {fullest(counts())} units")
+```
+
+```text include="steps/12-shelf-counts/expected/output.txt"
+fullest shelf: 12 units
+```
+
+The verifier proves that each element of the literal `[4, 12, 9]` is in `0..100`, and inside the loop it knows that each `units` is a `Units`, so it proves that `top` stays one. In edition `0.2`, the same code is rejected at each such type:
+
+```text include="steps/13-shelf-counts-0-2/expected/rendered.txt#L1"
+[U2002] Error: this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used
+```
 
 ### Failure handling that no longer runs
 
-A restock list in edition `0.2` computes how many units to order for each line. `order_quantity` once parsed a typed number and could fail, so its callers handled a failure. It has since become a plain calculation, which cannot fail, and the handling stayed:
+A restock list in edition `0.2` computes how many units to order for each line. `order_quantity` once parsed a typed number and could fail, so its callers handled a failure, with an `if error` clause and with `attempt` ([chapter 6](/learn/failure/#s6-2), [section 6.3](/learn/failure/#s6-3)): `if error use 0` gives a default when the call fails, and `attempt` keeps the outcome as a `Result`, `Ok` with the value or `Err` with the failure. It has since become a plain calculation, which cannot fail, and the handling stayed:
 
-```una include="steps/03-restock/src/restock.una" title="steps/03-restock/src/restock.una" verified="check, run"
+```una include="steps/14-restock/src/restock.una" title="steps/14-restock/src/restock.una" verified="check, run"
 module restock
 
 --- A line of a stock list: a SKU and the units on hand.
@@ -258,7 +647,7 @@ pub main() -> Unit
 
 In edition `0.2` this is accepted, and `una run .` prints:
 
-```text include="steps/03-restock/expected/output.txt"
+```text include="steps/14-restock/expected/output.txt"
 LAMP-01: order 6
 SHELF-03: enough
 DESK-02: order 1
@@ -269,7 +658,7 @@ DESK-02: order 1
 
 The `if error use 0` clause never runs, and the `Err` arm of `total` is never taken. They are harmless, but they mislead a reader into thinking `order_quantity` can fail. Edition `0.3` rejects both:
 
-```diff include="steps/03-restock..steps/04-restock-0-3:una.toml" title="una.toml"
+```diff include="steps/14-restock..steps/15-restock-0-3:una.toml" title="una.toml"
 --- a/una.toml
 +++ b/una.toml
 @@ -1,7 +1,7 @@
@@ -283,7 +672,7 @@ The `if error use 0` clause never runs, and the `Err` arm of `total` is never ta
  entry = "restock"
 ```
 
-```text include="steps/04-restock-0-3/expected/rendered.txt"
+```text include="steps/15-restock-0-3/expected/rendered.txt"
 [U3025] Error: this `if error` clause never runs, since the call of `order_quantity` cannot fail; remove the clause
     ╭─[ src/restock.una:15:5 ]
     │
@@ -309,14 +698,85 @@ The `if error use 0` clause never runs, and the `Err` arm of `total` is never ta
 1 of 2 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
 ```
 
-Each diagnostic names its repair. U3025's repair deletes the clause, an exact edit. U3026's repair is a description, because the uses of the `Result` have to be unwrapped by hand.
+Each diagnostic names its repair. U3025's repair deletes the clause, an exact edit. U3026's repair is a description, because the uses of the `Result` have to be unwrapped by hand. The last line counts one of the two as fixable.
 
-### A preview may get stricter
+### How a preview behaves
+
+- **It only gets stricter.** For every program that edition `0.2` can express, a later `0.3.x` release keeps its result, or adds obligations or errors to it.
+- **New constructs only narrow.** A later `0.3.x` release may accept a construct that earlier releases reject as a syntax error, such as a condition on an operation. Each such construct only narrows what a program may do: erase it, and you get a program that edition `0.2` accepts.
+- **The stable editions do not move.** Whatever happens to `0.3`, a release keeps what `0.1` and `0.2` accept and reject, except to fix a soundness or security error.
 
 > [!IMPORTANT]
-> A preview may get stricter in a later `0.3.x` release: a package that checks today on `0.3` may get a new obligation or a new error after an upgrade. Use `0.3` where its rules help, and expect to rerun `una check` after each upgrade.
+> A package that checks today on `0.3` may get a new obligation or a new error after an upgrade. Use `0.3` where its rules help, and rerun `una check .` and `una test .` after each upgrade.
+
+### When to choose `0.3`
+
+:::decide
+**Which to use:**
+
+| Your package… | Edition |
+| --- | --- |
+| Needs a condition on an operation, a locked contract, a boundary or units | `0.3` |
+| Should stay exactly as it is across upgrades | `0.2` |
+| Has failure handling you want the checker to keep honest | `0.3` |
+| Is maintained by a team that cannot react to a new error after an upgrade | `0.2` |
+:::
+
+### Check yourself: grams and kilograms
+
+Declare a second unit, a kilogram, and write the parcel's limit in kilograms:
+
+```diff include="steps/10-parcel..steps/16-parcel-kilograms:src/parcel.una" context="1" title="src/parcel.una"
+--- a/src/parcel.una
++++ b/src/parcel.una
+@@ -4,2 +4,5 @@
+ measure Gram
++
++--- A thousand grams.
++measure Kilogram = 1000 * Gram
+ 
+@@ -15,3 +18,3 @@
+   let weight = parcel_weight(3)
+-  let limit: Int of Gram = 5000
++  let limit: Int of Kilogram = 5
+   @console.print("{weight} grams, within the limit: {weight <= limit}")
+```
+
+A kilogram is 1,000 grams, and 3,600 grams is under 5 kilograms. Does the package check?
+
+:::answer Show the answer
+It does not. A unit is part of the type, and `<=` needs one type on both sides:
+
+```text include="steps/16-parcel-kilograms/expected/rendered.txt"
+[U2028] Error: `<=` needs operands of one type, and these are `Int of Gram` and `Int of 1000 * Gram`
+    ╭─[ src/parcel.una:20:54 ]
+    │
+ 20 │   @console.print("{weight} grams, within the limit: {weight <= limit}")
+    │                                                      ───────┬───────
+    │                                                             ╰───────── `<=` needs operands of one type, and these are `Int of Gram` and `Int of 1000 * Gram`
+    │
+    │ Note: run `una explain U2028` for an explanation
+────╯
+```
+
+`Int of 1000 * Gram` is how the checker writes a kilogram: a scale of 1000 on the unit `Gram`. una never converts implicitly: two values of different units never meet in `+`, `-` or a comparison, and each such place is U2028. To compare them, convert one explicitly, where a gram is expected: `let limit_grams: Int of Gram = limit.convert()` multiplies by 1000, the exact ratio, and `weight <= limit_grams` checks, as in [the derived unit](#a-derived-unit-and-changing-a-unit-convert-measured-magnitude) above.
+:::
+
+One more, without code. Two packages check clean with una 0.3.15: the restock list after its move, on edition `0.3`, and the stock list of [section 14.2](#s14-2), on edition `0.2`. A later `0.3.x` release comes out. Which of them can get a new error?
+
+:::answer Show the answer
+Only the package on edition `0.3`. It is on the preview, which a later `0.3.x` release may make stricter: a new rule may add an obligation or an error to it. The package on edition `0.2`, a stable edition, keeps exactly what it accepts and rejects, except for a fix of a soundness or security error. That is why the preview's packages rerun `una check .` and `una test .` after each upgrade.
+:::
 
 ## 14.4 Moving a package forward
+
+### What a move is
+
+**Moving** a package means changing the edition its `una.toml` names to a later one, and changing whatever code the new edition reads differently. The edition line is the whole decision; the rest is what the checker asks for.
+
+### A move is a change of its own
+
+Make the move a change of its own, with the edition line and the repairs it needed and nothing else, so that a reviewer reads it as a move and not as new behavior. The edition belongs to the package, not to a module: every module of a package moves together, and a store whose code is split into several packages can move them one at a time, each on the day its own tests are ready.
 
 ### The steps of a move
 
@@ -330,22 +790,22 @@ Moving a package to a later edition is a short loop. In the package's directory:
 5. **Run `una test .`**, and compare the output of `una run .` with the output before the move.
 :::
 
-### Moving the restock list
+### Moving the restock list to `0.3`
 
-For the restock list, the check of step 2 is the output of [section 14.3](#what-03-reports-u3025-and-u3026), and step 3 shows one exact repair:
+For the restock list, the check of step 2 is the output of [What `0.3` reports](#what-03-reports-u3025-and-u3026), and step 3 shows one exact repair:
 
 ```sh
 una fix --dry-run .
 ```
 
-```text include="steps/04-restock-0-3/expected/commands/fix.txt"
+```text include="steps/15-restock-0-3/expected/commands/fix.txt"
 $ una fix --dry-run .
 fixed src/restock.una:14:36 U3025 remove the clause
 ```
 
 `una fix .` removes the clause. The `attempt` is left to you: remove it, and replace the `when` with the value it unwrapped. The package after both repairs:
 
-```diff include="steps/03-restock..steps/05-restock-moved:src/restock.una" title="src/restock.una"
+```diff include="steps/14-restock..steps/17-restock-moved:src/restock.una" title="src/restock.una"
 --- a/src/restock.una
 +++ b/src/restock.una
 @@ -12,7 +12,6 @@
@@ -372,7 +832,7 @@ fixed src/restock.una:14:36 U3025 remove the clause
 
 `una run .` prints the same as before the move:
 
-```text include="steps/05-restock-moved/expected/output.txt"
+```text include="steps/17-restock-moved/expected/output.txt"
 LAMP-01: order 6
 SHELF-03: enough
 DESK-02: order 1
@@ -381,9 +841,43 @@ DESK-02: order 1
 
 The move changed no output, removed a clause and an arm that never ran, and left a `total` that reads as what it is: a sum.
 
-### A move is a change of its own
+### Moving a name that became a keyword
 
-Make the move a change of its own, with the edition line and the repairs it needed and nothing else, so that a reviewer reads it as a move and not as new behavior. The edition belongs to the package, not to a module: every module of a package moves together, and a store whose code is split into several packages can move them one at a time, each on the day its own tests are ready.
+The package of [Why a language needs editions](#why-a-language-needs-editions) moves to `0.2` the same way. Step 2 gives U0101 at `old`, with the repair "choose another name, such as `old_value`", which has no edit, since the right name is a choice. Step 3 shows that `una fix` has nothing to apply:
+
+```text include="steps/02-arrived-0-2/expected/commands/fix.txt"
+$ una fix --dry-run .
+```
+
+Step 4 is the rename by hand. `before` says what the count is:
+
+```diff include="steps/01-arrived..steps/18-arrived-moved:src/restock.una" title="src/restock.una"
+--- a/src/restock.una
++++ b/src/restock.una
+@@ -1,7 +1,7 @@
+ module restock
+ 
+---- How many units arrived: the count `new` on the shelf now, less the count `old` from before.
+-arrived(old: Int, new: Int) -> Int = new - old
++--- How many units arrived: the count `new` on the shelf now, less the count `before`.
++arrived(before: Int, new: Int) -> Int = new - before
+ 
+ pub main() -> Unit
+   uses @console: Console[print]
+```
+
+The package checks in `0.2`, and prints what it printed in `0.1`:
+
+```text include="steps/18-arrived-moved/expected/output.txt"
+6 units arrived
+```
+
+### How a move behaves
+
+- **One edition per package.** Every module moves at once. A program is one package, so it has one edition: in una 0.3.15 a package does not depend on other packages ([section 11.3](/learn/packages/#s11-3)).
+- **Moving back fails where the code uses the later edition.** A construct of a later edition is a syntax error or an unknown table in an earlier one: [Moving a package back](#moving-a-package-back-u0101-u7002) shows it.
+- **Read a rename before you apply it.** In edition `0.1`, a reserved word gets a rename repair, which is right for a name and wrong for a construct of a later edition: [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows the second case.
+- **The output is the test of a move.** A move changes the language, not the program's behavior: the examples pass, and `una run .` prints what it printed before.
 
 ### Which edition to name
 
@@ -396,15 +890,66 @@ The table sums up which edition a package's `una.toml` should name:
 | --- | --- |
 | Is stable code that you do not want to touch | Keep its edition: every release that lists it in `una --version` serves it |
 | Uses loops, maps, `together` or any construct of this tutorial's later chapters | `0.2` |
-| Needs a condition on an operation, a locked contract or a boundary | `0.3`, the preview |
+| Needs a condition on an operation, a locked contract, a boundary or units | `0.3`, the preview |
 | Is new, and should follow the stable rules | `0.2` |
+:::
+
+### Check yourself: a parameter named `take`, moved
+
+Take the `0.1` package of [Check yourself: a word reserved for later](#check-yourself-a-word-reserved-for-later), and move it to `0.2` without renaming anything:
+
+```diff include="steps/06-take..steps/19-take-0-2:una.toml" title="una.toml"
+--- a/una.toml
++++ b/una.toml
+@@ -1,7 +1,7 @@
+ [package]
+ name = "shelf"
+ version = "0.1.0"
+-edition = "0.1"
++edition = "0.2"
+ 
+ [run]
+ entry = "shelf"
+```
+
+In `0.1`, each use of `take` was U0103, with a rename. What does `una check .` report in `0.2`, and what does `una fix --dry-run .` offer?
+
+:::answer Show the answer
+Two syntax errors, and no repair:
+
+```text include="steps/19-take-0-2/expected/rendered.txt"
+[U0101] Error: unexpected `:`, expected a parameter name
+   ╭─[ src/shelf.una:4:22 ]
+   │
+ 4 │ left(units: Int, take: Int) -> Int = units - take
+   │                      ┬
+   │                      ╰── unexpected `:`, expected a parameter name
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+[U0101] Error: unexpected `:`, expected an expression
+   ╭─[ src/shelf.una:9:33 ]
+   │
+ 9 │   @console.print("{left(10, take: 3)} left")
+   │                                 ┬
+   │                                 ╰── unexpected `:`, expected an expression
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+```
+
+```text include="steps/19-take-0-2/expected/commands/fix.txt"
+$ una fix --dry-run .
+```
+
+From edition `0.2` on, `take` is a keyword that starts a parameter's mode, as in `take items: List[Line]` ([chapter 12](/learn/memory-and-concurrency/#s12-3)). So una reads `take` and expects the parameter's name after it, and finds `:`. The messages describe the syntax, not the word, which makes them harder to read: when a move gives a syntax error at a word that the new edition made a keyword, rename the word. Here, rename `take` to `taken`, by hand, before or after the move.
 :::
 
 ## 14.5 Day-to-day: a shelf-label printer
 
 ### What the program must do
 
-Now the program from the start of the chapter. The store prints shelf labels from a stock export. A line that does not parse is left out, a line with no stock gets no label, and a dry run must count the labels without printing any, so that the night shift can check a run before it uses up the label stock. The package is on edition `0.3`, because the dry run's rule is one the checker can then enforce.
+Now the program from the start of the chapter. The store prints shelf labels from a stock export. A line that does not parse is left out, a line with no stock gets no label, and a dry run must count the labels without printing any, so that the night shift can check a run before it uses up the label stock. The package is on edition `0.3`, because the dry run's rule is one the checker can then enforce. The package is on edition `0.3`, and it uses constructs that each edition introduced; each part below says which.
 
 ### The manifest: the edition and the lock
 
@@ -424,13 +969,13 @@ grants = ["console"]
 "labels.print_labels" = ["@printer: Printer[print_label where not dry_run]"]
 ```
 
-`edition = "0.3"` opts into the preview. `[contracts]` locks the authority of `print_labels`: whatever its header says, it may never print a label where `dry_run` is true. Each key is the qualified name of a public function, and each value lists `uses` clauses as a header writes them. The header may grant less than its lock, never more. A change to that line is a change to `una.toml`, which a reviewer sees in the diff, even when nobody touches the code.
+`edition = "0.3"` opts into the preview. `[contracts]` locks the authority of `print_labels`: whatever its header says, it may never print a label where `dry_run` is true. Each key is the qualified name of a public function, its module's name, a dot and its own name, and each value lists `uses` clauses as a header writes them. The header may grant less than its lock, never more. A change to that line is a change to `una.toml`, which a reviewer sees in the diff, even when nobody touches the code.
 
 Why both a condition and a lock? The condition makes the verifier check the body against the header. The lock makes the checker hold the header to `una.toml`. Without the lock, a later change could drop `where not dry_run` from the header and add a print without a guard, and the package would still check. With it, that change is U3023 until `una.toml` changes too.
 
 ### The kinds, the printer and the parser
 
-These use edition `0.1` and `0.2` constructs only: a record, a sum kind for the failures, a capability, and a parser that fails with `LineError`.
+These use edition `0.1` and `0.2` constructs only: a record, a sum kind for the failures, a capability, and a parser that fails with `LineError`. `text.split` and `to_int` are text functions of `0.2`.
 
 ```una include="day-to-day/src/labels.una#L1-L27" title="day-to-day/src/labels.una"
 module labels
@@ -464,7 +1009,7 @@ pub parse_line(text: Text) -> Line
 
 ### Reading an export
 
-`read_lines` keeps the lines that parse. `attempt` keeps each outcome as a `Result`, and a `when` on it decides whether the line is added. On `0.3`, `attempt` must wrap a call that can fail, and `parse_line` can.
+`read_lines` keeps the lines that parse. `attempt` keeps each outcome as a `Result`, and a `when` on it decides whether the line is added. On `0.3`, `attempt` must wrap a call that can fail, and `parse_line` can, so U3026 does not apply.
 
 ```una include="day-to-day/src/labels.una#read_lines" title="day-to-day/src/labels.una"
 --- Reads every line of an export; a line that does not parse is left out.
@@ -481,7 +1026,7 @@ pub read_lines(export: List[Text]) -> List[Line]
 
 ### Printing, with a dry run
 
-The header gives `print_label` a condition: `where not dry_run`. Inside the body, the operation is called only under `if not dry_run`, and the verifier proves that the condition holds there. Remove the guard, and the check fails with a counterexample where `dry_run` is true ([An operation outside its condition](#an-operation-outside-its-condition-u5001) shows it).
+The header gives `print_label` a condition: `where not dry_run`, a construct of `0.3`. Inside the body, the operation is called only under `if not dry_run`, and the verifier proves that the condition holds there. Remove the guard, and the check fails with a counterexample where `dry_run` is true ([An operation outside its condition](#an-operation-outside-its-condition-u5001) shows it).
 
 ```una include="day-to-day/src/labels.una#print_labels" title="day-to-day/src/labels.una"
 --- Prints a label for every line with stock, and gives how many. A dry run prints nothing.
@@ -526,7 +1071,12 @@ pub main() -> Unit
   @console.print("printed {printed} labels")
 ```
 
-`una run .` prints the output shown in [What you'll build](#what-youll-build). The run uses all three editions at once: the kinds and the `when` of `0.1`, the loops, `let edit` and the text functions of `0.2`, and the condition and the lock of `0.3`. The dry run counts two labels and prints none. The real run prints the lamp and the shelf. The desk has no stock, and the chair's line, `CHAIR-09, two`, does not parse, so neither gets a label.
+`una run .` prints the output shown in [What you'll build](#what-youll-build). The package is on edition `0.3`, and it uses constructs that each edition introduced: the kinds and the `when` of `0.1`, the loops, `let edit` and the text functions of `0.2`, and the condition and the lock of `0.3`. The dry run counts two labels and prints none. The real run prints the lamp and the shelf. The desk has no stock, and the chair's line, `CHAIR-09, two`, does not parse, so neither gets a label. `una report .` lists the printer handler under `handler authority`, with what it may do:
+
+```text include="day-to-day/expected/commands/report.txt#L9-L10"
+handler authority:
+  labels.on_console for labels.Printer (private): @console: Console[print]
+```
 
 ### The whole program
 
@@ -647,7 +1197,7 @@ example "a run prints a label for each line with stock"
 
 ### A plain `dry_run` and the calls `silent` records
 
-The examples pass `dry_run` as a plain `true` or `false`. A caller has nothing to prove about it: the condition is proven once, inside `print_labels`, for every value of `dry_run`, so the examples only check behavior. `silent` answers every `print_label` with `unit`, and the trace of each example records the calls, which `expect performed` and `expect not performed` read.
+The examples pass `dry_run` as a plain `true` or `false`. Here the examples have nothing to prove about it: each installs its own printer with `given`, and the condition is proven once, inside `print_labels`, for every value of `dry_run`, so the examples only check behavior. `silent` answers every `print_label` with `unit`, and the trace of each example records the calls, which `expect performed` and `expect not performed` read.
 
 ### The proof and the examples
 
@@ -674,7 +1224,7 @@ The first two mistakes are changes to the edition `0.1` stock list of [section 1
 :::mistake
 Print the list as it is:
 
-```diff include="steps/01-edition-0-1..mistakes/1:src/shelf.una" context="1" title="src/shelf.una"
+```diff include="steps/05-edition-0-1..mistakes/1:src/shelf.una" context="1" title="src/shelf.una"
 --- a/src/shelf.una
 +++ b/src/shelf.una
 @@ -15 +15,2 @@
@@ -686,7 +1236,7 @@ Print the list as it is:
 [U2001] Error: interpolation converts `Int`, `Bool` and `Text` to text, and this value is `List[Line]`
 ```
 
-*Why:* edition `0.1` interpolates only `Int`, `Bool` and `Text`.
+*Why:* edition `0.1` interpolates only `Int`, `Bool` and `Text`. The message names both sides: what interpolation converts, and the type it was given, `List[Line]`.
 
 *Fix:* interpolate the fields you want, or move the package to `0.2`, which interpolates any value that `==` compares, except a `Hashed`. See [U2001](/docs/errors/U2001/).
 :::
@@ -696,7 +1246,7 @@ Print the list as it is:
 :::mistake
 Write the total with `let edit` and `for` in edition `0.1`:
 
-```diff include="steps/01-edition-0-1..mistakes/2:src/shelf.una" context="1" title="src/shelf.una"
+```diff include="steps/05-edition-0-1..mistakes/2:src/shelf.una" context="1" title="src/shelf.una"
 --- a/src/shelf.una
 +++ b/src/shelf.una
 @@ -8,3 +8,8 @@
@@ -733,7 +1283,7 @@ $ una fix --dry-run .
 fixed src/shelf.una:11:7 U0103 rename it to `the_edit`
 ```
 
-*Why:* in edition `0.1`, `edit` is a reserved word, not a keyword, so the checker reads it as a name that must change. Applied here, the rename gives `let the_edit sum = 0`, which does not parse.
+*Why:* in edition `0.1`, `edit` is a reserved word, not a keyword, so the checker reads it as a name that must change. The message says the rest: `reserved for v0.2 (memory model)` names the edition where `let edit` exists. Applied here, the rename gives `let the_edit sum = 0`, which does not parse.
 
 *Fix:* change `edition` in `una.toml` to `"0.2"`. Do not apply the rename: offering it here is a known issue of una 0.3.15. See [U0103](/docs/errors/U0103/).
 :::
@@ -774,7 +1324,7 @@ Set the day-to-day program's edition to `0.2`:
 ────╯
 ```
 
-*Why:* both constructs exist only in edition `0.3`. In `0.2`, the condition is a syntax error and `[contracts]` is an unknown table.
+*Why:* both constructs exist only in edition `0.3`. In `0.2`, the condition is a syntax error, so the message speaks of `where` as an unexpected keyword, and `[contracts]` is an unknown table of `una.toml`. Two diagnostics in two files point at one cause: the edition line.
 
 *Fix:* keep the edition the package's constructs need. See [U0101](/docs/errors/U0101/) and [U7002](/docs/errors/U7002/).
 :::
@@ -806,7 +1356,7 @@ Remove the guard in `print_labels`:
     │ Note 2: counterexample: dry_run = true, line = Line#0, line.sku = Text#0, line.units = 1, lines = List#0, lines.len = 1, printed = 0
 ```
 
-*Why:* the header lets `print_label` run only where `not dry_run` holds, and the verifier found a run where it does not: `dry_run = true` with one line in stock.
+*Why:* the header lets `print_label` run only where `not dry_run` holds, and the verifier found a run where it does not. The obligation's kind, `effect_condition`, says that it is a condition on an operation. The counterexample is `dry_run = true` with one line in stock, `line.units = 1`: the placeholders `Line#0`, `Text#0` and `List#0` are values the solver needed but whose details do not matter.
 
 *Fix:* the first repair, `if not dry_run`. The second repair, `requires not dry_run`, would forbid every dry run. See [U5001](/docs/errors/U5001/).
 :::
@@ -844,14 +1394,14 @@ Remove the condition from the header:
     │ Note 2: counterexample: dry_run = true
 ```
 
-*Why:* the lock in `una.toml` says how much `print_labels` may ever do, and the header now grants more: printing in a dry run, as the counterexample `dry_run = true` shows.
+*Why:* the lock in `una.toml` says how much `print_labels` may ever do, and the header now grants more: printing in a dry run, as the counterexample `dry_run = true` shows. The diagnostic has two places in two files: the header, the primary place, and the lock in `una.toml`, marked `lock`. The obligation's kind is `contract_lock`.
 
 *Fix:* restore the condition. To really change the rule, change the lock in `una.toml` too, where a reviewer sees it. See [U3023](/docs/errors/U3023/).
 :::
 
 ## 14.8 Exercises
 
-Each exercise starts from `exercises/N/start` and has an example that fails there until the exercise is done. Run `una fmt .` before `una check .`.
+Each exercise starts from `exercises/N/start` and has an example that fails there until the exercise is done. Work in the start package's directory: check the edition in `una.toml` first, then run `una fmt .`, `una check .` and `una test .`.
 
 ### Exercise 1: move a package to `0.2`
 
@@ -880,7 +1430,7 @@ error U0103 at src/shelf.una:14:7: `edit` is reserved for v0.2 (memory model)
 ```
 
 :::hint
-*Hint:* the code is right. Read [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) before you run `una fix`.
+*Hint:* the code is right; the message says which edition has `edit`. Read [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) before you run `una fix`, then follow [the steps of a move](#the-steps-of-a-move).
 :::
 
 Check your answer with `una check .`, then `una test .`.
@@ -933,7 +1483,7 @@ example "a restock dry run prints nothing"
 ```
 
 :::hint
-*Hint:* start from the body of `print_labels`. If you leave out the guard, `una check .` reports where.
+*Hint:* start from the body of `print_labels`, and change only the test on `line.units`. Keep the count outside the `if not dry_run`, so a dry run counts too. If you leave out the guard, `una check .` reports where, with a counterexample where `dry_run` is true.
 :::
 
 Check your answer with `una test .`.
@@ -1002,7 +1552,7 @@ example "a dry run prints the summary, and no label"
 ```
 
 :::hint
-*Hint:* the header decides which operations may run, and under which condition. Once the code checks on its own, read what `una check .` says about `una.toml`.
+*Hint:* the header decides which operations may run, and under which condition: add `print_summary` to the `uses` clause of `print_labels`, with no condition, and call it after the loop. Once the code checks on its own, read what `una check .` says about `una.toml`: the lock must list what the header grants.
 :::
 
 After the change to the code alone, `una check .` reports:
@@ -1055,18 +1605,18 @@ and the lock, which a reviewer sees:
 ### For agents
 
 :::agents
-An edition shows up in two places of `una --json` output: a construct of a later edition gives U0103 (a reserved word) or U0101 (a syntax error) at the construct, and a table of a later edition gives U7002 at `una.toml`. To move a package, change only `edition` in `una.toml`, run `una --json check .`, apply what `una fix .` applies, and repair the rest from each diagnostic's repairs. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and only tightens rules.*
+An edition shows up in two places of the diagnostics: a construct of a later edition gives U0103 or U0101 at the construct, and a table of a later edition gives U7002 at `una.toml`. To move a package, change only `edition` in `una.toml`, run `una --json check .`, apply what `una fix .` applies, and repair the rest from each diagnostic's repairs. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and only tightens rules.*
 :::
 
 ### Recap
 
 :::recap
-- `[package] edition` names a package's edition. A single file has edition `0.1`.
+- `[package] edition` names a package's edition, and is required. A single file has edition `0.1`.
 - Upgrading `una` keeps what each stable edition accepts and rejects, except to fix a soundness or security error.
-- Editions are cumulative: a later edition adds constructs and tightens rules, and never removes a construct.
-- `0.2` adds loops, `let edit`, `edit` and `take`, `together`, maps, JSON and more.
-- `0.3` is a preview: conditions on operations, locked contracts, boundaries, and no dead failure handling. It may get stricter in a later `0.3.x`.
-- To move a package: change the edition, `una check .`, `una fix .`, repair the rest, `una test .`.
+- Editions are cumulative: a later edition adds constructs, keywords and rules, and never removes a construct.
+- `0.2` adds loops, `let edit`, `edit` and `take`, `together`, maps, JSON and more, and makes `old` a keyword.
+- `0.3` is a preview: conditions on operations, locked contracts, boundaries, units, refined type arguments, and no dead failure handling. It may get stricter in a later `0.3.x`.
+- To move a package: change the edition, `una check .`, `una fix .`, repair the rest, `una test .`, and compare the output.
 - Never let `una fix` rename a keyword of a later edition; change the edition instead.
 :::
 
@@ -1076,6 +1626,6 @@ An edition shows up in two places of `una --json` output: a construct of a later
 - Editions: [editions](/docs/editions/), [moving from 0.1 to 0.2](/docs/editions/migrate-0.1-to-0.2/), [`[package] edition`](/docs/configure/package/edition/), [`[boundaries]`](/docs/configure/boundaries/)
 - Construct pages: [`let edit`](/docs/language/control-flow/let-edit/), [`for`](/docs/language/control-flow/for/), [`together`](/docs/language/control-flow/together/), [`uses`](/docs/language/capabilities/uses/), [`if error`](/docs/language/errors/if-error/), [`attempt`](/docs/language/errors/attempt/), [constraints on generics](/docs/language/types/constraints/)
 - Command line: [`una check`](/docs/cli/check/), [`una fix`](/docs/cli/fix/)
-- Diagnostics: [U0101](/docs/errors/U0101/), [U0103](/docs/errors/U0103/), [U2001](/docs/errors/U2001/), [U3023](/docs/errors/U3023/), [U3025](/docs/errors/U3025/), [U3026](/docs/errors/U3026/), [U5001](/docs/errors/U5001/), [U7002](/docs/errors/U7002/)
-- Specification: [project files and editions](/docs/spec/13-diagnostics-and-abi/), [lexical structure, reserved words](/docs/spec/01-lexical-structure/), [memory model](/docs/spec/17-memory-model/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [errors](/docs/spec/06-errors/)
+- Diagnostics: [U0101](/docs/errors/U0101/), [U0103](/docs/errors/U0103/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2002](/docs/errors/U2002/), [U2028](/docs/errors/U2028/), [U3023](/docs/errors/U3023/), [U3025](/docs/errors/U3025/), [U3026](/docs/errors/U3026/), [U5001](/docs/errors/U5001/), [U7002](/docs/errors/U7002/)
+- Specification: [project files and editions](/docs/spec/13-diagnostics-and-abi/), [lexical structure, reserved words](/docs/spec/01-lexical-structure/), [types](/docs/spec/03-types/), [memory model](/docs/spec/17-memory-model/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [errors](/docs/spec/06-errors/)
 :::

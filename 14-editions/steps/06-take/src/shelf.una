@@ -1,0 +1,9 @@
+module shelf
+
+--- The units left after a customer takes `take` of `units`.
+left(units: Int, take: Int) -> Int = units - take
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{left(10, take: 3)} left")

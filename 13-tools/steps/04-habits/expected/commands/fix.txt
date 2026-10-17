@@ -1,0 +1,3 @@
+$ una fix --dry-run .
+fixed src/receipt.una:9:1 U0101 write the `if` with blocks: `if` and its condition, the indented branch, `else`, then the indented branch
+fixed src/receipt.una:15:7 U0001 rename `_total` to `total2` in its declaration: a name starts with a letter

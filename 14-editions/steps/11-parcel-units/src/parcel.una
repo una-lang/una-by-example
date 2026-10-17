@@ -1,0 +1,24 @@
+module parcel
+
+--- A unit of weight.
+measure Gram
+
+--- A thousand grams.
+measure Kilogram = 1000 * Gram
+
+--- The most a parcel may weigh, as the carrier states it.
+parcel_limit() -> Int of Kilogram = 5
+
+--- A scale's reading, a plain number of grams, as a weight.
+from_scale(reading: Int) -> Int of Gram = reading.measured()
+
+--- The postage in cents, from a price list of plain numbers: 1 cent for every 10 grams.
+postage(grams: Int) -> Int = grams / 10
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weight = from_scale(3650)
+  let limit: Int of Gram = parcel_limit().convert()
+  @console.print("{weight} grams, limit {limit} grams, within: {weight <= limit}")
+  @console.print("postage: {postage(weight.magnitude())} cents")

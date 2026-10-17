@@ -1,0 +1,16 @@
+module receipt
+
+--- The total of a line in cents.
+line_cents(units: Int, unit_cents: Int) -> Int = units * unit_cents
+
+--- A label for a line: "bulk" from 10 units on.
+size_label(units: Int) -> Text
+=
+  if units >= 10 then "bulk"
+  else "single"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let _total = line_cents(2, unit_cents: 1990)
+  @console.print("{size_label(2)} {_total}")

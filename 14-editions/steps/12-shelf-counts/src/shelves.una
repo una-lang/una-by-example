@@ -1,0 +1,21 @@
+module shelves
+
+--- Units on a shelf, which holds at most 100.
+kind Units = Int in 0..100
+
+--- The counts of this morning's shelves, each a `Units`.
+counts() -> List[Units] = [4, 12, 9]
+
+--- The largest count, which is a `Units` too, or 0 for no shelf.
+fullest(shelves: List[Units]) -> Units
+=
+  let edit top: Units = 0
+  for units in shelves
+    if units > top
+      top = units
+  top
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("fullest shelf: {fullest(counts())} units")

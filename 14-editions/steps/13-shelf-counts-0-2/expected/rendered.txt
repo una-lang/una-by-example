@@ -1,0 +1,23 @@
+[U2002] Error: this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used
+   ╭─[ src/shelves.una:7:18 ]
+   │
+ 7 │ counts() -> List[Units] = [4, 12, 9]
+   │                  ──┬──
+   │                    ╰──── this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used
+   │
+   │ Help: repair 1: write the base type `Int`; edit src/shelves.una:7:18..7:23 to "Int"
+   │
+   │ Note: run `una explain U2002` for an explanation
+───╯
+[U2002] Error: this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used
+    ╭─[ src/shelves.una:10:23 ]
+    │
+ 10 │ fullest(shelves: List[Units]) -> Units
+    │                       ──┬──
+    │                         ╰──── this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used
+    │
+    │ Help: repair 1: write the base type `Int`; edit src/shelves.una:10:23..10:28 to "Int"
+    │
+    │ Note: run `una explain U2002` for an explanation
+────╯
+2 of 2 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

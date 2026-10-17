@@ -1,0 +1,11 @@
+[U0101] Error: `old` is a reserved keyword, so it cannot name a binding
+   ╭─[ src/restock.una:4:9 ]
+   │
+ 4 │ arrived(old: Int, new: Int) -> Int = new - old
+   │         ─┬─
+   │          ╰─── `old` is a reserved keyword, so it cannot name a binding
+   │
+   │ Help: repair 1: choose another name, such as `old_value`
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
