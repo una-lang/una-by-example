@@ -1,0 +1,8 @@
+module hello
+
+--- Says that the store is open.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.write("The store is open")
+  @console.show("Orders placed before 18:00 ship today")

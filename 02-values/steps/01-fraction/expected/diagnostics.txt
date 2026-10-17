@@ -1,0 +1,1 @@
+error U0101 at src/shelf.una:7:17: `19.90` is a fractional literal; Una's integer literals are decimal

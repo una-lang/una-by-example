@@ -1,0 +1,12 @@
+[U1002] Error: `lamp` is already bound in this scope; a local cannot rebind another
+   ╭─[ src/till.una:8:7 ]
+   │
+ 7 │   let lamp = 1_990
+   │       ──┬─
+   │         ╰─── first defined here
+ 8 │   let lamp = 2_490
+   │       ──┬─
+   │         ╰─── `lamp` is already bound in this scope; a local cannot rebind another
+   │
+   │ Note: run `una explain U1002` for an explanation
+───╯

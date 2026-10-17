@@ -1,0 +1,20 @@
+module texts
+
+--- Prints texts written with escapes and joined with interpolation.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let raw = "lamp-01 "
+  let sku = "LAMP-01"
+  @console.print("[{raw}] and [{sku}] are equal: {raw == sku}")
+  @console.print("a quote \", a backslash \\ and braces \{ \}")
+  @console.print("before a tab:\tafter it")
+  @console.print("Caf\u{e9} table")
+  let size = "XL"
+  @console.print("{sku}-{size}")
+  let empty = ""
+  @console.print("[{empty}] has {empty.len} characters, [{sku}] has {sku.len}")
+  let padded = "  oak desk "
+  @console.print("{padded.trim.len}")
+  let cafe = "Café"
+  @console.print(cafe.to_upper)

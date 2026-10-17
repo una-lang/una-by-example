@@ -1,0 +1,8 @@
+$ una test .
+example notice "the store closes at six in the evening" ... ok
+example notice "the cutoff line names the hour" ... ok
+example notice "the cutoff line for nine in the morning" ... FAILED
+  src/notice.una:29: expect result == "Orders placed before 09:00 ship today"
+  it is false, with `result` = `"Orders placed before 9:00 ship today"`
+
+3 examples: 2 passed, 1 failed

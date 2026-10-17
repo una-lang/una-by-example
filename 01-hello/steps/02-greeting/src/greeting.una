@@ -1,0 +1,9 @@
+module greeting
+
+--- Greets the first customers of the day.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Good morning")
+  @console.print("The store is open")
+  @console.print("Today's special: desk lamps")

@@ -1,0 +1,27 @@
+[U2019] Error: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+    ╭─[ src/till.una:10:3 ]
+    │
+ 10 │   total = total + lamp
+    │   ──┬──
+    │     ╰──── `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯
+[U2019] Error: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+    ╭─[ src/till.una:12:3 ]
+    │
+ 12 │   total = total + lamp
+    │   ──┬──
+    │     ╰──── `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯
+[U2019] Error: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+    ╭─[ src/till.una:15:3 ]
+    │
+ 15 │   total = total + 4_500
+    │   ──┬──
+    │     ╰──── `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯

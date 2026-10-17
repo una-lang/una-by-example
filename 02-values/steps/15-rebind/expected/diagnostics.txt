@@ -1,0 +1,1 @@
+error U1002 at src/till.una:8:7: `lamp` is already bound in this scope; a local cannot rebind another

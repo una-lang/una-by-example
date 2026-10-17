@@ -2,8 +2,8 @@
 learn: "2"
 title: Values
 editions: ["0.2"]
-codes: [U0006, U2001, U2019, U2022, U5001]
-time: 35
+codes: [U0006, U0101, U1002, U2001, U2019, U2022, U5001]
+time: 55
 builds: The shelf labels of a store, with prices, sale prices, prices per kilogram and the number of copies to print
 prerequisites: ["1"]
 template: 2
@@ -38,12 +38,12 @@ You will learn to:
 
 ## Why it works this way
 
-In many languages the basic values are where the quiet bugs live. A 32-bit or 64-bit integer wraps around when a total gets large, and the result is wrong without an error. Integer division rounds toward zero, so the remainder of a negative amount is negative. A number, an empty text or a null passes for `false` in a condition. A substring call with an index past the end throws at run time, or returns less than the code expected.
+In many languages the basic values are where the quiet mistakes live. A whole number has a largest value, and a total that grows past it jumps to a wrong number, often a negative one, with no error. A division of a negative amount can leave a negative remainder. A number, or an empty text, can stand for "no" in a condition. Cutting a piece out of a text at a position past its end stops the program while it runs, or gives back less than the code expected. Each section of this chapter shows one of these in Una.
 
 Una makes each of these a rule that the checker enforces:
 
 :::steps
-1. **`Int` has no bound.** It is a whole number of any size, so a sum or a product is always exact. Where a width matters, you choose a fixed-width type, and the verifier proves that every operation stays in its range.
+1. **`Int` has no bound.** It is a whole number of any size, so a sum or a product is always exact. Where a width matters, you choose a fixed-width type, and the verifier, the part of `una check` that proves facts about the code ([section 2.1](#division-by-zero-a-proof-obligation)), proves that every operation stays in its range.
 2. **Division is defined everywhere it can run.** The remainder of a division is never negative, and a division by a value that may be zero does not check.
 3. **`Bool` is its own type.** A condition must be a `Bool`. An `Int` or a `Text` is never read as true or false.
 4. **Operations state what they need.** Cutting a text requires positions inside it, and the verifier proves it at each call, from the code around the call.
@@ -54,16 +54,90 @@ Una makes each of these a rule that the checker enforces:
 
 ## 2.1 Numbers: `Int`
 
-### Whole numbers of any size
+### What an integer is
 
-An `Int` is a whole number, positive, zero or negative, with no limit on its size. You write it in decimal, and you may group the digits with `_`, as `1_990` or `10_000`. The usual operators work on it: `+`, `-`, `*`, `/` for division and `mod` for the remainder, with the usual precedence, and parentheses to group.
+An **integer** is a whole number: positive, zero or negative, with no fraction. `7`, `0` and `-1205` are integers; `19.90` is not. Una's integer type is `Int`, and it has no limit on its size: an `Int` can be as large as the computer's memory allows.
+
+Most numbers in a store are counts of whole things: units on a shelf, lines of an order, labels to print. Money is one too, once you count it in its smallest unit. A price of 19.90 is 1990 **cents**, and an `Int` holds 1990 exactly.
+
+### Why money is whole cents
+
+A price written with a decimal point looks natural, so try it:
+
+```una include="steps/01-fraction/src/shelf.una" title="steps/01-fraction/src/shelf.una"
+module shelf
+
+--- Prints the price of a desk lamp, written with a decimal point.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = 19.90
+  @console.print("{lamp}")
+```
+
+```text include="steps/01-fraction/expected/rendered.txt"
+[U0101] Error: `19.90` is a fractional literal; Una's integer literals are decimal
+   ╭─[ src/shelf.una:7:17 ]
+   │
+ 7 │   let lamp = 19.90
+   │                 ─┬
+   │                  ╰── `19.90` is a fractional literal; Una's integer literals are decimal
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+```
+
+The message says that `19.90` is a **fractional literal**, a number with a fraction, and that Una's integer literals are written in decimal digits only. Una has no number type for fractions.
+
+That is a choice, not a gap. Many languages store a fraction such as 0.1 as a binary approximation, so adding prices gives totals such as 0.30000000000000004, and rounding them is a decision the code makes in a hundred places without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
+
+### How to write integers and arithmetic
+
+#### Integer literals
+
+- Write an integer in decimal digits: `7`, `1990`.
+- Group the digits with `_` to make large numbers readable: `1_990`, `10_000`, `1_000_000`. The `_` goes only between digits.
+- For a negative number, write a minus sign in front of the literal: `-1205`.
+- A literal has no leading zero, except `0` itself: `007` is a mistake.
+
+#### The operators
+
+| Operator | Meaning | `7` and `2` give |
+| --- | --- | --- |
+| `+` | addition | `7 + 2` is 9 |
+| `-` | subtraction, or a minus sign in front of one value | `7 - 2` is 5, `-7` is minus seven |
+| `*` | multiplication | `7 * 2` is 14 |
+| `/` | division, dropping the remainder | `7 / 2` is 3 |
+| `mod` | the remainder of the division | `7 mod 2` is 1 |
+
+`*`, `/` and `mod` come before `+` and `-`, and operators of the same level go from left to right. Parentheses change the order. The step tries each operator on 7 units packed 2 to a box:
+
+```una include="steps/02-operators/src/arithmetic.una#L7-L13" title="steps/02-operators/src/arithmetic.una"
+  let units = 7
+  let per_box = 2
+  @console.print("{units + per_box}, {units - per_box} and {units * per_box}")
+  @console.print("{units / per_box} full boxes, {units mod per_box} unit left over")
+  @console.print("{-units} and {per_box - units}")
+  @console.print("{2 + 3 * 4} and {(2 + 3) * 4}")
+  @console.print("{1_000_000 * 1_000_000}")
+```
+
+```text include="steps/02-operators/expected/output.txt#L1-L5"
+9, 5 and 14
+3 full boxes, 1 unit left over
+-7 and -5
+14 and 20
+1000000000000
+```
+
+`7 / 2` gives 3 full boxes and drops the half, and `7 mod 2` gives the 1 unit left over. `1_000_000 * 1_000_000` is exact, with all its zeros.
 
 ### Money as `Int` cents
 
-Money is an `Int` of cents, in this chapter and in every chapter of this tutorial. A price never needs a fraction, so it never needs rounding until the code chooses one:
+A price never needs a fraction, so it never needs rounding until the code chooses one:
 
 :::steps
-```una include="steps/01-int/src/prices.una" title="src/prices.una" verified="check, run"
+```una include="steps/03-prices/src/prices.una" title="src/prices.una" verified="check, run"
 module prices
 
 --- Prints a few computations on prices in cents.
@@ -91,40 +165,185 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/01-int/expected/output.txt"
+```text include="steps/03-prices/expected/output.txt"
 order: 8480 cents, or 84 units and 80 cents
 15% off: 1272 cents off, 7208 to pay
 refund: -13 and 95
 no overflow: 9223372036854775808
 ```
 
-### No 64-bit limit
+The discount is 15 percent of 8480 cents, 1272: the exact value is 1272.0, so nothing is dropped here. Where a percentage does not come out whole, `/` rounds down, and [the sale prices of section 2.6](#sale-prices-and-prices-per-kilogram) show the store choosing that on purpose.
 
-The last line shows that `Int` has no 64-bit limit: the sum is exact. Many languages would print a large negative number there, or stop with an error.
+### How `Int` behaves
 
-### Euclidean division
+#### No 64-bit limit
 
-The refund line shows how Una divides. Division and `mod` are **Euclidean**: the remainder is never negative, and the quotient is chosen to make that true. So `-1205 / 100` is `-13` and `-1205 mod 100` is `95`, since `-13 * 100 + 95` is `-1205`. Languages that round toward zero give `-12` and `-5` instead. For amounts that are not negative, both rules agree, and that is why the money functions of this chapter state that they take an amount that is not negative.
+The last line shows that `Int` has no 64-bit limit: the sum is exact. Many languages store integers in 64 **bits**, binary digits, and a sum past the largest 64-bit value wraps around to a large negative number, or stops the program. In Una it is just a larger number.
 
-### Division by zero, a proof obligation
+#### Euclidean division
 
-A division by a value that may be zero does not check. `una check` turns each division into a **proof obligation**, a fact the verifier must prove before the program may run: here, that the divisor is not zero. A literal such as `100` proves itself. For a divisor that comes from a parameter, the function must say why it cannot be zero, and [section 2.6](#s2-6) shows how.
+The refund line shows how Una divides a negative number. Division and `mod` are **Euclidean**: the remainder is never negative, and the quotient is chosen to make that true. So `-1205 / 100` is `-13` and `-1205 mod 100` is `95`, since `-13 * 100 + 95` is `-1205`. Languages that round toward zero give `-12` and `-5` instead. For amounts that are not negative, both rules agree, and that is why the money functions of this chapter state that they take an amount that is not negative.
+
+#### Division by zero, a proof obligation
+
+Dividing by zero has no answer, so Una does not let a program reach such a division. Here is a function whose divisor comes from a **parameter**, an input of the function ([chapter 1](/learn/hello/#s1-5)):
+
+```una include="steps/04-division/src/split.una" title="steps/04-division/src/split.una"
+module split
+
+--- What each of `people` pays when they share a bill of `total` cents, rounded down.
+pub share(total: Int, people: Int) -> Int = total / people
+
+--- Prints one share of a bill.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{share(9000, people: 4)} cents each")
+```
+
+```text include="steps/04-division/expected/rendered.txt"
+[U5001] Error: division obligation `people != 0` is refuted
+   ╭─[ src/split.una:4:45 ]
+   │
+ 4 │ pub share(total: Int, people: Int) -> Int = total / people
+   │                                             ───────┬──────
+   │                                                    ╰──────── division obligation `people != 0` is refuted
+   │
+   │ Help: repair 1: guard the division with `if people != 0`
+   │
+   │ Note 1: obligation ob-7797c5169054 (division) is refuted: people != 0
+   │
+   │ Note 2: counterexample: people = 0
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯
+```
+
+Read it as [chapter 1](/learn/hello/#s1-2) shows: the message, the place, then the notes. The checker turned the division into a **proof obligation**, a fact that must be proved before the program may run: here, `people != 0`, "people is not zero". The part of `una check` that proves such facts is the **verifier**. It asks the solver Z3, which `verification.lock` pins, whether the fact holds for every value the parameters can take. It does not: the line `Note 2: counterexample: people = 0` gives the value that breaks it. (`Note 1` repeats the obligation with its identifier, `ob-…`, which tools use to name it.) A **counterexample** is that value. The obligation is **refuted**, and the code is U5001.
+
+A literal divisor, such as `100`, proves itself. For a divisor that comes from a parameter, the function must say why it cannot be zero: the `Help` line proposes a **guard**, an `if` that tests the divisor before the division runs, and [section 2.6](#s2-6) shows the other way, a precondition that every caller must meet.
 
 > [!NOTE]
-> `Int` arithmetic costs a little more than a machine's own, since a value may outgrow a machine word. Where a protocol, a file format or a hash needs a fixed width, use the fixed-width types of [section 2.5](#s2-5).
+> `Int` arithmetic costs a little more than the computer's own arithmetic on numbers of a fixed size, since an `Int` may grow past that size. Where a number must have a fixed size, such as a number another program reads as one byte, use the fixed-width types of [section 2.5](#s2-5).
+
+### `Int` or something else
+
+:::decide
+**Which to use:**
+
+| The number is… | Use |
+| --- | --- |
+| A count, a quantity or an amount of money | `Int`, with money in cents |
+| A field that a protocol, a file or a device reads with a fixed width | a fixed-width type ([section 2.5](#s2-5)) |
+| A code made of digits, such as a postal code with a leading zero | `Text`: you never compute with it, and `01310` is not an integer literal |
+| A price with a fraction | `Int` cents, and a function that writes them with two decimals, as `money` does in [section 2.6](#s2-6) |
+:::
+
+### Check yourself: integers
+
+The step `arithmetic` ends with two more lines:
+
+```una include="steps/02-operators/src/arithmetic.una#L14-L15" title="steps/02-operators/src/arithmetic.una"
+  @console.print("{1990 * 3 / 100}")
+  @console.print("{-7 / 2} and {-7 mod 2}")
+```
+
+What do they print? The first is three units at 19.90, in whole units of money.
+
+:::answer Show the answer
+```text include="steps/02-operators/expected/output.txt#L6-L7"
+59
+-4 and 1
+```
+
+`1990 * 3` is 5970, and `/ 100` drops the remainder: 59. For `-7 / 2`, Euclidean division keeps the remainder at 0 or above: −4 × 2 is −8, and −7 − (−8) is 1. So the quotient is −4 and the remainder 1.
+:::
 
 ## 2.2 Conditions: `Bool`
 
-### `true`, `false` and the operators
+### What a condition is
 
-A `Bool` is `true` or `false`. Comparisons give one: `==` and `!=` for equal and not equal, and `<`, `<=`, `>` and `>=` for order. `and`, `or` and `not` combine them.
+A **condition** is a question whose answer is yes or no: is the order over 100.00? Is the address in the country? Una's type for such answers is `Bool`, and it has exactly two values, `true` and `false`. A comparison, such as `cents >= 10_000`, gives a `Bool`.
+
+Conditions are how a program decides. A `Bool` says whether an order ships for free, and an `if` ([chapter 3](/learn/functions/#s3-3)) picks one of two values depending on it: `if free then 0 else 495` is 0 when `free` is `true`, and 495 otherwise.
+
+### Why `Bool` is its own type
+
+In some languages a number can stand for a yes or no: 0 means no, and anything else means yes. So a slip, such as writing the amount where the rule belongs, still runs, and quietly answers the wrong question. In Una a condition must be a `Bool`. Join an amount to a condition by mistake (`>=` means "at least", and `and` joins two conditions, as the next subsection shows):
+
+```diff include="steps/07-rules..steps/05-not-a-condition:src/rules.una" title="src/rules.una" context="0"
+--- a/src/rules.una
++++ b/src/rules.una
+@@ -4 +4 @@
+-pub ships_free(cents: Int, domestic: Bool) -> Bool = cents >= 10_000 and domestic
++pub ships_free(cents: Int, domestic: Bool) -> Bool = cents and domestic
+```
+
+```text include="steps/05-not-a-condition/expected/rendered.txt#L1"
+[U2001] Error: an operand of `and` must be `Bool`, found `Int`
+```
+
+`and` joins two conditions, and `cents` is an `Int`. The rule meant `cents >= 10_000`, and the checker says so before the program runs.
+
+### How to write conditions
+
+#### Comparisons
+
+| Operator | True when |
+| --- | --- |
+| `==` | the two values are equal |
+| `!=` | they differ |
+| `<`, `<=` | the left is smaller, or smaller or equal |
+| `>`, `>=` | the left is larger, or larger or equal |
+
+`==` and `!=` work on two values of any one type. `<` and the other orderings work on `Int`, on the fixed-width types of [section 2.5](#s2-5), and on `Text`, which is ordered character by character.
+
+#### `and`, `or` and `not`
+
+- `a and b` is `true` when both are.
+- `a or b` is `true` when at least one is.
+- `not a` turns `true` into `false` and back.
+
+#### The order of operations
+
+Arithmetic comes first, then comparisons, then `not`, then `and`, then `or`. So `not units > 5` means `not (units > 5)`, and `a or b and c` means `a or (b and c)`. Parentheses make any order explicit, and a reader thanks you for them in a mixed rule.
+
+The step tries each form:
+
+```una include="steps/06-conditions/src/stock.una#L1-L16" title="steps/06-conditions/src/stock.una"
+module stock
+
+--- Whether a shelf holds any units.
+pub in_stock(units: Int) -> Bool = units > 0
+
+--- Prints what comparisons and the operators on `Bool` give.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let units = 3
+  @console.print("{units == 3} {units != 3} {units < 3} {units <= 3} {units > 3} {units >= 3}")
+  @console.print("{in_stock(units)} {in_stock(0)} {not in_stock(0)}")
+  @console.print("{true and false} {true or false} {not true}")
+  let lamp = "LAMP-01"
+  let rug = "RUG-07"
+  @console.print("{lamp == rug} {lamp != rug} {lamp < rug}")
+```
+
+```text include="steps/06-conditions/expected/output.txt#L1-L4"
+true false false true false true
+true false true
+false true false
+false true true
+```
+
+`in_stock` is a function that returns a `Bool`: `in_stock(0)` is `false`, and `not in_stock(0)` is `true`. `"LAMP-01" < "RUG-07"` is `true`, since `L` comes before `R`.
 
 ### Store rules that return a `Bool`
 
 Store rules are full of conditions like these, so they make good functions:
 
 :::steps
-```una include="steps/02-bool/src/rules.una" title="src/rules.una" verified="check, run"
+```una include="steps/07-rules/src/rules.una" title="src/rules.una" verified="check, run"
 module rules
 
 --- Whether an order ships for free: 10000 cents of goods or more, to a domestic address.
@@ -151,14 +370,14 @@ pub main() -> Unit
 
 1. **`cents >= 10_000 and domestic`.** Both parts must be `true`. `domestic` is already a `Bool`, so it needs no comparison: write `domestic`, not `domestic == true`.
 2. **`cents > 50_000 or (gift and cents > 20_000)`.** `and` binds tighter than `or`, but the parentheses make the rule readable at a glance.
-3. **`ships_free(12_000, domestic: false)`.** A call with two arguments names the second one, as in [chapter 1](/learn/hello/#s1-6).
+3. **`ships_free(12_000, domestic: false)`.** A call with two arguments names the second one, as in [chapter 1](/learn/hello/#several-parameters-and-labels-at-the-call).
 4. **`not ships_free(2_500, domestic: true)`.** `not` turns `true` into `false` and back.
 5. **`lamp == lamp` and `lamp != rug`.** Equality compares values, here two texts, character by character.
 :::
 
 `una run .` prints:
 
-```text include="steps/02-bool/expected/output.txt"
+```text include="steps/07-rules/expected/output.txt"
 12000 cents: free at home true, free abroad false
 30000 cents: signature as a gift true, otherwise false
 a small order pays shipping: true
@@ -171,24 +390,124 @@ A `Bool` prints as `true` or `false`. Everything else about `Bool` is a rule of 
 
 - A condition must be a `Bool`. An `if` over an `Int`, such as `if percent then …`, does not check, and neither does `quantity and true`. A number is not true or false in Una, and neither is a text.
 - `==` compares two values of the same type. Comparing an `Int` with a `Text` is a type error, never a quiet `false`.
-- Comparisons do not chain. `1 <= percent <= 90` does not check: write `percent >= 1 and percent <= 90`, which says the same thing in a way no reader can misread.
+- Comparisons do not chain, as the next example shows.
+
+A range test written as a chain, as in school, does not check:
+
+```diff include="steps/07-rules..steps/08-chained:src/rules.una" title="src/rules.una" context="0"
+--- a/src/rules.una
++++ b/src/rules.una
+@@ -7,0 +8,3 @@
++
++--- Whether a discount is one the store runs: from 1 to 90 percent off.
++pub fair_discount(percent: Int) -> Bool = 1 <= percent <= 90
+```
+
+```text include="steps/08-chained/expected/rendered.txt#L1"
+[U0101] Error: comparisons cannot be chained; join them with `and`, as in `a < b and b < c`
+```
+
+The message gives the repair: `percent >= 1 and percent <= 90`, which says the same thing in a way no reader can misread.
 
 ### One function per rule
 
 A rule that the store applies in more than one place deserves a function that returns a `Bool`, named after the question it answers: `ships_free`, `needs_signature`, `on_sale`. The call then reads as the rule, `if ships_free(cents, domestic: domestic)`, and the rule lives in one place, with its own examples. When the free-shipping threshold changes, one line changes, and one example tells you whether the new rule is the one you meant.
 
+### Check yourself: conditions
+
+The step `stock` ends with two conditions, where `units` is 3 and `gift` is `true`:
+
+```una include="steps/06-conditions/src/stock.una#L17-L19" title="steps/06-conditions/src/stock.una"
+  let gift = true
+  @console.print("{not units > 5}")
+  @console.print("{not gift or units > 5}")
+```
+
+What do they print?
+
+:::answer Show the answer
+```text include="steps/06-conditions/expected/output.txt#L5-L6"
+true
+false
+```
+
+`not` comes after comparisons, so `not units > 5` is `not (units > 5)`: 3 > 5 is `false`, and `not false` is `true`. In the second line, `not` applies to `gift` alone, before `or`: `not gift` is `false`, `units > 5` is `false`, and `false or false` is `false`.
+:::
+
 ## 2.3 Text
 
-### Characters, UTF-8 and escapes
+### What a text is
 
-A `Text` is a sequence of characters, written between double quotes on one line. It may hold the characters of any language, since its encoding is UTF-8. A few characters need an escape inside the quotes: `\"` for a quote, `\\` for a backslash, `\n` for a new line, `\t` for a tab, and `\{` and `\}` for braces, since a brace starts an interpolation.
+A **text** is a sequence of characters: letters, digits, spaces, punctuation. A SKU, a product name and a line of a label are texts. Una's type is `Text`, and you write a text between double quotes on one line, as in [chapter 1](/learn/hello/#s1-4).
+
+A text may hold the characters of any language, `é` and `ü` included, since it is **Unicode**: the standard that numbers every character of every writing system. Una stores a text in **UTF-8**, the usual encoding of Unicode, which uses one **byte**, a unit of storage of 8 bits, for an English letter and two to four for others. Positions and lengths count characters, never bytes.
+
+### Why text needs care
+
+Texts come from people and from other systems, and they are messy. A SKU typed at the till arrives as `"lamp-01 "`, with small letters and a stray space, and compares unequal to the `"LAMP-01"` of the catalog:
+
+```text include="steps/09-text-forms/expected/output.txt#L1"
+[lamp-01 ] and [LAMP-01] are equal: false
+```
+
+A product name may be longer than its label. A program must clean, compare and cut text, and a cut at a position past the end of a text has no answer. Una gives you the functions to clean and search, and the verifier proves that every cut lies inside its text.
+
+### How to write a text
+
+#### Quotes and escapes
+
+A few characters need an **escape**, a backslash and one more character, inside the quotes:
+
+| Write | For |
+| --- | --- |
+| `\"` | a double quote |
+| `\\` | a backslash |
+| `\{` and `\}` | a brace, since a brace starts an interpolation |
+| `\n` | a new line |
+| `\t` | a tab |
+| `\u{e9}` | the character with that Unicode number in hexadecimal: `é` |
+
+#### Joining texts: interpolation
+
+Una joins texts with an **interpolation**, as in [chapter 1](/learn/hello/#putting-values-into-a-text): `"{sku}-{size}"` is the SKU, a dash and the size. Una has no `+` for text: `+` adds numbers, and [Common mistakes](#s2-8) shows what the checker says to it. A text literal cannot go inside the braces of another text, so name it with `let` first, as `size` is named here.
+
+The step writes each form:
+
+```una include="steps/09-text-forms/src/texts.una#L1-L16" title="steps/09-text-forms/src/texts.una"
+module texts
+
+--- Prints texts written with escapes and joined with interpolation.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let raw = "lamp-01 "
+  let sku = "LAMP-01"
+  @console.print("[{raw}] and [{sku}] are equal: {raw == sku}")
+  @console.print("a quote \", a backslash \\ and braces \{ \}")
+  @console.print("before a tab:\tafter it")
+  @console.print("Caf\u{e9} table")
+  let size = "XL"
+  @console.print("{sku}-{size}")
+  let empty = ""
+  @console.print("[{empty}] has {empty.len} characters, [{sku}] has {sku.len}")
+```
+
+```text include="steps/09-text-forms/expected/output.txt#L2-L6"
+a quote ", a backslash \ and braces { }
+before a tab:	after it
+Café table
+LAMP-01-XL
+[] has 0 characters, [LAMP-01] has 7
+```
+
+`.len` gives the length of a text, its number of characters: `""`, the **empty text**, has 0.
 
 ### The prelude's text functions
 
-The prelude, the set of functions every module has without an import, gives text most of what a program needs. You call them with **method syntax**: `raw.trim` is the call `trim(raw)`, and `sku.starts_with(prefix: prefix)` is `starts_with(sku, prefix: prefix)`. A call that takes nothing but its receiver may leave out the parentheses, as `raw.trim` and `sku.len` do.
+The **prelude** is the set of types and functions every module has without an import. It gives text most of what a program needs. You call its functions with **method syntax**: `raw.trim` is the call `trim(raw)`, and `sku.starts_with(prefix: prefix)` is `starts_with(sku, prefix: prefix)`. The value before the dot becomes the first argument. `.len` and the prelude's functions that take nothing but that value may leave out the parentheses, as `raw.trim` and `sku.len` do. The methods of the fixed-width integers in [section 2.5](#s2-5) always keep theirs.
 
 :::steps
-```una include="steps/03-text/src/catalog.una" title="src/catalog.una" verified="check, run"
+```una include="steps/10-catalog/src/catalog.una" title="src/catalog.una" verified="check, run"
 module catalog
 
 --- The SKU as labels print it: without the white space around it, in capital letters.
@@ -212,7 +531,7 @@ pub main() -> Unit
 ```
 
 1. **`raw.trim.to_upper`.** Two calls in a row: `trim` removes the white space at both ends, and `to_upper` writes the letters in capitals. Each returns a new text; `raw` itself does not change.
-2. **`sku.len`.** The number of characters, counted as Unicode scalar values. `"Café table, oak"` has 15: the `é` here is one, not the two bytes UTF-8 needs for it.
+2. **`sku.len`.** The number of characters, as Unicode counts them (it calls them scalar values). `"Café table, oak"` has 15: the `é` here is one, not the two bytes UTF-8 needs for it.
 3. **`let prefix = "LAMP-"`, then `starts_with(prefix: prefix)`.** A text literal cannot appear inside the braces of another text, so the prefix gets a name first.
 4. **`contains_text(part: wood)` and `replace(pattern: wood, by: walnut)`.** A search, and a replacement of every occurrence.
 5. **`"a quote \" and a brace \{ in a text"`.** Two escapes.
@@ -220,7 +539,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/03-text/expected/output.txt"
+```text include="steps/10-catalog/expected/output.txt"
 [  lamp-01 ] becomes [LAMP-01], 7 characters
 a lamp: true
 15 characters, oak: true
@@ -241,16 +560,19 @@ The table lists the prelude's main functions on a text `t`:
 | `t.contains_text(part: p)` | `Bool` | |
 | `t.replace(pattern: p, by: r)` | `Text` | every occurrence; `p` must not be empty |
 | `t.slice(start: a, end: b)` | `Text` | the characters from position `a` up to, not including, `b` |
-| `t.split(on: s)` | a list of `Text` | `s` must not be empty; lists are the subject of [chapter 5](/learn/collections/) |
+| `t.split(on: s)` | a list of `Text` | `s` must not be empty; a **list** is a sequence of values, the subject of [chapter 5](/learn/collections/) |
 
-`to_upper` changes only the 26 letters of the English alphabet, so `é` stays `é`: the result is the same on every machine, whatever its language settings. Two texts are joined with an interpolation, `"{first}{second}"`. Una has no `+` for text, and [Common mistakes](#s2-8) shows what the checker says to it.
+`to_upper` changes only the 26 letters of the English alphabet, so `é` stays `é`: the result is the same on every machine, whatever its language settings.
+
+> [!NOTE]
+> `len`, `trim`, `starts_with` and `==` work in every edition. `trim_start`, `trim_end`, `to_upper`, `to_lower`, `ends_with`, `contains_text`, `replace`, `slice` and `split` are the text functions of edition `0.2` and later; in a package of edition `0.1` their names are ordinary names.
 
 ### Cutting a text, and the proof it takes
 
-A label has room for 24 characters, so a longer name must be cut. `slice` cuts, and it **requires** its positions to lie inside the text: a requirement that the verifier proves at every call, before the program runs.
+A label has room for 24 characters, so a longer name must be cut. Positions in a text count characters from 0, so the first 24 characters are those at positions 0 to 23. `slice` cuts, and it **requires** its positions to lie inside the text: `0 <= start`, `start <= end` and `end <= t.len`. A requirement of this kind is a **precondition**, and the verifier proves it at every call, before the program runs.
 
 :::steps
-```una include="steps/04-slice/src/names.una" title="src/names.una" verified="check, run"
+```una include="steps/11-names/src/names.una" title="src/names.una" verified="check, run"
 module names
 
 --- A product name cut to the 24 characters a label has room for.
@@ -266,11 +588,11 @@ pub main() -> Unit
   @console.print("[{fit_name(rug)}]")
 ```
 
-1. **`if name.len > 24 then … else name`.** A choice between two values: the cut name when it is too long, the name itself when it fits. [Chapter 3](/learn/functions/#s3-3) covers `if`.
-2. **`name.slice(start: 0, end: 24)`.** The first 24 characters. It needs `24 <= name.len`, and the `if` above it says that `name.len > 24`, so the verifier proves it.
+1. **`if name.len > 24 then … else name`.** An `if` chooses between two values: the value after `then` when the condition holds, and the value after `else` when it does not. Here, the cut name when it is too long, and the name itself when it fits. [Chapter 3](/learn/functions/#s3-3) covers `if`.
+2. **`name.slice(start: 0, end: 24)`.** The first 24 characters. It needs `24 <= name.len`. In the `then` branch, the verifier knows that `name.len > 24`, so it proves it.
 :::
 
-```text include="steps/04-slice/expected/output.txt"
+```text include="steps/11-names/expected/output.txt"
 [Desk lamp, brass]
 [Wool rug, 120 by 180 cm,]
 ```
@@ -279,7 +601,7 @@ pub main() -> Unit
 
 Without the `if`, nothing says the name is long enough:
 
-```diff include="steps/04-slice..steps/05-unguarded:src/names.una" title="src/names.una" context="0"
+```diff include="steps/11-names..steps/12-unguarded:src/names.una" title="src/names.una" context="0"
 --- a/src/names.una
 +++ b/src/names.una
 @@ -4 +4 @@
@@ -287,22 +609,89 @@ Without the `if`, nothing says the name is long enough:
 +pub fit_name(name: Text) -> Text = name.slice(start: 0, end: 24)
 ```
 
-```text include="steps/05-unguarded/expected/rendered.txt#L1,L10,L16"
+```text include="steps/12-unguarded/expected/rendered.txt#L1,L10,L16"
 [U5001] Error: precondition `0 <= 0 and 0 <= 24 and 24 <= name.len` of this call is refuted
    │ Help 2: repair 2: add a guard (`if` or a `when` arm) that handles the values where `0 <= 0 and 0 <= 24 and 24 <= name.len` does not hold
    │ Note 2: counterexample: name = Text#0, name.len = 0
 ```
 
-The **counterexample** is the case that breaks the requirement: an empty name, whose length is 0. A text in a counterexample is shown by a placeholder, `Text#0`, followed by the facts about it that matter. Where another language would fail at run time on a short name, or cut it silently, Una refuses the program and names the input that would break it.
+Read it in order. The first line names the obligation: the precondition of `slice`, with the call's arguments in place of `start` and `end`. The `Help` line proposes a guard, which is what the `if` was. The **counterexample** is the case that breaks the requirement: an empty name, whose length is 0. A text in a counterexample is shown by a placeholder, `Text#0`, followed by the facts about it that matter. Where another language would fail at run time on a short name, or cut it silently, Una refuses the program and names the input that would break it.
+
+### How text behaves
+
+- **A text never changes.** `trim`, `to_upper` and `replace` return a new text; the one you passed stays as it was.
+- **Lengths and positions count characters.** `"Café"` has 4, whatever bytes UTF-8 uses. Positions run from 0 to `len - 1`.
+- **Equality is exact.** `==` compares character by character: `"lamp-01 "` and `"LAMP-01"` differ in case and in the space.
+- **Case changes are ASCII only.** `to_upper` and `to_lower` change `a` to `z` and `A` to `Z`, nothing else, so a text keeps its length.
+- **The empty text is a text.** `""` has length 0, and `trim` of a text of spaces gives it.
+- **Cuts are proved.** `slice` and `replace` state what they need, and a call the verifier cannot prove does not check.
+
+### Check yourself: text
+
+The step `texts` ends with two more lines:
+
+```una include="steps/09-text-forms/src/texts.una#L17-L20" title="steps/09-text-forms/src/texts.una"
+  let padded = "  oak desk "
+  @console.print("{padded.trim.len}")
+  let cafe = "Café"
+  @console.print(cafe.to_upper)
+```
+
+What do they print?
+
+:::answer Show the answer
+```text include="steps/09-text-forms/expected/output.txt#L7-L8"
+8
+CAFé
+```
+
+`trim` removes the two spaces at the front and the one at the end, leaving `oak desk`, 8 characters. `to_upper` changes only the letters `a` to `z`, so `é` stays as it is.
+:::
 
 ## 2.4 Names: `let` and `let edit`
 
+### What a name is
+
+A **name**, or **binding**, ties a word to a value, so that later lines can use the value by its word. Think of a sticky label on a box: the label says `total`, and the box holds 8480. You met `let` in [chapter 1](/learn/hello/#naming-a-value-let). This section shows the two kinds of name and the rules they follow.
+
+### Why names do not change by default
+
+Most values in a function are computed once: a price, a SKU, the result of a call. If any line could give such a name a new value, a reader would have to read every line to know what the name holds at a given point. So a plain `let` name never changes. Try to assign one:
+
+```diff include="steps/14-till..steps/13-assign-let:src/till.una" title="src/till.una" context="1"
+--- a/src/till.una
++++ b/src/till.una
+@@ -7,3 +7,3 @@
+   let lamp = 1_990
+-  let edit total = 0
++  let total = 0
+   let edit items = 0
+```
+
+```text include="steps/13-assign-let/expected/rendered.txt#L1"
+[U2019] Error: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+```
+
+The message names the problem and both repairs. When a value really must change, as a running total does, you say so where the name is made.
+
+### How to write names
+
+| Write | Meaning |
+| --- | --- |
+| `let lamp = 1_990` | a plain name; its type comes from its value |
+| `let lamp: Int = 1_990` | the same, with its type written after `:` |
+| `let edit total = 0` | an **editable** name, which later lines may give new values |
+| `let edit receipt: Text = "LAMP-01"` | the same, with its type |
+| `total = total + lamp` | an **assignment**: the editable name `total` gets the value on the right |
+
+An assignment is a **statement**: a line that does something instead of giving a value. It stands on its own line, and the right side is computed first, from the name's old value.
+
 ### A running total at the till
 
-`let` gives a name to a value, and the name holds that value until the end of its block. A name cannot be bound twice in one block, and it cannot be assigned. When a value must change, as a running total does, you declare the name with `let edit`, and assign it new values with `=`:
+A till adds up the items a cashier scans, so its total is an editable name:
 
 :::steps
-```una include="steps/06-let/src/till.una" title="src/till.una" verified="check, run"
+```una include="steps/14-till/src/till.una" title="src/till.una" verified="check, run"
 module till
 
 --- Prints the running total of a till as three items are scanned.
@@ -334,15 +723,74 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/06-let/expected/output.txt"
+```text include="steps/14-till/expected/output.txt"
 2 items, 3980 cents
 3 items, 8480 cents
 LAMP-01, LAMP-01, RUG-07
 ```
 
-### No assignment and no shadowing
+> [!NOTE]
+> `let edit` belongs to edition `0.2` and later. In a package of edition `0.1`, `edit` is a reserved word, and every name is a plain `let`.
 
-A name declared with `let` cannot change, and the checker holds you to it. An assignment to it is a type error, U2019, whose message tells you to declare it `let edit`. Binding the same name a second time in one block, `let total = 3` and then `let total = 4`, is a different error: Una has no shadowing within a block, so a name means one thing from its line to the end of its block.
+### How names behave
+
+#### A name lives to the end of its block
+
+A **block** is a run of lines at the same indentation, such as the body of a function. A name exists from its `let` line to the end of its block. A line before the `let` cannot use it.
+
+#### One name, one meaning: no shadowing
+
+Making a name that another `let` of the same body already made is an error, even with `let` both times:
+
+```diff include="steps/14-till..steps/15-rebind:src/till.una" title="src/till.una" context="1"
+--- a/src/till.una
++++ b/src/till.una
+@@ -7,2 +7,3 @@
+   let lamp = 1_990
++  let lamp = 2_490
+   let edit total = 0
+```
+
+```text include="steps/15-rebind/expected/rendered.txt"
+[U1002] Error: `lamp` is already bound in this scope; a local cannot rebind another
+   ╭─[ src/till.una:8:7 ]
+   │
+ 7 │   let lamp = 1_990
+   │       ──┬─
+   │         ╰─── first defined here
+ 8 │   let lamp = 2_490
+   │       ──┬─
+   │         ╰─── `lamp` is already bound in this scope; a local cannot rebind another
+   │
+   │ Note: run `una explain U1002` for an explanation
+───╯
+```
+
+The diagnostic marks both lines: where the name was first defined, and where it was made again. Its **scope** is the stretch of code where a name can be used: here, the body of `main`. Some languages allow the second `let`, which **shadows** the first: the old value is still there, hidden behind the new one. Una does not, inside a block or in a block nested in it, so a name means one thing from its line to the end of its block. To change a value, use `let edit` and an assignment; for a different value, choose a different name.
+
+#### An editable name keeps its type
+
+`let edit items = 0` makes `items` an `Int` for good. Assign it a text:
+
+```diff include="steps/14-till..steps/16-edit-type:src/till.una" title="src/till.una" context="1"
+--- a/src/till.una
++++ b/src/till.una
+@@ -10,3 +10,3 @@
+   total = total + lamp
+-  items = items + 1
++  items = "one"
+   total = total + lamp
+```
+
+```text include="steps/16-edit-type/expected/rendered.txt#L1"
+[U2001] Error: expected `Int`, found `Text`
+```
+
+The checker expected an `Int`, the type of `items`, and found a `Text`.
+
+#### Adding to a text in place
+
+`receipt = "{receipt}, …"` does not copy the whole text each time. When an assignment adds to the end of a text that nothing else holds, the text grows in place, so building a long text this way takes time in proportion to its length.
 
 ### Choosing between `let` and `let edit`
 
@@ -359,25 +807,134 @@ A name declared with `let` cannot change, and the checker holds you to it. An as
 
 Prefer `let`. A name that cannot change is one less thing a reader must track, and in most functions every name can be a `let`. Use `let edit` when a value really accumulates, as `total` does here, and as loops do in [chapter 5](/learn/collections/).
 
-> [!NOTE]
-> `receipt = "{receipt}, …"` does not copy the whole text each time. When an assignment adds to the end of a text that nothing else holds, the text grows in place, so building a long text this way takes time in proportion to its length.
+### Check yourself: names
+
+A shelf holds 10 units. Three are sold, then a delivery brings five:
+
+```una include="steps/17-restock/src/restock.una" title="steps/17-restock/src/restock.una"
+module restock
+
+--- Prints the stock of a shelf after a sale and a delivery.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit stock = 10
+  stock = stock - 3
+  let sold = 10 - stock
+  stock = stock + 5
+  @console.print("{stock} in stock, {sold} sold")
+```
+
+What does it print?
+
+:::answer Show the answer
+```text include="steps/17-restock/expected/output.txt"
+12 in stock, 3 sold
+```
+
+`stock` goes 10, 7, 12. `sold` is computed once, when `stock` is 7, so it is 3, and it stays 3 when `stock` changes later: a plain `let` holds the value it was given, not a formula.
+:::
 
 ## 2.5 Fixed-width integers
 
-### When a width matters
+### What a fixed-width integer is
 
-`Int` fits nearly every number in a store's code. Some places need an exact width instead: a byte in a protocol, a field of a file format, a count that a device reads as one byte. For these, Una has the unsigned types `U8`, `U16`, `U32` and `U64`, from 0 up to 255, 65535 and so on, and the signed types `I8`, `I16`, `I32` and `I64`, which also hold negative values. Each is its own type, distinct from `Int` and from the others.
+An `Int` grows as large as it needs. A **fixed-width integer** has a set number of bits, and so a smallest and a largest value. Think of the counter on a parking ticket machine with three digits: it shows 0 to 999, and nothing past that. A computer stores such a number in 8, 16, 32 or 64 bits, and other programs, file formats and devices often expect exactly that: a byte, 8 bits, holds 0 to 255.
 
-### A proof for every operation
+Una has the **unsigned** types `U8`, `U16`, `U32` and `U64`, which hold 0 and up, and the **signed** types `I8`, `I16`, `I32` and `I64`, which hold negative values too:
 
-A fixed-width value never wraps around. Every `+`, `-`, `*`, `/` and `mod` on one is a proof obligation: the verifier must prove that the exact result fits the type.
+| Type | Smallest | Largest |
+| --- | --- | --- |
+| `U8` | 0 | 255 |
+| `U16` | 0 | 65535 |
+| `U32` | 0 | 4294967295 |
+| `U64` | 0 | 18446744073709551615 |
+| `I8` | -128 | 127 |
+| `I16` | -32768 | 32767 |
+| `I32` | -2147483648 | 2147483647 |
+| `I64` | -9223372036854775808 | 9223372036854775807 |
+
+Each is its own type, distinct from `Int` and from the others.
+
+> [!NOTE]
+> The fixed-width types belong to edition `0.2` and later. In a package of edition `0.1`, `U8` and the others are ordinary names.
+
+### Why every operation is proved
+
+In many languages a fixed-width number that passes its largest value **wraps around**: 255 + 1 in a byte gives 0, without an error. A count of 256 labels kept in a byte becomes 0, the label printer prints nothing, and nobody knows why. In Una a fixed-width value never wraps around unless the code asks for it by name. Every `+`, `-`, `*`, `/` and `mod` on one is a proof obligation: the verifier must prove that the exact result fits the type.
+
+A function that adds 1 to a byte, with nothing to say the byte is below 255, does not check:
+
+```una include="steps/18-overflow/src/printer.una#copies" title="steps/18-overflow/src/printer.una"
+--- How many copies of a label to print: one per facing on the shelf, and one spare.
+--- The label printer reads the count as one byte, so it is a `U8`.
+pub copies(facings: U8) -> U8 = facings + 1
+```
+
+```text include="steps/18-overflow/expected/rendered.txt#L1,L8,L10,L12,L16"
+[U5001] Error: overflow obligation `facings + 1 in 0..255` is refuted
+   │ Help 1: repair 1: guard the operation with `if facings.to_int() + 1 in 0..255`
+   │ Help 2: repair 2: give the values a wider type, converting them explicitly
+   │ Help 3: repair 3: if wrapping or saturating is meant, use `wrapping_add`, `saturating_add` or their siblings
+   │ Note 2: counterexample: facings = 255
+```
+
+The obligation `facings + 1 in 0..255` says that the sum must lie between 0 and 255, and the counterexample is the one value that breaks it, 255. The repairs list the three honest choices: check the range first, use a wider type, or say that wrapping or saturating is what you mean. Each makes the behavior at the edge of the range visible in the code.
+
+### How to write fixed-width values
+
+#### A literal takes the type its place expects
+
+`let copies: U8 = 200` makes 200 a `U8`, since the name says so. A literal also takes the type of the parameter it is passed to, or of the other side of an operator. A literal that does not fit its type is U2022, and [A literal out of range](#a-literal-out-of-range-u2022), in Common mistakes, shows it.
+
+#### Converting between integer types
+
+- `x.to_int()` turns any fixed-width value into an `Int`. Every value fits, so it never fails.
+- `x.to_u8()`, `x.to_u16()`, `x.to_i32()` and the others turn a value into another integer type. A conversion that can lose a value, from `Int` or to a smaller range, is a proof obligation that the value fits; one where every value fits, such as `U8` to `U16`, is not.
+- These methods always take their parentheses: `x.to_int` without them names the prelude's `to_int` of a text, and the checker then reports that its argument must be a `Text`.
+- A `U8` and an `Int`, or a `U8` and a `U16`, do not mix in one operation: convert one of them first.
+
+#### Wrapping and saturating, by name
+
+- `a.wrapping_add(by: b)`, `wrapping_sub` and `wrapping_mul` wrap around, as other languages do silently.
+- `a.saturating_add(by: b)`, `saturating_sub` and `saturating_mul` stop at the end of the range: at 0 or at the largest value.
+
+These never leave the range, so they need no proof.
+
+The step writes each form:
+
+```una include="steps/19-fixed-forms/src/widths.una#L1-L14" title="steps/19-fixed-forms/src/widths.una"
+module widths
+
+--- Prints values of fixed-width types, and what their methods give.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let copies: U8 = 200
+  let offset: I8 = -128
+  let largest: U64 = 18_446_744_073_709_551_615
+  @console.print("{copies}, {offset} and {largest}")
+  @console.print("{copies.to_int() + 100} as an Int")
+  @console.print("{copies.wrapping_add(by: 100)} wrapped, {copies.saturating_add(by: 100)} saturated")
+  let count = 42
+  @console.print("{count.to_u8()} as a U8")
+```
+
+```text include="steps/19-fixed-forms/expected/output.txt#L1-L4"
+200, -128 and 18446744073709551615
+300 as an Int
+44 wrapped, 255 saturated
+42 as a U8
+```
+
+`copies.to_int() + 100` is an `Int`, so 300 is fine. In a `U8`, 200 + 100 wraps to 44 or saturates at 255. `count.to_u8()` narrows the `Int` 42: the verifier knows `count` is 42, so it proves that it fits.
 
 ### Label copies as one byte: `U8`
 
 The module `printer` counts the copies of a shelf label in a `U8`, and a roll of labels in a `U16`:
 
 :::steps
-```una include="steps/07-fixed-width/src/printer.una" title="src/printer.una" verified="check, run"
+```una include="steps/20-printer/src/printer.una" title="src/printer.una" verified="check, run"
 module printer
 
 --- How many copies of a label to print: one per facing on the shelf, and one spare.
@@ -402,8 +959,8 @@ pub main() -> Unit
   @console.print("{roll.saturating_sub(by: 1_200)} left on a roll of {roll} after 1200")
 ```
 
-1. **`pub copies(facings: U8) -> U8`.** The label printer reads the number of copies as one byte, so the result is a `U8`.
-2. **`requires facings < 255`.** A **precondition**: a fact every caller must make true. It makes `facings + 1` fit in a `U8`, so the verifier proves the addition, and it proves the precondition at each call. [Chapter 7](/learn/contracts/) covers contracts in full.
+1. **`pub copies(facings: U8) -> U8`.** The label printer reads the number of copies as one byte, so the result is a `U8`. A **facing** is one row of a product on the front of a shelf.
+2. **`requires facings < 255`.** A **precondition**: a fact every caller must make true, written on its own line under the header, before `=`. It makes `facings + 1` fit in a `U8`, so the verifier proves the addition, and it proves the precondition at each call. [Chapter 7](/learn/contracts/#s7-1) covers preconditions in full.
 3. **`let lamps: U8 = 4`.** A literal takes the type its context expects, here `U8`. A literal that does not fit, such as `300`, does not check.
 4. **`lamp_labels.to_int() + mug_labels.to_int()`.** Two `U8` values turned into `Int` before they are added. Every `U8` fits in an `Int`, so `to_int()` always succeeds; the sum is an `Int` and cannot overflow.
 5. **`roll.saturating_sub(by: 1_200)`.** Subtraction that stops at the bottom of the range, 0, instead of going below it. Methods such as this one say in their names what happens at the ends of the range.
@@ -411,40 +968,69 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/07-fixed-width/expected/output.txt"
+```text include="steps/20-printer/expected/output.txt"
 5 and 13 labels
 18 labels in all
 0 left on a roll of 1000 after 1200
 ```
 
-### When the result may not fit: overflow
+### How fixed-width integers behave
 
-Remove the precondition, and the verifier finds the one value that breaks the addition:
+- **No silent wrap.** Every operation that could leave the range is an obligation, and a refuted one does not check.
+- **Literals are checked at once.** A literal that does not fit its type is U2022, before any proof.
+- **A constant computation is proved, not folded.** `250 + 10` where a `U8` is expected is not one literal: it gets an overflow obligation, which is refuted.
+- **Types do not mix.** Operands of two integer types are U2001; convert one with `to_int()` or a narrowing method.
+- **Contracts read the exact value.** In a `requires` clause, a `U8` reads as its mathematical value, so `facings < 255` compares integers and never overflows.
+- **Lengths stay `Int`.** `t.len` and the length of a list are always `Int`.
 
-```diff include="steps/07-fixed-width..steps/08-overflow:src/printer.una" title="src/printer.una" context="0"
---- a/src/printer.una
-+++ b/src/printer.una
-@@ -5,4 +5 @@
--pub copies(facings: U8) -> U8
--  requires facings < 255
--=
--  facings + 1
-+pub copies(facings: U8) -> U8 = facings + 1
+### When to use a fixed width
+
+:::decide
+**Which to use:**
+
+| The number… | Use |
+| --- | --- |
+| Is a count, a total or money in your own code | `Int` |
+| Is read or written by a device, a protocol or a file format with a set width | the fixed-width type it names |
+| Must wrap around on purpose, as in a checksum | a fixed-width type and `wrapping_add` |
+| Must stop at the end of the range, as a counter of labels left | `saturating_sub` and its siblings |
+| Crosses between the two | `to_int()` one way, and a narrowing method, with its proof, the other |
+:::
+
+### Check yourself: fixed-width integers
+
+Change the first line of `widths` so that the `U8` is computed:
+
+```diff include="steps/19-fixed-forms..steps/21-constant-overflow:src/widths.una" title="src/widths.una" context="0"
+--- a/src/widths.una
++++ b/src/widths.una
+@@ -7 +7 @@
+-  let copies: U8 = 200
++  let copies: U8 = 200 + 100
 ```
 
-```text include="steps/08-overflow/expected/rendered.txt#L1,L8,L10,L12,L16"
-[U5001] Error: overflow obligation `facings + 1 in 0..255` is refuted
-   │ Help 1: repair 1: guard the operation with `if facings.to_int() + 1 in 0..255`
-   │ Help 2: repair 2: give the values a wider type, converting them explicitly
-   │ Help 3: repair 3: if wrapping or saturating is meant, use `wrapping_add`, `saturating_add` or their siblings
-   │ Note 2: counterexample: facings = 255
+Does it still check? And in the original step, what does the last line print, with `roll` holding 500?
+
+```una include="steps/19-fixed-forms/src/widths.una#L15-L16" title="steps/19-fixed-forms/src/widths.una"
+  let roll: U16 = 500
+  @console.print("{roll.saturating_sub(by: 600)} and {roll.wrapping_sub(by: 600)}")
 ```
 
-The repairs list the three honest choices: check the range first, use a wider type, or say that wrapping or saturating is what you mean. Each makes the behavior at the edge of the range visible in the code.
+:::answer Show the answer
+It does not check:
 
-### Conversions between integer types
+```text include="steps/21-constant-overflow/expected/rendered.txt#L1"
+[U5001] Error: overflow obligation `200 + 100 in 0..255` is refuted
+```
 
-Conversions are explicit in both directions. `to_int()` widens and never fails. `to_u8()`, `to_u16()` and the others narrow, and each narrowing is a proof obligation that the value fits. Operands of two different integer types, such as a `U8` and an `Int`, do not mix: convert one of them first.
+`200 + 100` is 300, which a `U8` cannot hold, and the verifier proves that the sum leaves the range. The last line of the original prints:
+
+```text include="steps/19-fixed-forms/expected/output.txt#L5"
+0 and 65436
+```
+
+500 − 600 is −100. `saturating_sub` stops at 0. `wrapping_sub` wraps around the 65536 values of a `U16`: −100 + 65536 is 65436.
+:::
 
 ## 2.6 Day-to-day: shelf labels
 
@@ -452,7 +1038,13 @@ Conversions are explicit in both directions. `to_int()` widens and never fails. 
 
 Every product on a shelf has a label: its SKU, its name, and its price. The labels change every week, as prices change and sales start and end, so the store prints them from its catalog. The data is messy in the usual ways. SKUs arrive with stray spaces and in small letters, some names are longer than the label, and a product sold by weight must show its price per kilogram as well.
 
-The program follows the data. Each fix to a value is a small function with a doc comment and an example: clean the SKU, fit the name, write the price. Each kind of label is a function built from those. `main` prints the labels of four products and counts the copies to print.
+The program follows the data. Each fix to a value is a small function with a doc comment and an example: clean the SKU, fit the name, write the price. Each kind of label is a function built from those. `main` prints the labels of four products and counts the copies to print. Every section of this chapter has its part:
+
+- `Int` cents and Euclidean division ([section 2.1](#s2-1)) write the prices, and a precondition makes a division by a parameter safe.
+- `Bool` ([section 2.2](#s2-2)) states the store's rule for a sale.
+- The prelude's text functions and a proved `slice` ([section 2.3](#s2-3)) clean SKUs and fit names.
+- A `let edit` total ([section 2.4](#s2-4)) counts the copies.
+- A `U8` ([section 2.5](#s2-5)) is the count the label printer reads.
 
 ### Cleaning the values
 
@@ -763,7 +1355,7 @@ Build the weight label with `+`, as many languages allow:
 [U2001] Error: an operand of `+` must be `Int`, found `Text`
 ```
 
-*Why:* `+` adds numbers. A text is not a number, and Una converts neither side. una also reports that the function no longer returns a `Text`, since `+` gives an `Int`.
+*Why:* `+` adds numbers. A text is not a number, and Una converts neither side. The message names the operator and the type it found. una reports each operand that is a text, here both, and also that the function no longer returns a `Text`, since `+` gives an `Int`: one mistake, three diagnostics, and the one fix removes them all.
 
 *Fix:* join texts with an interpolation, `"{regular_label(sku, name: name, cents: cents)} ({money(kilo)} per kg)"`. See [U2001](/docs/errors/U2001/).
 :::
@@ -787,7 +1379,7 @@ Declare the running total with `let`:
 [U2019] Error: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
 ```
 
-*Why:* a name declared with `let` holds one value. una reports each of the four assignments.
+*Why:* a name declared with `let` holds one value. una reports each of the four assignments, one diagnostic each, and the message gives the exact declaration to write.
 
 *Fix:* `let edit printed = 0`, as the message says. See [U2019](/docs/errors/U2019/).
 :::
@@ -816,7 +1408,7 @@ Remove the precondition of `per_kilo`, which canonical form then writes on one l
     │ Note 2: counterexample: cents = 0, grams = 0
 ```
 
-*Why:* `grams` may be 0, and a division by zero is never allowed to run. The counterexample is that case.
+*Why:* `grams` may be 0, and a division by zero is never allowed to run. The first line names the obligation, `grams != 0`; the `Note 2` line is the counterexample, the case that breaks it, with every parameter's value. `cents = 0` is there only because the solver had to pick some value; `grams = 0` is what matters.
 
 *Fix:* put back `requires grams > 0`, so that each caller proves it, or guard the division as the `Help` line says. See [U5001](/docs/errors/U5001/).
 :::
@@ -840,7 +1432,7 @@ Print a label through an interpolation, with its arguments written in place:
 [U0006] Error: text literal inside interpolation; bind it with `let` and interpolate the name
 ```
 
-*Why:* the braces of an interpolation cannot hold a text literal. una reports each of the two.
+*Why:* the braces of an interpolation cannot hold a text literal, since its quotes would end the outer text. una reports each of the two, and the message gives the repair.
 
 *Fix:* print the label itself, `@console.print(regular_label(…))`, or name the texts with `let` first, as the message says. See [U0006](/docs/errors/U0006/).
 :::
@@ -864,7 +1456,7 @@ Give a shelf 300 facings:
 [U2022] Error: the literal `300` does not fit `U8`, which holds `0` to `255`
 ```
 
-*Why:* the parameter of `copies` is a `U8`, so the literal is a `U8`, and 300 does not fit.
+*Why:* the parameter of `copies` is a `U8`, so the literal is a `U8`, and 300 does not fit. The message gives the type and its range, `0` to `255`. This check needs no proof: the checker sees the literal and the type.
 
 *Fix:* a value that fits, or a wider type for the parameter if the printer accepts one. See [U2022](/docs/errors/U2022/).
 :::
@@ -888,14 +1480,19 @@ Test the discount itself, as if a number could be true:
 [U2001] Error: the condition of `if` must be `Bool`, found `Int`
 ```
 
-*Why:* a condition must be a `Bool`. An `Int` is never true or false.
+*Why:* a condition must be a `Bool`. An `Int` is never true or false. The message names the place, the condition of `if`, the type it needs and the type it found.
 
 *Fix:* say the rule: `if on_sale(percent)`, or `if percent > 0`. See [U2001](/docs/errors/U2001/).
 :::
 
 ## 2.9 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one line on the header line.
+Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a stub of the function to write, whose body is a placeholder value. `una test .` fails there until the exercise is done. Work as in [chapter 1](/learn/hello/#s1-10):
+
+1. Read the examples: they say what the function must return.
+2. Write the body, in place of the placeholder.
+3. Run `una fmt .`, then `una check .`. When the verifier refutes something, read the counterexample: it is the input your code does not handle yet.
+4. Run `una test .` until every example passes.
 
 ### Exercise 1: sales tax
 
@@ -917,7 +1514,7 @@ example "half a cent rounds up"
 ```
 
 :::hint
-*Hint:* `cents * (100 + percent)` is the price in hundredths of a cent. Adding half of 100 before dividing by 100 rounds to the nearest cent.
+*Hint:* `cents * (100 + percent)` is the price in hundredths of a cent: for 1990 cents and 8 percent, 214920. `/ 100` alone would round down. Adding half of 100, 50, before dividing by 100 makes every value from half a cent up reach the next cent.
 :::
 
 Check your answer with `una test .`. On the start package it reports:
@@ -1019,7 +1616,7 @@ example "printing more than the roll holds leaves no labels"
 *Hint:* try `roll - printed` first, and read what `una check .` reports. One of its repairs names the kind of method you need.
 :::
 
-Check your answer with `una test .`.
+Check your answer with `una test .`. A `U16` holds 0 to 65535, as the table of [section 2.5](#s2-5) shows.
 
 :::answer Answer (*check, run, test*; `exercises/3/answer`).
 Give `labels_left` its body:
@@ -1051,11 +1648,11 @@ Give `labels_left` its body:
 :::recap
 - `Int` has no bound, so its arithmetic is exact. Keep money in whole cents.
 - `/` and `mod` are Euclidean: the remainder is never negative. A division by a value that may be zero does not check.
-- A condition is a `Bool`. Compare with `==`, `!=`, `<` and the others, and combine with `and`, `or` and `not`; comparisons do not chain.
-- Join texts with interpolation, never `+`. Bind a text literal with `let` before you use it inside braces.
-- `slice` and other functions state what they require, and the verifier proves it at each call: guard the call with an `if`, or pass the requirement on with `requires`.
+- A condition is a `Bool`: compare, then combine with `and`, `or` and `not`. Comparisons do not chain.
+- Join texts with interpolation, never `+`, and name a text literal before you use it in braces.
+- `slice` states what it requires, and the verifier proves it at each call: guard the call with an `if`, or pass it on with `requires`.
 - Prefer `let`. Use `let edit` for a value that accumulates; a name is bound once per block.
-- Use a fixed-width type only where a width is required. Its arithmetic is proved to fit, and conversions are explicit.
+- Use a fixed-width type only where a width is required. Its arithmetic is proved to fit, and conversions are explicit. It and `let edit` need edition `0.2` or later.
 :::
 
 ### Reference
@@ -1064,6 +1661,6 @@ Give `labels_left` its body:
 - Construct pages: [literals and operators](/docs/language/lexical-structure/), [built-in types](/docs/language/types/), [`let` and `if`](/docs/language/control-flow/), [`let edit`](/docs/language/control-flow/let-edit/), [`requires`](/docs/language/functions/requires/)
 - Guides: [fixed-width integers](/docs/guides/fixed-width-integers/), [work with text](/docs/guides/text/)
 - Standard library: [the prelude](/docs/std/) (`Int`, `Bool`, `Text`, `trim`, `starts_with`), [text](/docs/std/text/) (`slice`, `replace`, `contains_text`, `to_upper`, `split`), [the built-in methods](/docs/std/builtin/) (`.len`, `to_int`, `to_u8`, `saturating_sub`)
-- Diagnostics: [U0006](/docs/errors/U0006/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2019](/docs/errors/U2019/), [U2022](/docs/errors/U2022/), [U5001](/docs/errors/U5001/)
+- Diagnostics: [U0006](/docs/errors/U0006/), [U0101](/docs/errors/U0101/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2019](/docs/errors/U2019/), [U2022](/docs/errors/U2022/), [U5001](/docs/errors/U5001/)
 - Specification: [lexical structure](/docs/spec/01-lexical-structure/), [types](/docs/spec/03-types/), [the standard library](/docs/spec/14-standard-library/), [the memory model](/docs/spec/17-memory-model/), [fixed-width integers](/docs/spec/18-fixed-width-integers/), [text](/docs/spec/22-text/)
 :::

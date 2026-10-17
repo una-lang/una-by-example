@@ -1,0 +1,1 @@
+error U2001 at src/rules.una:4:54: an operand of `and` must be `Bool`, found `Int`

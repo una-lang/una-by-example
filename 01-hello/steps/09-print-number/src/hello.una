@@ -1,0 +1,7 @@
+module hello
+
+--- Says until when the store is open.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(18)

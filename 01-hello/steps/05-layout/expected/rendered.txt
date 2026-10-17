@@ -1,0 +1,12 @@
+[U7001] Error: line 7 is not in canonical form
+   ╭─[ src/hello.una:7:1 ]
+   │
+ 7 │   @console.print( "The store is open" )
+   │ ───────────────────┬───────────────────
+   │                    ╰───────────────────── line 7 is not in canonical form
+   │
+   │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/hello.una:7:1..8:1 to "  @console.print(\"The store is open\")\n"
+   │
+   │ Note: run `una explain U7001` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

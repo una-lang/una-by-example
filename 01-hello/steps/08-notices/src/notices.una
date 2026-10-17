@@ -1,0 +1,10 @@
+module notices
+
+--- Prints the notices of the morning, with an empty line after the greeting.
+pub main() -> Unit
+  uses @screen: Console
+=
+  @screen.print("Good morning")
+  @screen.print("")
+  @screen.print("Fresh stock: desk lamps and wool rugs")
+  @screen.print("The café opens at 10:00")

@@ -1,0 +1,8 @@
+module shelf
+
+--- Prints the price of a desk lamp, written with a decimal point.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = 19.90
+  @console.print("{lamp}")

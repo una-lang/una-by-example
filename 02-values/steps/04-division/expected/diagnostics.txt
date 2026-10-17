@@ -1,0 +1,2 @@
+error U5001 at src/split.una:4:45: division obligation `people != 0` is refuted
+  counterexample: people = 0
