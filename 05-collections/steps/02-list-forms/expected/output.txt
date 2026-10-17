@@ -1,0 +1,8 @@
+0 3 3 2
+true false
+Some(4) Some(7) None None
+true 11 ''
+[0, 4, 7] [Small, Medium, Large]
+[4, 5, 7] [4, 0, 7]
+true false
+[1, 1, 2, 3] 3

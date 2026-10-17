@@ -1,0 +1,36 @@
+module ledger
+
+--- The units on hand of each SKU, after a delivery and a sale.
+stock_after_day() -> Map[Text, Int]
+=
+  let edit stock: Map[Text, Int] = empty_map()
+  edit stock.set(key: "LAMP-01", value: 4)
+  edit stock.set(key: "DESK-02", value: 1)
+  edit stock.set(key: "VASE-03", value: 6)
+  edit stock.set(key: "LAMP-01", value: 3)
+  edit stock.remove(key: "VASE-03")
+  stock
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let empty: Map[Text, Int] = empty_map()
+  let stock = stock_after_day()
+  @console.print("{empty} {empty.len} / {stock} {stock.len}")
+  let restocked = stock.with(key: "RUG-07", value: 9)
+  let retired = restocked.without(key: "DESK-02")
+  @console.print("{restocked} {retired} {stock}")
+  let lamps = stock.get(key: "LAMP-01")
+  let vases = stock.get(key: "VASE-03")
+  let has_desks = stock.has(key: "DESK-02")
+  let has_vases = stock.has(key: "VASE-03")
+  @console.print("{lamps} {vases} {has_desks} {has_vases}")
+  @console.print("{restocked.keys()} {restocked.values()}")
+  for entry in restocked.entries()
+    @console.print("{entry.key} has {entry.value}")
+  let aisles = empty_map().with(key: 12, value: "garden").with(key: 3, value: "lighting")
+  @console.print("{aisles}")
+  let same = restocked.without(key: "DESK-02")
+  @console.print("{retired == same} {retired == stock}")
+  let tally = empty_map().with(key: "RUG-07", value: 1).with(key: "LAMP-01", value: 2).with(key: "RUG-07", value: 5)
+  @console.print("{tally} {tally.len}")

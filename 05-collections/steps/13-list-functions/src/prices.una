@@ -1,0 +1,33 @@
+module prices
+
+--- A price with 10% sales tax added, rounded down.
+with_tax(cents: Int) -> Int = cents + cents / 10
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let prices = [1990, 4500, 850]
+  let skus = ["LAMP-01", "RUG-07", "MUG-11"]
+  let empty: List[Int] = []
+  @console.print("map: {prices.map(each: with_tax)}")
+  @console.print("map: {skus.map(each: fn(sku) -> sku.to_lower())}")
+  @console.print("map: {prices.map(each: fn(cents) -> cents >= 2000)}")
+  let limit = 2000
+  let above = prices.filter(keep: fn(cents) -> cents >= limit)
+  let mugs = skus.filter(keep: fn(sku) -> sku.starts_with(prefix: "MUG"))
+  @console.print("filter: {above} {mugs}")
+  let total = prices.fold(initial: 0, step: fn(sum, cents) -> sum + cents)
+  let top = prices.fold(initial: 0, step: fn(best, cents) -> max(best, b: cents))
+  @console.print("fold: {total} and {top}")
+  let rug = skus.first_where(keep: fn(sku) -> sku.starts_with(prefix: "RUG"))
+  let desk = skus.first_where(keep: fn(sku) -> sku.starts_with(prefix: "DESK"))
+  @console.print("first_where: {rug} and {desk}")
+  let cheap = prices.filter(keep: fn(cents) -> cents < 2000).map(each: with_tax).sum()
+  @console.print("chained: {cheap}")
+  let doubled = empty.map(each: fn(cents) -> cents * 2)
+  let counted = empty.fold(initial: 0, step: fn(sum, cents) -> sum + cents)
+  let first_big = empty.first_where(keep: fn(cents) -> cents > 0)
+  @console.print("empty: {doubled} {counted} {first_big}")
+  let picked = [5, 12, 8].filter(keep: fn(units) -> units > 6).map(each: fn(units) -> units * 2)
+  let longest = skus.fold(initial: 0, step: fn(best, sku) -> max(best, b: sku.len))
+  @console.print("question: {picked} {longest}")

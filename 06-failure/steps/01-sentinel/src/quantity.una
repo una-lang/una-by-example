@@ -1,0 +1,15 @@
+module quantity
+
+--- The quantity typed into an order form: a whole number from 1 to 99. Any other text gives
+--- 0, so the caller cannot tell a bad quantity from what went wrong with it.
+quantity_or_zero(raw: Text) -> Int
+=
+  let n = raw.trim.to_int().or_else(default: 0)
+  if n < 1 or n > 99 then 0 else n
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  for raw in ["3", "three", "0", "500"]
+    let units = quantity_or_zero(raw)
+    @console.print("'{raw}': {units} units, {units * 1990} cents")

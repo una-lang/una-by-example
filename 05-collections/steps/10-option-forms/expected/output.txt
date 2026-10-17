@@ -1,0 +1,9 @@
+Some(14) None
+14 on the shelf / not counted yet
+true false
+7 12
+true false
+7 0
+true true
+Some(4) Some(1) Some("L")
+0 on the shelf / 0 / false

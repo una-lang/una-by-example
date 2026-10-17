@@ -1,5 +1,0 @@
-'12': 12 units
-'': nothing was typed
-'-': a sign with no digits
-'3x': not a digit at position 1
-1 of 4 accepted, then Ok(7)

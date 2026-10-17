@@ -1,0 +1,4 @@
+'3': 3 units, 5970 cents
+'three': 0 units, 0 cents
+'0': 0 units, 0 cents
+'500': 0 units, 0 cents

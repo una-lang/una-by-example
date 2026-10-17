@@ -1,0 +1,17 @@
+module byhand
+
+--- The price in a product record, read by cutting the text: it expects the SKU first and the
+--- price second, and nothing else.
+price_by_hand(text: Text) -> Option[Int]
+=
+  let second = text.split(on: ",").at(index: 1).or_else(default: "")
+  let value = second.split(on: ":").at(index: 1).or_else(default: "")
+  value.replace(pattern: "\}", by: "").trim.to_int()
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let usual = "\{\"sku\": \"LAMP-01\", \"cents\": 1990\}"
+  let reordered = "\{\"cents\": 1990, \"sku\": \"LAMP-01\"\}"
+  let tagged = "\{\"sku\": \"LAMP-01\", \"tags\": [\"new\", \"sale\"], \"cents\": 1990\}"
+  @console.print("{price_by_hand(usual)} {price_by_hand(reordered)} {price_by_hand(tagged)}")

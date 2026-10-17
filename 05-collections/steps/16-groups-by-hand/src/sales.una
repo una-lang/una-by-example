@@ -1,0 +1,23 @@
+module sales
+
+--- A sale of some units of one SKU, in a category.
+kind Sale
+  sku: Text
+  category: Text
+  quantity: Int
+
+--- The units sold in one category: a walk over every sale, for each category asked.
+units_of(sales: List[Sale], category: Text) -> Int = sales.filter(keep: fn(sale) -> sale.category == category).map(each: fn(sale) -> sale.quantity).sum()
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Sale(sku: "LAMP-01", category: "lighting", quantity: 2)
+  let rug = Sale(sku: "RUG-07", category: "textiles", quantity: 1)
+  let shade = Sale(sku: "SHADE-05", category: "lighting", quantity: 3)
+  let spade = Sale(sku: "SPADE-02", category: "garden", quantity: 4)
+  let sales = [lamp, rug, shade, spade]
+  let categories = ["lighting", "textiles"]
+  for category in categories
+    @console.print("{category}: {units_of(sales, category: category)}")
+  @console.print("{sales.map(each: fn(sale) -> sale.quantity).sum()} units sold in all")

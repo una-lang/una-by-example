@@ -1,0 +1,15 @@
+[U7003] Error: module `sku` uses `checked` 1 time, and `[escape_budget] checked_per_module` allows 0
+    ╭─[ src/sku.una:15:3 ]
+    │
+ 15 │   checked(raw.trim, well_formed(it)) else fail NotASku
+    │   ──────────────────────────┬─────────────────────────
+    │                             ╰─────────────────────────── module `sku` uses `checked` 1 time, and `[escape_budget] checked_per_module` allows 0
+    │
+    │ Help 1: repair 1: state the fact in a refined type or a `requires` clause, so that the solver proves it, and remove the `checked`
+    │
+    │ Help 2: repair 2: handle the values where the fact does not hold with a guard (`if` or a `when` arm), and remove the `checked`
+    │
+    │ Help 3: repair 3 (escape: escape_budget; the module may use more runtime tests in place of proofs; each one is listed in the build report and needs review): raise `checked_per_module` in `[escape_budget]` of `una.toml`
+    │
+    │ Note: run `una explain U7003` for an explanation
+────╯

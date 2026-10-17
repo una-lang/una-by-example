@@ -1,0 +1,2 @@
+error U5001 at src/sku.una:20:39: refinement `well_formed(raw)` is refuted
+  counterexample: raw = "Text#0"

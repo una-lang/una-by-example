@@ -1,0 +1,9 @@
+[U3007] Error: `read_count` can fail with `CountError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    ╭─[ src/shelves.una:20:15 ]
+    │
+ 20 │   let units = read_count(raw)
+    │               ───────┬───────
+    │                      ╰───────── `read_count` can fail with `CountError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    │
+    │ Note: run `una explain U3007` for an explanation
+────╯

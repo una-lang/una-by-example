@@ -1,0 +1,18 @@
+[U2025] Error: a map's key type must satisfy `Ord`, and `Sale` does not
+    ╭─[ src/stock.una:22:21 ]
+    │
+ 22 │   let edit by_sale: Map[Sale, Int] = empty_map()
+    │                     ───────┬──────
+    │                            ╰──────── a map's key type must satisfy `Ord`, and `Sale` does not
+    │
+    │ Note: run `una explain U2025` for an explanation
+────╯
+[U2025] Error: `empty_map` needs its type parameter `K` to satisfy `Ord`, and `Sale` does not
+    ╭─[ src/stock.una:22:38 ]
+    │
+ 22 │   let edit by_sale: Map[Sale, Int] = empty_map()
+    │                                      ─────┬─────
+    │                                           ╰─────── `empty_map` needs its type parameter `K` to satisfy `Ord`, and `Sale` does not
+    │
+    │ Note: run `una explain U2025` for an explanation
+────╯

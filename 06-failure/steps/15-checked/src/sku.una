@@ -1,0 +1,33 @@
+module sku
+
+--- A SKU as the warehouse prints it: seven characters, ending in a dash and two digits, as in `LAMP-01`.
+--- The rule is checked when the program runs, so the predicate is opaque to proofs.
+predicate opaque well_formed(t: Text) -> Bool = t.len == 7 and t.slice(start: 4, end: 5) == "-" and is_digits(t.slice(start: 5, end: 7))
+
+kind Sku = Text where well_formed(it)
+
+kind SkuError = | NotASku
+
+--- Turns text from the outside into a `Sku`, or fails.
+parse_sku(raw: Text) -> Sku
+  fails SkuError
+=
+  checked(raw.trim, well_formed(it)) else fail NotASku
+
+--- The label printed on a shelf. It takes a `Sku`, so it never sees unchecked text.
+shelf_label(sku: Sku) -> Text = "sku {sku}"
+
+show(raw: Text) -> Text
+=
+  let outcome = attempt parse_sku(raw)
+  when outcome
+    is Ok(value) -> shelf_label(value)
+    is Err -> "not a sku: {raw}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(show("LAMP-01"))
+  @console.print(show("lamp 1"))
+  @console.print(show(" LAMP-02 "))
+  @console.print(show("RUG-07"))
