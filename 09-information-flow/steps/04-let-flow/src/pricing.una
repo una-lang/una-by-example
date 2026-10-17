@@ -1,0 +1,48 @@
+module pricing
+
+--- What the store pays its supplier for one unit of a SKU. A label on a field: the amount is
+--- confidential.
+kind UnitCost
+  sku: Text
+  cents: confidential Int
+
+--- A label on a parameter and on the result: the cost of a unit once freight is paid.
+landed(cost: confidential Int, freight: Int) -> confidential Int = cost + freight
+
+--- A label on an annotated `let`: what a batch of units costs the store.
+batch(item: UnitCost, quantity: Int) -> confidential Int
+=
+  let total: Int = item.cents * quantity
+  total
+
+--- A label inside a type: the list is public, and each element is confidential.
+cost_list(items: List[UnitCost]) -> List[confidential Int] = items.map(each: fn(item) -> item.cents)
+
+--- A label on the whole list: which SKUs the store is renegotiating with its supplier.
+renegotiating() -> confidential List[Text] = ["DESK-02"]
+
+--- `public` written out, which means the same as no label.
+shelf_name(item: UnitCost) -> public Text = item.sku
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = UnitCost(sku: "LAMP-01", cents: 2100)
+  let desk = UnitCost(sku: "DESK-02", cents: 12600)
+  @console.print("{shelf_name(lamp)} and {shelf_name(desk)}: {cost_list([lamp, desk]).len} costs on file")
+
+example "a lamp that costs 21.00, with 3.50 of freight"
+  do landed(2100, freight: 350)
+  expect result == 2450
+
+example "three desks"
+  do batch(UnitCost(sku: "DESK-02", cents: 12600), quantity: 3)
+  expect result == 37800
+
+example "the costs of two SKUs, in order"
+  do cost_list([UnitCost(sku: "LAMP-01", cents: 2100), UnitCost(sku: "DESK-02", cents: 12600)])
+  expect result == [2100, 12600]
+
+example "one SKU is being renegotiated"
+  do renegotiating()
+  expect result.len == 1

@@ -1,0 +1,41 @@
+module courier
+
+--- A stop on a delivery route. The phone number is secret, and nothing says it is personal.
+kind Stop
+  order: Text
+  city: Text
+  phone: secret Text
+
+--- The courier's booking service. It may receive secret data.
+capability Courier
+  op book(order: Text, phone: Text) -> Unit
+    accepts secret
+
+--- The store's analytics service. It may receive secret data too: sales figures, for one.
+capability Analytics
+  op record(event: Text) -> Unit
+    accepts secret
+
+--- Books every stop of a route, and records each booking for the analysts.
+book_route(stops: List[Stop]) -> Unit
+  uses @courier: Courier[book]
+  uses @analytics: Analytics[record]
+=
+  for stop in stops
+    @courier.book(stop.order, phone: stop.phone)
+    @analytics.record("booked {stop.order} in {stop.city} for {stop.phone}")
+
+--- A courier that accepts every booking, for this run.
+handler accepting() for Courier
+  op book(order, phone) = unit
+
+--- An analytics service that stores nothing, for this run.
+handler discarding() for Analytics
+  op record(event) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let route = [Stop(order: "A-1001", city: "Recife", phone: "+55 81 5550 0101"), Stop(order: "A-1002", city: "Olinda", phone: "+55 81 5550 0102")]
+  book_route(route) with @courier = accepting(), @analytics = discarding()
+  @console.print("route booked and recorded")

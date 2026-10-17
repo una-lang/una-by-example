@@ -1,0 +1,35 @@
+module courier
+
+--- A stop on a delivery route. The phone number is personal data.
+kind Stop
+  order: Text
+  city: Text
+  phone: secret[PII] Text
+
+--- The courier's booking service. It may receive personal data, so that a driver can call
+--- the customer at the door.
+capability Courier
+  op book(order: Text, phone: Text) -> Unit
+    accepts restricted
+
+--- Books every stop of a route with the courier.
+book_route(stops: List[Stop]) -> Unit
+  uses @courier: Courier[book]
+=
+  for stop in stops
+    @courier.book(stop.order, phone: stop.phone)
+
+--- The cities of a route, for the dispatch board. They are public.
+cities(stops: List[Stop]) -> List[Text] = stops.map(each: fn(stop) -> stop.city)
+
+--- A courier that accepts every booking, for this run.
+handler accepting() for Courier
+  op book(order, phone) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let route = [Stop(order: "A-1001", city: "Recife", phone: "+55 81 5550 0101"), Stop(order: "A-1002", city: "Olinda", phone: "+55 81 5550 0102")]
+  book_route(route) with @courier = accepting()
+  let board = cities(route).join(separator: ", ")
+  @console.print("route booked: {board}")

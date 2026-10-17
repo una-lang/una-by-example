@@ -1,0 +1,5 @@
+$ una test .
+example release "a list of two SKUs has two lines" ... ok
+example release "a list of three SKUs, with a blank line between two of them" ... ok
+
+2 examples: 2 passed, 0 failed

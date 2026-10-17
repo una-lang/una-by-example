@@ -1,0 +1,14 @@
+module reorder
+
+--- How many lines a list has.
+count_lines(list: internal Text) -> Int = list.split(on: "\n").filter(keep: fn(line) -> line.len > 0).len
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[read, write]
+=
+  @files.write("reorder.csv", content: "LAMP-01,20\nDESK-02,5\n")
+    if error use unit
+  let list = @files.read("reorder.csv")
+    if error use ""
+  @console.print("{count_lines(list)} SKUs to reorder")

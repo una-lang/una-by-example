@@ -1,0 +1,2 @@
+error U4002 at src/reorder.una:13:36: policy `line_count` lowers data to `public`, and it is called under an `internal` condition, which its result would reveal
+error U4003 at src/reorder.una:14:18: `@console.print` accepts `public` data, and this argument is `internal`

@@ -1,0 +1,1 @@
+error U4001 at src/loyalty.una:7:45: the result of `badge` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`

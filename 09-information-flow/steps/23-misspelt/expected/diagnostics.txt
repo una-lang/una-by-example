@@ -1,0 +1,1 @@
+error U4007 at src/courier.una:7:17: label category `PIl` is not declared in `[labels] categories` of `una.toml`

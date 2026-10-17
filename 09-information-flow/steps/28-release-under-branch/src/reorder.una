@@ -1,0 +1,14 @@
+module reorder
+
+import release (line_count)
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[read, write]
+=
+  @files.write("reorder.csv", content: "LAMP-01,20\nDESK-02,5\n")
+    if error use unit
+  let list = @files.read("reorder.csv")
+    if error use ""
+  let shown = if list.len > 0 then line_count(list) else 0
+  @console.print("{shown} SKUs to reorder")

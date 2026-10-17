@@ -1,0 +1,12 @@
+[U4007] Error: label category `PIl` is not declared in `[labels] categories` of `una.toml`
+   ╭─[ src/courier.una:7:17 ]
+   │
+ 7 │   phone: secret[PIl] Text
+   │                 ─┬─
+   │                  ╰─── label category `PIl` is not declared in `[labels] categories` of `una.toml`
+   │
+   │ Help: repair 1: write `PII`; edit src/courier.una:7:17..7:20 to "PII"
+   │
+   │ Note: run `una explain U4007` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

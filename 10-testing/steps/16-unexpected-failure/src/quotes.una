@@ -1,0 +1,81 @@
+module quotes
+
+--- How the catalog service can fail.
+pub kind CatalogError = | CatalogDown
+
+--- Why a quote could not be made.
+pub kind QuoteError = NoPrice(sku: Text) | Unavailable
+
+--- The store's catalog, a service on the network.
+pub capability Catalog
+  op price(sku: Text) -> Option[Int]
+    fails CatalogError
+
+--- The price of `quantity` units of a SKU, in cents, as the catalog says today.
+pub quote(sku: Text, quantity: Int) -> Int
+  uses @catalog: Catalog[price]
+  fails QuoteError
+=
+  let cents = @catalog.price(sku)
+    if error fail Unavailable
+    if none fail NoPrice(sku)
+  cents * quantity
+
+--- A catalog that gives every SKU the same price.
+handler flat_price(cents: Int) for Catalog
+  op price(sku) = Some(cents)
+
+--- A catalog that knows the prices in `prices`, and no others.
+handler price_list(prices: Map[Text, Int]) for Catalog
+  op price(sku) = prices.get(key: sku)
+
+--- A catalog that never answers.
+handler catalog_down() for Catalog
+  op price(sku) = fail CatalogDown
+
+--- A catalog that decides by the SKU it is asked about: mugs cost 890, and it is down for
+--- anything else.
+handler mugs_only() for Catalog
+  op price(sku) = if sku.starts_with(prefix: "MUG") then Some(890) else fail CatalogDown
+
+--- A console that prints nothing: a fake of a host capability.
+handler quiet() for Console
+  op print(line) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = attempt quote("LAMP-01", quantity: 2) with @catalog = flat_price(1990)
+  @console.print("{lamps}")
+
+example "two lamps at a flat price"
+  given @catalog = flat_price(1990)
+  do quote("LAMP-01", quantity: 2)
+  expect result == 3980
+  expect performed @catalog.price
+
+example "a SKU the list does not hold has no price"
+  given @catalog = price_list(empty_map().with(key: "LAMP-01", value: 1990))
+  do quote("DESK-02", quantity: 1)
+  expect fails NoPrice
+
+example "a catalog that does not answer"
+  given @catalog = catalog_down()
+  do quote("LAMP-01", quantity: 1)
+  expect fails Unavailable
+  expect performed @catalog.price
+
+example "three mugs from a catalog that knows only mugs"
+  given @catalog = mugs_only()
+  do quote("MUG-03", quantity: 3)
+  expect result == 2670
+
+example "main prints, and nothing reaches the terminal"
+  given @console = quiet()
+  do main()
+  expect performed @console.print
+
+example "a catalog that does not answer was asked"
+  given @catalog = catalog_down()
+  do quote("LAMP-01", quantity: 1)
+  expect performed @catalog.price

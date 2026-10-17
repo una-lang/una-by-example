@@ -1,0 +1,1 @@
+error U1007 at src/shipping.una:7:10: requirement `SHIPPING_1` has source `generated`, so its status must be `proposed`

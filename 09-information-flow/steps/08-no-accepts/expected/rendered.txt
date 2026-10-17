@@ -1,0 +1,13 @@
+[U4003] Error: `@supplier.submit` accepts `public` data, and this argument is `internal`
+    ╭─[ src/reorder.una:11:20 ]
+    │
+ 11 │   @supplier.submit(list)
+    │                    ──┬─
+    │                      ╰─── `@supplier.submit` accepts `public` data, and this argument is `internal`
+    │
+    │ Help 1: repair 1: send `@supplier.submit` only data labeled `public` or lower, or send this value to an operation that accepts `internal`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯

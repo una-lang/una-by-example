@@ -1,0 +1,8 @@
+$ una test .
+example cart "two lamps and a mug" ... ok
+example cart "an empty cart holds nothing" ... ok
+example cart "three mugs on one line" ... FAILED
+  src/cart.una:42: expect result.units == 1
+  it is false, with `result` = `Summary(units: 3, cents: 2670)`
+
+3 examples: 2 passed, 1 failed

@@ -1,0 +1,48 @@
+module coupons
+
+--- Why a coupon was not accepted.
+pub kind CouponError = Unknown(code: Text) | BelowMinimum(minimum: Int)
+
+--- The percent that a coupon code takes off.
+pub percent_off(code: Text) -> Int
+  fails CouponError
+=
+  if code == "SPRING10" then 10 else if code == "VIP25" then 25 else fail Unknown(code)
+
+--- The price of a cart after a coupon, in cents. A coupon needs a cart of at least 20.00.
+pub apply_coupon(code: Text, cents: Int) -> Int
+  fails CouponError
+=
+  let percent = percent_off(code)
+    if error pass
+  if cents < 2000
+    fail BelowMinimum(minimum: 2000)
+  else
+    cents - cents * percent / 100
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let spring = attempt apply_coupon("SPRING10", cents: 5000)
+  let winter = attempt apply_coupon("WINTER5", cents: 5000)
+  @console.print("{spring} {winter}")
+
+example "SPRING10 takes 10 percent off"
+  do apply_coupon("SPRING10", cents: 5000)
+  expect result == 4500
+
+example "an unknown code is Unknown"
+  do apply_coupon("WINTER5", cents: 5000)
+  expect fails Unknown
+
+example "a small cart is BelowMinimum, even with a good code"
+  do apply_coupon("VIP25", cents: 1500)
+  expect fails BelowMinimum
+
+example "the code is checked before the amount"
+  do apply_coupon("WINTER5", cents: 1500)
+  expect fails Unknown
+
+example "a small cart with a lowercase code is BelowMinimum"
+  do apply_coupon("vip25", cents: 1500)
+  expect fails BelowMinimum

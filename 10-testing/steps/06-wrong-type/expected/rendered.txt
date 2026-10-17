@@ -1,0 +1,9 @@
+[U2001] Error: `==` needs operands of one type, and these are `Int` and `Text`
+    ╭─[ src/shelf.una:32:10 ]
+    │
+ 32 │   expect result == "59.70"
+    │          ────────┬────────
+    │                  ╰────────── `==` needs operands of one type, and these are `Int` and `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

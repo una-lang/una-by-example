@@ -1,0 +1,12 @@
+[U4003] Error: `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
+    ╭─[ src/shipping.una:23:5 ]
+    │
+ 22 │   if spent >= 50000
+    │      ───────┬──────
+    │             ╰──────── the labeled condition
+ 23 │     @console.print("thank you for shopping with us again")
+    │     ───────────────────────────┬──────────────────────────
+    │                                ╰──────────────────────────── `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯

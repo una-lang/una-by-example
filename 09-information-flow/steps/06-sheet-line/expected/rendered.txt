@@ -1,0 +1,9 @@
+[U4001] Error: the result of `sheet_line` is `Text`, and this value is `confidential Text`: a flow from `confidential` to `public`
+    ╭─[ src/pricing.una:16:40 ]
+    │
+ 16 │ sheet_line(product: Product) -> Text = "{product.sku}: costs {product.cost}, sells for {product.price}"
+    │                                        ────────────────────────────────┬───────────────────────────────
+    │                                                                        ╰───────────────────────────────── the result of `sheet_line` is `Text`, and this value is `confidential Text`: a flow from `confidential` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯
