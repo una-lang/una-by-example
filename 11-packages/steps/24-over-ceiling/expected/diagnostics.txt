@@ -1,0 +1,1 @@
+error U3021 at src/store/app.una:9:3: the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`

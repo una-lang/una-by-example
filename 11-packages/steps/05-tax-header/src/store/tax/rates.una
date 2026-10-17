@@ -1,0 +1,13 @@
+module tax.rates
+
+--- The store's sales tax, in percent.
+pub rate() -> Int = 8
+
+--- The tax on an amount, in cents, rounded down.
+pub tax_cents(cents: Int) -> Int = cents * rate() / 100
+
+--- The rate as a person reads it: 8 is "8%".
+pub rate_text() -> Text = format(rate())
+
+--- A percentage as a person reads it.
+format(percent: Int) -> Text = "{percent}%"

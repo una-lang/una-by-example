@@ -1,0 +1,40 @@
+module vouchers
+
+--- A gift voucher: a code and what it takes off an order, in cents.
+kind Voucher
+  code: Text
+  cents: Int
+
+--- Redeems a voucher. It takes the voucher, so the same voucher cannot be redeemed twice.
+redeem(take voucher: Voucher) -> Int = voucher.cents
+
+--- Redeems a voucher and says so. It takes its parameter, and passes it on with `take`.
+redeem_text(take voucher: Voucher) -> Text
+=
+  let code = voucher.code
+  let cents = redeem(take voucher)
+  "{code}: {cents} off"
+
+--- Redeems one voucher for each code: each turn makes its own voucher and takes it.
+redeem_codes(codes: List[Text]) -> Int
+=
+  let edit total = 0
+  for code in codes
+    let voucher = Voucher(code: code, cents: 200)
+    let cents = redeem(take voucher)
+    total = total + cents
+  total
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let gift = Voucher(code: "GIFT-10", cents: 1000)
+  let first = redeem(take gift)
+  @console.print("first: {first} off")
+  let edit spare = Voucher(code: "SPRING-5", cents: 500)
+  let second = redeem(take spare)
+  spare = Voucher(code: "SUMMER-5", cents: 500)
+  let third = redeem_text(take spare)
+  @console.print("second: {second} off, then {third}")
+  let codes = ["A-1", "A-2", "A-3"]
+  @console.print("three codes: {redeem_codes(codes)} off")

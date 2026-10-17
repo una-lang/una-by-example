@@ -1,0 +1,4 @@
+points: 150
+customer: 160 points, ships to Braga
+shelves: [4, 12, 7]
+LAMP-01 at 1990; was 1990; now 1490

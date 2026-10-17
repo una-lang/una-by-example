@@ -1,0 +1,9 @@
+[U2017] Error: `voucher` is taken in every iteration of this loop; give it a new value before the end of the body, or declare it inside the loop
+    ╭─[ src/vouchers.una:24:29 ]
+    │
+ 24 │     let cents = redeem(take voucher)
+    │                             ───┬───
+    │                                ╰───── `voucher` is taken in every iteration of this loop; give it a new value before the end of the body, or declare it inside the loop
+    │
+    │ Note: run `una explain U2017` for an explanation
+────╯

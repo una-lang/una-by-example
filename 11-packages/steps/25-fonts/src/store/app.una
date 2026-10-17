@@ -1,0 +1,10 @@
+module store.app
+
+import vendor.labels (print_label)
+import vendor.labels.fonts (print_large)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  print_label("LAMP-01", price: "19.90") with @console = @console
+  print_large("LAMP-01")

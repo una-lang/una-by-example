@@ -1,0 +1,9 @@
+module store.app
+
+import vendor.labels (print_label)
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @clock: Clock[now]
+=
+  print_label("LAMP-01", price: "19.90")

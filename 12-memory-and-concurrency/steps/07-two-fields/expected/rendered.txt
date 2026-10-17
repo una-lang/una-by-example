@@ -1,0 +1,11 @@
+[U2018] Error: `spot` is passed as `edit` in this call, so the call cannot use it again
+    ╭─[ src/transfer.una:60:37 ]
+    │
+ 60 │   move(edit spot.back, target: edit spot.front, units: 2)
+    │             ────┬────               ─────┬────
+    │                 ╰─────────────────────────────── passed as `edit` here
+    │                                          │
+    │                                          ╰────── `spot` is passed as `edit` in this call, so the call cannot use it again
+    │
+    │ Note: run `una explain U2018` for an explanation
+────╯

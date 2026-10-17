@@ -1,0 +1,3 @@
+first: 1000 off
+second: 500 off, then SUMMER-5: 500 off
+three codes: 600 off

@@ -1,0 +1,1 @@
+error U1009 at src/std/money.una:1:1: module `std.money` starts with `std`, a segment that only the standard library may use

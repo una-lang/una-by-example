@@ -1,0 +1,22 @@
+module store.app
+
+import store.sale (Audit, PriceList, apply_sale, show_price)
+
+--- A price list where every SKU costs `each` cents, and that prints each change instead of storing it.
+handler flat(each: Int) for PriceList
+  uses @console: Console[print]
+  op price(sku) = each
+  op set_price(sku, cents) = @console.print("set {sku} to {cents}")
+
+--- An audit log that prints each line.
+handler printed() for Audit
+  uses @console: Console[print]
+  op record(line) = @console.print("audit: {line}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let shown = show_price("LAMP-01") with @prices = flat(1990)
+  @console.print("LAMP-01 costs {shown}")
+  let planned = apply_sale("LAMP-01", percent: 10, dry_run: true) with @prices = flat(1990), @audit = printed()
+  @console.print("a dry run plans {planned}")

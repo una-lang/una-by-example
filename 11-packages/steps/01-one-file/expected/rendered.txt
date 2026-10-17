@@ -1,0 +1,13 @@
+[U1002] Error: `format` is defined twice in this module, both times as a function
+    ╭─[ src/store.una:10:1 ]
+    │
+  4 │ format(cents: Int) -> Text
+    │ ───┬──
+    │    ╰──── first defined here
+    │
+ 10 │ format(percent: Int) -> Text = "{percent}%"
+    │ ───┬──
+    │    ╰──── `format` is defined twice in this module, both times as a function
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯

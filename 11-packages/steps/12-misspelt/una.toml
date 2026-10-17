@@ -1,0 +1,18 @@
+# The package: its name, its version, and the edition of the language it is written in.
+[package]
+name = "store"
+version = "0.2.0"
+edition = "0.2"
+
+# What `una run` starts, and the host capabilities it grants, besides those of a `--grant` flag.
+[run]
+entry = "store.app"
+grants = ["console"]
+
+# The categories that labels may name.
+[labels]
+categories = ["PII"]
+
+# How many uses of `checked` each module may have.
+[escape_budget]
+checked_per_modules = 1

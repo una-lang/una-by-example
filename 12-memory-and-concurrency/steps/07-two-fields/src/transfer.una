@@ -1,0 +1,63 @@
+module transfer
+
+--- A shelf of the store: the SKU it holds and how many units are on it.
+kind Shelf
+  sku: Text
+  units: Int
+
+--- The two shelves of a SKU: the one customers see, and the one in the stockroom.
+kind Spot
+  front: Shelf
+  back: Shelf
+
+kind PickError = | Short(sku: Text, wanted: Int, left: Int)
+
+--- Adds a delivery to a shelf, and gives back how many units it held before.
+receive(edit shelf: Shelf, units: Int) -> Int
+  ensures shelf.units == old(shelf).units + units
+=
+  let before = shelf.units
+  shelf.units = shelf.units + units
+  before
+
+--- Moves `units` from one shelf to another: two parameters passed in and out.
+move(edit source: Shelf, edit target: Shelf, units: Int) -> Unit
+  ensures source.units == old(source).units - units
+  ensures target.units == old(target).units + units
+=
+  source.units = source.units - units
+  target.units = target.units + units
+
+--- Takes `units` off a shelf for an order. It fails when the shelf holds fewer.
+pick(edit shelf: Shelf, units: Int) -> Unit
+  fails PickError
+=
+  if units > shelf.units
+    fail Short(sku: shelf.sku, wanted: units, left: shelf.units)
+  shelf.units = shelf.units - units
+
+--- What is left on a shelf of 5 rugs after the orders ask for each number of `wanted` in turn.
+after_picks(wanted: List[Int]) -> Int
+=
+  let edit shelf = Shelf(sku: "RUG-07", units: 5)
+  for units in wanted
+    pick(edit shelf, units: units)
+      if error use unit
+  shelf.units
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit front = Shelf(sku: "LAMP-01", units: 2)
+  let edit back = Shelf(sku: "LAMP-01", units: 10)
+  let before = receive(edit front, units: 4)
+  @console.print("front had {before}, now {front.units}")
+  let earlier = edit front.receive(units: 1)
+  @console.print("front had {earlier}, now {front.units}")
+  move(edit back, target: edit front, units: 3)
+  @console.print("front {front.units}, back {back.units}")
+  let edit spot = Spot(front: front, back: back)
+  move(edit spot.back, target: edit spot.front, units: 2)
+  let back_before = receive(edit spot.back, units: 5)
+  @console.print("the stockroom had {back_before}, now {spot.back.units}")
+  @console.print("rugs left: {after_picks([2, 4, 3])}")

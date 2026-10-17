@@ -1,0 +1,11 @@
+module restock
+
+--- How many weeks `stock` units last when `per_week` units sell each week. It stops only when
+--- the stock is exactly 0.
+weeks_left(stock: Int, per_week: Int) -> Int = if stock == 0 then 0 else 1 + weeks_left(stock - per_week, per_week)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("12 units at 3 a week: {weeks_left(12, per_week: 3)} weeks")
+  @console.print("10 units at 3 a week: {weeks_left(10, per_week: 3)} weeks")

@@ -1,0 +1,15 @@
+module store
+
+--- An amount in cents as a person reads it: 1990 is "19.90".
+format(cents: Int) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
+
+--- A tax rate as a person reads it: 8 is "8%".
+format(percent: Int) -> Text = "{percent}%"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("a lamp costs {format(1990)}, with tax at {format(8)}")

@@ -1,0 +1,26 @@
+module store.app
+
+import std.host (Console)
+import store.stock (Availability, availability)
+
+--- What a shelf card says.
+card(sku: Text, stock: Availability) -> Text
+=
+  when stock
+    is InStock(units) -> "{sku}: {units} in stock"
+    is SoldOut -> "{sku}: sold out"
+
+--- Prints the card of each shelf.
+report(cards: List[Text]) -> Unit
+  uses @console: Console[print]
+=
+  for line in cards
+    @console.print(line)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = card("LAMP-01", stock: availability(4))
+  let desk = card("DESK-02", stock: availability(0))
+  let chair = card("CHAIR-09", stock: SoldOut)
+  report([lamp, desk, chair])

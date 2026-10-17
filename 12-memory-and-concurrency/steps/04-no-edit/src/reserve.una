@@ -1,0 +1,17 @@
+module reserve
+
+--- A shelf of the store: its SKU, the units on it, and the units set aside for orders.
+kind Shelf
+  sku: Text
+  units: Int
+  reserved: Int
+
+--- The shelf with `units` more set aside for an order: a new value, which the caller must keep.
+reserved(shelf: Shelf, units: Int) -> Shelf = Shelf(sku: shelf.sku, units: shelf.units, reserved: shelf.reserved + units)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit lamps = Shelf(sku: "LAMP-01", units: 5, reserved: 0)
+  let updated = reserved(lamps, units: 2)
+  @console.print("{lamps.reserved} of {lamps.units} reserved")

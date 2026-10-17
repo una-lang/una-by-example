@@ -1,0 +1,9 @@
+[U2001] Error: expected `Int`, found `Text`
+    ╭─[ src/places.una:27:12 ]
+    │
+ 27 │   points = "150 points"
+    │            ──────┬─────
+    │                  ╰─────── expected `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

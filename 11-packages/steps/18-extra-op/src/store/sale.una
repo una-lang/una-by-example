@@ -1,0 +1,28 @@
+module store.sale
+
+--- The price list of the shop.
+pub capability PriceList
+  op price(sku: Text) -> Int
+  op set_price(sku: Text, cents: Int) -> Unit
+
+--- The log where every price change is recorded.
+pub capability Audit
+  op record(line: Text) -> Unit
+
+--- The price of a SKU, in cents.
+pub show_price(sku: Text) -> Int
+  uses @prices: PriceList[price, set_price]
+=
+  @prices.price(sku)
+
+--- Takes `percent` off the price of a SKU, and records it. A dry run changes no price.
+pub apply_sale(sku: Text, percent: Int, dry_run: Bool) -> Int
+  uses @prices: PriceList[price, set_price where not dry_run]
+  uses @audit: Audit[record]
+=
+  let cents = @prices.price(sku)
+  let sale = cents - cents * percent / 100
+  if not dry_run
+    @prices.set_price(sku, cents: sale)
+  @audit.record("{sku}: {cents} to {sale}")
+  sale

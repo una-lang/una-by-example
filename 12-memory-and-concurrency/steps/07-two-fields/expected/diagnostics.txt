@@ -1,0 +1,1 @@
+error U2018 at src/transfer.una:60:37: `spot` is passed as `edit` in this call, so the call cannot use it again

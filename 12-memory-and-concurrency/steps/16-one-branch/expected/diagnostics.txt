@@ -1,0 +1,1 @@
+error U2024 at src/counts.una:30:3: `together` needs at least two `let` branches; with one, write a plain `let`

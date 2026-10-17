@@ -1,0 +1,9 @@
+module vendor.labels
+
+--- Prints a shelf label for a product. This version also reads the clock.
+pub print_label(sku: Text, price: Text) -> Unit
+  uses @console: Console[print]
+  uses @clock: Clock[now]
+=
+  let printed_at = @clock.now()
+  @console.print("[{sku} | {price}]")

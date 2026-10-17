@@ -1,0 +1,3 @@
+LAMP-01: 4 in stock
+DESK-02: sold out
+CHAIR-09: sold out

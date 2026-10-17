@@ -1,0 +1,7 @@
+module store.stock
+
+--- Whether a shelf can sell a SKU now.
+pub kind Availability = InStock(units: Int) | SoldOut
+
+--- The availability of a shelf that holds `units` units.
+pub availability(units: Int) -> Availability = if units > 0 then InStock(units: units) else SoldOut
