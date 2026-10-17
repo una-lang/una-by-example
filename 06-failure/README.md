@@ -402,8 +402,8 @@ The lambda prices each SKU at 100 cents per character of its code, so `LAMP-01` 
 
 #### How `fails of` behaves
 
-- `fails of p` and `uses of p`, its twin for capabilities ([chapter 8](/learn/capabilities/)), exist from edition `0.2` on.
-- A header may also have its own `fails E`. Then the argument for `p` must fail with `E` too, so that the function keeps one error kind (U3009 at the argument).
+- `fails of p` exists from edition `0.2` on. Its twin for capabilities, `uses of p`, is taught in [section 8.4](/learn/capabilities/#s8-4), with what else a parameter named by these clauses may and may not do.
+- `fails E` and `fails of p` can both appear in one header. When both are there, the argument for `p` must fail with `E` (U3009 at the argument), so that the function keeps one error kind.
 - A private function may leave `fails of p` out, and the checker infers it when the body only passes on the failures of `p`, as it infers `fails` ([Public functions declare; private ones may infer](#public-functions-declare-private-ones-may-infer)). That is why `total_with` is `pub` here: the line is what its callers rely on.
 - In edition `0.2`, `map`, `filter`, `fold` and `first_where` declare `fails of` their function parameter, so they accept a function that fails, and stop at its first failure.
 
