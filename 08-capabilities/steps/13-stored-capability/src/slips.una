@@ -1,0 +1,7 @@
+module slips
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let saved = @console
+  saved.print("Packing slip for order A-1001")

@@ -1,0 +1,21 @@
+[U5001] Error: refinement `result in 0..100` is refuted
+    ╭─[ src/rates.una:16:3 ]
+    │
+  4 │ kind Percent = Int in 0..100
+    │                       ───┬──
+    │                          ╰──── range
+    │
+ 16 │   n
+    │   ┬
+    │   ╰── refinement `result in 0..100` is refuted
+    │
+    │ Help 1: repair 1: add a guard (`if` or a `when` arm) that handles the values where `result in 0..100` does not hold
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, result in 0..100) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-2b8bb19e1487 (refinement) is refuted: result in 0..100
+    │
+    │ Note 2: counterexample: raw = Text#1, raw.len = 0, result = 101
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

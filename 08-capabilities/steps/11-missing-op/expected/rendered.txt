@@ -1,0 +1,9 @@
+[U3011] Error: handler `fixed` does not implement the operation `tare` of `Scale`
+   ╭─[ src/scales.una:9:9 ]
+   │
+ 9 │ handler fixed(grams: Int) for Scale
+   │         ──┬──
+   │           ╰──── handler `fixed` does not implement the operation `tare` of `Scale`
+   │
+   │ Note: run `una explain U3011` for an explanation
+───╯

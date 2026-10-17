@@ -1,0 +1,15 @@
+[U3020] Error: `print_label` is in the boundary `barcode` and needs `@console: Console[print]`, which a call into it grants only with `with`
+   ╭─[ src/barcode.una:6:3 ]
+   │
+ 6 │   uses @console: Console[print]
+   │   ──────────────┬──────────────
+   │                 ╰──────────────── the boundary's requirement
+   │
+   ├─[ src/shelf.una:9:3 ]
+   │
+ 9 │   print_label("desk-02")
+   │   ───────────┬──────────
+   │              ╰──────────── `print_label` is in the boundary `barcode` and needs `@console: Console[print]`, which a call into it grants only with `with`
+   │
+   │ Note: run `una explain U3020` for an explanation
+───╯

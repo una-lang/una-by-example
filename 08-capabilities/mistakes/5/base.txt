@@ -1,1 +1,1 @@
-steps/03-host
+steps/06-host

@@ -1,0 +1,12 @@
+module shelves
+
+--- The floor area of a shelf, in square centimeters.
+area(width: Int in 1..100, depth: Int in 1..100) -> Int
+  ensures result >= 1
+=
+  width * depth
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("area: {area(40, depth: 30)}")

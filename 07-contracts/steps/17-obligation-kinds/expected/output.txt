@@ -1,0 +1,2 @@
+unit price 497, capped 99, with fee 1495
+share 333, bin stocked, next shelf 8

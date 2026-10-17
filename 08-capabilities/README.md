@@ -2,8 +2,8 @@
 learn: "8"
 title: Capabilities
 editions: ["0.2"]
-codes: [U1001, U3001, U3002, U3004, U3010, U3012, U3014, U5001]
-time: 40
+codes: [U1001, U3001, U3002, U3004, U3005, U3010, U3011, U3012, U3014, U3020, U5001]
+time: 55
 builds: A shipping-notice service that looks customers up and emails them, tested with fake services
 prerequisites: ["3", "4", "6"]
 template: 2
@@ -55,15 +55,24 @@ The cost is a line in the header for each capability. In return, a reviewer read
 
 ## 8.1 Declaring what a function may do: `uses`
 
-### Printing is an effect
+### What an effect is
 
-Start with the smallest effect: printing. A packing slip has a title and one line per item. Building a line is pure computation. Printing it is an effect, and the header says so.
+Most of what a program does happens inside it: adding prices, building a line of text, choosing a branch. Some of what it does reaches outside: it prints a line on the screen, writes a file, asks the clock for the time, or sends a message to another computer. Each of these is an **effect**: something the program does to, or learns from, the world outside it. A function with no effects can only compute its result. Call it twice with the same arguments and it gives the same answer, and nothing else in the world changes.
+
+Una treats effects as authority that must be handed out, the way a store hands out keys. A cashier's keycard opens the till and the front door, and not the stockroom or the office safe. Anyone can read on the card what it opens, and nobody gets in anywhere without one. A few words name the parts, and this chapter uses them throughout:
+
+- A **capability** is the authority to do one kind of thing outside the program, such as printing to the console or reading the clock. `Console` and `Clock` are capabilities.
+- An **operation** is one thing a capability can do: `print` is an operation of `Console`, and `now` is an operation of `Clock`.
+- A **binding** is the name a function uses for a capability it holds. It always starts with `@`, as in `@console`. You perform an operation on a binding: `@console.print("…")`.
+- A **`uses` clause** is a line of a function's header that names a binding, its capability, and the operations the function may perform with it: `uses @console: Console[print]`.
+
+The `uses` clauses of a header are the function's keycard: the complete list of what it may do outside the program.
 
 ### Each step is a package
 
-The step is a package, as in [chapter 1](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1, or take the step, whole, from the chapter's download, `08-capabilities.tar.gz`) and the module under `src/`. The manifest grants the console, which is what lets `main` print:
+Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1, or take the step, whole, from the chapter's download, `08-capabilities.tar.gz`) and the module under `src/`. The manifest of a step that prints grants the console, which is what lets `main` print; [section 8.2](#s8-2) explains grants:
 
-```toml include="steps/01-uses/una.toml" title="steps/01-uses/una.toml"
+```toml include="steps/01-hidden-effect/una.toml" title="steps/01-hidden-effect/una.toml"
 [package]
 name = "slips"
 version = "0.1.0"
@@ -74,12 +83,196 @@ entry = "slips"
 grants = ["console"]
 ```
 
+In the package's directory, `una check .` checks the step and `una run .` runs it:
+
+```sh
+una check .
+una run .
+```
+
+### Why a header lists effects
+
+In most languages any function may print, write a file or open a network connection, and nothing in its header says so. To learn what a function does outside the program, you read its body, and the body of every function it calls, and theirs. A helper that only formats a line today can start sending data somewhere tomorrow, and the change shows nowhere but in that one body.
+
+Here is that change in Una. `slip_line` builds one line of a packing slip, and its header promises a text and nothing else. Someone adds a line that prints, to see what the function is doing:
+
+```una include="steps/01-hidden-effect/src/slips.una" title="steps/01-hidden-effect/src/slips.una"
+module slips
+
+--- One line of a packing slip. Its header promises a text, and nothing else.
+pub slip_line(sku: Text, quantity: Int) -> Text
+=
+  @console.print("building the line for {sku}")
+  "{quantity} x {sku}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(slip_line("LAMP-01", quantity: 2))
+```
+
+`una check .` refuses it:
+
+```text include="steps/01-hidden-effect/expected/rendered.txt"
+[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
+   ╭─[ src/slips.una:6:3 ]
+   │
+ 6 │   @console.print("building the line for {sku}")
+   │   ────┬───
+   │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
+   │
+   │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
+   │
+   │ Note: run `una explain U3004` for an explanation
+───╯
+```
+
+Read the diagnostic from the top. The code is U3004, and the message names the binding, `@console`, and the reason: the function "declares no `uses`, so it is pure". The mark points at `@console` in the body. The help line is the repair: declare a `uses` line in the header. It is marked "widens authority", because the repair gives the function more power, and every caller must then hold that power too. Whether the function should print is a decision for its author, so the checker does not make it.
+
+So a header that says nothing about effects is a promise: the function has none. A header that lists `uses @console: Console[print]` is a promise too: the function may print, and do nothing else outside the program. The checker holds every body to its header, so a reviewer learns what a function may do from the header alone.
+
+### How to write `uses`
+
+#### The parts of a `uses` line
+
+A `uses` clause sits under the header, with the other clauses, before `=`. Take `uses @files: Files[read, write]`:
+
+1. **`uses`** starts the clause.
+2. **`@files`** is the binding: the name the body uses for the capability. You choose it. `@files` is the usual name for `Files`, and a name such as `@audit` can say what a capability is for.
+3. **`: Files`** is the capability.
+4. **`[read, write]`** lists the operations the function may perform, separated by commas.
+
+A function written in the long form ([chapter 3](/learn/functions/#s3-2)) has its clauses on their own lines, each indented two spaces. When a function has several kinds of clause, they go in this order: `requires`, `ensures`, `uses`, `fails`, then `derived from`.
+
+The step of this part shows every form. It is a small back room of a store: it announces restocked items, and it saves a count to a file:
+
+```toml include="steps/02-uses-forms/una.toml" title="steps/02-uses-forms/una.toml"
+[package]
+name = "backroom"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "backroom"
+grants = ["console", "files:src:read,write"]
+```
+
+#### No `uses`: a pure function
+
+A function without `uses` is **pure**: it can only compute its result.
+
+```una include="steps/02-uses-forms/src/backroom.una#shelf_tag" title="steps/02-uses-forms/src/backroom.una"
+--- No `uses`: a pure function. It can only compute its result.
+shelf_tag(sku: Text) -> Text = "[{sku}]"
+```
+
+#### One operation
+
+The brackets hold one operation. `announce` may print, and nothing else:
+
+```una include="steps/02-uses-forms/src/backroom.una#announce" title="steps/02-uses-forms/src/backroom.una"
+--- One operation of one capability: it may print, and nothing else.
+announce(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("restocked {shelf_tag(sku)}")
+```
+
+`@console.print(…)` performs the operation on the binding. A call of a pure function, `shelf_tag(sku)`, may stand inside its arguments.
+
+#### Several operations of one capability
+
+List them in one pair of brackets. `copy_count` reads a file and writes another, so it needs both operations of `Files`:
+
+```una include="steps/02-uses-forms/src/backroom.una#copy_count" title="steps/02-uses-forms/src/backroom.una"
+--- Two operations of one capability, in one pair of brackets.
+copy_count(source: Text, to: Text) -> Unit
+  uses @files: Files[read, write]
+  fails FileError
+=
+  let count = @files.read(source)
+    if error pass
+  @files.write(to, content: count)
+    if error pass
+```
+
+Both operations of `Files` can fail, with `FileError`, so `copy_count` declares `fails FileError` and passes each failure on with `if error pass`, as [chapter 6](/learn/failure/) shows.
+
+#### Every operation: no brackets
+
+Without brackets, the function may perform every operation of the capability, including any the capability gains later:
+
+```una include="steps/02-uses-forms/src/backroom.una#announce_all" title="steps/02-uses-forms/src/backroom.una"
+--- No brackets: every operation of the capability, now and later.
+announce_all(skus: List[Text]) -> Unit
+  uses @console: Console
+=
+  for sku in skus
+    @console.print("restocked {shelf_tag(sku)}")
+```
+
+`Console` has one operation today, `print`, so `Console` and `Console[print]` allow the same thing now. They differ when the capability grows: the first header would allow the new operation at once, and the second would not.
+
+#### Several capabilities
+
+Write one `uses` line per binding. `save_and_say` writes a file and prints:
+
+```una include="steps/02-uses-forms/src/backroom.una#save_and_say" title="steps/02-uses-forms/src/backroom.una"
+--- Two capabilities, one `uses` line each.
+save_and_say(sku: Text, units: Int) -> Unit
+  uses @files: Files[write]
+  uses @console: Console[print]
+  fails FileError
+=
+  @files.write("count.txt", content: "{sku},{units}")
+    if error pass
+  @console.print("saved the count of {sku}")
+```
+
+#### No `uses` on a private function: inferred
+
+A function without `pub` is **private**: only its own module can call it. A private function may leave its `uses` out, and una infers them: the fewest that cover its body and the functions it calls. [How `uses` behaves](#how-uses-behaves) shows it on a packing slip.
+
+#### Running the forms
+
+`main` holds `@console` and `@files`, and calls each function:
+
+```una include="steps/02-uses-forms/src/backroom.una#main" title="steps/02-uses-forms/src/backroom.una"
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[read, write]
+=
+  announce("LAMP-01")
+  announce_all(["DESK-02", "RUG-07"])
+  save_and_say("LAMP-01", units: 4)
+    if error use unit
+  copy_count("count.txt", to: "count-copy.txt")
+    if error use unit
+  @console.print("copied the count")
+  close_shelf("RUG-07", units: 9)
+    if error use unit
+```
+
+`una run .` prints:
+
+```text include="steps/02-uses-forms/expected/output.txt"
+restocked [LAMP-01]
+restocked [DESK-02]
+restocked [RUG-07]
+saved the count of LAMP-01
+copied the count
+restocked [RUG-07]
+saved the count of RUG-07
+```
+
+The count and its copy land in `src/count.txt` and `src/count-copy.txt`. `main` passes each failure of a file to `if error use unit`, which goes on as if the line had done nothing: a back room that cannot save a count still announces its stock.
+
 ### A packing slip
 
-The module builds the lines of a packing slip and prints them:
+Now the clauses at work on a packing slip. A packing slip has a title and one line per item. Building a line is pure computation. Printing it is an effect, and the header says so:
 
 :::steps
-```una include="steps/01-uses/src/slips.una" title="steps/01-uses/src/slips.una" verified="check, run"
+```una include="steps/03-uses/src/slips.una" title="steps/03-uses/src/slips.una" verified="check, run"
 module slips
 
 --- One line of a packing slip. Pure: it has no `uses`, so all it can do is compute a value.
@@ -99,31 +292,35 @@ pub main() -> Unit
   print_line("DESK-02", quantity: 1)
 ```
 
-Walkthrough:
-
 1. **`slip_line(sku: Text, quantity: Int) -> Text`.** No `uses`, so the body may not perform any operation. It builds a text and returns it.
-2. **`uses @console: Console[print]`.** This line gives `print_line` a binding named `@console`, of the host capability `Console`, with the one operation `print`. The brackets list the operations the function may perform. Without brackets, every operation of the capability is allowed.
-3. **`@console.print(slip_line(sku, quantity: quantity))`.** An operation is written on the binding: `@console.print(...)`. A call to a pure function, such as `slip_line`, may stand inside its arguments.
+2. **`uses @console: Console[print]`.** This line gives `print_line` a binding named `@console`, of the host capability `Console`, with the one operation `print`.
+3. **`@console.print(slip_line(sku, quantity: quantity))`.** The operation, with the pure function's result as its argument.
 4. **`print_line("LAMP-01", quantity: 2)` in `main`.** `main` holds `@console`, and `print_line` needs `@console`, so the call passes it on by name. Nothing else is written at the call.
 :::
 
 `una run .` prints:
 
-```text include="steps/01-uses/expected/output.txt"
+```text include="steps/03-uses/expected/output.txt"
 Packing slip for order A-1001
 2 x LAMP-01
 1 x DESK-02
 ```
 
-### Bindings are found by name
+### How `uses` behaves
 
-A binding is found by its name, never by its type. If `print_line` asked for `@out: Console[print]`, the call in `main` would not check: `main` holds a `@console`, not an `@out`. [Section 8.4](#s8-4) shows how to hand one over under another name.
+#### Bindings are found by name
 
-### Private functions infer their `uses`
+A call hands the callee the bindings its header asks for, by name, never by type. If `print_line` asked for `@out: Console[print]`, the call in `main` would not check: `main` holds a `@console`, not an `@out`. [Section 8.4](#s8-4) shows how to hand a binding over under another name, and [forgetting to hand over a binding](#forgetting-to-hand-over-a-binding-u3001) shows the diagnostic, U3001.
 
-`print_line` is private, so its `uses` line can be left out: the checker infers the least set of capabilities that covers its body and its callees. Remove the line, and `una contract` prints the inferred header:
+#### A caller holds at least what its callees use
 
-```diff include="steps/01-uses..steps/02-inferred:src/slips.una" context="1" title="src/slips.una"
+A caller must hold every binding its callees need, with at least the operations they list. `main` may call `print_line` because it holds `@console` with `print`. A function that holds `Customers[find]` cannot call one that needs `Customers[forget]`: that is U3002, which [using an operation the header does not list](#using-an-operation-the-header-does-not-list-u3002) shows. So the effects of a function include the effects of every function it calls, and its header covers them all.
+
+#### Private functions infer their `uses`
+
+`print_line` is private, so its `uses` line can be left out. Remove it, and `una contract` prints the header una infers:
+
+```diff include="steps/03-uses..steps/04-inferred:src/slips.una" context="1" title="src/slips.una"
 --- a/src/slips.una
 +++ b/src/slips.una
 @@ -6,6 +6,3 @@
@@ -136,14 +333,18 @@ A binding is found by its name, never by its type. If `print_line` asked for `@o
  
 ```
 
-```text include="steps/02-inferred/expected/commands/contract.txt"
+```text include="steps/04-inferred/expected/commands/contract.txt"
 $ una contract slips.print_line
 --- Prints one line of a packing slip. It may print, and nothing else.
 print_line(sku: Text, quantity: Int) -> Unit
   uses @console: Console[print] -- inferred
 ```
 
-A `pub` function is the module's reviewed boundary, so it must declare every `uses` itself. A `pub` function with no `uses` is pure, and an operation in its body is U3004 ([an effect in a pure `pub` function](#an-effect-in-a-pure-pub-function-u3004) shows it). Write `uses` on a private function too whenever its effects are part of what a reader should know.
+The `-- inferred` comment marks what una added. Inference finds the fewest `uses` that cover the body and its callees, and an inferred function may do exactly that much. A private function that writes at least one `uses` line has exactly the ones it writes.
+
+#### A `pub` function declares every `uses`
+
+A `pub` function is the module's reviewed boundary: other modules call it, and its header is what they read. It must declare every `uses` itself, and one with no `uses` is pure, as [Why a header lists effects](#why-a-header-lists-effects) showed. Write `uses` on a private function too whenever its effects are part of what a reader should know.
 
 ### How many operations to allow
 
@@ -156,21 +357,118 @@ A `pub` function is the module's reviewed boundary, so it must declare every `us
 | One operation of a capability | `uses @x: C[op]` |
 | Several operations | `uses @x: C[op1, op2]` |
 | Every operation, now and when the capability gains more | `uses @x: C`, without brackets |
+| A private helper whose effects are obvious from its callers | No `uses` line; let una infer it |
 :::
 
-List the operations you need. A header with brackets also tells the reader what the function does not do.
+List the operations you need. A header with brackets also tells the reader what the function does not do, and it keeps saying so when the capability gains an operation.
+
+### Check yourself: `uses`
+
+`close_shelf`, in the back room's step, writes no `uses` and is private. It calls `announce`, then `save_and_say`:
+
+```una include="steps/02-uses-forms/src/backroom.una#close_shelf" title="steps/02-uses-forms/src/backroom.una"
+--- Closes a shelf for the night. It writes no `uses`, so una infers them.
+close_shelf(sku: Text, units: Int) -> Unit
+=
+  announce(sku)
+  save_and_say(sku, units: units)
+    if error pass
+```
+
+Which `uses` and which `fails` does una infer for it?
+
+:::answer Show the answer
+The union of what its callees need: `@console` with `print`, which both callees use, and `@files` with `write`, from `save_and_say`. `save_and_say` can fail with `FileError`, and `if error pass` passes that failure on, so `fails FileError` is inferred too:
+
+```text include="steps/02-uses-forms/expected/commands/contract.txt"
+$ una contract backroom.close_shelf
+--- Closes a shelf for the night. It writes no `uses`, so una infers them.
+close_shelf(sku: Text, units: Int) -> Unit
+  uses @console: Console[print] -- inferred
+  uses @files: Files[write] -- inferred
+  fails FileError -- inferred
+```
+
+`read` is not in the list: no callee of `close_shelf` reads a file.
+:::
+
+A second one: which functions of the back room could a test call with no fake at all?
+
+:::answer Show the answer
+Only `shelf_tag`. It has no `uses`, so it touches nothing outside the program, and a test can call it and compare the text it returns. Every other function performs an operation, and an example must give each binding it needs a stand-in, as [section 8.7](#s8-7) shows.
+:::
 
 ## 8.2 The host's capabilities and grants
 
-### The host capabilities
+### What the host is
 
-The runtime provides the host capabilities: `Console` to print, `Clock` to read the time, `Env` to read environment variables, `Files` to read and write files, and `Keys` for keyed hashes. Edition `0.2` adds `Http`. They are in scope in every module, and they enter a program only one way: through the `uses` of `main`, from `una run`.
+The **host** is what runs your program: the una runtime on your computer or a server. It is the only part of the system that can really print, read a file or ask the time, so the capabilities for these things come from it. They are the **host capabilities**:
 
-### Grants in `una.toml`
+| Capability | Operations | What it does |
+| --- | --- | --- |
+| `Console` | `print(line: Text) -> Unit` | writes a line to the screen |
+| `Clock` | `now() -> Int` | gives the milliseconds since the Unix epoch, 1 January 1970 |
+| `Env` | `get(name: Text)` | reads an environment variable of the process |
+| `Files` | `read(path: Text)`, `write(path: Text, content: Text)` | reads and writes files, and can fail with `FileError` |
+| `Keys` | `hmac(key_name: Text, data: Text)` | computes a keyed hash with a secret key that never enters the program |
+| `Http` | requests over the network (edition `0.2`) | talks to web services |
 
-`una run` gives `main` only what the package grants. The grants are listed in `[run] grants` of `una.toml`, or passed as `--grant` flags. This step writes an end-of-day stock export, stamped with the time, so it needs three grants:
+They are in scope in every module, with no `import`. But a function can hold one only if its caller hands it over, and the first caller of all is `main`. `main` gets its host capabilities from `una run`, and only those that the package **grants**: a grant is the permission, written down, for the program to use a host capability when it runs.
 
-```toml include="steps/03-host/una.toml" title="steps/03-host/una.toml"
+### Why a program needs grants
+
+You run programs you did not write: a tool from a colleague, a package from the internet, an example from a book. Its header says what it may do, but the header is part of the program, written by its author. A grant is written by the person who runs it.
+
+Here is a stock export whose `main` writes a file. Its manifest grants only the console:
+
+```toml include="steps/05-ungranted/una.toml" title="steps/05-ungranted/una.toml"
+[package]
+name = "export"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "export"
+grants = ["console"]
+```
+
+```una include="steps/05-ungranted/src/export.una" title="steps/05-ungranted/src/export.una"
+module export
+
+--- Writes the end-of-day stock export. The manifest grants only the console.
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[write]
+=
+  let outcome = attempt @files.write("stock-export.csv", content: "LAMP-01,4\n")
+  @console.print("export: {outcome}")
+```
+
+`una check .` refuses it before anything runs:
+
+```text include="steps/05-ungranted/expected/rendered.txt"
+[U3012] Error: `main` uses `write` of `Files`, which `[run] grants` does not grant
+   ╭─[ src/export.una:6:3 ]
+   │
+ 6 │   uses @files: Files[write]
+   │   ────────────┬────────────
+   │               ╰────────────── `main` uses `write` of `Files`, which `[run] grants` does not grant
+   │
+   │ Help: repair 1 (widens grant: the program then gets this host authority when it runs): grant `write` of `Files` in `[run] grants` of `una.toml`, or with `--grant`
+   │
+   │ Note: run `una explain U3012` for an explanation
+───╯
+```
+
+The message is U3012: `main` uses `write` of `Files`, "which `[run] grants` does not grant". The mark points at the `uses` line of `main`. The help line offers a repair that "widens grant": add the grant to `una.toml`. The person who owns the package decides whether to, and the decision shows in review, as a changed line of the manifest.
+
+### How to write grants
+
+#### `[run] grants` in `una.toml`
+
+The grants are a list of texts under `[run]`, next to `entry`, which names the module whose `main` runs:
+
+```toml include="steps/06-host/una.toml" title="steps/06-host/una.toml"
 [package]
 name = "export"
 version = "0.1.0"
@@ -181,12 +479,33 @@ entry = "export"
 grants = ["console", "clock", "files:src:write"]
 ```
 
+Each text grants one host capability:
+
+| Grant | What `main` may use |
+| --- | --- |
+| `"console"` | `Console` |
+| `"clock"` | `Clock` |
+| `"files:src:read"` | `Files[read]`, inside the directory `src` |
+| `"files:src:write"` | `Files[write]`, inside `src` |
+| `"files:src:read,write"` | both operations, inside `src` |
+| `"files:src/exports:write"` | `Files[write]`, inside `src/exports` only |
+
+A `Files` grant always carries a directory and a mode, so it says where the program may read or write, and which of the two.
+
+#### `--grant` on the command line
+
+`una run` also takes grants as flags, one per capability, such as `--grant clock`. They count for that run only, and nothing records them. Prefer the manifest: it is reviewed with the code.
+
+#### The host capabilities in `main`
+
+`main` declares what it uses, as any function does, and the grants must cover it. The step of this section writes an end-of-day stock export, stamped with the time, so it needs three grants, as its manifest shows.
+
 ### An end-of-day stock export
 
 The module reads the clock, writes the export, and reports the outcome:
 
 :::steps
-```una include="steps/03-host/src/export.una" title="steps/03-host/src/export.una" verified="check, run"
+```una include="steps/06-host/src/export.una" title="steps/06-host/src/export.una" verified="check, run"
 module export
 
 --- The stock to export, one `SKU,units` line each.
@@ -207,45 +526,258 @@ pub main() -> Unit
     is Err(failure) -> @console.print("export failed: {failure}")
 ```
 
-Walkthrough:
-
 1. **Three `uses` lines on `main`.** Each names one host capability and the operations it needs. `main` may write files, but not read them.
 2. **`@clock.now()`.** `Clock.now` gives the milliseconds since the Unix epoch, as an `Int`. Each call is an effect, so it goes on its own line.
 3. **`attempt @files.write("stock-export.csv", content: content)`.** `Files.write` can fail with `FileError` (`NotFound`, `Denied` or `Io`). `attempt` keeps the outcome, as in [chapter 6](/learn/failure/), and the `when` reports either case.
-4. **`"files:src:write"`.** A `Files` grant carries a directory and a mode. The path `stock-export.csv` resolves inside `src/`. A path outside the grant, an absolute one or one that climbs out with `..`, fails with `Denied` instead of reaching the file.
+4. **`"files:src:write"`.** The path `stock-export.csv` resolves inside `src/`, the directory of the grant.
 :::
 
 `una run .` prints:
 
-```text include="steps/03-host/expected/output.txt"
+```text include="steps/06-host/expected/output.txt"
 export written: 3 lines
 ```
 
 and leaves the export in `src/stock-export.csv`. The time in it changes on every run, so the program does not print it.
 
-### What `una check` and `una run` compare
+### How grants behave
 
-When `una.toml` lists `[run] grants`, `una check` compares them with the `uses` of `main`. Remove `"clock"` from the list, and the check fails with U3012. A grant in the manifest is a line that shows in review.
+#### What `una check` and `una run` compare
 
-`una run` takes `--grant` flags as a second source, such as `una run . --grant clock`. It grants the union of `[run] grants` and its flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest lacks `"clock"` therefore fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
+When `una.toml` lists `[run] grants`, `una check` compares them with the `uses` of `main`: a host operation that the grants do not cover is U3012, as [Why a program needs grants](#why-a-program-needs-grants) showed.
 
-### Labels on what a program reads
+`una run` grants the union of `[run] grants` and its `--grant` flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest lacks `"clock"` therefore fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
+
+#### Paths stay inside the grant
+
+A `Files` grant fixes a directory when the program starts, and every path the program passes is read from that directory. A path that tries to leave it does not reach the file: the operation fails with `Denied`. The step tries four paths against a grant of `src/`:
+
+```una include="steps/07-outside-grant/src/export.una#try_write" title="steps/07-outside-grant/src/export.una"
+--- Writes one line to `path`, and says what happened.
+try_write(path: Text) -> Text
+  uses @files: Files[write]
+=
+  let outcome = attempt @files.write(path, content: "LAMP-01,4\n")
+  when outcome
+    is Ok -> "{path}: written"
+    is Err(failure) -> "{path}: {failure}"
+```
+
+```text include="steps/07-outside-grant/expected/output.txt#L1-L3"
+stock-export.csv: written
+../stock-export.csv: Denied
+/tmp/stock-export.csv: Denied
+```
+
+- **`stock-export.csv`** is inside `src/`, and is written.
+- **`../stock-export.csv`** climbs out with `..`, so it is `Denied`.
+- **`/tmp/stock-export.csv`** is an absolute path, a path from the root of the disk, so it is `Denied` too.
+
+`Denied` is a failure like any other, so the program handles it and goes on. The grant, not the program, decides where its files may be.
+
+#### Labels on what a program reads
 
 > [!NOTE] What a program reads from files and the environment is labeled.
-> `Files.read` returns `internal Text`, and `Env.get` returns `internal` values too. `Clock.now` returns a public `Int`. A label says how sensitive data is, and the console accepts only `public` data. So the program can write what it read to a file, but cannot print it without a declared policy. [Chapter 9, Information flow](/learn/information-flow/), explains labels and how to release data legitimately.
+> `Files.read` returns `internal Text`, and `Env.get` returns `internal` values too. `Clock.now` returns a public `Int`. A label says how sensitive data is, and the console accepts only `public` data. So the program can write what it read to a file, as the back room of [section 8.1](#s8-1) does, but cannot print it without a declared policy. [Chapter 9, Information flow](/learn/information-flow/), explains labels and how to release data legitimately.
+
+### Which grant to give
+
+:::decide
+**Which to use:**
+
+| The program… | Grant |
+| --- | --- |
+| Prints | `"console"` |
+| Reads the time | `"clock"` |
+| Reads its input files | `"files:<dir>:read"`, on the directory that holds them |
+| Writes its output | `"files:<dir>:write"`, on a directory of its own |
+| Needs a capability for one run only, such as a test of a new feature | `--grant` on that run |
+:::
+
+Grant the least that works: the narrowest directory, and only the modes the program uses. A grant that is not there cannot be misused.
+
+### Check yourself: grants
+
+The step of [Paths stay inside the grant](#paths-stay-inside-the-grant) tries a fourth path, `reports/../stock-export.csv`. It contains `..`. What does it print for it?
+
+:::answer Show the answer
+```text include="steps/07-outside-grant/expected/output.txt#L4"
+reports/../stock-export.csv: written
+```
+
+The path goes into `reports` and back out, so it ends inside `src/`: it names the same file as `stock-export.csv`, and the write is allowed. Only a `..` that leaves the granted directory is `Denied`.
+:::
+
+A package grants `["console", "files:src:read"]`. Its `main` declares `uses @console: Console[print]` and `uses @files: Files[write]`. Does `una check .` pass?
+
+:::answer Show the answer
+No. The grant covers reading files, not writing them, so `una check .` reports U3012 at the `uses @files` line of `main`, as in [Why a program needs grants](#why-a-program-needs-grants). Either grant `"files:src:write"` or `"files:src:read,write"`, or remove the write from `main`.
+:::
 
 ## 8.3 Your own capabilities and handlers
 
-### Capabilities you declare
+### What a capability you declare is
 
-The host capabilities cover the machine. A program's own services, such as a mail service, a payment provider or a customer directory, are capabilities you declare. A `capability` lists operations, each with `op`, and no code. A `handler` gives the operations their code. Several handlers can implement one capability, and the caller picks one with `with`.
+The host capabilities cover the machine: the screen, the clock, the files. A store's program also talks to services of its own: a mail service, a payment provider, a customer directory, a scale at the packing desk. In Una each of these is a capability that you declare, and it comes in two parts:
+
+- A **`capability` declaration** lists what the service can do: its operations, each with the types it takes and gives back, and how it can fail. It holds no code.
+- A **`handler`** gives those operations their code: one way to provide the service. A capability can have many handlers, such as one that talks to the real service, one that prints what it would send, and one that always fails, for tests.
+
+Think of a job description and the people who fill it. The description of a cashier lists the duties: take payment, give change, print a receipt. Any trained person can do the job, and the store can put a trainee on the till for practice without changing the description. The `capability` is the description; each `handler` is a person who can do the job. The code that needs the service names the description in its `uses`, and its caller chooses who does the work, with `with`.
+
+### Why declare a capability
+
+Here is a receipt sender written before the store had a mail service. It prints each message on the console:
+
+```una include="steps/08-mail-by-console/src/receipts.una" title="steps/08-mail-by-console/src/receipts.una" verified="check, run"
+module receipts
+
+--- Emails the receipt of an order. For now it prints the message, since the store has no mail
+--- service yet.
+send_receipt(to: Text, order: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("to {to}: Receipt for order {order}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  send_receipt("rosa@example.invalid", order: "A-1001")
+```
+
+```text include="steps/08-mail-by-console/expected/output.txt"
+to rosa@example.invalid: Receipt for order A-1001
+```
+
+It runs, but it is fragile in three ways:
+
+1. **The header says the wrong thing.** `uses @console: Console[print]` tells a reviewer that `send_receipt` prints. It does not say that it sends mail, which is its job.
+2. **Changing the service means changing the code.** When the store gets a real mail service, the body of `send_receipt` changes, and so does the header of every function that calls it, since they must now hold whatever the new service needs.
+3. **The failures have nowhere to go.** A mail service can refuse an address or not answer. Printing never fails, so the header has no `fails` clause, and no caller is ready for a failure.
+
+A capability fixes all three. `uses @mailer: Mailer[send]` says what the function does. The handler can change without touching `send_receipt` or its callers. And the operation's `fails` clause tells every caller how mail can fail.
+
+### How to write a capability
+
+#### The capability and its operations
+
+A capability is the word `capability`, a name, and one operation per line under it, indented two spaces. An operation is `op`, a name, typed parameters and a result type, like a function header with no body:
+
+```una include="steps/10-handlers/src/receipts.una#MailError..Mailer" title="steps/10-handlers/src/receipts.una"
+--- How the mail service can fail.
+kind MailError = Bounced(address: Text) | Timeout
+
+--- The mail service: what it can do, with no code.
+capability Mailer
+  op send(to: Text, subject: Text) -> Unit
+    fails MailError
+```
+
+#### An operation that can fail: `fails`
+
+A clause under an operation, indented two spaces more, says how it can fail. `fails MailError` works exactly as on a function ([chapter 6](/learn/failure/)): a caller handles the failure or passes it on.
+
+#### An operation with a contract: `requires` and `ensures`
+
+An operation can carry the contracts of [chapter 7](/learn/contracts/). The scale at the packing desk takes a SKU of at least four characters, and promises a weight of at least 1 gram:
+
+```una include="steps/09-scale/src/scales.una#ScaleError..Scale" title="steps/09-scale/src/scales.una"
+--- How the scale can fail.
+kind ScaleError = | NotOnScale
+
+--- The scale at the packing desk. The clauses of `weigh` are its contract: a caller passes a
+--- SKU of at least four characters, and gets a weight of at least 1 gram back.
+capability Scale
+  op weigh(sku: Text) -> Int
+    requires sku.len >= 4
+    ensures result >= 1
+    fails ScaleError
+```
+
+`requires` is what every caller must prove at the call. `ensures` is what every caller may rely on. For a service outside the program, an `ensures` is an assumption: una checks every handler written in Una against it, and trusts the real service to keep it.
+
+#### What an operation accepts: `accepts`
+
+A fourth clause, `accepts`, states the most sensitive data the operation may receive. [Chapter 9](/learn/information-flow/) explains it.
+
+#### A capability for other modules: `pub capability`
+
+Like a function or a kind, a capability can be used outside its module only when it is declared `pub`: `pub capability Mailer`. The day-to-day program of [section 8.6](#s8-6) declares its services `pub`.
+
+### How to write a handler
+
+#### The handler and its operations
+
+A handler is the word `handler`, a name, parameters in parentheses, `for` and the capability it implements. Under it, one `op` line per operation of the capability, each with the operation's name, its parameter names, `=` and the body:
+
+```una include="steps/09-scale/src/scales.una#fixed" title="steps/09-scale/src/scales.una"
+--- A scale on a developer's machine: it weighs every item at the same weight.
+handler fixed(grams: Int) for Scale
+  op weigh(sku) = if grams < 1 then fail NotOnScale else grams
+```
+
+The operation's parameters take their names only: their types and the result type come from the capability. The body is ordinary Una code. Here it fails with a variant of the operation's error kind when the fixed weight makes no sense, and returns the weight otherwise.
+
+#### Handler parameters
+
+`fixed(grams: Int)` has a parameter, as a function does. Its value is given when the handler is installed, and every operation of the handler can read it: `weigh` returns `grams`. A handler with no parameters is written with empty parentheses, as `bouncing()`.
+
+#### A handler with capabilities of its own
+
+A handler may declare `uses` lines, under its first line. A mail service for a developer's machine prints each message, so it holds the console:
+
+```una include="steps/10-handlers/src/receipts.una#printed" title="steps/10-handlers/src/receipts.una"
+--- A mail service for a developer's machine: it prints each message instead of sending it.
+handler printed(prefix: Text) for Mailer
+  uses @console: Console[print]
+  op send(to, subject) = @console.print("{prefix} to {to}: {subject}")
+```
+
+The code that installs the handler must hold those capabilities.
+
+#### Installing a handler: `with`
+
+A handler runs only where it is installed. `with @scale = fixed(850)`, at the end of a statement, installs the handler for the call in that statement:
+
+```una include="steps/09-scale/src/scales.una#parcel_grams..main" title="steps/09-scale/src/scales.una"
+--- A parcel's weight in grams: the item, and a box of 150 grams.
+parcel_grams(sku: Text) -> Int
+  requires sku.len >= 4
+  ensures result >= 151
+  uses @scale: Scale[weigh]
+  fails ScaleError
+=
+  let grams = @scale.weigh(sku)
+    if error pass
+  grams + 150
+
+--- A scale on a developer's machine: it weighs every item at the same weight.
+handler fixed(grams: Int) for Scale
+  op weigh(sku) = if grams < 1 then fail NotOnScale else grams
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weighed = attempt parcel_grams("LAMP-01") with @scale = fixed(850)
+  @console.print("{weighed}")
+  let empty = attempt parcel_grams("LAMP-01") with @scale = fixed(0)
+  @console.print("{empty}")
+```
+
+`parcel_grams` holds `@scale: Scale[weigh]`. It never learns which handler answers; `main` chooses. An example installs a handler with a `given` line instead, as [section 8.7](#s8-7) shows. The step prints:
+
+```text include="steps/09-scale/expected/output.txt#L1"
+Ok(1000)
+```
+
+The weight is the item's 850 grams and the box's 150. `parcel_grams` promises at least 151 grams, and the verifier proves it from the operation's `ensures result >= 1`, without knowing any handler.
 
 ### Receipts by email
 
-This step sends receipts by email. On a developer's machine the mail service prints each message instead of sending it, and a second handler stands for a service that refuses every address:
+Now the mail service, with two handlers. On a developer's machine the mail service prints each message instead of sending it, and a second handler stands for a service that refuses every address:
 
 :::steps
-```una include="steps/04-handlers/src/receipts.una" title="steps/04-handlers/src/receipts.una" verified="check, run"
+```una include="steps/10-handlers/src/receipts.una" title="steps/10-handlers/src/receipts.una" verified="check, run"
 module receipts
 
 --- How the mail service can fail.
@@ -282,39 +814,222 @@ pub main() -> Unit
   @console.print("second receipt: {outcome}")
 ```
 
-Walkthrough:
-
-1. **`capability Mailer` and `op send(...) -> Unit`.** An operation has a name, typed parameters and a result type, like a function header with no body. `fails MailError` says how it can fail, exactly as on a function.
+1. **`capability Mailer` and `op send(...) -> Unit`.** One operation, which can fail with `MailError`.
 2. **`send_receipt`.** It uses `@mailer: Mailer[send]` and fails with `MailError`. It does not know which mail service it talks to.
-3. **`handler printed(prefix: Text) for Mailer`.** A handler implements every operation of its capability. Its operations take the parameter names only: the types come from the capability. `prefix` is a parameter of the handler, given when it is installed and seen by every operation.
-4. **`uses @console: Console[print]` inside the handler.** A handler can use capabilities of its own. They come from the code that installs it: here `main`, which holds `@console`.
-5. **`fail Bounced(address: to)`.** An operation body is ordinary Una code. `bouncing` fails with a variant of the operation's error kind.
-6. **`with @mailer = printed("[mail]")`.** This installs the handler for the one statement it ends. Inside that call, `@mailer` is the `printed` handler.
+3. **`handler printed(prefix: Text) for Mailer`.** `prefix` is a parameter of the handler, given when it is installed and seen by `send`.
+4. **`uses @console: Console[print]` inside the handler.** The console comes from the code that installs it: here `main`, which holds `@console`.
+5. **`fail Bounced(address: to)`.** `bouncing` fails every time, with a variant of the operation's error kind.
+6. **`with @mailer = printed("[mail]")`.** Inside that call, `@mailer` is the `printed` handler. `if error use unit` handles a failure, which `printed` never has.
+7. **`attempt … with @mailer = bouncing()`.** The same function with the other handler. `attempt` keeps the failure as a value.
 :::
 
 `una run .` prints:
 
-```text include="steps/04-handlers/expected/output.txt"
+```text include="steps/10-handlers/expected/output.txt"
 [mail] to rosa@example.invalid: Receipt for order A-1001
 second receipt: Err(Bounced("tomas@example.invalid"))
 ```
 
 The second line comes from `attempt` with the `bouncing` handler: the receipt was not sent, and the outcome says why.
 
-### More clauses on an operation
+### How handlers behave
 
-An operation can carry more clauses than `fails`. `requires` states what callers must establish, `ensures` what callers may rely on, and `accepts` the most sensitive data the operation may receive ([chapter 9](/learn/information-flow/)). An `ensures` on an operation is an assumption about the outside service: callers may rely on it, the verifier checks every handler written in Una against it, and the service itself is trusted to keep it. `una report .` lists every capability declaration as an assumption.
+#### A handler implements every operation
 
-### A handler is not a value
+A handler must implement every operation of its capability, with the same names and the same number of parameters. Give the scale a second operation, `tare`, which sets it to zero, and leave the handler as it was:
+
+```una include="steps/11-missing-op/src/scales.una#Scale..fixed" title="steps/11-missing-op/src/scales.una"
+--- The scale at the packing desk: it weighs, and it can be set to zero.
+capability Scale
+  op weigh(sku: Text) -> Int
+  op tare() -> Unit
+
+--- A scale that only weighs.
+handler fixed(grams: Int) for Scale
+  op weigh(sku) = grams
+```
+
+```text include="steps/11-missing-op/expected/rendered.txt"
+[U3011] Error: handler `fixed` does not implement the operation `tare` of `Scale`
+   ╭─[ src/scales.una:9:9 ]
+   │
+ 9 │ handler fixed(grams: Int) for Scale
+   │         ──┬──
+   │           ╰──── handler `fixed` does not implement the operation `tare` of `Scale`
+   │
+   │ Note: run `una explain U3011` for an explanation
+───╯
+```
+
+U3011 names the handler, `fixed`, and the operation it lacks, `tare`. The mark is on the handler's name. Add `op tare() = unit` to the handler, or remove the operation if no handler should have it.
+
+#### A handler is held to the operation's contract
+
+The verifier checks each operation of a handler against the operation's `ensures`, as it checks a function. Return `grams` without the test:
+
+```diff include="steps/09-scale..steps/12-broken-promise:src/scales.una" context="1" title="src/scales.una"
+--- a/src/scales.una
++++ b/src/scales.una
+@@ -26,3 +26,3 @@
+ handler fixed(grams: Int) for Scale
+-  op weigh(sku) = if grams < 1 then fail NotOnScale else grams
++  op weigh(sku) = grams
+ 
+```
+
+```text include="steps/12-broken-promise/expected/rendered.txt"
+[U5001] Error: postcondition of `weigh` is refuted
+    ╭─[ src/scales.una:27:19 ]
+    │
+ 11 │     ensures result >= 1
+    │             ─────┬─────
+    │                  ╰─────── ensures clause
+    │
+ 27 │   op weigh(sku) = grams
+    │                   ──┬──
+    │                     ╰──── postcondition of `weigh` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 1` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-8bdfbdc534e5 (postcondition) is refuted: result >= 1
+    │
+    │ Note 2: counterexample: grams = 0, result = 0, sku = Text#0, sku.len = 4
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯
+```
+
+The diagnostic is U5001, the refuted postcondition of [chapter 7](/learn/contracts/#s7-2). The marks show the promise, `ensures result >= 1` on the operation, and the body that breaks it, `grams`. The counterexample, `grams = 0`, is a scale installed with a weight of 0. Callers rely on the promise, so a handler that breaks it does not check.
+
+#### A handler is not a value
 
 > [!TIP]
-> A handler is not a value. It cannot be stored in a variable or returned. It exists only where `with` or an example's `given` line installs it, and its parameters are fixed there.
+> A handler is not a value. It cannot be stored in a variable, passed as an ordinary argument or returned. It exists only where `with` or an example's `given` line installs it, and its parameters are fixed there.
+
+#### Every capability is in the report
+
+`una report .` lists each capability the package declares under `assumptions`, with its operations, since the program assumes that each service does what its declaration says. Under `authority` and `handler authority` it lists what each function and each handler may use:
+
+```text include="steps/10-handlers/expected/commands/report.txt#L5-L9,L12-L13"
+obligations: 0 proven, 0 refuted, 0 unknown; 0 cached
+authority:
+  receipts.main (pub): @console: Console[print]
+  receipts.send_receipt (private): @mailer: Mailer[send]
+handler authority:
+escapes:
+assumptions:
+```
+
+### A capability, a host capability or a pure function
+
+:::decide
+**Which to use:**
+
+| The code needs… | Use |
+| --- | --- |
+| Only to compute a value from its arguments | A pure function, with no `uses` |
+| The screen, the clock, the files or the network of the machine | A host capability, granted to `main` |
+| A service of the business, such as mail, payments or a directory | A `capability` of your own, with a handler for each way to provide it |
+| A stand-in for a service in a test | Another handler of the same capability |
+:::
+
+A capability of your own costs a declaration and a handler. It pays back as soon as the service has two providers, which it does the day you write a test.
+
+### Check yourself: handlers
+
+`main` in the scale's step makes a second call, with a scale installed at a weight of 0:
+
+```una include="steps/09-scale/src/scales.una#main" title="steps/09-scale/src/scales.una"
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weighed = attempt parcel_grams("LAMP-01") with @scale = fixed(850)
+  @console.print("{weighed}")
+  let empty = attempt parcel_grams("LAMP-01") with @scale = fixed(0)
+  @console.print("{empty}")
+```
+
+What does the second line print?
+
+:::answer Show the answer
+```text include="steps/09-scale/expected/output.txt#L2"
+Err(NotOnScale)
+```
+
+`fixed(0)` takes the `then` branch of its test, `grams < 1`, and fails with `NotOnScale`. `parcel_grams` passes the failure on with `if error pass`, and `attempt` in `main` keeps it as `Err(NotOnScale)`.
+:::
+
+A second one, without code: a handler `free()` for `Scale` has `op weigh(sku) = 0`. Does it check?
+
+:::answer Show the answer
+No. `weigh` promises `result >= 1`, and 0 breaks it, so the verifier refutes the operation with U5001, as in [A handler is held to the operation's contract](#a-handler-is-held-to-the-operations-contract).
+:::
 
 ## 8.4 Passing authority: `with`, rebinding and narrowing
 
-### What a callee receives
+### What passing authority means
 
-A call passes a binding when the callee's name for it matches the caller's. `with` changes what a callee receives, for one statement:
+A capability moves from a caller to a callee, and only that way. A store manager lends a colleague a key for one errand: the colleague uses it for that errand and hands it back. They cannot copy it, keep it in a drawer, or give it to a stranger. In Una, the caller is the manager, the callee is the colleague, and the errand is one call.
+
+Three things can happen at a call:
+
+- **By name.** The callee's header asks for `@customers`, and the caller holds a `@customers`. It is handed over with nothing written at the call.
+- **Rebinding.** The callee asks for `@audit`, and the caller holds the same capability under another name, `@console`. `with @audit = @console` hands it over under the callee's name.
+- **Installing.** The caller holds no such capability, or wants another provider. `with @customers = directory(customers)` installs a handler.
+
+And whatever the callee receives, it may use only the operations its own header lists: authority narrows on its way down.
+
+### Why authority moves only downward
+
+If a capability were a value, a function could keep it: store it in a record, return it, or pass it to code that its header never mentions. A reviewer would then have to follow every value to know who can print or send mail. Una forbids it. Try to keep the console in a variable:
+
+```una include="steps/13-stored-capability/src/slips.una" title="steps/13-stored-capability/src/slips.una"
+module slips
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let saved = @console
+  saved.print("Packing slip for order A-1001")
+```
+
+```text include="steps/13-stored-capability/expected/rendered.txt"
+[U3005] Error: capability `@console` is used as a value; capabilities pass by name, through `uses` and `with`
+   ╭─[ src/slips.una:6:15 ]
+   │
+ 6 │   let saved = @console
+   │               ────┬───
+   │                   ╰───── capability `@console` is used as a value; capabilities pass by name, through `uses` and `with`
+   │
+   │ Note: run `una explain U3005` for an explanation
+───╯
+```
+
+U3005 says that the capability is "used as a value", and how capabilities move instead: "by name, through `uses` and `with`". Because a capability never travels any other way, every function's reach is in its header, and in the headers of the functions that call it.
+
+### How to write `with`
+
+#### Passing by name: nothing to write
+
+When the names match, write nothing. `main` holds `@console`, and `print_line` in [section 8.1](#s8-1) asks for `@console`, so `print_line("LAMP-01", quantity: 2)` passes it.
+
+#### Rebinding: `with @x = @y`
+
+`with`, at the end of a statement, then the callee's name, `=` and the caller's binding. Both must be the same capability, and the caller's binding must permit at least the operations the callee lists.
+
+#### Installing a handler: `with @x = handler(args)`
+
+The callee's name, `=` and a call of a handler for the capability the callee needs at that name. The handler's own `uses` must be held by the caller.
+
+#### Several bindings
+
+One `with` takes several bindings, separated by commas: `with @customers = directory(customers), @audit = @console`.
+
+#### How far `with` reaches
+
+A `with` belongs to the statement it ends, or to the `let` it ends, and to nothing after it. The next statement gets its bindings by name again, or from its own `with`.
 
 | Write | The callee's `@x` is |
 | --- | --- |
@@ -322,14 +1037,12 @@ A call passes a binding when the callee's name for it matches the caller's. `wit
 | `with @x = @y` | the caller's `@y`, which has the same capability |
 | `with @x = handler(args)` | a new instance of that handler |
 
-Several bindings go in one `with`, separated by commas. The binding lasts only for the statement it ends.
-
 ### Narrowing: a greeting that may only look up
 
-A callee may also receive a binding with more operations than it needs. It then holds only the operations its own header lists. This is how authority narrows on its way down. In this step, the customer directory has two operations, looking a customer up and erasing one. The page greeting may look up, and only the erase request may erase:
+In this step, the customer directory has two operations, looking a customer up and erasing one. The page greeting may look up, and only the erase request may erase:
 
 :::steps
-```una include="steps/05-with/src/accounts.una" title="steps/05-with/src/accounts.una" verified="check, run"
+```una include="steps/14-with/src/accounts.una" title="steps/14-with/src/accounts.una" verified="check, run"
 module accounts
 
 kind Customer
@@ -373,47 +1086,107 @@ pub main() -> Unit
   erase("C-20") with @customers = directory(customers), @audit = @console
 ```
 
-Walkthrough:
-
-1. **`capability Customers` with `find` and `forget`.** Two operations with different risks. A capability can also declare operations without `fails`: these two cannot fail.
+1. **`capability Customers` with `find` and `forget`.** Two operations with different risks. Neither has a `fails` clause: these two cannot fail.
 2. **`uses @customers: Customers[find]` on `greeting`.** The `directory` handler implements both operations, but `greeting` holds only `find`. An `@customers.forget(id)` in its body would not check.
 3. **`if none use Customer(id: id, name: "guest")`.** `find` returns an `Option`, so the handling clauses of [chapter 6](/learn/failure/) apply to an operation as to any call.
 4. **`uses @audit: Console[print]` on `erase`.** The audit trail is a console here, under the name `@audit`, so the header says what the console is for.
-5. **`with @customers = directory(customers), @audit = @console`.** The first binding installs a handler. The second is a rebinding: the callee's `@audit` is the caller's `@console`. `main` holds no `@audit` of its own, so without the rebinding the call would not check.
+5. **`let page = greeting("C-17") with @customers = directory(customers)`.** A `with` at the end of a `let`: it installs the handler for that call.
+6. **`with @customers = directory(customers), @audit = @console`.** Two bindings. The first installs a handler. The second is a rebinding: the callee's `@audit` is the caller's `@console`. `main` holds no `@audit` of its own, so without the rebinding the call would not check.
 :::
 
 `una run .` prints:
 
-```text include="steps/05-with/expected/output.txt"
+```text include="steps/14-with/expected/output.txt"
 Welcome back, Rosa
 Welcome back, guest
 audit: erased customer C-20
 ```
 
-### Each installation is a new instance
+### How `with` behaves
+
+#### A callee holds only what its header lists
+
+A callee may receive a binding with more operations than it needs. It then holds only the operations its own header lists. `directory` can forget customers, but inside `greeting` the binding permits `find` and nothing else.
+
+#### Each installation is a new instance
 
 Each `with @customers = directory(customers)` installs a new instance. A handler holds no state between calls, and `directory` takes its map as a parameter, so `forget` has nothing to change here. A handler for a real directory would call the service.
 
-### Checking that authority narrows
+#### Where a handler's own capabilities come from
+
+A handler installed with `with` takes its own `uses` from the code around the statement, by name. `printed`, in [section 8.3](#s8-3), holds `@console` because `main`, which installs it, holds `@console`.
+
+#### A binding of the wrong capability
+
+A rebinding needs the same capability on both sides, and a handler must implement the capability the callee needs at that name. Installing a `Customers` handler as `@mailer` is U3010, as [installing a handler of another capability](#installing-a-handler-of-another-capability-u3010) shows.
+
+#### Checking that authority narrows
 
 > [!IMPORTANT]
 > Narrowing is a promise you can check. Because `greeting` holds `Customers[find]`, no change to its body can make it erase a customer without a change to its header, which a reviewer sees.
 
+### Pass, rebind or install
+
+:::decide
+**Which to use:**
+
+| At the call… | Write |
+| --- | --- |
+| The caller holds the capability under the callee's name | Nothing |
+| The caller holds it under another name | `with @callee_name = @caller_name` |
+| The caller must choose a provider, or holds none | `with @x = handler(args)` |
+| The caller wants the callee to use fewer operations | Nothing: the callee's header already limits it |
+:::
+
+Name bindings after what they are for, as `@audit` and `@log` are. A rebinding at the call then reads as a decision: "the audit trail is the console, here".
+
+### Check yourself: `with`
+
+In the step, remove `@audit = @console` from the last line of `main`, so that it reads `erase("C-20") with @customers = directory(customers)`. Does it check?
+
+:::answer Show the answer
+No. `erase` needs `@audit: Console[print]`, and `main` holds no binding named `@audit`: bindings are found by name, never by type, so `@console` does not count. `una check .` reports U3001 at the call, as [forgetting to hand over a binding](#forgetting-to-hand-over-a-binding-u3001) shows for the day-to-day program.
+:::
+
+A second one: `main` holds `@console: Console[print]`. It calls `greeting("C-17")` with no `with` at all. What does `una check .` say?
+
+:::answer Show the answer
+U3001 again. `greeting` needs `@customers`, and `main` holds none. A handler exists only where `with` installs it, so the call must install one, as the step does.
+:::
+
 ## 8.5 Edition 0.3 preview: conditions and boundaries
 
-Edition `0.3` is a preview: a package opts in with `edition = "0.3"` in `una.toml`, and [chapter 14, Editions](/learn/editions/), explains what that means. It adds two ways to say more about authority.
+### What edition 0.3 adds
 
-### Conditions on operations
+An **edition** is a version of the language that a package chooses. Edition `0.3` is a preview: a package opts in with `edition = "0.3"` in `una.toml`, and [chapter 14, Editions](/learn/editions/), explains what that means. It adds two ways to say more about authority:
 
-An operation in `uses` may carry a condition over the function's parameters, written after `where`. The header then says not only what a function may do, but when. A dry run is the common case: the function may place orders only when `dry_run` is false. The verifier proves, at every place where the operation can run, that the condition holds. A call of a function that performs the operation counts as such a place too, so the condition holds through every layer of calls.
+- A **condition on an operation**: the header says not only what a function may do, but when.
+- A **boundary**: a module from outside the store's own code, such as a vendored library, receives only what each call grants it, up to a ceiling written in `una.toml`.
 
-A condition is never inferred: a private function without `uses` has no condition on any operation. A function with a condition cannot be passed as a value, since the function that receives it could not prove the condition.
+### Why an operation needs a condition
+
+A function often has a mode in which it must not act: a dry run, a preview, a rehearsal. The rule "never place an order in a dry run" usually lives in an `if` somewhere in the body, or in a callee, and nothing makes sure every path respects it. One forgotten branch, and the rehearsal places real orders. A condition puts the rule in the header, where the verifier proves it on every path.
+
+### How to write a condition
+
+After the operation's name in the brackets of `uses`, write `where` and a condition over the function's parameters: `uses @supplier: Supplier[order where not dry_run]` lets the function place an order only where `dry_run` is false. The condition is written in the refinement language of [chapter 7](/learn/contracts/#s7-3), like a `requires` clause, and must be a `Bool`. It reads the parameters only: they never change during a call, so the condition's value is fixed for the whole call. Operations without `where` in the same brackets are unconditioned.
 
 ### A restock with a dry run
 
 The step's `reorder` may place an order only when `dry_run` is false:
 
-```una include="steps/06-conditions/src/restock.una" title="steps/06-conditions/src/restock.una" verified="check, run"
+```toml include="steps/15-conditions/una.toml" title="steps/15-conditions/una.toml"
+[package]
+name = "restock"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "restock"
+grants = ["console"]
+```
+
+```una include="steps/15-conditions/src/restock.una" title="steps/15-conditions/src/restock.una" verified="check, run"
 module restock
 
 --- The supplier's ordering service.
@@ -447,18 +1220,31 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/06-conditions/expected/output.txt"
+```text include="steps/15-conditions/expected/output.txt"
 would order 20 x LAMP-01
 ordered 20 x LAMP-01
 ```
 
-The first call is a dry run, so it only prints. The third finds enough stock and does nothing. If `reorder` placed the order without the `dry_run` branch, `una check` would report U5001, with a counterexample in which `dry_run` is true ([running an operation where its condition may not hold](#running-an-operation-where-its-condition-may-not-hold-edition-03-u5001) shows it).
+The first call is a dry run, so it only prints. The third finds enough stock and does nothing. In the `else` branch that places the order, the verifier knows that `dry_run` is false, which is the condition.
 
-### Boundaries
+### How a condition is checked
 
-A package often holds code it did not write, such as a vendored library that prints barcodes. `una.toml` can mark such a module as a boundary, with a ceiling: the most the rest of the package may grant it, as a list of capabilities and operations. A call into a boundary takes nothing by name. The caller grants each capability with `with`, so every call shows what the boundary receives, and the checker holds every grant under the ceiling. Here the vendored module is `barcode`, and its ceiling allows `Console[print]`:
+The verifier proves, at every place where the operation can run, that the condition holds. A call of a function that performs the operation counts as such a place too, so the condition holds through every layer of calls. If `reorder` placed the order without the `dry_run` branch, `una check` would report U5001, with a counterexample in which `dry_run` is true ([running an operation where its condition may not hold](#running-an-operation-where-its-condition-may-not-hold-edition-03-u5001) shows it).
 
-```toml include="steps/07-boundaries/una.toml" title="steps/07-boundaries/una.toml"
+Two rules keep the proof sound:
+
+- **A condition is never inferred.** A private function without `uses` has no condition on any operation.
+- **A function with a condition is not a value.** A function can usually be passed to another function as an argument ([chapter 3](/learn/functions/#s3-5)). One whose `uses` carry a condition cannot, since the function that receives it could not prove the condition.
+
+### What a boundary is
+
+A package often holds code it did not write, such as a vendored library that prints barcodes. Its functions declare their own `uses`, but a reviewer of the store's code would like a limit that the library's author cannot change: whatever its headers say, it never gets more than this. `una.toml` can mark such a module as a **boundary**, with a **ceiling**: the most the rest of the package may grant it, as a list of capabilities and operations.
+
+### How to write a boundary
+
+Under `[boundaries]` in `una.toml`, one line per module: its name in quotes, `=`, and the list of what it may receive. Here the vendored module is `barcode`, and its ceiling allows `Console[print]`:
+
+```toml include="steps/16-boundaries/una.toml" title="steps/16-boundaries/una.toml"
 [package]
 name = "shelf"
 version = "0.1.0"
@@ -476,7 +1262,7 @@ grants = ["console"]
 
 This is the vendored module. Its function needs `@console`, which the store's code must grant it:
 
-```una include="steps/07-boundaries/src/barcode.una" title="steps/07-boundaries/src/barcode.una" verified="check, run"
+```una include="steps/16-boundaries/src/barcode.una" title="steps/16-boundaries/src/barcode.una" verified="check, run"
 module barcode
 
 --- Prints a shelf label with the SKU spelled out for a barcode font. This module is code from
@@ -487,9 +1273,9 @@ pub print_label(sku: Text) -> Unit
   @console.print("*{sku.to_upper}*")
 ```
 
-The store's own module calls it:
+The store's own module calls it, and grants the console at each call with `with`:
 
-```una include="steps/07-boundaries/src/shelf.una" title="steps/07-boundaries/src/shelf.una" verified="check, run"
+```una include="steps/16-boundaries/src/shelf.una" title="steps/16-boundaries/src/shelf.una" verified="check, run"
 module shelf
 
 import barcode (print_label)
@@ -503,18 +1289,86 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/07-boundaries/expected/output.txt"
+```text include="steps/16-boundaries/expected/output.txt"
 *LAMP-01*
 *DESK-02*
 ```
 
-A call to `print_label` without `with @console = @console` is U3020. If `print_label` also needed a `Clock`, granting it would be U3021, since the ceiling allows only `Console[print]`. A binding that the callee does not need is not counted against the ceiling. A boundary module can never be trusted, so it can never release labeled data ([chapter 9](/learn/information-flow/)).
+### How a boundary is checked
+
+#### Nothing passes by name
+
+A call into a boundary takes nothing by name. The caller grants each capability with `with`, so every call shows what the boundary receives. Leave out the `with` on the second call:
+
+```diff include="steps/16-boundaries..steps/17-boundary-call:src/shelf.una" context="1" title="src/shelf.una"
+--- a/src/shelf.una
++++ b/src/shelf.una
+@@ -8,2 +8,2 @@
+   print_label("lamp-01") with @console = @console
+-  print_label("desk-02") with @console = @console
++  print_label("desk-02")
+```
+
+```text include="steps/17-boundary-call/expected/rendered.txt"
+[U3020] Error: `print_label` is in the boundary `barcode` and needs `@console: Console[print]`, which a call into it grants only with `with`
+   ╭─[ src/barcode.una:6:3 ]
+   │
+ 6 │   uses @console: Console[print]
+   │   ──────────────┬──────────────
+   │                 ╰──────────────── the boundary's requirement
+   │
+   ├─[ src/shelf.una:9:3 ]
+   │
+ 9 │   print_label("desk-02")
+   │   ───────────┬──────────
+   │              ╰──────────── `print_label` is in the boundary `barcode` and needs `@console: Console[print]`, which a call into it grants only with `with`
+   │
+   │ Note: run `una explain U3020` for an explanation
+───╯
+```
+
+U3020 points at two places: the boundary's requirement, the `uses` line of `print_label`, and the call that does not grant it. `with @console = @console` reads as redundant elsewhere; at a boundary it is the grant.
+
+#### The ceiling holds every grant
+
+The checker holds every grant under the ceiling. If `print_label` also needed a `Clock`, granting it would be U3021, since the ceiling allows only `Console[print]`. A binding that the callee does not need is not counted against the ceiling. A boundary module can never be trusted, so it can never release labeled data ([chapter 9](/learn/information-flow/)).
+
+### A condition, a narrower header or a boundary
+
+:::decide
+**Which to use:**
+
+| You want… | Use |
+| --- | --- |
+| A function that may perform an operation only in some calls, such as never in a dry run | A condition: `op where …` in its `uses` |
+| A function that never performs an operation | Leave the operation out of its `uses` |
+| Code you did not write to receive at most some authority, whatever its headers say | A boundary with a ceiling, in `una.toml` |
+:::
+
+Conditions and boundaries are edition `0.3`. In edition `0.2`, the closest you can come is a narrow header and a review of every call.
+
+### Check yourself: conditions and boundaries
+
+`rehearse` holds `uses @mailer: Mailer[send where not dry_run]` and calls `dispatch(shipments)`, whose header holds `uses @mailer: Mailer[send]` with no condition. Does the call check, with no `if` around it?
+
+:::answer Show the answer
+No. `dispatch` may send mail on every call, so the call is a place where `send` can run, and there the verifier must prove `not dry_run`. Nothing tells it what `dry_run` is, so it refutes the condition with `dry_run = true`. [Exercise 3](#exercise-3-a-dry-run-edition-03) starts from exactly this function, and its answer puts the call in the `else` branch of `if dry_run`.
+:::
 
 ## 8.6 Day-to-day: shipping notices
 
 ### What the dispatch step must do
 
-Now the program from the start of the chapter. When orders leave the warehouse, the store emails each customer a notice. The customer directory and the mail service are services on the network, which can time out. The operator reads a log with one line per order.
+Now the program from the start of the chapter. When orders leave the warehouse, the store emails each customer a notice. The customer directory and the mail service are services on the network, which can time out. The operator reads a log with one line per order. Each part of the job uses one idea of this chapter:
+
+| Part of the job | How the program does it |
+| --- | --- |
+| Talk to the directory and the mail service | two capabilities of its own, `Customers` and `Mailer` ([section 8.3](#s8-3)) |
+| Write the notice's text | a pure function, with no `uses` ([section 8.1](#s8-1)) |
+| Send one notice, and nothing else | a header with exactly two operations |
+| Run a batch and log each outcome | a header with a third binding, `@log`, which `main` rebinds to the console ([section 8.4](#s8-4)) |
+| Run with fake services, here and in tests | handlers, installed with `with` and, in tests, `given` |
+| Print at all | the one grant of `una.toml`, `"console"` ([section 8.2](#s8-2)) |
 
 ### The kinds and the services
 
@@ -923,7 +1777,7 @@ example notices "the batch logs every shipment, even when the mail service is do
 
 ## 8.8 Common mistakes
 
-Most of the mistakes below are a small change to `day-to-day/src/notices.una`. The others change a step of this chapter, as each one says.
+Most of the mistakes below are a small change to `day-to-day/src/notices.una`. The others change a step of this chapter, as each one says. The capability diagnostics are U3 codes, reported before any proof is tried. Each names the binding and what is missing, and marks the place in the code where it is needed.
 
 ### Forgetting to hand over a binding (U3001)
 
@@ -944,7 +1798,7 @@ Leave `@log = @console` out of the first `with` in `main`:
 [U3001] Error: `dispatch` needs `@log: Console[print]`, which is not in scope here
 ```
 
-*Why:* `dispatch` needs `@log`, and `main` holds only `@console`. Bindings are found by name, never by type.
+*Why:* the console is right there in `main`, so it seems `dispatch` should find it. But `dispatch` needs `@log`, and `main` holds only `@console`. Bindings are found by name, never by type. The message names the callee, the binding with its capability, and "not in scope here"; the mark is on the call.
 
 *Fix:* add `@log = @console` to the `with`. The repair una offers, a `uses @log` line on `main`, would widen `main`'s header instead, so `una fix` skips it, and `una fix --dry-run .` says so ([For agents](#for-agents)).
 :::
@@ -952,9 +1806,9 @@ Leave `@log = @console` out of the first `with` in `main`:
 ### Using an operation the header does not list (U3002)
 
 :::mistake
-In [step 05](#narrowing-a-greeting-that-may-only-look-up), give `erase` the header of `greeting`, `uses @customers: Customers[find]`:
+In the step of [Narrowing: a greeting that may only look up](#narrowing-a-greeting-that-may-only-look-up), give `erase` the header of `greeting`, `uses @customers: Customers[find]`:
 
-```diff include="steps/05-with..mistakes/2:src/accounts.una" context="1" title="src/accounts.una"
+```diff include="steps/14-with..mistakes/2:src/accounts.una" context="1" title="src/accounts.una"
 --- a/src/accounts.una
 +++ b/src/accounts.una
 @@ -21,3 +21,3 @@
@@ -968,7 +1822,7 @@ In [step 05](#narrowing-a-greeting-that-may-only-look-up), give `erase` the head
 [U3002] Error: `@customers` permits `find`, not `forget`
 ```
 
-*Why:* the brackets list every operation the function may perform.
+*Why:* the header was copied from a similar function. The brackets list every operation the function may perform, and the mark is on the operation the header does not list, `forget`. The repair una offers widens the header, so it is yours to judge.
 
 *Fix:* write `Customers[forget]`. Add an operation to a header only when it belongs to the function's job: every caller must then hold it too.
 :::
@@ -995,7 +1849,7 @@ Add a log line to `notice`:
 [U3004] Error: `@log` is used here, but this code declares no `uses`, so it is pure
 ```
 
-*Why:* a `pub` function declares every `uses`, so one without `uses` is pure.
+*Why:* a log line is a habit when something needs watching. But a `pub` function declares every `uses`, so one without `uses` is pure, and the mark is on the binding it tries to use, `@log`.
 
 *Fix:* log in the caller, which already holds `@log`. A message text should stay a pure function, which tests can call without fakes.
 :::
@@ -1019,7 +1873,7 @@ Write `@mailer = directory_down()`:
 [U3010] Error: this handler implements `Customers`, and `dispatch` needs `@mailer` to be `Mailer`
 ```
 
-*Why:* `directory_down` implements `Customers`, and `@mailer` is a `Mailer`.
+*Why:* both handlers stand for a service that never answers, and their names are close. The message says which capability the handler implements, `Customers`, and which one the callee needs at that name, `Mailer`; the mark is on the handler's call.
 
 *Fix:* install `mail_down()`, the handler of `Mailer` that never answers.
 :::
@@ -1027,9 +1881,9 @@ Write `@mailer = directory_down()`:
 ### Using a host capability that is not granted (U3012)
 
 :::mistake
-In [step 03](#grants-in-unatoml), remove `"clock"` from `[run] grants`:
+In the step of [An end-of-day stock export](#an-end-of-day-stock-export), remove `"clock"` from `[run] grants`:
 
-```diff include="steps/03-host..mistakes/5:una.toml" context="1" title="una.toml"
+```diff include="steps/06-host..mistakes/5:una.toml" context="1" title="una.toml"
 --- a/una.toml
 +++ b/una.toml
 @@ -7,2 +7,2 @@
@@ -1043,7 +1897,7 @@ In [step 03](#grants-in-unatoml), remove `"clock"` from `[run] grants`:
    │ Help: repair 1 (widens grant: the program then gets this host authority when it runs): grant `now` of `Clock` in `[run] grants` of `una.toml`, or with `--grant`
 ```
 
-*Why:* `main` uses `Clock[now]`, and the package does not grant it.
+*Why:* grants are easy to forget when a `uses` line is added to `main`. The mark is on the `uses` line that is not granted, and the help line widens the grant, which is for the package's owner to decide.
 
 *Fix:* grant `"clock"` if the program needs the time. Otherwise remove the `uses` line and the call.
 :::
@@ -1066,7 +1920,7 @@ Remove `given @log = quiet()` from the last example:
 [U3014] Error: `dispatch` needs `@log: Console[print]`, a host capability, and examples cannot use host capabilities; give it a handler with `given`
 ```
 
-*Why:* examples are deterministic, so they never reach the host. una also reports U3001 at `expect performed @log.print`, since no `given` line binds `@log`.
+*Why:* in `main` the log is the console, so it seems a test could use it too. But examples are deterministic, so they never reach the host. The first diagnostic marks the `do` line and names the binding it needs. una also reports U3001 at `expect performed @log.print`, since no `given` line binds `@log`.
 
 *Fix:* install a handler for every binding the `do` line needs, such as `quiet()` for a console.
 :::
@@ -1074,9 +1928,9 @@ Remove `given @log = quiet()` from the last example:
 ### Running an operation where its condition may not hold, edition 0.3 (U5001)
 
 :::mistake
-In [step 06](#a-restock-with-a-dry-run), place the order without the dry-run branch:
+In the step of [A restock with a dry run](#a-restock-with-a-dry-run), place the order without the dry-run branch:
 
-```diff include="steps/06-conditions..mistakes/7:src/restock.una" context="1" title="src/restock.una"
+```diff include="steps/15-conditions..mistakes/7:src/restock.una" context="1" title="src/restock.una"
 --- a/src/restock.una
 +++ b/src/restock.una
 @@ -13,4 +13,2 @@
@@ -1092,7 +1946,7 @@ In [step 06](#a-restock-with-a-dry-run), place the order without the dry-run bra
     │ Note 2: counterexample: dry_run = true, left = 4
 ```
 
-*Why:* the header allows `order` only where `not dry_run` holds, and the verifier finds a run where it does not.
+*Why:* the dry-run branch looks like a nicety and is easy to drop. The header allows `order` only where `not dry_run` holds, and the verifier finds a run where it does not: the counterexample has `dry_run = true` with `left = 4`, few enough units to order. The marks show the condition in the header and the operation that may break it.
 
 *Fix:* the repair una lists first, a guard, which the step has as its `else if dry_run` branch.
 :::
@@ -1121,7 +1975,7 @@ example "a directory of one customer knows no one else"
 ```
 
 :::hint
-*Hint:* a handler's operation takes the parameter names only, and its body can use the handler's parameters. An `if … then … else …` fits on one line.
+*Hint:* start from `directory`, which has the same shape. Write `handler only(customer: Customer) for Customers`, then one line `op find(id) = …`: the operation takes the parameter names only, and its body can read the handler's parameter `customer`. `find` returns an `Option[Customer]`, so the body gives `Some(customer)` when `id == customer.id` and `None` otherwise, with an `if … then … else …` on one line.
 :::
 
 Check your answer with `una test .`.
@@ -1246,7 +2100,7 @@ Its body calls `dispatch` in every case, so `una check .` reports:
 The start package also has two examples: a dry run performs `@log.print` and not `@mailer.send`, and a real run performs `@mailer.send`.
 
 :::hint
-*Hint:* branch on `dry_run`. In the dry run, log one line per shipment, such as `would notify A-1001`, and call nothing that uses `@mailer`.
+*Hint:* replace the body with an `if dry_run` that has two branches. In the dry-run branch, loop over the shipments with `for` and log one line per shipment on `@log`, such as `would notify A-1001`, and call nothing that uses `@mailer`. In the `else` branch, call `dispatch(shipments)` as before: there the verifier knows `dry_run` is false, which proves the condition.
 :::
 
 Check your answer with `una test .`.
@@ -1306,7 +2160,8 @@ The compact rule: *every effect is `@binding.op(...)` on a binding of the header
 - List the operations a function needs in brackets. A callee holds only the operations its own header lists.
 - Bindings pass by name. `with @x = @y` rebinds, and `with @x = handler(args)` installs a handler, for one statement.
 - The host's capabilities reach `main` only as `una run` grants them: `[run] grants` in `una.toml`, plus any `--grant` flags of that run.
-- Declare each outside service as a `capability`, and give it one handler for production and fakes for tests.
+- Declare each outside service as a `capability`, and give it one handler for production and fakes for tests. A handler implements every operation, and is held to each operation's `ensures`.
+- A capability is never a value: it moves only downward, by name or through `with`, for one statement.
 - Every example installs its fakes with `given`, and checks effects with `expect performed` and `expect not performed`.
 - In edition `0.3`, `where` puts a condition on an operation, and `[boundaries]` limits what outside code receives.
 :::
@@ -1317,7 +2172,7 @@ The compact rule: *every effect is `@binding.op(...)` on a binding of the header
 - Construct pages: [`capability` and `op`](/docs/language/capabilities/capability/), [`uses`](/docs/language/capabilities/uses/), [`with`](/docs/language/capabilities/with/), [`handler`](/docs/language/capabilities/handler/), [host capabilities and grants](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)
 - Configuration: [`[run] grants`](/docs/configure/run/grants/), [`[boundaries]`](/docs/configure/boundaries/)
 - Standard library: [the prelude and the host capabilities](/docs/std/)
-- Diagnostics: [U1001](/docs/errors/U1001/), [U3001](/docs/errors/U3001/), [U3002](/docs/errors/U3002/), [U3004](/docs/errors/U3004/), [U3010](/docs/errors/U3010/), [U3012](/docs/errors/U3012/), [U3014](/docs/errors/U3014/), [U3020](/docs/errors/U3020/), [U3021](/docs/errors/U3021/), [U5001](/docs/errors/U5001/)
+- Diagnostics: [U1001](/docs/errors/U1001/), [U3001](/docs/errors/U3001/), [U3002](/docs/errors/U3002/), [U3004](/docs/errors/U3004/), [U3005](/docs/errors/U3005/), [U3010](/docs/errors/U3010/), [U3011](/docs/errors/U3011/), [U3012](/docs/errors/U3012/), [U3014](/docs/errors/U3014/), [U3020](/docs/errors/U3020/), [U3021](/docs/errors/U3021/), [U5001](/docs/errors/U5001/)
 - Specification: [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [standard library](/docs/spec/14-standard-library/), [diagnostics and ABI](/docs/spec/13-diagnostics-and-abi/)
 - Editions: [editions](/docs/editions/)
 :::

@@ -1,0 +1,58 @@
+module backroom
+
+--- No `uses`: a pure function. It can only compute its result.
+shelf_tag(sku: Text) -> Text = "[{sku}]"
+
+--- One operation of one capability: it may print, and nothing else.
+announce(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("restocked {shelf_tag(sku)}")
+
+--- No brackets: every operation of the capability, now and later.
+announce_all(skus: List[Text]) -> Unit
+  uses @console: Console
+=
+  for sku in skus
+    @console.print("restocked {shelf_tag(sku)}")
+
+--- Two operations of one capability, in one pair of brackets.
+copy_count(source: Text, to: Text) -> Unit
+  uses @files: Files[read, write]
+  fails FileError
+=
+  let count = @files.read(source)
+    if error pass
+  @files.write(to, content: count)
+    if error pass
+
+--- Two capabilities, one `uses` line each.
+save_and_say(sku: Text, units: Int) -> Unit
+  uses @files: Files[write]
+  uses @console: Console[print]
+  fails FileError
+=
+  @files.write("count.txt", content: "{sku},{units}")
+    if error pass
+  @console.print("saved the count of {sku}")
+
+--- Closes a shelf for the night. It writes no `uses`, so una infers them.
+close_shelf(sku: Text, units: Int) -> Unit
+=
+  announce(sku)
+  save_and_say(sku, units: units)
+    if error pass
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[read, write]
+=
+  announce("LAMP-01")
+  announce_all(["DESK-02", "RUG-07"])
+  save_and_say("LAMP-01", units: 4)
+    if error use unit
+  copy_count("count.txt", to: "count-copy.txt")
+    if error use unit
+  @console.print("copied the count")
+  close_shelf("RUG-07", units: 9)
+    if error use unit

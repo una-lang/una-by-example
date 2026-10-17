@@ -1,0 +1,9 @@
+module export
+
+--- Writes the end-of-day stock export. The manifest grants only the console.
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[write]
+=
+  let outcome = attempt @files.write("stock-export.csv", content: "LAMP-01,4\n")
+  @console.print("export: {outcome}")

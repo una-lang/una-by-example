@@ -1,0 +1,1 @@
+error U5002 at src/shelves.una:7:3: postcondition of `area` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)

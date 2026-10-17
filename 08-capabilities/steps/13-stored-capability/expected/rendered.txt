@@ -1,0 +1,9 @@
+[U3005] Error: capability `@console` is used as a value; capabilities pass by name, through `uses` and `with`
+   ╭─[ src/slips.una:6:15 ]
+   │
+ 6 │   let saved = @console
+   │               ────┬───
+   │                   ╰───── capability `@console` is used as a value; capabilities pass by name, through `uses` and `with`
+   │
+   │ Note: run `una explain U3005` for an explanation
+───╯

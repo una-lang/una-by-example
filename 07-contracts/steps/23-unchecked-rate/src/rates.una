@@ -1,0 +1,22 @@
+module rates
+
+--- A share in whole percent.
+kind Percent = Int in 0..100
+
+--- Why a typed rate was refused.
+kind RateError = | NotANumber(raw: Text)
+
+--- A discount rate typed into the back office. It checks that the text is a number, and
+--- nothing more.
+parse_rate(raw: Text) -> Percent
+  fails RateError
+=
+  let n = raw.trim.to_int()
+    if none fail NotANumber(raw)
+  n
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let outcome = attempt parse_rate("15")
+  @console.print("{outcome}")

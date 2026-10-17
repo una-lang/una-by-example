@@ -2,8 +2,8 @@
 learn: "7"
 title: Contracts and the verifier
 editions: ["0.2"]
-codes: [U1001, U2014, U2016, U5001, U5002]
-time: 60
+codes: [U1001, U1006, U1007, U2014, U2016, U5001, U5002]
+time: 80
 builds: The billing step of a store, which prices an invoice, applies a coupon, splits the payment and refunds
 prerequisites: ["3", "4", "5", "6"]
 template: 2
@@ -1319,9 +1319,171 @@ Only the kind. A function's `requires` and `ensures` may call only `reflect` pre
 
 ## 7.4 What the verifier proves
 
-### Obligations and `una obligations`
+### What an obligation is
 
-Every contract, refinement and division becomes one or more **obligations**: a question for the solver, with an answer. `una obligations .` lists them all, each with its status, its identity, its kind, where it is, and its goal. For the cart of [section 7.3](#s7-3), where the first line is `shipping`'s result entering `Cents`, its declared type:
+Before a new shop opens, an inspector walks through it with a checklist: the fire exits, the wiring, the ramp at the door. Each item gets one mark: passed, failed, or could not be inspected. The shop opens only when every item has passed.
+
+The verifier works through your program the same way. Its checklist is the list of **proof obligations**, or **obligations** for short: one question for each place where the program relies on a fact. [What the verifier is](#what-the-verifier-is), in section 7.1, introduced them. "Is this divisor never 0?" "Does this call meet the callee's `requires`?" "Does this value fit the kind it enters?" Each question gets one mark, its **status**:
+
+- **proven:** the fact holds for every input;
+- **refuted:** some input breaks it, and the verifier shows that input;
+- **unknown:** the solver could not decide.
+
+A program checks only when every obligation is proven. You never write an obligation yourself: una derives them from what you wrote, the contracts, the refined kinds, the divisions and a few other constructs. This section shows how to see them, what each kind asks, and what to do when the solver cannot answer.
+
+### Why list the obligations
+
+When `una check .` passes, it prints nothing. Silence is the right answer for a program that is correct, but it does not tell you what was proven. Was the guard you just added the thing that proved the division safe? Did the rule you care about become a question at all? A function with no contract has nothing to prove, and it passes in the same silence as a function whose every promise was proven.
+
+A reviewer needs to see the checklist, not only the result. `una obligations .` prints it: every obligation of the package, proven or not, with where it comes from and what it asks.
+
+### How to list the obligations: `una obligations`
+
+In the package's directory, run:
+
+```sh
+una obligations .
+```
+
+It checks the package first. When the package has an error that is not an obligation, such as a syntax error or a missing `uses`, it reports that error instead of a list. Otherwise it prints one line per obligation. The step of this part has one small function for each kind of obligation, and it prints:
+
+:::steps
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt"
+$ una obligations .
+proven   ob-b852e63daefa division      src/stockroom.una:11:3 units != 0
+proven   ob-2a3920108dd8 postcondition src/stockroom.una:15:11 result <= 99
+proven   ob-0d6cd810c278 refinement    src/stockroom.una:20:1 result >= 0
+proven   ob-011bffbfed9b division      src/stockroom.una:23:72 people != 0
+proven   ob-17951dbe35f9 exhaustive    src/stockroom.una:28:3 units == 0 or units in 1..9 or units in 10..999
+proven   ob-7ed451ea7768 overflow      src/stockroom.una:34:51 shelf + 1 in 0..255
+proven   ob-20fdd4197f66 precondition  src/stockroom.una:39:31 4 >= 1
+proven   ob-82707e2c71ad refinement    src/stockroom.una:39:101 1000 >= 0
+proven   ob-8ef0d001a88c refinement    src/stockroom.una:40:61 12 in 0..999
+```
+
+1. **`proven`.** The status. A list with only `proven` lines is a package that checks.
+2. **`ob-b852e63daefa`.** The obligation's identity: a short name that stays the same while the obligation does not change.
+3. **`division`.** The kind of question, which the next part explains one by one.
+4. **`src/stockroom.una:11:3`.** Where it is: the file, the line and the column of the code that raised it.
+5. **`units != 0`.** The goal: the fact the solver must prove, written in Una with the names of your code.
+:::
+
+Each line is one question, answered on its own. `una --json obligations .` prints the same list as JSON, for tools and agents, as [For agents](#for-agents) shows for diagnostics.
+
+### The kinds of obligations
+
+Each kind comes from one construct. The step's functions, one per kind:
+
+#### `precondition`: at every call of a function with `requires`
+
+```una include="steps/17-obligation-kinds/src/stockroom.una#unit_price" title="steps/17-obligation-kinds/src/stockroom.una"
+--- The price of one unit of a pack. The clause gives each call a precondition obligation, and
+--- the division gives the body a division obligation.
+unit_price(pack_cents: Int, units: Int) -> Int
+  requires units >= 1
+=
+  pack_cents / units
+```
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L8"
+proven   ob-20fdd4197f66 precondition  src/stockroom.una:39:31 4 >= 1
+```
+
+The goal is the callee's clause, `units >= 1`, with the caller's argument in place of the parameter. `main` calls `unit_price(1990, units: 4)`, so the goal is `4 >= 1`. The line points at the call, in `main`, not at the clause.
+
+#### `division`: at every `/` and `mod` by a value that is not a literal
+
+The same function divides by `units`, which gives a second obligation, in the body:
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L2"
+proven   ob-b852e63daefa division      src/stockroom.una:11:3 units != 0
+```
+
+The precondition proves it: inside the body, `units >= 1` is a fact, so `units` is never 0. `share` proves its division with a guard instead:
+
+```una include="steps/17-obligation-kinds/src/stockroom.una#share" title="steps/17-obligation-kinds/src/stockroom.una"
+--- A share of a bill. The guard proves the division obligation.
+share(total: Int, people: Int) -> Int = if people == 0 then total else total / people
+```
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L5"
+proven   ob-011bffbfed9b division      src/stockroom.una:23:72 people != 0
+```
+
+In the `else` branch, `people == 0` is false. A division by a literal, such as `total / 100`, raises no obligation: the divisor is visibly not 0.
+
+#### `postcondition`: at every return of a function with `ensures`
+
+```una include="steps/17-obligation-kinds/src/stockroom.una#capped" title="steps/17-obligation-kinds/src/stockroom.una"
+--- At most 99 units on one line. The clause gives the body a postcondition obligation.
+capped(units: Int) -> Int
+  ensures result <= 99
+=
+  if units > 99 then 99 else units
+```
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L3"
+proven   ob-2a3920108dd8 postcondition src/stockroom.una:15:11 result <= 99
+```
+
+One obligation covers every path that returns: both branches of the `if`. The line points at the clause.
+
+#### `refinement`: wherever a value enters a refined kind
+
+```una include="steps/17-obligation-kinds/src/stockroom.una#with_fee" title="steps/17-obligation-kinds/src/stockroom.una"
+--- A price with the shipping fee. The result enters `Cents`: a refinement obligation.
+with_fee(price: Cents) -> Cents = price + 495
+```
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L4,L9-L10"
+proven   ob-0d6cd810c278 refinement    src/stockroom.una:20:1 result >= 0
+proven   ob-82707e2c71ad refinement    src/stockroom.una:39:101 1000 >= 0
+proven   ob-8ef0d001a88c refinement    src/stockroom.una:40:61 12 in 0..999
+```
+
+The first line is the result entering `Cents`: `result >= 0`. The other two are arguments entering the refined parameters of their functions in `main`: 1000 entering `Cents`, and 12 entering `Int in 0..999`, the parameter of `fill`. The goal is the kind's condition with the value in place of `it`.
+
+#### `exhaustive`: at a `when` on literals or ranges with no `else`
+
+```una include="steps/17-obligation-kinds/src/stockroom.una#fill" title="steps/17-obligation-kinds/src/stockroom.una"
+--- How full a bin is. A `when` on ranges with no `else` gives an exhaustive obligation.
+fill(units: Int in 0..999) -> Text
+=
+  when units
+    is 0 -> "empty"
+    in 1..9 -> "low"
+    in 10..999 -> "stocked"
+```
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L6"
+proven   ob-17951dbe35f9 exhaustive    src/stockroom.una:28:3 units == 0 or units in 1..9 or units in 10..999
+```
+
+A `when` on numbers must have an arm for every value, or an `else`. The goal joins the arms with `or`: every `units` the parameter's kind allows matches one of them. `units` is `Int in 0..999`, so the three arms cover it.
+
+#### `overflow`: at arithmetic on a fixed-width integer
+
+```una include="steps/17-obligation-kinds/src/stockroom.una#next_shelf" title="steps/17-obligation-kinds/src/stockroom.una"
+--- The next shelf of a rack of 201 shelves. `U8` holds 0 to 255: an overflow obligation.
+next_shelf(shelf: U8) -> U8 = if shelf < 200 then shelf + 1 else 0
+```
+
+```text include="steps/17-obligation-kinds/expected/commands/obligations.txt#L7"
+proven   ob-7ed451ea7768 overflow      src/stockroom.una:34:51 shelf + 1 in 0..255
+```
+
+A `U8` holds the whole numbers 0 to 255 ([chapter 2](/learn/values/#s2-5)). `shelf + 1` must stay in that range; the guard `shelf < 200` proves it does.
+
+#### Running the step
+
+```text include="steps/17-obligation-kinds/expected/output.txt"
+unit price 497, capped 99, with fee 1495
+share 333, bin stocked, next shelf 8
+```
+
+### The obligations of a cart
+
+Now the list for a real module: the cart of [Cents, quantities and free shipping](#cents-quantities-and-free-shipping), in section 7.3. It has no division and no `when` on numbers, so its obligations are refinements and one postcondition:
 
 ```text include="steps/12-refined/expected/commands/obligations.txt"
 $ una obligations .
@@ -1336,34 +1498,49 @@ proven   ob-0ebf927b2507 refinement    src/cart.una:38:38 3980 >= 0
 proven   ob-cb89b59f2358 refinement    src/cart.una:38:61 5970 >= 0
 ```
 
-### The kinds of obligations
+Read it against the code, line by line:
 
-The kinds you meet most:
+1. **`19:1 result >= 0`.** `shipping` returns `Cents`, so its result must not be negative, on both branches. The line points at the function.
+2. **`20:11 ships_free(total) implies result == 0`.** The `ensures` of `shipping`.
+3. **`22:17 total >= 0`.** `shipping` calls `ships_free(total)`, whose parameter is `Cents`.
+4. **`28:37 line.unit_cents >= 0`** and **`28:64 (line.quantity + 1) in 1..99`.** `one_more` builds a `Line`, so each refined field proves its kind. The second is the one the guard `if line.quantity < 99` proves.
+5. **`35:47` to `38:61`.** `main` builds a line and calls `shipping` with literals. Each literal entering a refined kind is a question, and an easy one.
 
-| Kind | Where | The goal |
-| --- | --- | --- |
-| `precondition` | Every call of a function with `requires` | The callee's `requires`, for the arguments given |
-| `postcondition` | Every path that returns | The function's `ensures` |
-| `refinement` | Every place a value enters a refined kind | The kind's condition, for that value |
-| `division` | Every `/` and `mod` by a value that is not a literal | The divisor is not zero |
-| `exhaustive` | A `when` with literal or range arms and no `else` | Some arm matches |
-| `overflow` | Arithmetic on a fixed-width integer, such as `U8` | The exact result fits the type |
+Every rule of the cart that matters is on this list, and so is every place where a value could break one. When a line you expected is missing, the rule did not become a question: look for a contract or a kind that is not there.
 
-### Statuses and identities
+### How an obligation is answered
 
-Each obligation has one of three statuses:
+#### With the facts of its path
 
-- **proven:** the goal holds for every input.
-- **refuted:** U5001, with a counterexample.
-- **unknown:** U5002, with the reason. This is an error too.
+The solver answers each obligation with the facts known at its place in the code, and only those: the function's `requires`, the conditions of the `if` branches and `when` arms on the way, the refined kinds of the values in scope, and the `ensures` of the functions called before it. It never uses what a callee's body does. So a guard proves an obligation only inside its branch, and a fact proven in one function reaches another only through a header.
 
-The identity, such as `ob-2a5905c8f53d`, comes from the module, the function, the kind and the goal, so a reviewer can follow an obligation across commits. The same goal twice in one function shares one identity.
+#### Statuses
+
+- **proven:** nothing to report. The obligation costs nothing when the program runs.
+- **refuted:** U5001, with a counterexample, as [section 7.2](#s7-2) shows how to read.
+- **unknown:** U5002, with the reason. This is an error too: una never passes a program with a missing proof.
+
+#### Identities
+
+The identity, such as `ob-2a5905c8f53d`, comes from the module, the function, the kind and the goal. An edit that does not change the obligation keeps its identity, so a reviewer can follow one obligation across commits. The same goal of the same kind twice in one function shares one identity.
+
+#### A pinned solver
+
+The answers come from the solver Z3 at the version `verification.lock` names, with a fixed step budget, the most work it may do on one question. The same program and the same lock give the same answers on every machine.
 
 ### When the solver cannot decide: U5002
 
-The solver decides linear arithmetic: sums, differences, products where one side is a literal, and quotients and remainders by a literal that is not zero. A product of two values that are not literals, such as a unit price times a quantity, is beyond it: the solver treats it as an unknown number. When the solver then finds values that break a rule, una checks them with real multiplication. If they agree, the rule really breaks, and you get U5001 with those values as a counterexample. If every case the solver found needs a product that real arithmetic does not give, you get U5002. Here the solver cannot prove that the price of a line is not negative, even though it obviously is:
+#### What the solver decides
 
-```diff include="steps/17-products..steps/18-unknown:src/invoice.una" context="1" title="src/invoice.una"
+The solver decides **linear arithmetic**: sums and differences of values, products where one side is a literal, such as `price * 3`, and quotients and remainders by a literal that is not zero. A question in that language is one it can answer, given enough steps. A product of two values that are not literals, such as a unit price times a quantity, is beyond it: the solver treats the product as an unknown number.
+
+When it then finds values that break a rule, una checks them with real multiplication. If they agree, the rule really breaks, and you get U5001 with those values as a counterexample. If every case the solver found needs a product that real arithmetic does not give, the values are no run of the program, and you get U5002.
+
+#### A product the solver cannot read
+
+Here the solver cannot prove that the price of a line is not negative, even though both factors are:
+
+```diff include="steps/18-products..steps/19-unknown:src/invoice.una" context="1" title="src/invoice.una"
 --- a/src/invoice.una
 +++ b/src/invoice.una
 @@ -18,8 +18,4 @@
@@ -1379,18 +1556,18 @@ The solver decides linear arithmetic: sums, differences, products where one side
  
 ```
 
-```text include="steps/18-unknown/expected/rendered.txt#L1"
+```text include="steps/19-unknown/expected/rendered.txt#L1"
 [U5002] Error: refinement `result >= 0` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)
 ```
 
-The message names the section of the specification that defines what the solver decides (see [Reference](#reference)).
+Read the message in two parts. The first is the obligation: the refinement `result >= 0`, the result entering `Cents`, "could not be proven". The part in parentheses is the reason: the only refutation the solver found "depends on a product, quotient or remainder of two values". It names the section of the specification that defines what the solver decides ([Reference](#reference) links it). There is no counterexample, because the solver found no real one.
 
 ### Proving a product with a guard
 
-U5002 is not a claim that the code is wrong: it says that the proof is missing, and una does not pass a program with a missing proof. The first help line proposes a guard:
+U5002 is not a claim that the code is wrong: it says that the proof is missing. The first repair is a guard, which gives the solver the fact it cannot derive:
 
 :::steps
-```una include="steps/17-products/src/invoice.una" title="steps/17-products/src/invoice.una" verified="check, run"
+```una include="steps/18-products/src/invoice.una" title="steps/18-products/src/invoice.una" verified="check, run"
 module invoice
 
 --- An amount of money in cents. It is never negative.
@@ -1430,29 +1607,238 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/17-products/expected/output.txt"
+```text include="steps/18-products/expected/output.txt"
 29800 cents, 298 points
 ```
 
-### Other sources of U5002
+### When a loop forgets a fact
 
-U5002 also comes from a proof that runs out of the step budget in `verification.lock`; the reason says which. A loop gives U5002 too: it keeps, from one turn to the next, only the refinements of the bindings it updates. `let edit total: Cents = 0` keeps `total >= 0`, which is all the day-to-day program needs. For any other fact the reason says what to do: state what one iteration does as the `ensures` of a helper with an `edit` parameter ([chapter 12, Memory and concurrency](/learn/memory-and-concurrency/)).
+A loop gives U5002 too. A loop's body runs any number of times, so the verifier does not follow it turn by turn. From one turn to the next it keeps, about each binding the loop updates, only the refinement of its type. Everything else about the binding is forgotten. Here `total` is a plain `Int`:
 
-> [!TIP]
-> Prefer a guard to `checked` when you can show from the kinds that the guard never fires. A guard needs no error variant and no budget, and the verifier proves the code around it. Use `checked` when you cannot show it, or for a rule that only a test at run time can decide: it fails at run time instead of answering quietly.
+```una include="steps/20-loop-unknown/src/units.una#units_of" title="steps/20-loop-unknown/src/units.una"
+--- The units of a delivery, counting only the lines with a positive quantity.
+units_of(quantities: List[Int]) -> Int
+  ensures result >= 0
+=
+  let edit total = 0
+  for quantity in quantities
+    if quantity > 0
+      total = total + quantity
+  total
+```
+
+```text include="steps/20-loop-unknown/expected/rendered.txt#L1"
+[U5002] Error: postcondition of `units_of` could not be proven (the loop forgets every fact about `total` but the refinements of its type, so the counterexample sets `total` freely; state what one iteration does as the `ensures` of a helper with an `edit` parameter, and call the helper in the loop)
+```
+
+The reason says what happened: "the loop forgets every fact about `total` but the refinements of its type". `Int` has no refinement, so after the loop `total` could be anything, as far as the solver knows. The reason also says what to do in general: state what one turn does as the `ensures` of a helper with an `edit` parameter, and call the helper in the loop. An `edit` parameter is one the function may change for its caller, as `restock` in [section 7.2](#s7-2) does; [chapter 12](/learn/memory-and-concurrency/) covers it.
+
+Here a simpler fix is enough. The fact the clause needs, "not negative", can be the type of `total`. `Nat`, from the prelude, is the integers that are not negative:
+
+```diff include="steps/20-loop-unknown..steps/21-loop-nat:src/units.una" context="1" title="src/units.una"
+--- a/src/units.una
++++ b/src/units.una
+@@ -6,3 +6,3 @@
+ =
+-  let edit total = 0
++  let edit total: Nat = 0
+   for quantity in quantities
+```
+
+Now each assignment `total = total + quantity` proves that the new value is a `Nat`, which holds since `quantity > 0` on that branch, and the loop keeps `total >= 0` from turn to turn. The step checks, and prints:
+
+```text include="steps/21-loop-nat/expected/output.txt"
+units: 5
+```
+
+The day-to-day program's `subtotal` uses the same move, with `let edit total: Cents = 0`.
+
+U5002 has one more source: a question that runs out of the step budget in `verification.lock`. The reason then says so. It is rare in code of this size; split the function, or state an intermediate fact with a `let` and a guard, so that each question is smaller.
+
+### A guard, a stronger type or `checked`
+
+:::decide
+**Which to use:**
+
+| The solver lacks a fact… | Use |
+| --- | --- |
+| That you can show from the kinds, such as "a product of two `Cents` is not negative" | A guard: bind the value, then `if … then … else` |
+| That holds of a binding a loop updates | A refined type for the binding, such as `Nat` or `Cents` |
+| About what one turn of a loop does, beyond its type | A helper with an `edit` parameter, whose `ensures` states it |
+| That only a test at run time can decide, such as the format of a text | `checked`, which fails at run time and counts against the escape budget |
+:::
+
+Prefer a guard to `checked` when you can show from the kinds that the guard never fires. A guard needs no error variant and no budget, and the verifier proves the code around it. Use `checked` when you cannot show it: it fails at run time instead of answering quietly.
+
+### Check yourself: obligations
+
+The invoice step of [Proving a product with a guard](#proving-a-product-with-a-guard) has `points`, `line_total` and a `main` that builds a line. How many obligations does `una obligations .` list for it, and of which kinds?
+
+:::answer Show the answer
+Six: two postconditions and four refinements.
+
+```text include="steps/18-products/expected/commands/obligations.txt"
+$ una obligations .
+proven   ob-00d161d86eb3 postcondition src/invoice.una:14:11 result >= 0
+proven   ob-a14e2a20a58d postcondition src/invoice.una:15:11 result * 100 <= total
+proven   ob-d6433d56c573 refinement    src/invoice.una:21:1 result >= 0
+proven   ob-200f35c3fccb refinement    src/invoice.una:29:47 14900 >= 0
+proven   ob-b453dd62cb76 refinement    src/invoice.una:29:64 2 in 1..99
+proven   ob-f82fc95c6633 refinement    src/invoice.una:31:42 total >= 0
+```
+
+The postconditions are the two `ensures` of `points`. The refinements are the result of `line_total` entering `Cents`, the two refined fields of the `Line` that `main` builds, and `total` entering `points`, whose parameter is `Cents`. The product in `line_total` raises none of its own: it is the guard that lets the refinement be proven. `points` divides by the literal 100, so there is no division obligation.
+:::
+
+A second one. Is this function proven, refuted (U5001) or unknown (U5002)?
+
+```una include="steps/22-shelf-area/src/shelves.una#area" title="steps/22-shelf-area/src/shelves.una"
+--- The floor area of a shelf, in square centimeters.
+area(width: Int in 1..100, depth: Int in 1..100) -> Int
+  ensures result >= 1
+=
+  width * depth
+```
+
+:::answer Show the answer
+Unknown:
+
+```text include="steps/22-shelf-area/expected/rendered.txt#L1"
+[U5002] Error: postcondition of `area` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)
+```
+
+`width * depth` is a product of two values, so the solver treats it as an unknown number, and every value that would break `result >= 1` needs a product that real arithmetic does not give. The rule holds, since both factors are at least 1, but the proof is missing. Bind the product and guard it, as `line_total` does.
+:::
 
 ## 7.5 Contracts at the boundary
 
-### Where code meets code
+### Where the program meets the world
 
-Contracts are checked where code meets code. At each call, the caller proves the callee's `requires` and gets its `ensures` in return. A refined kind is a boundary too: the value is checked once, where it enters the kind, and every function after that may rely on it.
+Inside a program, contracts are checked where code meets code. At each call, the caller proves the callee's `requires` and gets its `ensures` in return. A refined kind is a meeting point too: a value is checked once, where it enters the kind, and every function after that may rely on it.
 
-### Checking outside data once
+A **boundary** is where the program meets something it does not control. Two things cross it:
 
-That leaves data from outside the program: text typed by a person, a line of a file, a field of a request. No proof can say what a person will type. Check it once, where it enters, and give it a refined kind there:
+- **Data from outside**: text typed by a person, a line of a file, a field of a request from another system. No proof can say what a person will type.
+- **Rules from outside**: a billing policy, a regulation, a promise made to customers. They are written by people, in documents, and the code must follow them.
+
+Think of the receiving dock of a warehouse. Goods arrive from many suppliers, and each delivery is checked once, at the dock, against the order. Inside the warehouse, nobody checks the boxes again: a box on a shelf has passed the dock. And the rules of the dock, what is accepted and what is sent back, come from the store's purchasing policy, which says who wrote them. This section shows both halves: checking data once, where it enters, and recording the rules a contract comes from, with `requirement`.
+
+### Why outside data needs a check
+
+A discount rate is typed into the back office as text. Here is a function that turns the text into a `Percent`, and checks only that it is a number:
+
+```una include="steps/23-unchecked-rate/src/rates.una#Percent..parse_rate" title="steps/23-unchecked-rate/src/rates.una"
+--- A share in whole percent.
+kind Percent = Int in 0..100
+
+--- Why a typed rate was refused.
+kind RateError = | NotANumber(raw: Text)
+
+--- A discount rate typed into the back office. It checks that the text is a number, and
+--- nothing more.
+parse_rate(raw: Text) -> Percent
+  fails RateError
+=
+  let n = raw.trim.to_int()
+    if none fail NotANumber(raw)
+  n
+```
+
+`una check .` refuses it:
+
+```text include="steps/23-unchecked-rate/expected/rendered.txt"
+[U5001] Error: refinement `result in 0..100` is refuted
+    ╭─[ src/rates.una:16:3 ]
+    │
+  4 │ kind Percent = Int in 0..100
+    │                       ───┬──
+    │                          ╰──── range
+    │
+ 16 │   n
+    │   ┬
+    │   ╰── refinement `result in 0..100` is refuted
+    │
+    │ Help 1: repair 1: add a guard (`if` or a `when` arm) that handles the values where `result in 0..100` does not hold
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, result in 0..100) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-2b8bb19e1487 (refinement) is refuted: result in 0..100
+    │
+    │ Note 2: counterexample: raw = Text#1, raw.len = 0, result = 101
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯
+```
+
+The goal is the condition of `Percent` for the returned value: `result in 0..100`. The counterexample says what the solver tried: `raw = Text#1`, some text, and `result = 101`. `Text#1` stands for a text the solver chose; it does not know what `to_int` returns for it, beyond an `Int`, so 101 is possible. That is the honest answer: a person can type `101`, or `-5`, or `150`.
+
+Without the check, the program has two bad choices. It can trust the text, and carry a "percent" of 150 into every function that computes a price. Or every function that receives a rate can test it again, and one of them will forget. Una takes a third way: one function checks, and gives the value its kind.
+
+### How to check data once
+
+A function at the boundary takes the raw value, tests it, and either returns it with its refined kind or fails. The step of this part shows the two ways to test:
+
+```una include="steps/24-check-forms/src/rates.una#Percent..by_check" title="steps/24-check-forms/src/rates.una"
+--- A share in whole percent.
+kind Percent = Int in 0..100
+
+--- Why a rate was refused.
+kind RateError = | OutOfRange(value: Int)
+
+--- A guard: the code tests the value, and fails when it does not fit.
+by_guard(n: Int) -> Percent
+  fails RateError
+=
+  if n < 0 or n > 100 then fail OutOfRange(value: n) else n
+
+--- `checked`: a test at run time that gives the value its kind, or fails.
+by_check(n: Int) -> Percent
+  fails RateError
+=
+  checked(n, it in 0..100) else fail OutOfRange(value: n)
+```
+
+```toml include="steps/24-check-forms/una.toml" title="steps/24-check-forms/una.toml"
+[package]
+name = "rates"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "rates"
+grants = ["console"]
+
+[escape_budget]
+checked_per_module = 1
+```
+
+#### A guard that fails
+
+`by_guard` tests the value with an `if`, and fails with a variant of its error kind when the value does not fit. In the `else` branch, the verifier knows `0 <= n` and `n <= 100`, so it proves that `n` is a `Percent`. Nothing runs that the proof did not cover.
+
+#### `checked`
+
+`by_check` writes the test as `checked(n, it in 0..100) else fail OutOfRange(value: n)`: the value, the condition with `it` for the value, and the failure. At run time it tests the condition. When the condition holds, the value comes back with its kind; when it does not, the function fails. [Chapter 6](/learn/failure/#s6-4) introduced `checked`. Each one counts against the module's **escape budget**, a limit set in `una.toml` under `[escape_budget]`, and appears in the build report, so a reviewer sees every place where a run, not a proof, decides.
+
+#### An opaque predicate
+
+A rule that only running code can decide, such as "13 digits", goes in an opaque predicate, established with `checked`, as [Opaque predicates](#opaque-predicates), in section 7.3, shows.
+
+#### Running the forms
+
+```text include="steps/24-check-forms/expected/output.txt"
+guard: Ok(15) Err(OutOfRange(150))
+checked: Ok(15) Err(OutOfRange(-5))
+```
+
+Both forms give the same results here. The guard is the better choice when, as here, the test is in the refinement language: it needs no budget. `checked` is for a test the solver cannot follow, and for the cases where you want the build report to list the check.
+
+### A discount rate typed in the back office
+
+Now a whole boundary: the back office types a rate, and the program tells a number from text that is not one, and a rate in range from one out of it:
 
 :::steps
-```una include="steps/19-boundary/src/rates.una" title="steps/19-boundary/src/rates.una" verified="check, run"
+```una include="steps/25-boundary/src/rates.una" title="steps/25-boundary/src/rates.una" verified="check, run"
 module rates
 
 --- A share in whole percent.
@@ -1499,35 +1885,259 @@ pub main() -> Unit
 ```
 
 1. **`parse_rate(raw: Text) -> Percent`.** The only place where text becomes a `Percent`. It fails, with `RateError`, when the text is not a number or not between 0 and 100.
-2. **`if n < 0 or n > 100` then `fail`, `else n`.** In the `else` branch, the verifier knows `0 <= n <= 100`, so it proves the result a `Percent`.
-3. **`rest_of(rate: Percent) -> Percent = 100 - rate`.** Inside the program, nothing checks again: `100 - rate` is in range because `rate` is.
-4. **`attempt parse_rate(raw)`.** In the `Ok(rate)` arm, `rate` is a `Percent`, with its fact, as after a direct call. `attempt` keeps what a callee promises ([chapter 6](/learn/failure/#s6-3)).
+2. **`raw.trim.to_int()` and `if none fail NotANumber(raw)`.** `trim` removes the spaces at both ends, and `to_int` gives `None` for text that is not a number.
+3. **`if n < 0 or n > 100` then `fail`, `else n`.** In the `else` branch, the verifier knows `0 <= n <= 100`, so it proves the result a `Percent`.
+4. **`rest_of(rate: Percent) -> Percent = 100 - rate`.** Inside the program, nothing checks again: `100 - rate` is in range because `rate` is.
+5. **`attempt parse_rate(raw)`.** In the `Ok(rate)` arm, `rate` is a `Percent`, with its fact, as after a direct call. `attempt` keeps what a callee promises ([chapter 6](/learn/failure/#s6-3)).
 :::
 
 `una run .` prints:
 
-```text include="steps/19-boundary/expected/output.txt"
+```text include="steps/25-boundary/expected/output.txt"
 15% off: the customer pays 85%
 150 is not between 0 and 100
 'ten' is not a number
 ```
 
+### How a check at the boundary behaves
+
+#### One way in
+
+Once `parse_rate` exists, a `Percent` can come from nowhere but a proof: a literal the verifier checks, a computation it proves, or this function, whose `else` branch is itself a proof.
+
 > [!SECURITY]
 > A refined kind turns "every function must remember to check the rate" into "one function checks it, and the checker refuses every other way in". A new function that takes a `Percent` cannot receive 150, whoever calls it.
 
+#### The fact survives `attempt` and `when`
+
+`attempt` keeps the callee's promise on the `Ok` path, and the arm `is Ok(rate)` gives `rate` its kind. So the caller of a boundary function handles the failure once, and from then on works with a value that needs no check.
+
+#### Fail, do not return an `Option`
+
+A boundary function fails with a reason, rather than returning `None`. The reason tells a person what to fix. And in edition `0.2` an `Option[Percent]` is not even allowed: a refined kind cannot be a type argument, as the note in [Refinements of refinements, and type arguments](#refinements-of-refinements-and-type-arguments) says.
+
+#### A refined field in a variant
+
+A refined kind can be the field of a variant, as `PercentOff(rate: Percent)` in [the day-to-day program](#the-rules-and-the-kinds). Then building the variant proves the field: `PercentOff(rate: 110)` does not check ([a rate above 100 percent](#a-rate-above-100-percent-u5001)).
+
 ### Rules from outside the code: `requirement`
 
-Some rules come from outside the code too: a billing policy, a regulation, a promise to customers. A `requirement` records such a rule with its source and owner, and `derived from` ties a function's contract to it. `una trace` lists the functions derived from a requirement, with their proofs, and `una report .` lists a package's requirements.
+#### What a requirement is
+
+A **requirement** records a rule that comes from outside the code, in the words of its source, with who owns it. The billing policy says "a refund never pays back more than the customer paid". In Una that sentence becomes a `requirement` declaration, and a function whose contract implements it says so with `derived from`.
+
+#### Why tie a contract to its rule
+
+A contract says what the code does: `ensures result <= paid`. It does not say why. When the billing policy changes, someone must find every function that implements the old rule, and when an auditor asks how the store enforces a regulation, someone must show the code that does. Comments drift, and a search for words misses the function that phrases the rule differently. A requirement makes the link part of the program: una checks it, and `una trace` follows it from the rule to the proof.
+
+### How to write a requirement
+
+#### The declaration
+
+A requirement is the word `requirement`, an identifier in capitals, and four fields, one per line, indented two spaces:
+
+```una include="steps/26-requirements/src/refunds.una#L3-L7" title="steps/26-requirements/src/refunds.una"
+requirement REFUND_1
+  text "A refund never pays back more than the customer paid"
+  source policy "Store billing rules"
+  owner billing
+  status active
+```
+
+1. **`text`.** The rule, as its source wrote it, in quotes.
+2. **`source`.** Where the rule comes from.
+3. **`owner`.** The team accountable for it, in lowercase words joined by `_`.
+4. **`status`.** `active` for a rule in force, `proposed` for one that waits for a person to accept it.
+
+#### The sources
+
+`source` takes one of four forms. The step declares one of each:
+
+```una include="steps/26-requirements/src/refunds.una#L9-L25" title="steps/26-requirements/src/refunds.una"
+requirement REFUND_2
+  text "A refund above 500.00 needs a second look"
+  source human
+  owner support
+  status active
+
+requirement TAX_1
+  text "A refund returns the tax that was charged with it"
+  source regulation "Consumer tax code, part 4"
+  owner finance
+  status active
+
+requirement REFUND_3
+  text "A refund is never negative"
+  source generated "billing review"
+  owner billing
+  status proposed
+```
+
+- **`policy "Store billing rules"`.** A document of the business, by name.
+- **`human`.** A person stated the rule, with no document behind it.
+- **`regulation "Consumer tax code, part 4"`.** A law or a regulation, by name.
+- **`generated "billing review"`.** A tool or an agent proposed the rule, during the task named in quotes. Such a requirement must stay `proposed`: only a person can make it `active`, by changing its source to `human`, `policy` or `regulation`.
+
+#### `derived from` on a function
+
+A function that implements a rule names it in a `derived from` clause, the last of its clauses. It may name several requirements, separated by commas:
+
+```una include="steps/26-requirements/src/refunds.una#refund..needs_review" title="steps/26-requirements/src/refunds.una"
+--- What a refund pays back: what was asked, which is never more than what was paid.
+refund(paid: Cents, asked: Cents) -> Cents
+  requires asked <= paid
+  ensures result <= paid
+  derived from REFUND_1, REFUND_3
+=
+  asked
+
+--- Whether a refund needs a second look by a person.
+needs_review(asked: Cents) -> Bool
+  ensures result == (asked > 50000)
+  derived from REFUND_2
+=
+  asked > 50000
+```
+
+```text include="steps/26-requirements/expected/output.txt"
+refund 3980, needs review: true
+```
+
+### Following a rule to its proof
+
+`una trace` takes a requirement's identifier and lists every function derived from it, with its contract and the status of each obligation:
+
+```text include="steps/26-requirements/expected/commands/trace.txt"
+$ una trace REFUND_1
+requirement REFUND_1 (active)
+  text "A refund never pays back more than the customer paid"
+  source policy "Store billing rules"
+  owner billing
+refunds.refund
+  requires asked <= paid
+  ensures result <= paid
+  proven   ob-0b48412701fd refinement    result >= 0
+  proven   ob-0ac4aeb885fd postcondition result <= paid
+```
+
+Read it from the top: the requirement, its status, its text, source and owner; then `refunds.refund`, the function that implements it, by module and name; its `requires` and `ensures`; and the obligations of the function, both proven. A reviewer who owns the refund policy can read this instead of the code.
+
+`una report .` lists every requirement of the package, with the functions derived from it, under `requirements`:
+
+```text include="steps/26-requirements/expected/commands/report.txt#L18-L21"
+requirements:
+  REFUND_1 (active): refunds.refund
+  REFUND_2 (active): refunds.needs_review
+  REFUND_3 (proposed): refunds.refund
+```
+
+`REFUND_3` is marked `(proposed)`, so a reviewer sees that `refund` follows a rule nobody has accepted yet. A function derived from a proposed requirement still compiles.
+
+### How requirements are checked
+
+#### A generated rule stays proposed
+
+Make the generated requirement `active`:
+
+```diff include="steps/26-requirements..steps/27-generated-active:src/refunds.una" context="1" title="src/refunds.una"
+--- a/src/refunds.una
++++ b/src/refunds.una
+@@ -24,3 +24,3 @@
+   owner billing
+-  status proposed
++  status active
+ 
+```
+
+```text include="steps/27-generated-active/expected/rendered.txt#L1"
+[U1007] Error: requirement `REFUND_3` has source `generated`, so its status must be `proposed`
+```
+
+U1007 points at the status. A tool may propose a rule, but only a person may put it in force, and the change of source that does so shows in review.
+
+#### Every name in `derived from` exists
+
+A `derived from` that names a requirement the package does not declare, such as a typing slip, is U1006:
+
+```diff include="steps/26-requirements..steps/28-unknown-requirement:src/refunds.una" context="1" title="src/refunds.una"
+--- a/src/refunds.una
++++ b/src/refunds.una
+@@ -40,3 +40,3 @@
+   ensures result == (asked > 50000)
+-  derived from REFUND_2
++  derived from REFUND_4
+ =
+```
+
+```text include="steps/28-unknown-requirement/expected/rendered.txt#L1"
+[U1006] Error: requirement `REFUND_4` is not declared in this package
+```
+
+#### One identifier, one requirement
+
+Two requirements with the same identifier in one package are U1002, as two declarations with one name are anywhere.
+
+### Where each rule belongs
+
+:::decide
+**Which to use:**
+
+| The rule… | Use |
+| --- | --- |
+| Concerns data from outside the program | A check where it enters, which gives it a refined kind |
+| Can be tested in the refinement language | A guard that fails, in that function |
+| Can only be decided by running code | `checked`, with an opaque predicate if it needs a name |
+| Is the caller's to keep, inside the program | `requires` |
+| Comes from a policy, a regulation or a person, and a contract implements it | A `requirement`, and `derived from` on the function |
+| Explains what a function is for | A doc comment (`---`) |
+:::
+
+A requirement does not replace a contract: it names the reason for one. The contract is what the verifier proves; the requirement is what a person reads to know why.
+
+### Check yourself: boundaries
+
+A colleague adds a function to the back-office module of [A discount rate typed in the back office](#a-discount-rate-typed-in-the-back-office). It reads a rate from text and passes it straight on, without `parse_rate`:
+
+`quick_rest(raw: Text) -> Percent`, whose body reads the number with `let n = raw.trim.to_int()` and `if none use 0`, then calls `rest_of(n)`.
+
+Does it check? If not, what is the obligation, and what is the fix?
+
+:::answer Show the answer
+It does not check. `rest_of` takes a `Percent`, so the call raises a refinement obligation: `n in 0..100`. Nothing tells the verifier what `to_int` returned, so it refutes the goal with a value out of range, as in [Why outside data needs a check](#why-outside-data-needs-a-check). The fix is the boundary itself: get the rate from `parse_rate`, with `attempt` or a handling clause, and pass on the `Percent` it returns. The checker leaves no other way in.
+:::
+
+A second one: which functions does `una trace TAX_1` list for the refund step of [How to write a requirement](#how-to-write-a-requirement)?
+
+:::answer Show the answer
+None. No function names `TAX_1` in a `derived from` clause, and the report shows it with nothing after the colon:
+
+```text include="steps/26-requirements/expected/commands/report.txt#L22"
+  TAX_1 (active): 
+```
+
+A requirement with no function is a rule the code does not implement yet, or implements without saying so. The report makes the gap visible.
+:::
 
 ## 7.6 Day-to-day: billing
 
 ### What the billing step must do
 
-Now the program from the start of the chapter. The store's billing step receives the lines of an invoice and a coupon. It must never charge a negative amount, never take off more than the invoice is worth, pay from store credit first, and never refund more than the customer paid. Each of these rules becomes a contract or a kind, and the verifier proves them all.
+Now the program from the start of the chapter. The store's billing step receives the lines of an invoice and a coupon. It prices the lines, takes the coupon off, splits the total between the customer's store credit and a card, and later refunds part of it. Each rule of the business becomes one of the tools of this chapter:
+
+| Rule | How the program states it |
+| --- | --- |
+| Money is never negative | the refined kind `Cents` ([section 7.3](#s7-3)) |
+| A rate is between 0 and 100, a line orders 1 to 99 units | the refined kind `Percent`, and a range on a field |
+| A coupon never takes off more than the invoice is worth | `ensures result <= amount` on `discount` ([section 7.2](#s7-2)) |
+| Store credit pays first, and the two parts add up to the total | two `ensures` on `pay` |
+| A refund never pays back more than was paid | `ensures result <= paid` on `refund`, which fails otherwise |
+| Where the two money rules come from | two `requirement` declarations ([section 7.5](#s7-5)) |
+
+The verifier proves them all before the program runs. The parts below build the module in order, one declaration or a few at a time.
 
 ### The rules and the kinds
 
-Two requirements name the store's rules. The kinds carry the facts that hold of every value: money is never negative, a rate is between 0 and 100, a line orders 1 to 99 units.
+The module opens with two requirements, which name the store's rules in the words of its billing policy, and the kinds, which carry the facts that hold of every value.
 
 ```una include="day-to-day/src/billing.una#BILLING_1..RefundError" title="day-to-day/src/billing.una" caption="the rules and the kinds"
 requirement BILLING_1
@@ -1566,11 +2176,15 @@ pub kind Payment
 pub kind RefundError = | MoreThanPaid(paid: Cents)
 ```
 
-A `requirement` holds the text of a rule as its source wrote it, the source, the team that owns it, and whether it is `active` or only `proposed`. `Coupon` is a sum kind whose variants carry refined fields, so a `PercentOff(rate: 110)` does not check.
+- **`BILLING_1` and `BILLING_2`.** Two rules of a policy document, owned by the billing team, both in force. The functions that implement them say so with `derived from`.
+- **`Cents` and `Percent`.** Every amount in the module is a `Cents`, so no amount is ever negative, and every rate is a `Percent`.
+- **`Line`.** A record whose fields carry their rules: a price in `Cents`, and a quantity from 1 to 99, refined in place.
+- **`Coupon`.** A sum kind with three variants. Its fields are refined, so a `PercentOff(rate: 110)` does not check.
+- **`Payment` and `RefundError`.** The result of paying, with both parts in `Cents`, and the one reason a refund is refused, which carries what was paid.
 
 ### Pricing the lines
 
-`line_total` multiplies, with the guard from [section 7.4](#s7-4). `subtotal` sums with a loop. `total` is declared `Cents`, so every assignment to it proves the sum not negative, which holds since both sides are `Cents`.
+`line_total` multiplies a price by a quantity: a product of two values, which the solver cannot read, so it binds the product and guards it, as [Proving a product with a guard](#proving-a-product-with-a-guard) shows. `subtotal` sums the lines with a loop. `total` is declared `Cents`, so every assignment to it proves the sum not negative, which holds since both sides are `Cents`, and the loop keeps that fact from turn to turn ([When a loop forgets a fact](#when-a-loop-forgets-a-fact)). An empty list gives 0, the first value of `total`.
 
 ```una include="day-to-day/src/billing.una#line_total..subtotal" title="day-to-day/src/billing.una"
 --- What one line costs. The guard handles a case that cannot happen, since both factors
@@ -1628,7 +2242,7 @@ pub pay(total: Cents, credit: Cents) -> Payment
 
 ### Refunding
 
-`refund` fails rather than break its promise. Its `ensures` covers the path that returns, and the path that fails returns nothing. The failure carries what was paid, so a message can say how much a refund may be.
+`refund` fails rather than break its promise. Its `ensures` covers the path that returns, and the path that fails returns nothing. The failure carries what was paid, so a message can say how much a refund may be. `fails RefundError` comes after `ensures` and before `derived from`: the clauses of a header always go in the order `requires`, `ensures`, `uses`, `fails`, `derived from`.
 
 The contracts leave some things open on purpose. `refund` does not say that it pays back exactly what was asked, and `discount` does not say how a percentage is rounded. Those are choices of the business, not rules of safety, and the examples in [section 7.7](#s7-7) pin them down. A contract states what must never break; an example states what the answer is for one case.
 
@@ -1686,7 +2300,7 @@ pub main() -> Unit
 
 ### Tracing a rule to its proof
 
-`una trace BILLING_2` lists the function derived from the refund rule, its contract, and the proof of each obligation:
+As in [Following a rule to its proof](#following-a-rule-to-its-proof), `una trace BILLING_2` lists the function derived from the refund rule, its contract, and the proof of each obligation:
 
 ```text include="day-to-day/expected/commands/trace.txt"
 $ una trace BILLING_2
@@ -1701,7 +2315,7 @@ billing.refund
   proven   ob-258d17d765c8 refinement    paid >= 0
 ```
 
-A reviewer who owns the refund policy can read this instead of the code: the rule, the function that implements it, the promise in its header, and the proof.
+A reviewer who owns the refund policy can read this instead of the code: the rule, the function that implements it, the promise in its header, and the proof. The third obligation, `paid >= 0`, is `MoreThanPaid(paid)` building a failure whose field is `Cents`. `una trace BILLING_1` lists `discount` and `pay` the same way.
 
 ### The whole program
 
@@ -1914,7 +2528,7 @@ example billing "an empty invoice costs nothing" ... ok
 
 ## 7.8 Common mistakes
 
-Each mistake below is a small change to `day-to-day/src/billing.una`, followed by what `una check .` reports.
+Each mistake below is a small change to `day-to-day/src/billing.una`, followed by what `una check .` reports. Read each diagnostic the same way: the first line names the obligation and its goal, the marks show the clause that asks and the code that does not deliver, and `Note 2`, when there is one, is the counterexample.
 
 ### A coupon that can be worth more than the order (U5001)
 
@@ -1955,7 +2569,7 @@ In `discount`, return the coupon's value without the cap:
 ────╯
 ```
 
-*Why:* with `amount = 0` and a `CentsOff` coupon of 1 cent, the result is 1, which breaks `result <= amount`. In a counterexample for a sum kind, `coupon = CentsOff` names the variant, and only that variant's fields mean anything: `coupon.rate` belongs to `PercentOff`, and its value here is noise.
+*Why:* the arm returns the coupon's value whatever the amount, and a coupon can be worth more than a cheap invoice. The marks point at the clause, `ensures result <= amount`, and at the arm's `off`. With `amount = 0` and a `CentsOff` coupon of 1 cent, the result is 1, which breaks `result <= amount`. In a counterexample for a sum kind, `coupon = CentsOff` names the variant, and only that variant's fields mean anything: `coupon.rate` belongs to `PercentOff`, and its value here is noise.
 
 *Fix:* cap the coupon at the amount, as the day-to-day program does.
 :::
@@ -1979,7 +2593,7 @@ Remove `ensures result <= amount` from `discount`:
      │ Note 2: counterexample: gross = 0, lines = List#0, lines.len = 2, off = 1, total = -1
 ```
 
-*Why:* the error is in `main`, not in `discount`. A caller knows a function only by its header, so without the clause `main` cannot prove that `gross - off` is not negative. The counterexample is not a run: `discount(0, …)` never returns 1, but its header now allows it. `List#0` names some list the solver chose, and `total = -1` is the value that breaks the rule; only `gross` and `off` matter.
+*Why:* the clause looked unneeded, since `discount` keeps it anyway, but the error is in `main`, not in `discount`. A caller knows a function only by its header, so without the clause `main` cannot prove that `gross - off` is not negative. The counterexample is not a run: `discount(0, …)` never returns 1, but its header now allows it. `List#0` names some list the solver chose, and `total = -1` is the value that breaks the rule; only `gross` and `off` matter.
 
 *Fix:* put the clause back. When a caller needs a fact about a result, the callee's `ensures` is where it goes.
 :::
@@ -2004,7 +2618,7 @@ In `refund`, swap `asked` and `paid` in the test:
     │ Note 2: counterexample: asked = 1, paid = 0, result = 1
 ```
 
-*Why:* with `paid = 0` and `asked = 1`, the refund pays 1 cent of an invoice that cost nothing. The `ensures` catches a swap a quick review misses.
+*Why:* the two names read alike, and `paid > asked` looks as plausible as `asked > paid`. The marks point at the clause, `ensures result <= paid`, and at the `asked` the `else` branch returns. With `paid = 0` and `asked = 1`, the test is false, so the refund pays 1 cent of an invoice that cost nothing. The `ensures` catches a swap a quick review misses.
 
 *Fix:* `if asked > paid then fail MoreThanPaid(paid) else asked`.
 :::
@@ -2031,7 +2645,7 @@ Write `line_total` as one expression:
 [U5002] Error: refinement `result >= 0` could not be proven (the refutation depends on a product, quotient or remainder of two values, which the encoding of `spec/12 §2` leaves uninterpreted)
 ```
 
-*Why:* the solver treats the product of two values as an unknown number, so it cannot prove the result is not negative. The values it found do not agree with real multiplication, so there is no counterexample, and the message gives that reason.
+*Why:* one expression looks simpler, and the rule obviously holds. But the solver treats the product of two values as an unknown number, so it cannot prove the result is not negative. The mark points at the product, and the message ends with the reason in parentheses. The values the solver found do not agree with real multiplication, so there is no counterexample, and `Note 1` says the obligation is unknown, not refuted.
 
 *Fix:* bind the product, then guard it, as in [section 7.4](#s7-4).
 :::
@@ -2054,7 +2668,7 @@ Promise the exact product in `line_total`:
 [U2014] Error: `*` of two operands that are not literals is outside the refinement language
 ```
 
-*Why:* a clause is a question for the solver, written in the language it decides, which multiplies only by a literal.
+*Why:* the exact result seems the most useful promise to make. But a clause is a question for the solver, written in the language it decides, which multiplies only by a literal. U2014 is reported before any proof is tried, and the mark covers the whole product in the clause.
 
 *Fix:* state what the solver can decide, such as `result >= line.unit_cents`, or leave the exact value to an example.
 :::
@@ -2078,7 +2692,7 @@ Give the coupon a rate of 110:
 [U5001] Error: refinement `110 in 0..100` is refuted
 ```
 
-*Why:* `rate` is a `Percent`, and 110 is not in `0..100`. The goal names no variable, so there is no counterexample: the literal itself is the case.
+*Why:* a rate of 110 is an easy slip of the keyboard. `rate` is a `Percent`, and the marks point at the range of `Percent` and at the literal 110. The goal names no variable, so there is no counterexample: the literal itself is the case.
 
 *Fix:* a rate from 0 to 100. A rate typed by a person goes through a function such as `parse_rate` ([section 7.5](#s7-5)).
 :::
@@ -2108,7 +2722,7 @@ pub shipping(total: Cents) -> Cents
 ```
 
 :::hint
-*Hint:* read the counterexample as a test case: here the body has no calls, so it is one. For an invoice of exactly 50.00, the body charges 4.95. The body needs a branch for that case, and a branch on `total > 5000` is refuted with the same counterexample.
+*Hint:* read the counterexample as a test case: here the body has no calls, so it is one. For an invoice of exactly 50.00, the body charges 4.95, which breaks the second clause. The body needs two cases, so write it as `if <condition> then <one price> else <the other>`, with the condition the clause names. A branch on `total > 5000` is refuted with the same counterexample: 5000 itself must ship free.
 :::
 
 Check your answer with `una check .`, then `una test .`, which runs these examples:
@@ -2158,7 +2772,7 @@ example "a fixed price above the subtotal takes off nothing"
 ```
 
 :::hint
-*Hint:* add the variant, then the arm. The verifier checks the arm against the header of `discount`.
+*Hint:* work in three steps. First add `| FixedPrice(cents: Cents)` at the end of `Coupon`, and run `una check .`: it now reports U2007, "`when` does not match variant `FixedPrice` of `Coupon`": the `when` of `discount` has no arm for the new variant. Then add the arm `is FixedPrice(cents) -> …`. The verifier checks it against the header of `discount`: the result must be a `Cents`, so never negative, and at most `amount`.
 :::
 
 The first arm most people write is `amount - cents`. `una check .` refutes it:
@@ -2218,7 +2832,7 @@ pub refund_again(paid: Cents, already: Cents, asked: Cents) -> Cents
 `result = 1` with `asked = 0` is not what `refund` returns. It is what `refund`'s header allows: any amount up to `paid`. The body never limits the refund to what is left, so the verifier cannot prove the refunds together stay within `paid`.
 
 :::hint
-*Hint:* compare `already + asked` with `paid`, and fail with `MoreThanPaid(paid)` when it is more, so the message still names what the customer paid.
+*Hint:* the body may not call `refund`, since `refund` knows nothing of `already`. Write the test yourself, with the shape of `refund`'s body: compare `already + asked` with `paid`, fail with `MoreThanPaid(paid)` when it is more, so the message still names what the customer paid, and return `asked` otherwise. In the `else` branch, the verifier then knows `already + asked <= paid`, which is the promise.
 :::
 
 Check your answer with `una test .`, which runs these examples:
@@ -2286,10 +2900,10 @@ The repairs of U5001 and U5002 carry no `edit`, since only the author knows whet
 - `ensures` states what every return promises; callers know a function by its header alone.
 - A counterexample shows where a contract breaks; calls in it follow their headers, not their bodies. Fix the code or the contract, and keep a real case as an example.
 - Put a rule that holds of every value on its kind, `Int where it >= 0`, never on a type argument. Name a rule that several clauses share with a `reflect` predicate; a rule only a run can decide is an `opaque` predicate, established with `checked`.
-- Clauses multiply and divide only by literals. A guard for a case the solver cannot rule out is yours to confirm from the kinds.
-- U5001: refuted, with a counterexample; U5002: no proof and no real counterexample. Both are errors.
+- Clauses multiply and divide only by literals. A guard for a case the solver cannot rule out is yours to confirm from the kinds; a loop keeps only the refined types of what it updates.
+- `una obligations .` lists every question the verifier answered, with its status. U5001: refuted, with a counterexample; U5002: no proof and no real counterexample, after a product of two values or a loop that forgets a fact. Both are errors.
 - Check data from outside once, where it enters, and give it a refined kind there.
-- Record business rules as requirements, and read their proofs with `una trace`.
+- Record business rules as requirements, with their source and owner; a generated one stays `proposed`. Read their proofs with `una trace`, and the gaps in `una report .`.
 :::
 
 ### Reference
@@ -2298,6 +2912,6 @@ The repairs of U5001 and U5002 carry no `edit`, since only the author knows whet
 - Construct pages: [`requires`](/docs/language/functions/requires/), [`ensures`](/docs/language/functions/ensures/), [`where` and refinements](/docs/language/types/where/), [`predicate`](/docs/language/types/predicate/), [`kind`](/docs/language/types/kind/), [`checked` and the escape budget](/docs/language/errors/checked/), [`requirement`](/docs/language/requirements/requirement/), [`example`](/docs/language/examples/example/), [verification](/docs/language/verification/)
 - Prelude: [`Nat`, `Option`, `Result`, `to_int`](/docs/std/)
 - Commands: [`una check`](/docs/cli/check/), [`una obligations`](/docs/cli/obligations/), [`una trace`](/docs/cli/trace/), [`una report`](/docs/cli/report/)
-- Diagnostics: [U1001](/docs/errors/U1001/), [U2002](/docs/errors/U2002/), [U2012](/docs/errors/U2012/) (`result` or `old` outside `ensures`), [U2014](/docs/errors/U2014/), [U2015](/docs/errors/U2015/) (a predicate body that is not allowed), [U2016](/docs/errors/U2016/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U5003](/docs/errors/U5003/) (the solver is missing or not the pinned version)
+- Diagnostics: [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/) (a name declared twice), [U1006](/docs/errors/U1006/), [U1007](/docs/errors/U1007/), [U2002](/docs/errors/U2002/), [U2012](/docs/errors/U2012/) (`result` or `old` outside `ensures`), [U2014](/docs/errors/U2014/), [U2015](/docs/errors/U2015/) (a predicate body that is not allowed), [U2016](/docs/errors/U2016/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U5003](/docs/errors/U5003/) (the solver is missing or not the pinned version)
 - Specification: [functions and contracts](/docs/spec/04-functions-and-contracts/), [types](/docs/spec/03-types/), [verification](/docs/spec/12-verification/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [errors](/docs/spec/06-errors/)
 :::

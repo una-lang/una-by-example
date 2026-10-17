@@ -1,0 +1,40 @@
+module stockroom
+
+--- An amount of money in cents. It is never negative.
+kind Cents = Int where it >= 0
+
+--- The price of one unit of a pack. The clause gives each call a precondition obligation, and
+--- the division gives the body a division obligation.
+unit_price(pack_cents: Int, units: Int) -> Int
+  requires units >= 1
+=
+  pack_cents / units
+
+--- At most 99 units on one line. The clause gives the body a postcondition obligation.
+capped(units: Int) -> Int
+  ensures result <= 99
+=
+  if units > 99 then 99 else units
+
+--- A price with the shipping fee. The result enters `Cents`: a refinement obligation.
+with_fee(price: Cents) -> Cents = price + 495
+
+--- A share of a bill. The guard proves the division obligation.
+share(total: Int, people: Int) -> Int = if people == 0 then total else total / people
+
+--- How full a bin is. A `when` on ranges with no `else` gives an exhaustive obligation.
+fill(units: Int in 0..999) -> Text
+=
+  when units
+    is 0 -> "empty"
+    in 1..9 -> "low"
+    in 10..999 -> "stocked"
+
+--- The next shelf of a rack of 201 shelves. `U8` holds 0 to 255: an overflow obligation.
+next_shelf(shelf: U8) -> U8 = if shelf < 200 then shelf + 1 else 0
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("unit price {unit_price(1990, units: 4)}, capped {capped(120)}, with fee {with_fee(1000)}")
+  @console.print("share {share(1000, people: 3)}, bin {fill(12)}, next shelf {next_shelf(7)}")

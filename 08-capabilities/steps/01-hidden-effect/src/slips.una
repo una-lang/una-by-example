@@ -1,0 +1,12 @@
+module slips
+
+--- One line of a packing slip. Its header promises a text, and nothing else.
+pub slip_line(sku: Text, quantity: Int) -> Text
+=
+  @console.print("building the line for {sku}")
+  "{quantity} x {sku}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(slip_line("LAMP-01", quantity: 2))

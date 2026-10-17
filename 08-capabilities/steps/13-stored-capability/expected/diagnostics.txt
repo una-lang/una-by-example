@@ -1,0 +1,1 @@
+error U3005 at src/slips.una:6:15: capability `@console` is used as a value; capabilities pass by name, through `uses` and `with`

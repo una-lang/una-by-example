@@ -1,0 +1,1 @@
+error U3011 at src/scales.una:9:9: handler `fixed` does not implement the operation `tare` of `Scale`

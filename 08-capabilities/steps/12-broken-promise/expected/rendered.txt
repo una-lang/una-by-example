@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `weigh` is refuted
+    ╭─[ src/scales.una:27:19 ]
+    │
+ 11 │     ensures result >= 1
+    │             ─────┬─────
+    │                  ╰─────── ensures clause
+    │
+ 27 │   op weigh(sku) = grams
+    │                   ──┬──
+    │                     ╰──── postcondition of `weigh` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 1` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-8bdfbdc534e5 (postcondition) is refuted: result >= 1
+    │
+    │ Note 2: counterexample: grams = 0, result = 0, sku = Text#0, sku.len = 4
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

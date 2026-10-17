@@ -1,0 +1,12 @@
+[U1007] Error: requirement `REFUND_3` has source `generated`, so its status must be `proposed`
+    ╭─[ src/refunds.una:25:10 ]
+    │
+ 25 │   status active
+    │          ───┬──
+    │             ╰──── requirement `REFUND_3` has source `generated`, so its status must be `proposed`
+    │
+    │ Help: repair 1: mark it `proposed`; a person activates it by changing its source; edit src/refunds.una:25:10..25:16 to "proposed"
+    │
+    │ Note: run `una explain U1007` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

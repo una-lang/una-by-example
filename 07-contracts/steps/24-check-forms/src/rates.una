@@ -1,0 +1,29 @@
+module rates
+
+--- A share in whole percent.
+kind Percent = Int in 0..100
+
+--- Why a rate was refused.
+kind RateError = | OutOfRange(value: Int)
+
+--- A guard: the code tests the value, and fails when it does not fit.
+by_guard(n: Int) -> Percent
+  fails RateError
+=
+  if n < 0 or n > 100 then fail OutOfRange(value: n) else n
+
+--- `checked`: a test at run time that gives the value its kind, or fails.
+by_check(n: Int) -> Percent
+  fails RateError
+=
+  checked(n, it in 0..100) else fail OutOfRange(value: n)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let guarded = attempt by_guard(15)
+  let refused = attempt by_guard(150)
+  @console.print("guard: {guarded} {refused}")
+  let tested = attempt by_check(15)
+  let rejected = attempt by_check(-5)
+  @console.print("checked: {tested} {rejected}")

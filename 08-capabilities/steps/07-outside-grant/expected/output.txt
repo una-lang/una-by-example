@@ -1,0 +1,4 @@
+stock-export.csv: written
+../stock-export.csv: Denied
+/tmp/stock-export.csv: Denied
+reports/../stock-export.csv: written
