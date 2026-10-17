@@ -534,7 +534,7 @@ class Units(unittest.TestCase):
         # A `### ` line inside a fenced block is code, not a subsection.
         fenced = body.replace("### How `fail` ends a function\n", '```text include="steps/01-quantity/expected/output.txt"\n### How `fail` ends a function\n```\n')
         problems = template2.structure(fenced, 3, "p", failures)
-        self.assertEqual(problems, ["`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 6"])
+        self.assertEqual(problems, ["`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 12"])
         self.assertEqual(failures.items, ["p: " + problems[0]])
         # A `#### ` part does not count as a subsection.
         deeper = body.replace("### How `fail` ends a function", "#### How `fail` ends a function")
@@ -725,6 +725,8 @@ class Chapters(Base):
         self.assertEqual(items, [])
         # The prose is short, so the targets give warnings, never failures.
         self.assertTrue(any("words" in w for w in warnings), warnings)
+        # A concept section without a check-yourself question warns, and does not fail.
+        self.assertTrue(any("`6.1 Declaring a failure` has no `### Check yourself: <topic>` subsection" in w for w in warnings), warnings)
 
     def test_fill_wrote_the_blocks(self):
         text = check.read(self.readme)
@@ -1097,12 +1099,12 @@ class Chapters(Base):
 
     def test_a_concept_section_with_two_subsections(self):
         edit(self.readme, "### How `fail` ends a function\n\n", "")
-        self.assertFails("`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 6")
+        self.assertFails("`6.1 Declaring a failure` has 2 `### ` subsections; a concept section has 3 to 12")
 
-    def test_a_concept_section_with_seven_subsections(self):
+    def test_a_concept_section_with_thirteen_subsections(self):
         edit(self.readme, "### Recovering with a default\n", "### Recovering with a default\n\n" + "".join(
-            f"Text.\n\n### Further case {n}\n\n" for n in range(1, 5)))
-        self.assertFails("`6.2 Handling a failure` has 7 `### ` subsections")
+            f"Text.\n\n### Further case {n}\n\n" for n in range(1, 11)))
+        self.assertFails("`6.2 Handling a failure` has 13 `### ` subsections")
 
     def test_a_generic_subsection_title(self):
         edit(self.readme, "### The five clauses", "### Overview")

@@ -87,7 +87,7 @@ The headings are fixed. `N` is the chapter's number, and the numbered parts coun
 | 1 | `# N <title>` and the lead | One paragraph: the problem this chapter solves in a working program | 60–120 words |
 | 2 | `## What you'll build` | The day-to-day program's output, included from `day-to-day/expected/output.txt`, and 3 to 5 "you will learn" bullets | 80–150 words |
 | 3 | `## Why it works this way` | The motivation: what goes wrong in languages without this, what Una guarantees instead, stated concretely and without polemic | 150–300 words |
-| 4 | `## N.1 <concept>` to `## N.k <concept>`, k from 3 to 6 | One idea per section: explanation, then a step package with a walkthrough, then its output. Examples grow in difficulty: a minimal use, then a second use of the same idea in context. A decision table where alternatives exist | 300–700 words each, 1 to 3 blocks each |
+| 4 | `## N.1 <concept>` to `## N.k <concept>`, k from 3 to 6 | One idea per section, taught as [Teaching a concept](#teaching-a-concept) says: what it is, why it exists, how to write it in every form, several examples with their output, how it behaves, when to use it, and a check-yourself question | 300–2,500 words each, as many blocks as the forms need |
 | 5 | `## N.k+1 Day-to-day: <program>` | The program in the shared store domain, 80 to 200 lines. Shown in parts with walkthroughs, then whole (collapsed), then run, then tested | 500–1,200 words |
 | 6 | `## N.k+2 Testing it` | The chapter's idea under `una test`: examples, fakes, the failure paths | 200–400 words |
 | 7 | `## N.k+3 Common mistakes` | 4 to 8 items: the wrong code (a diff), the real diagnostic, why it happens, the fix, and a link to the code's page | 60–120 words each |
@@ -97,7 +97,7 @@ The headings are fixed. `N` is the chapter's number, and the numbered parts coun
 | | `### Recap` | 5 to 8 bullets, each a rule the reader can apply | 80–150 words |
 | | `### Reference` | Links to the construct pages, std items, error codes and specification sections, all on the site, at the release | list |
 
-Totals: 3,000 to 5,000 words of prose (paragraphs and list text; headings, code and `:::` lines do not count, and the same holds for each part's target), 150 to 350 lines of code across all blocks, 25 to 40 minutes to read, 60 to 90 minutes with the exercises. A page longer than the site's page budget (40 KiB gzip) splits in two.
+Totals: 3,000 to 20,000 words of prose (paragraphs and list text; headings, code and `:::` lines do not count, and the same holds for each part's target), so that six concept sections at their longest fit with the other parts. The site shows each numbered section as a page of its own, so a long chapter stays readable; the budget of the whole-chapter page (40 KiB gzip) is handled by the site, separately from these targets.
 
 Inside each numbered part, `### ` subsections follow the rules of [Inside a section](#inside-a-section). No other `## ` heading may appear. Every heading is a `#` line at column 0, outside quotes and lists; an underlined (setext) heading fails, so put a blank line before a `---` rule.
 
@@ -113,7 +113,7 @@ The site shows each numbered section (`## N.k`) as a page of its own, and lists 
 
 | Section | Its `### ` subsections |
 | --- | --- |
-| Concept (`N.1` to `N.k`) | 3 to 6, each titled by what it teaches. The usual arc: the problem or idea; a first example, its include and walkthrough; the rules, how it works and its precise behavior; variations and real use; when to use it, or its pitfalls. Not every section needs every step, and a step may take two subsections. |
+| Concept (`N.1` to `N.k`) | 3 to 12, each titled by what it teaches, in the order of [Teaching a concept](#teaching-a-concept). Three to six is the least a concept needs; a concept with many forms takes more, and `#### ` parts inside them. |
 | Day-to-day | At least 2: one per part of the program, each module or step in the order the text builds it, then running it, then the whole program. The whole program is optional when the text already shows each module whole. A subsection may follow the whole program when it continues the program's story, such as `### The checks before a release`. |
 | Testing it | At least 2: one per kind of test, such as the happy path, the failure paths and what must not happen, then running the examples. The rule is distinct kinds of tests, not length: a subsection may be a lead sentence and a list. |
 | Common mistakes | One per mistake, titled by the mistake and ending with its code in parentheses, or its codes (`(U0101, U7002)`), each one a code the mistake's `diagnostics.txt` reports, such as `### Forgetting the clause (U3007)`, holding that mistake's `:::mistake` card and nothing of another. |
@@ -121,7 +121,7 @@ The site shows each numbered section (`## N.k`) as a page of its own, and lists 
 | Recap and reference | Exactly `### For agents`, `### Recap` and `### Reference`, in this order, with nothing before the first. |
 
 - **Titles are specific.** Every subsection's title, in every section, says what it holds: `### Translating between layers with error`, not `### Overview`, `### Details`, `### Example` or `### More`. A title is short, has no final period, and reads well after its number.
-- **Deeper parts.** A subsection may hold `#### ` parts, which the site numbers `N.k.m.1`. Use them sparingly, for two or three parts that a reader would look up one by one.
+- **Deeper parts.** A subsection may hold `#### ` parts, which the site numbers `N.k.m.1`. Use them for parts a reader would look up one by one: each form of a construct under "How to write it", each rule under "How it behaves".
 - **Text before the first subsection.** A section may open with a sentence or two before its first `### `, such as the intro of Common mistakes. A concept section usually starts its first subsection at once.
 - **Restructuring keeps the content.** Insert headings, and move or split paragraphs; add only the bridging sentence a subsection needs to read well on its own. Includes, expected outputs and verified blocks stay as they are.
 - **Anchors.** A subsection's anchor is the slug of its English words (`#forgetting-the-clause-u3007`): lowercase, backticks and other punctuation dropped, spaces as `-`. The site also gives it the anchor of its number (`#s6-7-1`), which changes when a subsection is added before it; prefer the slug. So that every anchor names one heading:
@@ -129,6 +129,31 @@ The site shows each numbered section (`## N.k`) as a page of its own, and lists 
   - no heading's words make the id of a section number (`### S6 1` would be `s6-1`);
   - `for-agents`, `recap` and `reference` are the ids of the closing section's three subsections, and no other heading of the chapter takes them;
   - every link to `#id` on the page names a heading's slug or number.
+
+## Teaching a concept
+
+Write every concept section for a reader who may never have programmed, and who has never seen Una. Such a reader learns from the page what a construct is, why the language has it, and how to use it; nothing may depend on knowledge the book has not given. When an example needs a construct of a later chapter, it gives that construct a one-clause gloss and a link to where it is taught, as the Style guide asks, and relies on nothing more. A concept section teaches its construct in this order, each part one or more `### ` subsections titled by what it holds:
+
+| Part | What it does | Usual title |
+| --- | --- | --- |
+| What it is | Says what the construct is in plain language first, with an everyday analogy where one helps. Defines every programming term at its first use in the book, or links to where it was defined. | `### What a loop is` |
+| Why it exists | Shows the problem first: code that is wrong, fragile or impossible without the construct, with its output or diagnostic, and says what goes wrong. For a construct most languages lack, such as contracts, capabilities and labels, says why Una has it. | `### Why programs repeat work` |
+| How to write it | Names and explains each part of the syntax. Covers every form and variant the language allows, each in its own short example, usually a `#### ` part per form. | `### How to write a for loop` |
+| Several examples | Small, focused examples, each showing one form or behavior, with its output or diagnostic. Then a realistic example in the store domain that combines them, with a walkthrough. | `### Installments that never divide by zero` |
+| How it behaves | The precise rules and the edge cases, each with an example: an empty input, the boundaries, what happens when it fails, and the diagnostic a broken version gives and how to read it. | `### How a loop behaves` |
+| When to use it, and what instead | The alternatives and how to choose between them, usually as a `:::decide` table. | `### A precondition, a guard or a kind` |
+| Check yourself | One or two short questions, usually "predict the output" or "does it check?", each with its answer in a `:::answer` box. | `### Check yourself: loops` |
+
+The chapters are being rewritten to this standard one by one. Until all are, `check.py` reports a concept section without a `### Check yourself: <topic>` subsection as a warning, not a failure; a section that is not yet rewritten keeps its earlier arc.
+
+Two parts may share a subsection, and a part may take several: a construct with many forms gives "How to write it" a `#### ` part per form, and a long realistic example keeps its own `### `. The order holds.
+
+- **Ground every claim.** A rule stated in the text comes from the specification or a decision record, and each example shows it. Nothing is invented, and nothing is stated only in a comment.
+- **Words first, then show, then name.** "What it is" uses words and an analogy, and no code block. From "How to write it" on, show the code and its output first, then name what the reader saw. A term the reader has not met is defined in the sentence that uses it.
+- **Every form is checked.** Each example is an include of a checked package, as everywhere on the page: a step package, an overlay for a broken version, or a function of a step package shown by its name (`#units`) with its line of output (`#L2`). A step package may hold several small functions, one per form, and its `main` prints one line for each.
+- **Diagnostics are read aloud.** When an example fails, the page shows the diagnostic, says which line names the problem, what the marks point at, what the counterexample means, and which repair fits.
+- **Check yourself.** The question comes first, with the code it asks about. The answer follows in `:::answer Show the answer`, folded, with the expected output or diagnostic that proves it and a sentence or two of why. The output a question asks about is not shown earlier in the section. A question may ask whether a changed version checks; its answer then shows that version's diagnostic from an overlay, whole or by selected lines (`rendered.txt#L1,L22`). A question about a rule may be answered in prose alone, when the rule is stated earlier in the chapter.
+- **Style.** Clear, warm and precise. Short sentences in the second person, no filler and no hype. An analogy is one or two sentences, from daily life, and never replaces the precise rule that follows it.
 
 ## Blocks are includes
 
@@ -216,6 +241,7 @@ The page uses Markdown and a small set of markers that the site renders. Raw HTM
 | `:::pair` around blocks with `mistake="wrong"` and `mistake="right"` | before and after, side by side | 7 |
 | `:::agents` | the machine panel, under `### For agents` | 9 |
 | `### Exercise N: <goal>` then `::::exercise` holding `:::hint` and `:::answer <summary>` | an exercise card under its subsection, a hint box, and a collapsed answer; the card opens with the goal in plain text | 8 |
+| `:::answer <summary>` on its own, in `### Check yourself: <topic>` | a collapsed answer to a check-yourself question | 4 |
 | `:::recap` | a checklist of rules, under `### Recap` | 9 |
 | `:::reference` | a quiet index list, under `### Reference` | 9 |
 | `` `code` `` | a chip, colored by what it holds: keyword, kind, capability, command or path | all |
@@ -232,20 +258,20 @@ Failures:
 2. The chapter directory holds only `README.md`, `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, laid out as above, with only the allowed files and no symbolic link.
 3. Every package and overlay has an allowed `una.toml` and the outcome in its `expected/`; its commands are allowed and print what they say; its `rendered.txt` is what `una` prints, normalized.
 4. The front matter has exactly its fields; `learn` matches the directory; `codes` are the codes the outcomes show.
-5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections; inside them, each concept section has 3 to 6 `### ` subsections, none titled by a generic label (`Overview`, `Details`, `Example` and the like), Day-to-day and Testing it have at least 2 `### `, no subsection anywhere has a generic title, Common mistakes and Exercises have one `### ` per card with its card in it (a mistake's title ends with a code its diagnostics show, an exercise's is `Exercise k: <goal>` in order), the anchors follow the rules of Anchors in [Inside a section](#inside-a-section) (a dangling `#id` link, a repeated slug and a slug like a section number fail in every chapter), and the closing section is `Recap and reference` with exactly `### For agents`, `### Recap` and `### Reference`. The markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
+5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections; inside them, each concept section has 3 to 12 `### ` subsections, none titled by a generic label (`Overview`, `Details`, `Example` and the like), Day-to-day and Testing it have at least 2 `### `, no subsection anywhere has a generic title, Common mistakes and Exercises have one `### ` per card with its card in it (a mistake's title ends with a code its diagnostics show, an exercise's is `Exercise k: <goal>` in order), the anchors follow the rules of Anchors in [Inside a section](#inside-a-section) (a dangling `#id` link, a repeated slug and a slug like a section number fail in every chapter), and the closing section is `Recap and reference` with exactly `### For agents`, `### Recap` and `### Reference`. The markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
 6. Every fenced block is an include (or a plain `sh` block of commands); its include resolves; its body is the included text; its attributes are quoted, known and given once; its `title` is its path; its `verified` badges hold.
 7. "What you'll build" has a block that includes exactly `day-to-day/expected/output.txt`; the page shows something of `day-to-day/`; there are at least 4 mistakes and 3 to 5 exercises; each card shows its own mistake or answer, as above.
 8. Each exercise's examples fail on `start/`; each answer checks clean, runs, and passes `una test .`.
 9. Links are to the site's pages, as above.
 10. Translations, neutrality, commit addresses and tracked bytecode are checked as for every chapter. A translation of a template 2 page also keeps `template`, `time`, `prerequisites`, the `N.M` numbers of its headings, the blocks and the containers, as above, and follows the same markup and link rules.
 
-Warnings, which do not fail the check but are listed in its report: a part outside its target length, more than 8 mistakes, a count of recap bullets outside 5 to 8, and a step that no block includes.
+Warnings, which do not fail the check but are listed in its report: a concept section without a `### Check yourself: <topic>` subsection, a part outside its target length, more than 8 mistakes, a count of recap bullets outside 5 to 8, and a step that no block includes.
 
 ## Style guide
 
 - **Voice.** Second person, present tense, active. "You declare", not "one declares" and not "we will declare".
 - **One idea per section.** Define a term on first use. Never use a term before its chapter without a one-clause gloss.
-- **Order inside a section.** Problem, then the construct, then a minimal example, then a second use in context, then pitfalls, each step a `### ` subsection as in [Inside a section](#inside-a-section).
+- **Order inside a section.** As in [Teaching a concept](#teaching-a-concept): what it is, why it exists, how to write it, examples, how it behaves, when to use it, check yourself.
 - **Names.** The store domain throughout: SKU, order, inventory, catalog, customer, payment, shipment, cents. Never `demo`, `foo`, `A`, `B` or `Oops`. Example values are fictional and clearly so, such as `example.invalid` addresses.
 - **Code.** Canonical form, always (the check enforces it). Comments only where they add what the prose does not. Doc comments (`---`) on every public item, since they are part of the API story.
 - **Outputs and diagnostics** come only from `expected/` files. Quote a diagnostic's message line in prose exactly.
@@ -271,5 +297,6 @@ Warnings, which do not fail the check but are listed in its report: a part outsi
 - [ ] Links point to site routes at the release, not to GitHub.
 - [ ] Neutral text: no names, roles, internal ids, issue or decision-record numbers.
 - [ ] Every fact is in prose (translatable), headings are from the fixed set, and the length is within target.
-- [ ] Every section has its subsections: 3 to 6 specific `### ` titles in each concept section, one per mistake and per exercise, and the closing `Recap and reference`; no "above" or "below" across sections.
+- [ ] Each concept section follows [Teaching a concept](#teaching-a-concept): a reader who has never programmed can follow it, every form of the construct has its own checked example, and the section ends with a check-yourself question.
+- [ ] Every section has its subsections: 3 to 12 specific `### ` titles in each concept section, one per mistake and per exercise, and the closing `Recap and reference`; no "above" or "below" across sections.
 - [ ] The page is within the site's page budget (40 KiB gzip). Otherwise, split it.

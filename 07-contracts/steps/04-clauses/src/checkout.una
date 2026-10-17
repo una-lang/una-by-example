@@ -1,0 +1,72 @@
+module checkout
+
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+kind CartLine
+  sku: Text
+  quantity: Int
+  unit_cents: Int
+
+--- Where a parcel goes.
+kind Zone = Local | National | Abroad
+
+--- The price of one unit when a pack of `units` costs `pack_cents`, rounded down.
+unit_price(pack_cents: Int, units: Int) -> Int
+  requires units >= 1
+=
+  pack_cents / units
+
+--- The price after a coupon worth `off` cents. Three clauses, and all of them must hold.
+after_coupon(price: Int, off: Int) -> Int
+  requires price >= 0
+  requires off >= 0
+  requires off <= price
+=
+  price - off
+
+--- What one line costs. The clause reads two fields of the line.
+line_cents(line: CartLine) -> Int
+  requires line.quantity >= 1 and line.unit_cents >= 0
+=
+  line.quantity * line.unit_cents
+
+--- The average units of the lines of a delivery, rounded down.
+average_units(quantities: List[Int]) -> Int
+  requires quantities.len > 0
+=
+  quantities.sum() / quantities.len
+
+--- The product family of a SKU: its first four characters, as `LAMP` in `LAMP-01`.
+family(sku: Text) -> Text
+  requires sku.len >= 4
+=
+  sku.slice(start: 0, end: 4)
+
+--- What shipping costs, in cents, for a parcel of `grams` grams. Abroad, a parcel weighs at
+--- most 20 kilograms.
+shipping_cents(zone: Zone, grams: Int) -> Int
+  requires grams >= 1
+  requires zone is Abroad implies grams <= 20000
+=
+  when zone
+    is Local -> 495
+    is National -> 795 + grams / 1000 * 100
+    is Abroad -> 2500 + grams / 1000 * 300
+
+--- The price on a product page after the weekly coupon of 5.00. A price below 5.00 becomes 0.
+weekly_price(price: Int) -> Int
+  requires price >= 0
+=
+  if price < 500 then 0 else after_coupon(price, off: 500)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("one unit of a pack of 4: {unit_price(1990, units: 4)}")
+  @console.print("after a coupon: {after_coupon(1990, off: 500)}")
+  let one_line = line_cents(CartLine(sku: "LAMP-01", quantity: 2, unit_cents: 1990))
+  @console.print("one line: {one_line}")
+  @console.print("average units: {average_units([2, 1, 3])}")
+  let sku = "LAMP-01"
+  @console.print("family of {sku}: {family(sku)}")
+  @console.print("shipping: {shipping_cents(National, grams: 2300)} and {shipping_cents(Abroad, grams: 1500)}")
+  @console.print("weekly price: {weekly_price(1990)} and {weekly_price(300)}")
