@@ -1,0 +1,1 @@
+error U2016 at src/barcodes.una:23:34: opaque predicate `is_barcode` is called outside `checked`, so its fact would bypass the escape budget

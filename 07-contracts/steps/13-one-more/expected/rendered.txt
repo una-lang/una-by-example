@@ -1,0 +1,23 @@
+[U5001] Error: refinement `(line.quantity + 1) in 1..99` is refuted
+    ╭─[ src/cart.una:25:91 ]
+    │
+  7 │ kind Quantity = Int in 1..99
+    │                        ──┬──
+    │                          ╰──── range
+    │
+ 25 │ one_more(line: Line) -> Line = Line(sku: line.sku, unit_cents: line.unit_cents, quantity: line.quantity + 1)
+    │                                                                                           ────────┬────────
+    │                                                                                                   ╰────────── refinement `(line.quantity + 1) in 1..99` is refuted
+    │
+    │ Help 1: repair 1: add `requires (line.quantity + 1) in 1..99` to the enclosing function; its callers then prove it
+    │
+    │ Help 2: repair 2: add a guard (`if` or a `when` arm) that handles the values where `(line.quantity + 1) in 1..99` does not hold
+    │
+    │ Help 3: repair 3 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, (line.quantity + 1) in 1..99) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-2a5905c8f53d (refinement) is refuted: (line.quantity + 1) in 1..99
+    │
+    │ Note 2: counterexample: line = Line#0, line.quantity = 99
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

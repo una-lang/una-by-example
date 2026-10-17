@@ -1,0 +1,13 @@
+[U2016] Error: opaque predicate `is_barcode` is called outside `checked`, so its fact would bypass the escape budget
+    ╭─[ src/barcodes.una:23:34 ]
+    │
+ 23 │ describe(raw: Text) -> Text = if is_barcode(raw) then "a barcode: {raw}" else "not a barcode: {raw}"
+    │                                  ───────┬───────
+    │                                         ╰───────── opaque predicate `is_barcode` is called outside `checked`, so its fact would bypass the escape budget
+    │
+    │ Help 1: repair 1: if the code needs only the test and not the fact, test with a function, not a predicate, with the body of `is_barcode`
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, is_barcode(it)) else fail <Variant>`
+    │
+    │ Note: run `una explain U2016` for an explanation
+────╯

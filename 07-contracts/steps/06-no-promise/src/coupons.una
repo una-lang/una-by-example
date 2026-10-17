@@ -1,0 +1,27 @@
+module coupons
+
+--- The price after a coupon worth `off` cents.
+after_coupon(price: Int, off: Int) -> Int
+  requires price >= 0
+  requires off >= 0
+=
+  if off > price then 0 else price - off
+
+--- What is left of a gift card after it pays for an order.
+left_on_card(card: Int, price: Int) -> Int
+  requires card >= 0
+  requires price >= 0
+  ensures result >= 0
+=
+  let due = after_coupon(price, off: card)
+  card - (price - due)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{after_coupon(1990, off: 500)} {after_coupon(300, off: 500)}")
+  @console.print("{left_on_card(5000, price: 1990)} {left_on_card(1000, price: 1990)}")
+
+example "a coupon worth more than the price gives 0"
+  do after_coupon(0, off: 1)
+  expect result == 0

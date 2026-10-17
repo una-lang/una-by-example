@@ -1,0 +1,15 @@
+[U5001] Error: division obligation `count != 0` is refuted
+   ╭─[ src/installments.una:4:46 ]
+   │
+ 4 │ installment(total: Int, count: Int) -> Int = total / count
+   │                                              ──────┬──────
+   │                                                    ╰──────── division obligation `count != 0` is refuted
+   │
+   │ Help: repair 1: guard the division with `if count != 0`
+   │
+   │ Note 1: obligation ob-69e79e4e9a3b (division) is refuted: count != 0
+   │
+   │ Note 2: counterexample: count = 0, total = 0
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯

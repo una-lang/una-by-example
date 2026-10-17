@@ -1,0 +1,2 @@
+error U5001 at src/cart.una:25:91: refinement `(line.quantity + 1) in 1..99` is refuted
+  counterexample: line = "Line#0", line.quantity = 99

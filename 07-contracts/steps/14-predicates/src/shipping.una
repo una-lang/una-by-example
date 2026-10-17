@@ -1,0 +1,44 @@
+module shipping
+
+--- An amount of money in cents. It is never negative.
+kind Cents = Int where it >= 0
+
+--- An order ships free from 50.00.
+predicate reflect ships_free(total: Cents) -> Bool = total >= 5000
+
+--- A coupon fits a price when it takes off no more than the price.
+predicate reflect fits(off: Cents, price: Cents) -> Bool = off <= price
+
+--- An order ready to ship as a gift: it ships free, and no coupon was used. One predicate
+--- may call another.
+predicate reflect gift_ready(total: Cents, off: Cents) -> Bool = ships_free(total) and off == 0
+
+--- An order total that ships free: a predicate in a `where` clause.
+kind FreeTotal = Cents where ships_free(it)
+
+--- The price after a coupon: a predicate in `requires`.
+after_coupon(price: Cents, off: Cents) -> Cents
+  requires fits(off, price)
+=
+  price - off
+
+--- What shipping costs: a predicate in `ensures`, and in code.
+shipping(total: Cents) -> Cents
+  ensures ships_free(total) implies result == 0
+=
+  if ships_free(total) then 0 else 495
+
+--- The note on a packing slip: a predicate of two arguments, called in code.
+slip_note(total: Cents, off: Cents) -> Text = if gift_ready(total, off) then "gift wrap" else "standard"
+
+--- The thank-you line of an order that ships free. It takes a `FreeTotal`, so it needs no
+--- check of its own.
+thank_you(total: FreeTotal) -> Text = "{total} cents, shipped free"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("after a coupon: {after_coupon(1990, off: 500)}")
+  @console.print("shipping {shipping(3980)}, then {shipping(5970)}")
+  @console.print("{slip_note(6000, off: 0)}, {slip_note(6000, off: 500)}")
+  @console.print(thank_you(6200))

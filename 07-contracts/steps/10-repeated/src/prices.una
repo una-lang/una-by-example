@@ -1,0 +1,28 @@
+module prices
+
+--- The price after a coupon worth `off` cents. A price is never negative, so the clauses say
+--- so.
+after_coupon(price: Int, off: Int) -> Int
+  requires price >= 0
+  requires off >= 0
+  ensures result >= 0
+=
+  if off > price then 0 else price - off
+
+--- The price with a shipping fee added. The same rule, written again.
+with_fee(price: Int, fee: Int) -> Int
+  requires price >= 0
+  requires fee >= 0
+  ensures result >= 0
+=
+  price + fee
+
+--- The price after a markdown of `cut` cents. This function forgot the rule.
+marked_down(price: Int, cut: Int) -> Int = price - cut
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("after a coupon: {after_coupon(1990, off: 500)}")
+  @console.print("with a fee: {with_fee(1990, fee: 495)}")
+  @console.print("on the shelf label: {marked_down(1990, cut: 2500)} cents")

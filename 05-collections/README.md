@@ -2,8 +2,8 @@
 learn: "5"
 title: Collections
 editions: ["0.2"]
-codes: [U0007, U0101, U2001, U2007, U2019, U2020, U2025, U3007]
-time: 35
+codes: [U0007, U0101, U0103, U2001, U2007, U2019, U2020, U2025, U3007]
+time: 45
 builds: A daily sales report that reads order lines from JSON, groups them by category and sums them up
 prerequisites: ["2", "3", "4"]
 template: 2
@@ -134,16 +134,106 @@ Positions in a list count from 0. There is no `xs[0]` syntax. `xs.at(index: 0)` 
 
 ## 5.2 Loops: `for` and `let edit`
 
-### Updating a binding in a loop
+### What a loop is
 
-`for` visits the elements of a list in order, or the integers of a range. A loop computes something by updating a binding declared before it, and that binding must be declared `let edit`. A plain `let` names one value for good.
+A **loop** repeats the same steps once for each item of a group. Think of a cashier at a till. The basket holds some items, and the cashier does the same thing with each one: scan it, and add its price to the total. Nobody writes down separate instructions for the first item, the second and the third. The instruction is "for each item in the basket, scan it and add its price", and it works for a basket of one item or of fifty.
 
-### Totals, bulk lines and weeks
+In Una you write that instruction with `for`. A few words name its parts, and the rest of this section uses them:
+
+- The **body** is the indented block of lines under the `for` line: the steps to repeat.
+- A **turn** is one run of the body, for one item. A list of three elements gives three turns. (Other books call a turn an *iteration*.)
+- The **loop variable** is the name the body uses for the current item. You choose it, and at each turn it holds the next element.
+- What the loop **walks** is the group it takes the items from: a list ([section 5.1](#s5-1)), or a range of whole numbers.
+
+### Why programs repeat work
+
+Without a loop, a program can only do work it can count in advance. Here is a function that prices a cart without one:
+
+```una include="steps/02-no-loop/src/receipt.una" title="steps/02-no-loop/src/receipt.una" verified="check, run"
+module receipt
+
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+kind CartLine
+  sku: Text
+  quantity: Int
+  cents: Int
+
+--- What a cart of exactly three lines costs, in cents. A cart of two lines, or of four, does
+--- not fit this function.
+total_of_three(one: CartLine, two: CartLine, three: CartLine) -> Int = one.quantity * one.cents + two.quantity * two.cents + three.quantity * three.cents
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = CartLine(sku: "LAMP-01", quantity: 2, cents: 1990)
+  let rug = CartLine(sku: "RUG-07", quantity: 1, cents: 4500)
+  let desk = CartLine(sku: "DESK-02", quantity: 1, cents: 15900)
+  @console.print("total: {total_of_three(lamp, two: rug, three: desk)} cents")
+```
+
+`una run .` prints:
+
+```text include="steps/02-no-loop/expected/output.txt"
+total: 24380 cents
+```
+
+The answer is right, but the function is fragile in three ways:
+
+1. **It fits one size.** It prices a cart of exactly three lines. A cart of two lines has nothing to pass as `three`, and a cart of four lines has nowhere to put the fourth. A real cart can hold any number of lines, and the program learns that number only when it runs.
+2. **It repeats itself.** The rule "quantity times price" is written three times. To change the rule, say to add a fee per line, you must change three places, and forgetting one is an easy mistake.
+3. **It grows with the data.** A function for ten lines would need ten parameters and a line of code longer than the screen.
+
+A loop solves all three. You state the rule once, and the loop applies it to every line the cart holds, however many there are, including none.
+
+### How to write a `for` loop
+
+Here is the same total with a loop. It takes a `List[CartLine]`, so it prices a cart of any size:
+
+:::steps
+```una include="steps/03-for/src/totals.una#total" title="steps/03-for/src/totals.una"
+--- What a cart costs, in cents.
+total(lines: List[CartLine]) -> Int
+=
+  let edit sum = 0
+  for line in lines
+    sum = sum + line.quantity * line.cents
+  sum
+```
+
+1. **`let edit sum = 0`.** Before the loop, a binding that will hold the running total. A **binding** is a name for a value ([chapter 2](/learn/values/#s2-4)). A plain `let` names one value for good; `let edit` makes a binding you may give new values. A binding that a loop builds up turn by turn is often called an **accumulator**. It starts at the answer for an empty cart: 0.
+2. **`for`.** The keyword that starts a loop.
+3. **`line`.** The loop variable. You choose the name; a good name says what one item is.
+4. **`in lines`.** What the loop walks: here the parameter `lines`, a list.
+5. **The indented line.** The body, indented two spaces under `for`. It runs once for each element, with `line` holding that element.
+6. **`sum = sum + line.quantity * line.cents`.** An **assignment**: it gives `sum` a new value, computed from its old one. It is a **statement**, a line that does something instead of giving a value, so it stands on its own line.
+7. **`sum`, after the loop.** When the loop has visited every element, the function returns the last value of `sum`.
+:::
+
+Follow it by hand for the cart of the next example, a lamp line of 2 units at 1990 cents and a rug line of 5 units at 4500 cents. Before the loop, `sum` is 0. The first turn sets `line` to the lamp line, and `sum` becomes 0 + 2 × 1990 = 3980. The second turn sets `line` to the rug line, and `sum` becomes 3980 + 5 × 4500 = 26480. There is no third element, so the loop ends, and `total` returns 26480.
+
+#### What a loop can walk
+
+What comes after `in` decides what the loop visits. Una has these forms:
+
+| You write | The loop visits |
+| --- | --- |
+| `for line in lines` | each element of a list, from first to last |
+| `for week in 1..3` | the whole numbers from 1 to 3, both included: 1, 2, 3 |
+| `for position in 0..<count` | the whole numbers from 0 up to `count`, without `count` |
+| `for character in sku.chars()` | each element of the list a function returns: here the characters of a text |
+| `for entry in stock.entries()` | the entries of a map, in key order ([section 5.5](#s5-5)) |
+| `let made = together for sku in skus` | each element, at the same time, building a list of the results ([chapter 12](/learn/memory-and-concurrency/#s12-4)) |
+
+The ends of a range can be any integer expressions, such as `0..<skus.len`. There is no other kind of loop: no `while` and no `loop`. [Una has no `while`](#una-has-no-while) says why.
+
+### Loops over lists and ranges
+
+#### Totals, bulk lines and weeks
 
 The step totals a cart, lists its bulk lines, and walks a range of weeks:
 
 :::steps
-```una include="steps/02-for/src/totals.una" title="steps/02-for/src/totals.una" verified="check, run"
+```una include="steps/03-for/src/totals.una" title="steps/03-for/src/totals.una" verified="check, run"
 module totals
 
 --- One line of a cart: a SKU, how many units, and the price of one unit in cents.
@@ -190,7 +280,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/02-for/expected/output.txt"
+```text include="steps/03-for/expected/output.txt"
 total: 26480 cents
 bulk: ["RUG-07"]
 week 1: 26480 cents so far
@@ -200,14 +290,364 @@ week 3: 79440 cents so far
 
 The output of `bulk` is a list of texts, and interpolation writes it in the form you would type in Una, with brackets and quotes.
 
-### What lives from one turn to the next
+#### Where a range starts and stops
 
-A binding declared inside the body, with `let`, is new at each turn of the loop and is gone after it. To carry a value from one turn to the next, or out of the loop, declare it before the loop with `let edit`, as `sum` and `found` are. The loop variable, `line` or `week`, is a plain binding: you read it, and the next turn gives it the next element.
+A range is the easiest place to be off by one, so it pays to see each form run. The next step walks ranges and keeps the numbers each loop visits:
 
-### No `while`
+```una include="steps/04-loop-forms/src/shelves.una#aisles_through..aisles_before" title="steps/04-loop-forms/src/shelves.una"
+--- The aisles from `start` to `stop`, `stop` included: a loop over an inclusive range.
+aisles_through(start: Int, stop: Int) -> List[Int]
+=
+  let edit visited: List[Int] = []
+  for aisle in start..stop
+    visited = visited.append(item: aisle)
+  visited
 
-> [!TIP]
-> Una has no `while`. A loop over a list or a range covers almost every case in day-to-day code, and recursion covers the rest. Because every loop walks a finite list or range, a reader can see where it ends.
+--- The aisles from `start` up to `stop`, `stop` left out: a loop over an exclusive range.
+aisles_before(start: Int, stop: Int) -> List[Int]
+=
+  let edit visited: List[Int] = []
+  for aisle in start..<stop
+    visited = visited.append(item: aisle)
+  visited
+```
+
+`main` calls them with a few pairs of ends:
+
+```text include="steps/04-loop-forms/expected/output.txt#L3-L7"
+aisles 1..3: [1, 2, 3]
+aisles 1..<3: [1, 2]
+aisles 2..2: [2]
+aisles 2..<2: []
+aisles 3..1: []
+```
+
+Read the lines in pairs. `..` stops *at* its end, and `..<` stops *before* it. A range from a number to itself visits that number once with `..`, and nothing with `..<`. A range whose start is above its end visits nothing: Una never counts down.
+
+#### Positions of a list
+
+Sometimes the body needs the position of each element, as a numbered receipt does. Walk the range of positions, from 0 up to the length:
+
+```una include="steps/04-loop-forms/src/shelves.una#numbered" title="steps/04-loop-forms/src/shelves.una"
+--- The lines of a receipt, numbered from 1: a loop over the positions of a list.
+numbered(skus: List[Text]) -> List[Text]
+=
+  let edit lines: List[Text] = []
+  for position in 0..<skus.len
+    let sku = skus.at(index: position).or_else(default: "")
+    lines = lines.append(item: "{position + 1}. {sku}")
+  lines
+```
+
+```text include="steps/04-loop-forms/expected/output.txt#L8"
+["1. DESK-02", "2. LAMP-01"]
+```
+
+`0..<skus.len` visits exactly the valid positions. `at` still returns an `Option`, because Una has no `skus[position]` form, and `or_else` gives the value inside it, or the default `""` ([section 5.3](#s5-3) explains both). When you need only the elements, walk the list itself: it is shorter, and it cannot miss an element or read past the end.
+
+#### The characters of a text
+
+Any function that returns a list gives a loop something to walk. `chars()` gives the characters of a text, one text of one character each:
+
+```una include="steps/04-loop-forms/src/shelves.una#digits_in" title="steps/04-loop-forms/src/shelves.una"
+--- How many digits a SKU holds: a loop over the characters of a text.
+digits_in(sku: Text) -> Int
+=
+  let edit count = 0
+  for character in sku.chars()
+    if character.is_digits()
+      count = count + 1
+  count
+```
+
+```text include="steps/04-loop-forms/expected/output.txt#L9"
+digits in LAMP-01: 2
+```
+
+#### An empty list
+
+A loop over an empty list runs its body zero times. The accumulator keeps its first value, so a function that starts from the right value for "nothing" needs no special case:
+
+```una include="steps/04-loop-forms/src/shelves.una#units" title="steps/04-loop-forms/src/shelves.una"
+--- How many units a cart holds: a loop over a list.
+units(lines: List[CartLine]) -> Int
+=
+  let edit count = 0
+  for line in lines
+    count = count + line.quantity
+  count
+```
+
+```text include="steps/04-loop-forms/expected/output.txt#L1-L2"
+units in the cart: 7
+units in an empty cart: 0
+```
+
+#### Building a list at the same time: `together for`
+
+`together for` runs one task per element, at the same time, and gives the list of what each task's body ends with. It stands where a value goes, after `let` or in an assignment:
+
+```una include="steps/04-loop-forms/src/shelves.una#labels" title="steps/04-loop-forms/src/shelves.una"
+--- A shelf label for each SKU, made at the same time: `together for` builds a list.
+labels(skus: List[Text]) -> List[Text]
+=
+  let made = together for sku in skus
+    "label {sku}"
+  made
+```
+
+```text include="steps/04-loop-forms/expected/output.txt#L10"
+["label DESK-02", "label LAMP-01"]
+```
+
+The results come in the order of the list, whatever order the tasks finish in. A task cannot assign a binding declared outside it, so `together for` builds a list and never accumulates. [Chapter 12](/learn/memory-and-concurrency/#s12-4) covers it.
+
+### What a loop body can hold
+
+The body of a loop is a block like any other: it can hold `let` lines, an `if`, a `when`, and another loop. The step for this part works on orders:
+
+```una include="steps/05-loop-bodies/src/orders.una#OrderLine..Movement" title="steps/05-loop-bodies/src/orders.una" caption="the kinds"
+--- One line of an order: a SKU, the category it is sold under, and how many units.
+kind OrderLine
+  sku: Text
+  category: Text
+  quantity: Int
+
+--- An order: its number and its lines.
+kind Order
+  number: Int
+  lines: List[OrderLine]
+
+--- A change to the stock of one SKU.
+kind Movement = Received(units: Int) | Sold(units: Int) | Lost(units: Int)
+```
+
+#### A choice at each turn: `if` and `when`
+
+An `if` inside the body decides, for each element, which steps to run. With an `else`, every element goes one way or the other, and two accumulators collect two results in one pass:
+
+```una include="steps/05-loop-bodies/src/orders.una#lighting_and_other" title="steps/05-loop-bodies/src/orders.una"
+--- The units of lighting, and of everything else: an `if` with an `else` inside a loop.
+lighting_and_other(lines: List[OrderLine]) -> Text
+=
+  let edit lighting = 0
+  let edit other = 0
+  for line in lines
+    if line.category == "lighting"
+      lighting = lighting + line.quantity
+    else
+      other = other + line.quantity
+  "lighting {lighting}, other {other}"
+```
+
+```text include="steps/05-loop-bodies/expected/output.txt#L1"
+lighting 5, other 1
+```
+
+A `when` chooses by the variant of a sum kind ([chapter 4](/learn/kinds/#s4-3)). Each arm that assigns writes its assignment on its own line, indented under the arm:
+
+```una include="steps/05-loop-bodies/src/orders.una#stock_after" title="steps/05-loop-bodies/src/orders.una"
+--- The stock after a day of movements, from `start` units: a `when` inside a loop.
+stock_after(start: Int, movements: List[Movement]) -> Int
+=
+  let edit stock = start
+  for movement in movements
+    when movement
+      is Received(units) ->
+        stock = stock + units
+      is Sold(units) ->
+        stock = stock - units
+      is Lost(units) ->
+        stock = stock - units
+  stock
+```
+
+```text include="steps/05-loop-bodies/expected/output.txt#L2"
+stock at closing: 8
+```
+
+The stock starts at 4, receives 10, sells 3, loses 1 and sells 2: 4 + 10 − 3 − 1 − 2 = 8.
+
+#### A loop inside a loop
+
+A body may hold another loop. The inner loop runs all its turns during each turn of the outer one. Orders hold lines, so counting every unit of every order takes two loops:
+
+```una include="steps/05-loop-bodies/src/orders.una#all_units" title="steps/05-loop-bodies/src/orders.una"
+--- Every unit of every order: a loop inside a loop.
+all_units(orders: List[Order]) -> Int
+=
+  let edit total = 0
+  for order in orders
+    for line in order.lines
+      total = total + line.quantity
+  total
+```
+
+```text include="steps/05-loop-bodies/expected/output.txt#L3"
+units in two orders: 6
+```
+
+Nested loops also combine two lists. Each color meets each size, so two colors and two sizes give four SKUs, in the order the loops visit them: all the sizes of the first color, then all the sizes of the second.
+
+```una include="steps/05-loop-bodies/src/orders.una#tee_skus" title="steps/05-loop-bodies/src/orders.una"
+--- Every SKU of a T-shirt, one for each color and size, such as `TEE-RED-S`.
+tee_skus(colors: List[Text], sizes: List[Text]) -> List[Text]
+=
+  let edit skus: List[Text] = []
+  for color in colors
+    for size in sizes
+      skus = skus.append(item: "TEE-{color}-{size}")
+  skus
+```
+
+```text include="steps/05-loop-bodies/expected/output.txt#L4"
+["TEE-RED-S", "TEE-RED-M", "TEE-BLUE-S", "TEE-BLUE-M"]
+```
+
+The inner loop assigns `skus`, which is declared outside both loops. That is how a result leaves a loop: through an editable binding declared before it.
+
+### How a loop behaves
+
+#### Order, and how many turns
+
+- A loop over a list visits the elements in the list's order, each one once.
+- A loop over a range visits the integers in increasing order.
+- The list or the range is computed once, before the first turn. Changing a binding inside the body does not change how many turns the loop takes.
+- Every turn runs. Una has no `break` to leave a loop early and no `continue` to skip the rest of a turn. To skip an element, put the body's steps under an `if`. To stop at the first element that matches, use `first_where` ([section 5.4](#s5-4)), which stops there.
+
+#### What lives from one turn to the next
+
+A binding declared inside the body, with `let`, is new at each turn of the loop and is gone after it. To carry a value from one turn to the next, or out of the loop, declare it before the loop with `let edit`, as `sum` and `found` are. The loop variable, `line` or `week`, is a plain binding: you read it, and the next turn gives it the next element. Assigning it is an error, U2019, as for any plain `let` ([updating a plain `let`](#updating-a-plain-let-u2019) shows the message).
+
+#### A loop is a statement
+
+A `for` loop gives no value of its own: it is a statement, and what it computes lives in the bindings it updates. So a function ends with the binding, `sum`, after the loop, never with the loop. `together for` is the exception: it is written after `let`, and its value is the list it builds.
+
+#### A loop is not a call
+
+A loop's turns are not calls, so a loop does not use up the call depth of a run, however many turns it takes ([chapter 12](/learn/memory-and-concurrency/#s12-5)). A recursive function, by contrast, adds one call per step.
+
+### Una has no `while`
+
+Many languages have a second kind of loop, `while`, which repeats its body for as long as a condition holds. Its end depends on the body changing something that the condition reads. When the body forgets to, the loop never ends, and the program hangs.
+
+In Una, every loop walks a list or a range whose size is known before the first turn, so a reader can see where each loop ends. Write a `while` anyway, in a function that counts how long the stock lasts:
+
+```diff include="steps/05-loop-bodies..steps/06-while:src/orders.una" context="1" title="src/orders.una"
+--- a/src/orders.una
++++ b/src/orders.una
+@@ -64,3 +64,8 @@
+ =
+-  if stock < per_week then 0 else 1 + weeks_of_stock(stock - per_week, per_week)
++  let edit left = stock
++  let edit weeks = 0
++  while left >= per_week
++    left = left - per_week
++    weeks = weeks + 1
++  weeks
+ 
+```
+
+`una check .` reports:
+
+```text include="steps/06-while/expected/rendered.txt"
+[U0103] Error: `while` is not a keyword in Una; use `for` or recursion
+    ╭─[ src/orders.una:67:3 ]
+    │
+ 67 │   while left >= per_week
+    │   ──┬──
+    │     ╰──── `while` is not a keyword in Una; use `for` or recursion
+    │
+    │ Note: run `una explain U0103` for an explanation
+────╯
+```
+
+The message names the two ways Una repeats work. Here, how many weeks the stock lasts is not known in advance, so a range does not fit. **Recursion** does: a function that calls itself with a smaller problem, and stops at a case it can answer at once ([chapter 3](/learn/functions/) introduces functions).
+
+```una include="steps/05-loop-bodies/src/orders.una#weeks_of_stock" title="steps/05-loop-bodies/src/orders.una"
+--- How many whole weeks `stock` units last when `per_week` units sell each week.
+weeks_of_stock(stock: Int, per_week: Int) -> Int
+  requires per_week >= 1
+=
+  if stock < per_week then 0 else 1 + weeks_of_stock(stock - per_week, per_week)
+```
+
+```text include="steps/05-loop-bodies/expected/output.txt#L5"
+10 units at 3 a week last 3 weeks
+```
+
+With 10 units and 3 sold a week, the function answers 1 + the weeks of 7 units, which is 1 + the weeks of 4 units, which is 1 + the weeks of 1 unit, which is 0: 3 weeks. Each call has a smaller stock, so the calls end. `requires per_week >= 1` keeps a caller from passing 0, which would never make the stock smaller ([chapter 7](/learn/contracts/#s7-1) explains `requires`). When you know an upper limit, such as "at most 52 weeks", a range up to that limit with an `if` in the body is the other choice.
+
+### Choosing a loop or a function over the list
+
+A loop says *how* to walk a list. The prelude also has functions that walk the list for you, so you say only what to do with each element ([section 5.4](#s5-4)):
+
+:::decide
+**Which to use:**
+
+| You want to… | Use |
+| --- | --- |
+| A total of integers | `map`, then `sum()`, or a loop |
+| A new list with one result per element | `map` |
+| Some of the elements | `filter`, or a loop with an `if` |
+| The first element that matches, and stop there | `first_where` |
+| Several results from one pass, or a step of several lines | a `for` loop with `let edit` bindings |
+| A result per position, or a combination of two lists | a `for` loop over a range, or nested loops |
+| Repeat until something happens, with no limit known in advance | recursion |
+:::
+
+Both are right where the table gives two answers. Choose what a reader follows faster: a one-line function call, or a loop when the step needs room.
+
+### Check yourself: loops
+
+Read each function, and predict what it returns before you open the answer.
+
+This function counts shelves that need restocking:
+
+```una include="steps/05-loop-bodies/src/orders.una#low_shelves" title="steps/05-loop-bodies/src/orders.una"
+--- How many shelves hold fewer than 2 units.
+low_shelves(counts: List[Int]) -> Int
+=
+  let edit low = 0
+  for count in counts
+    if count < 2
+      low = low + 1
+  low
+```
+
+What does `low_shelves([3, 0, 1, 5])` return?
+
+:::answer Show the answer
+```text include="steps/05-loop-bodies/expected/output.txt#L6"
+low shelves: 2
+```
+
+The body runs four times. `low` goes up for 0 and for 1, the two counts below 2, and stays put for 3 and 5. An empty list would give 0, the value `low` starts with.
+:::
+
+This one keeps a running total, and the list of totals after each line:
+
+```una include="steps/05-loop-bodies/src/orders.una#running" title="steps/05-loop-bodies/src/orders.una"
+--- The total after each line, in order.
+running(quantities: List[Int]) -> List[Int]
+=
+  let edit total = 0
+  let edit seen: List[Int] = []
+  for quantity in quantities
+    total = total + quantity
+    seen = seen.append(item: total)
+  seen
+```
+
+What does `running([2, 1, 3])` return?
+
+:::answer Show the answer
+```text include="steps/05-loop-bodies/expected/output.txt#L7"
+running totals: [2, 3, 6]
+```
+
+Both bindings live outside the loop, so each turn starts from what the previous turn left. `total` goes 2, 3, 6, and each turn appends the new total to `seen`.
+:::
 
 ## 5.3 A value that may be missing: `Option`
 
@@ -220,7 +660,7 @@ A search can find nothing. A product may not be in the catalog, a list may be em
 The step looks products up in a catalog, and reads a number and a position:
 
 :::steps
-```una include="steps/03-option/src/lookup.una" title="steps/03-option/src/lookup.una" verified="check, run"
+```una include="steps/07-option/src/lookup.una" title="steps/07-option/src/lookup.una" verified="check, run"
 module lookup
 
 --- A product the store sells, with the price of one unit in cents.
@@ -267,7 +707,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/03-option/expected/output.txt"
+```text include="steps/07-option/expected/output.txt"
 DESK-02: 15900 cents
 CHAIR-09: not sold here
 None or 0
@@ -312,7 +752,7 @@ Each calls its function on the elements from first to last, at most once per ele
 The step prices a cart, counts its units, and decides whether it ships free:
 
 :::steps
-```una include="steps/04-higher-order/src/pricing.una" title="steps/04-higher-order/src/pricing.una" verified="check, run"
+```una include="steps/08-higher-order/src/pricing.una" title="steps/08-higher-order/src/pricing.una" verified="check, run"
 module pricing
 
 --- One line of a cart: a SKU, how many units, and the price of one unit in cents.
@@ -353,7 +793,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/04-higher-order/expected/output.txt"
+```text include="steps/08-higher-order/expected/output.txt"
 [3980, 4500, 5000]
 ["LAMP-01"]
 4 units
@@ -392,7 +832,7 @@ A `Map[K, V]` maps keys to values: the stock of each SKU, the units of each cate
 The step keeps the stock of each SKU, and groups sales by category:
 
 :::steps
-```una include="steps/05-maps/src/stock.una" title="steps/05-maps/src/stock.una" verified="check, run"
+```una include="steps/09-maps/src/stock.una" title="steps/09-maps/src/stock.una" verified="check, run"
 module stock
 
 --- A sale of some units of one SKU, in a category.
@@ -438,7 +878,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/05-maps/expected/output.txt"
+```text include="steps/09-maps/expected/output.txt"
 {"DESK-02": 1, "LAMP-01": 4} and {"DESK-02": 1, "LAMP-01": 4, "RUG-07": 9}
 Some(4) None
 ["DESK-02", "LAMP-01", "RUG-07"]
@@ -478,7 +918,7 @@ JSON is how stores, services and exports exchange records. The prelude reads it 
 The step parses two records of a product feed, reads a price, and writes JSON back:
 
 :::steps
-```una include="steps/06-json/src/feed.una" title="steps/06-json/src/feed.una" verified="check, run"
+```una include="steps/10-json/src/feed.una" title="steps/10-json/src/feed.una" verified="check, run"
 module feed
 
 --- The price in a product record of the catalog feed, or `None` when it has none.
@@ -518,7 +958,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/06-json/expected/output.txt"
+```text include="steps/10-json/expected/output.txt"
 Object({"cents": Number(1990), "sku": Str("LAMP-01"), "tags": Array([Str("new")])})
 Some(1990)
 None
@@ -1367,6 +1807,7 @@ The repair of U2007 has a description and no `edit`, because the right arm depen
 :::recap
 - A list holds values of one type in order, and `append` returns a new list. Read a position with `at` or `first`.
 - A binding that changes is `let edit`, and a loop updates it with assignments. A plain `let` names one value.
+- `for x in xs` runs its body once per element, in order; `a..b` includes `b` and `a..<b` leaves it out. There is no `while`: repeat with a range, or with recursion.
 - `first`, `at`, `get`, `first_where` and `to_int` return an `Option`. Use it through a `when` with both arms, or `or_else` when a default is right.
 - Use `map`, `filter`, `fold` and `first_where` when each step is one expression, and `for` when it needs several lines.
 - Group with a map: read the total so far with `get` and `or_else`, then write it with `edit m.set(...)`.
@@ -1378,7 +1819,7 @@ The repair of U2007 has a description and no `edit`, because the right arm depen
 
 :::reference
 - Construct pages: [`for`](/docs/language/control-flow/for/), [`let edit` and `edit` parameters](/docs/language/control-flow/let-edit/), [`when`](/docs/language/control-flow/when/), [`example`](/docs/language/examples/example/), [`if error` and `if none`](/docs/language/errors/if-error/)
-- Standard library: [the prelude](/docs/std/) (`List`, `Option`, `append`, `at`, `first`, `first_where`, `contains`, `sum`, `sort`, `map`, `filter`, `fold`, `or_else`, `is_some`, `to_int`), [maps](/docs/std/maps/) (`Map`, `Entry`, `empty_map`), [text](/docs/std/text/) (`join`), [JSON](/docs/std/json/) (`Json`, `JsonError`, `parse_json`, `to_json`)
-- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U2001](/docs/errors/U2001/), [U2007](/docs/errors/U2007/), [U2019](/docs/errors/U2019/), [U2020](/docs/errors/U2020/), [U2025](/docs/errors/U2025/), [U3007](/docs/errors/U3007/)
-- Specification: [the standard library](/docs/spec/14-standard-library/), [the memory model](/docs/spec/17-memory-model/), [constraints on generics](/docs/spec/20-constraints-on-generics/), [maps](/docs/spec/21-maps/), [text](/docs/spec/22-text/), [JSON](/docs/spec/23-json/)
+- Standard library: [the prelude](/docs/std/) (`List`, `Option`, `append`, `at`, `first`, `first_where`, `contains`, `sum`, `sort`, `map`, `filter`, `fold`, `or_else`, `is_some`, `to_int`), [maps](/docs/std/maps/) (`Map`, `Entry`, `empty_map`), [text](/docs/std/text/) (`join`, `chars`), [JSON](/docs/std/json/) (`Json`, `JsonError`, `parse_json`, `to_json`)
+- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U0103](/docs/errors/U0103/) (a word Una does not use, such as `while`), [U2001](/docs/errors/U2001/), [U2007](/docs/errors/U2007/), [U2019](/docs/errors/U2019/), [U2020](/docs/errors/U2020/), [U2025](/docs/errors/U2025/), [U3007](/docs/errors/U3007/)
+- Specification: [the standard library](/docs/spec/14-standard-library/), [the memory model](/docs/spec/17-memory-model/) (`for`, ranges, `let edit`), [structured concurrency](/docs/spec/19-structured-concurrency/) (`together for`), [constraints on generics](/docs/spec/20-constraints-on-generics/), [maps](/docs/spec/21-maps/), [text](/docs/spec/22-text/), [JSON](/docs/spec/23-json/)
 :::
