@@ -28,8 +28,8 @@ pub main() -> Unit
   let south = empty_map().with(key: "LAMP-01", value: 2)
   let east = empty_map().with(key: "DESK-02", value: 3)
   together
-    let up = units_of("LAMP-01") with @inventory = shelves(north)
-  @console.print("LAMP-01: {up}")
+    let north_units = units_of("LAMP-01") with @inventory = shelves(north)
+  @console.print("LAMP-01: {north_units}")
   let edit labels: List[Text] = []
   labels = together for sku in ["LAMP-01", "DESK-02"]
     let size = sku.len

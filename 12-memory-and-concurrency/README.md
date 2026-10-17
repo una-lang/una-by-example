@@ -136,7 +136,7 @@ counts [4, 12, 7]
 Shelf(sku: "LAMP-01", units: 7)
 ```
 
-Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were aliases of one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation shows any value that `==` can compare, a record, a list or a map included.
+Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were aliases of one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation shows any value that `==` can compare, a record, a list or a map included, except a hash of a secret.
 
 ### How to change a binding
 
@@ -225,7 +225,7 @@ The mark points at the new value: the binding is an `Int`, and the value is a `T
 
 #### Only an editable binding changes
 
-Assigning a plain `let` binding, a parameter declared without `edit`, or the variable of a `for` loop is U2019 ([chapter 2](/learn/values/#s2-4) shows the message).
+Assigning a plain `let` binding, a parameter declared without `edit`, the variable of a `for` loop or, inside a lambda, a binding it captured is U2019 ([chapter 2](/learn/values/#s2-4) shows the message).
 
 #### No `+=` and no `while`
 
@@ -475,7 +475,7 @@ An `edit` argument has three rules, each with its own code:
 | Rule | Code |
 | --- | --- |
 | The call writes `edit` exactly where the parameter is declared `edit`, and nowhere else | U2020 |
-| The argument is a place: an editable binding or a field of one, such as `ledger` or `spot.back` | U2019 when the binding is not editable |
+| The argument is a place: an editable binding or a field of one, such as `ledger` or `spot.back` | U2020 when it is not a place; U2019 when its binding is not editable |
 | No other argument of the same call uses the same binding, even another field of it | U2018 |
 
 The third rule holds even for two different fields. Move stock between the two shelves of one `spot`:
@@ -866,10 +866,10 @@ pub main() -> Unit
   let south = empty_map().with(key: "LAMP-01", value: 2)
   let east = empty_map().with(key: "DESK-02", value: 3)
   together
-    let up = units_of("LAMP-01") with @inventory = shelves(north)
-    let down = units_of("LAMP-01") with @inventory = shelves(south)
-    let right = units_of("LAMP-01") with @inventory = shelves(east)
-  @console.print("LAMP-01: {up} + {down} + {right} = {up + down + right}")
+    let north_units = units_of("LAMP-01") with @inventory = shelves(north)
+    let south_units = units_of("LAMP-01") with @inventory = shelves(south)
+    let east_units = units_of("LAMP-01") with @inventory = shelves(east)
+  @console.print("LAMP-01: {north_units} + {south_units} + {east_units} = {north_units + south_units + east_units}")
   let edit labels: List[Text] = []
   labels = together for sku in ["LAMP-01", "DESK-02"]
     let size = sku.len
@@ -888,7 +888,7 @@ no weeks: []
 
 #### Branches: `together` with `let` lines
 
-`together` on a line of its own, then two or more indented `let` lines. Each `let` is a **branch**, and its expression is a task. After the block, the branches' bindings are in scope in order, as plain `let` lines would be: here `up`, `down` and `right`. A branch may install a handler with `with`, as each one here installs its own warehouse.
+`together` on a line of its own, then two or more indented `let` lines. Each `let` is a **branch**, and its expression is a task. After the block, the branches' bindings are in scope in order, as plain `let` lines would be: here `north_units`, `south_units` and `east_units`. A branch may install a handler with `with`, as each one here installs its own warehouse.
 
 #### One task per element: `together for`
 
@@ -1035,10 +1035,10 @@ Each task captured `asked` as it was when the block started, so an assignment co
 --- a/src/counts.una
 +++ b/src/counts.una
 @@ -32,3 +32 @@
--    let down = units_of("LAMP-01") with @inventory = shelves(south)
--    let right = units_of("LAMP-01") with @inventory = shelves(east)
--  @console.print("LAMP-01: {up} + {down} + {right} = {up + down + right}")
-+  @console.print("LAMP-01: {up}")
+-    let south_units = units_of("LAMP-01") with @inventory = shelves(south)
+-    let east_units = units_of("LAMP-01") with @inventory = shelves(east)
+-  @console.print("LAMP-01: {north_units} + {south_units} + {east_units} = {north_units + south_units + east_units}")
++  @console.print("LAMP-01: {north_units}")
 ```
 
 ```text include="steps/16-one-branch/expected/rendered.txt#L1"
@@ -1121,7 +1121,7 @@ When a function calls another, the first one waits until the second returns. A c
 
 ### Why a run has limits
 
-A recursion that never reaches its base case never stops calling itself. This function counts the weeks a stock lasts, and stops only when the stock is exactly 0:
+A recursion that never reaches its **base case**, the case it answers without calling itself, never stops calling itself. This function counts the weeks a stock lasts, and stops only when the stock is exactly 0:
 
 ```una include="steps/18-runaway/src/restock.una" title="steps/18-runaway/src/restock.una"
 module restock
@@ -1253,7 +1253,7 @@ Each task of a `together` block counts its call depth from the depth of the bloc
 | One step per element of a list, or per number of a range | A `for` loop: no depth at all |
 | A long list built step by step | A `for` loop with `let edit` |
 | To walk a shallow structure, such as categories inside categories | Recursion |
-| To repeat until something happens, with no limit known in advance | Recursion, with a base case every path reaches |
+| To repeat until something happens, with no limit known in advance | Recursion, with a base case every path reaches, and fewer steps than the call depth (10,000 by default) |
 :::
 
 ### Check yourself: how deep
@@ -1659,9 +1659,19 @@ Write `apply(ledger, …)` in `close_day`:
        if error use "rejected: {reason(error)}"
 ```
 
-```text include="mistakes/1/expected/rendered.txt#L1,L8"
+```text include="mistakes/1/expected/rendered.txt"
 [U2020] Error: parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`
+    ╭─[ src/stockcount.una:63:22 ]
+    │
+ 63 │     let line = apply(ledger, movement: movement)
+    │                      ───┬──
+    │                         ╰──── parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`
+    │
     │ Help: repair 1: write `edit ledger`; edit src/stockcount.una:63:22..63:28 to "edit ledger"
+    │
+    │ Note: run `una explain U2020` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
 ```
 
 *Why:* the call must show which bindings it may change, so a reader never has to open `apply` to find out. The mark points at the argument that lacks the word.
@@ -1686,8 +1696,16 @@ Declare the ledger with `let` instead of `let edit`:
    let edit lines: List[Text] = []
 ```
 
-```text include="mistakes/2/expected/rendered.txt#L1"
+```text include="mistakes/2/expected/rendered.txt"
 [U2019] Error: `ledger` is not editable; declare it `let edit ledger`, or the parameter `edit ledger`
+    ╭─[ src/stockcount.una:63:27 ]
+    │
+ 63 │     let line = apply(edit ledger, movement: movement)
+    │                           ───┬──
+    │                              ╰──── `ledger` is not editable; declare it `let edit ledger`, or the parameter `edit ledger`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯
 ```
 
 *Why:* an `edit` argument is assigned when the call returns, and a plain `let` binding is never assigned.
@@ -1752,8 +1770,16 @@ Keep the outcome of `apply` as a `Result`:
      lines = lines.append(item: line)
 ```
 
-```text include="mistakes/4/expected/rendered.txt#L1"
+```text include="mistakes/4/expected/rendered.txt"
 [U3013] Error: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+    ╭─[ src/stockcount.una:63:27 ]
+    │
+ 63 │     let outcome = attempt apply(edit ledger, movement: movement)
+    │                           ───────────────────┬──────────────────
+    │                                              ╰──────────────────── `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+    │
+    │ Note: run `una explain U3013` for an explanation
+────╯
 ```
 
 *Why:* a call with an `edit` or `take` argument is the whole expression of its statement, so that the binding it changes is updated on that line and nowhere else. The mark covers the whole call, inside the `attempt`.
@@ -1779,8 +1805,16 @@ Count the closed days in an outer `let edit`:
      close_day(day)
 ```
 
-```text include="mistakes/5/expected/rendered.txt#L1"
+```text include="mistakes/5/expected/rendered.txt"
 [U2023] Error: `closed` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
+    ╭─[ src/stockcount.una:73:5 ]
+    │
+ 73 │     closed = closed + 1
+    │     ───┬──
+    │        ╰──── `closed` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
+    │
+    │ Note: run `una explain U2023` for an explanation
+────╯
 ```
 
 *Why:* each task captures the values around it and runs on its own, so an assignment to an outer binding would be a race between tasks ([What the result can depend on](#what-the-result-can-depend-on)). The mark points at the binding being assigned.
@@ -1805,8 +1839,16 @@ Use `old(ledger)` in the body of `apply`:
    "{movement.sku} {left} -> {next}"
 ```
 
-```text include="mistakes/6/expected/rendered.txt#L1"
+```text include="mistakes/6/expected/rendered.txt"
 [U2012] Error: `old` is allowed only in `ensures` clauses
+    ╭─[ src/stockcount.una:40:20 ]
+    │
+ 40 │   ledger.applied = old(ledger).applied + 1
+    │                    ─────┬─────
+    │                         ╰─────── `old` is allowed only in `ensures` clauses
+    │
+    │ Note: run `una explain U2012` for an explanation
+────╯
 ```
 
 *Why:* `old` names the value on entry for the promise in the header. In the body, the parameter is simply its current value, so the mark points at `old(ledger)`.

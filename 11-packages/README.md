@@ -482,7 +482,7 @@ DESK-02: sold out
 CHAIR-09: sold out
 ```
 
-`card` writes the kind in a parameter's type, and `main` builds a variant, `SoldOut`, so both need the import. A `when` needs no import to match a variant: its arms take the variants of the value's type, whatever module declared it.
+`card` writes the kind in a parameter's type, and `main` builds a variant, `SoldOut`, so both need the import. A `when` needs no import to match a variant, even in a module that did not import the kind: its arms take the variants of the value's type, whatever module declared it.
 
 #### The host's capabilities: `std.host`
 
@@ -769,7 +769,7 @@ With the same sources, `una.toml` and lock, `una check` gives the same diagnosti
 
 - A table or a key that is not in the lists of this section is U7002, at its line.
 - A value of the wrong type, such as a number where a text goes, a missing required key, and a file that is not valid TOML are U7002 too.
-- A manifest error does not stop the check. The modules are still checked, with the default settings in place of the manifest: no grants, no label categories, a budget of 0, and edition `0.1`. So a broken manifest can bring other diagnostics with it, which go away once it is fixed.
+- A manifest error does not stop the check. The tables and keys una could read still apply, and only the wrong ones are reported. When the file is not valid TOML at all, the modules are checked with the default settings instead: no grants, no label categories, a budget of 0, and edition `0.1`. So a manifest that cannot be read can bring other diagnostics with it, which go away once it is fixed.
 - `una run .` also checks that `main`'s `uses` are granted: a capability that `main` uses but neither `[run] grants` nor a `--grant` flag grants stops the run before it starts (U3012, [chapter 8](/learn/capabilities/#s8-2)).
 
 :::decide
@@ -845,7 +845,7 @@ A header is code, and an edit to the code can change it. Here is a sale function
    sale
 ```
 
-The body keeps its header, so the package checks clean. `una run .` prints:
+This package has no `[contracts]` table yet: it is the situation a lock prevents. The body keeps its header, so the package checks clean. `una run .` prints:
 
 ```text include="steps/16-unlocked/expected/output.txt"
 set DESK-02 to 19920
@@ -1180,7 +1180,19 @@ The store copied a label printer's module into `src/vendor/labels.una`. A new ve
 +  let printed_at = @clock.now()
 ```
 
-Without a boundary, the store's code passes the clock along without a word, as any call passes the capabilities its callee needs by name ([chapter 8](/learn/capabilities/#s8-1)):
+This package has no boundary yet. The store accepts the new version with two small edits of its own: `main` declares that it holds the clock, and `una.toml` grants it. Without the first, `una check` reports U3001 at the call; without the second, `una run` stops with U3012 ([chapter 8](/learn/capabilities/#s8-2)).
+
+```diff include="steps/21-boundary..steps/22-unbounded:una.toml" context="0" title="una.toml"
+--- a/una.toml
++++ b/una.toml
+@@ -8,5 +8 @@
+-grants = ["console"]
+-
+-# Code from the label printer's supplier: the most the store may ever grant it.
+-[boundaries]
+-"vendor.labels" = ["Console[print]"]
++grants = ["console", "clock"]
+```
 
 ```una include="steps/22-unbounded/src/store/app.una" title="steps/22-unbounded/src/store/app.una" verified="check, run"
 module store.app
@@ -1198,7 +1210,7 @@ pub main() -> Unit
 [LAMP-01 | 19.90]
 ```
 
-The package checks and runs, and the label looks as before. The only sign that the supplier's code now reads the clock is a line of its header, in a file the store did not write. With network or file access, the same quiet change could send data away. A boundary turns that quiet change into an error at the store's call.
+The package checks and runs, and the label looks as before. The call itself did not change: `print_label` takes the clock by name, as any call passes the capabilities its callee needs ([chapter 8](/learn/capabilities/#s8-1)). Nothing at the call says where the clock goes, and once the store's code holds a capability for a job of its own, a later version of the supplier's module can start using it with no change at all in the store's code. With network or file access, the same change could send data away. A boundary makes every such grant visible at the call, and turns one beyond the ceiling into an error.
 
 ### How to write `[boundaries]`
 
@@ -1258,7 +1270,7 @@ A call into the boundary takes nothing by name. The caller grants each capabilit
 
 ### How calls into a boundary are checked
 
-A **call into a boundary** is a call from code outside the boundary to a function, handler or policy inside it. Two rules apply to it, and code inside the boundary calls itself as usual.
+A **call into a boundary** is a call from code outside the boundary to a function, handler or policy inside it. Two rules apply to it here ([chapter 8](/learn/capabilities/#s8-5) shows the others), and code inside the boundary calls itself as usual.
 
 #### Everything is granted with `with` (U3020)
 
