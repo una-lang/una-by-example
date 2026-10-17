@@ -2,8 +2,8 @@
 learn: "12"
 title: Memory and concurrency
 editions: ["0.2"]
-codes: [U2012, U2017, U2019, U2020, U2023, U3013]
-time: 40
+codes: [U2001, U2012, U2017, U2018, U2019, U2020, U2023, U2024, U3013]
+time: 55
 builds: An end-of-day stock count that replays each site's movements and closes every site at once
 prerequisites: ["4", "5", "6", "7", "8", "10"]
 template: 2
@@ -59,9 +59,15 @@ The price is that two parts of a program never share a changing value: one of th
 
 ## 12.1 Values, not references
 
-### One shelf, copied and changed
+### What a value is
 
-Start with one shelf of the store. Its record holds a SKU and the units on it. The program takes a copy at the start of the day, changes the shelf twice, and keeps a snapshot between the changes.
+A **value** is a piece of data: the number 4, the text `"LAMP-01"`, a list `[4, 0, 7]`, or a record such as a shelf with its SKU and its units. A **binding** gives a value a name, with `let` ([chapter 2, Values](/learn/values/#s2-4)).
+
+Think of a stock sheet on paper. When a clerk photocopies it and writes on the copy, the original does not change: the copy is a sheet of its own. Una's values work like the photocopy. Writing `let snapshot = current` gives `snapshot` its own copy of `current`'s value, and nothing that later happens to `current` reaches it.
+
+Many languages work like a shared whiteboard instead. There, a name holds a **reference**, an address where the data lives, and two names can hold the same address. Two such names are called **aliases**: write through one, and the other sees the change. Una has no references, so two bindings are never aliases. To **mutate** a value, meaning to change it after it was made, you rebind a name that you declared editable, and only that name sees the change.
+
+The constructs of this chapter, `let edit` among them, exist in packages of edition `0.2` and later, the edition every example here names. Edition `0.1` has none of them ([chapter 14, Editions](/learn/editions/)).
 
 ### Each step is a package
 
@@ -85,9 +91,11 @@ una check .
 una run .
 ```
 
-### Editable bindings and a snapshot
+### Why Una has no shared references
 
-The module declares the shelf's kind, then copies, changes and prints it in `main`:
+With aliases, a change in one place shows up somewhere else. A report reads a shelf's count, some other code changes the shelf, and the report now prints a number it never computed. Finding the cause means finding every name that could hold the same data. With values, the cause of every change is a line that names the binding it changes.
+
+This module declares a shelf, takes a copy at the start of the day, changes the shelf twice, and keeps a snapshot between the changes:
 
 :::steps
 ```una include="steps/01-values/src/shelf.una" title="steps/01-values/src/shelf.una" verified="check, run"
@@ -113,8 +121,6 @@ pub main() -> Unit
   @console.print("{current}")
 ```
 
-Walkthrough:
-
 1. **`let opening = Shelf(…)`.** A plain `let` binds a value for good. Assigning `opening` later is U2019, the code of an assignment to a binding that is not editable.
 2. **`let edit current = opening`.** An editable binding, as in [chapter 2, Values](/learn/values/#s2-4), starts as a copy of `opening`'s value. Its type is fixed by that first value: it stays a `Shelf`.
 3. **`current.units = current.units + 6`.** Assigning a field of an editable record rebinds `current` to a record with that field changed. `opening` keeps its own value, since it is another binding.
@@ -130,31 +136,284 @@ counts [4, 12, 7]
 Shelf(sku: "LAMP-01", units: 7)
 ```
 
-### Printing what each binding holds
+Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were aliases of one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation shows any value that `==` can compare, a record, a list or a map included.
 
-The three numbers on the first line are three values: the opening count, the snapshot and the shelf now. The last line interpolates the whole record. In edition `0.2`, any value that `==` compares can be interpolated, a record, a list or a map included, but not a `Hashed`. This chapter uses that to print what each binding holds.
+### How to change a binding
 
-### Copies at run time
+Only an editable binding changes, and only by an **assignment**: the binding, or a part of it, then `=`, then the new value. The part on the left of `=` is a **place**: an editable binding, or a field of one, as deep as the record goes. This step shows each form:
+
+```una include="steps/02-places/src/places.una#L1-L12" title="steps/02-places/src/places.una" caption="the kinds"
+module places
+
+--- Where a customer's orders are shipped.
+kind Address
+  street: Text
+  city: Text
+
+--- A customer of the store, with the loyalty points they hold.
+kind Customer
+  number: Text
+  address: Address
+  points: Int
+```
+
+```una include="steps/02-places/src/places.una#L23-L35" title="steps/02-places/src/places.una" caption="main"
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit points = 120
+  points = points + 30
+  @console.print("points: {points}")
+  let edit customer = Customer(number: "C-1042", address: Address(street: "1 Elm Row", city: "Porto"), points: points)
+  customer.points = customer.points + 10
+  customer.address.city = "Braga"
+  @console.print("customer: {customer.points} points, ships to {customer.address.city}")
+  let edit shelves = [4, 0, 7]
+  edit shelves.set(index: 1, item: 12)
+  @console.print("shelves: {shelves}")
+```
+
+```text include="steps/02-places/expected/output.txt#L1-L3"
+points: 150
+customer: 160 points, ships to Braga
+shelves: [4, 12, 7]
+```
+
+#### A whole binding
+
+`points = points + 30` gives `points` a new value computed from its old one. The right side is read first, with the old value, and then the binding takes the result: 120 + 30 is 150.
+
+#### A field of a record, at any depth
+
+`customer.points = customer.points + 10` changes one field. `customer.address.city = "Braga"` changes a field of a field: the address inside the customer. In both, una builds a new record with that field changed and rebinds `customer` to it; every other field keeps its value. Each field in the path must be a field of a record kind, and the path must start at an editable binding.
+
+#### An element of a list: `set`
+
+A list has no assignable positions: `shelves[1] = 12` is not Una. The prelude function `set` changes one element, and since it changes the list it is given, it takes the list as an `edit` parameter, which [section 12.2](#s12-2) explains. You write `edit` before the list: `edit shelves.set(index: 1, item: 12)`. Positions count from 0, so index 1 is the second element.
+
+### How values behave
+
+#### A copy is its own value
+
+`let snapshot = current` copies, and so does passing a value to a function, putting it in a list, or storing it in a record. After the copy, the two are separate: assigning one never changes the other, as the snapshot of [Why Una has no shared references](#why-una-has-no-shared-references) showed.
+
+#### An editable binding keeps its type
+
+A `let edit` binding takes its type from its first value, and every later value must have that type. Assign a text to `points`:
+
+```diff include="steps/02-places..steps/03-fixed-type:src/places.una" context="0" title="src/places.una"
+--- a/src/places.una
++++ b/src/places.una
+@@ -27 +27 @@
+-  points = points + 30
++  points = "150 points"
+```
+
+```text include="steps/03-fixed-type/expected/rendered.txt"
+[U2001] Error: expected `Int`, found `Text`
+    ╭─[ src/places.una:27:12 ]
+    │
+ 27 │   points = "150 points"
+    │            ──────┬─────
+    │                  ╰─────── expected `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
+```
+
+The mark points at the new value: the binding is an `Int`, and the value is a `Text`. A binding that holds a refined kind, such as `Cents` of [chapter 7](/learn/contracts/#s7-3), keeps its condition only when you write the type: `let edit total: Cents = 0`. Without it, the binding is a plain `Int`.
+
+#### Only an editable binding changes
+
+Assigning a plain `let` binding, a parameter declared without `edit`, or the variable of a `for` loop is U2019 ([chapter 2](/learn/values/#s2-4) shows the message).
+
+#### No `+=` and no `while`
+
+There are no compound assignments such as `+=`: write `points = points + 30`. And there is no `while` loop: a `for` loop, or **recursion**, a function that calls itself, does the repeating ([chapter 5, Collections](/learn/collections/#s5-2), covers both).
+
+#### Copies at run time
 
 > [!NOTE] Copies are cheap.
 > A copy need not duplicate the shelf's memory when the program runs. The backends of una share a value until one binding changes it, and change it in place when nothing else holds it. None of this is observable: the output is the output of the copies.
 
-### No `+=` and no `while`
+### `let` or `let edit`
 
-There are no compound assignments such as `+=`, and no `while` loop: a `for` loop, or recursion, does the repeating ([chapter 5, Collections](/learn/collections/), shows `for`).
+:::decide
+**Which to use:**
+
+| You want… | Use |
+| --- | --- |
+| A name for a value that never changes | `let` |
+| A running total, a list built step by step, or a record updated field by field | `let edit` |
+| The value a binding had at some point, kept while it changes | A plain `let` copy, as `snapshot` |
+| To change one element of a list | `let edit` for the list, then `edit list.set(index: …, item: …)` |
+:::
+
+Prefer `let`. A reader who sees `let` knows the value never changes; `let edit` asks them to follow every assignment.
+
+### Check yourself: copies
+
+`markdown` builds a price tag, keeps the original price, and then lowers the price:
+
+```una include="steps/02-places/src/places.una#markdown" title="steps/02-places/src/places.una"
+--- The price on a tag, before and after a markdown of 500 cents.
+markdown() -> Text
+=
+  let edit price = 1990
+  let tag = "LAMP-01 at {price}"
+  let original = price
+  price = price - 500
+  "{tag}; was {original}; now {price}"
+```
+
+What does `markdown()` return? Decide what `tag` holds before you open the answer.
+
+:::answer Show the answer
+```text include="steps/02-places/expected/output.txt#L4"
+LAMP-01 at 1990; was 1990; now 1490
+```
+
+`tag` was made from `price` when `price` was 1990, and a text holds its characters, not a link to `price`. `original` is a copy of 1990. Only `price` changes, to 1490.
+:::
 
 ## 12.2 Passing a value in and out: `edit`
 
-### Parameters passed in and out
+### What an `edit` parameter is
 
-A function that changes a value it receives must say so. A parameter declared `edit` is passed in and out: the function receives the caller's value, works on it as on a `let edit` binding, and when it returns, the caller's binding receives the final value. The caller writes `edit` at the call too, so the change is visible where it happens.
+You hand a clerk your shopping list and ask them to add what is missing. They write on it and hand it back. If they cannot finish, they hand back your list exactly as you gave it. An `edit` parameter works the same way.
+
+A **parameter** declared `edit` is passed in and out: the function receives the caller's value, works on it as on a `let edit` binding, and when it returns, the caller's binding receives the final value. The caller writes `edit` at the call too, so the change is visible where it happens. When the function fails ([chapter 6, Failure](/learn/failure/)), the caller's binding keeps the value it had before the call.
+
+### Why a function needs to change its caller's value
+
+Without `edit`, a function that "changes" a shelf returns a new shelf, and the caller must remember to keep it. Here the caller keeps the result under a new name, and prints the old one:
+
+```una include="steps/04-no-edit/src/reserve.una" title="steps/04-no-edit/src/reserve.una" verified="check, run"
+module reserve
+
+--- A shelf of the store: its SKU, the units on it, and the units set aside for orders.
+kind Shelf
+  sku: Text
+  units: Int
+  reserved: Int
+
+--- The shelf with `units` more set aside for an order: a new value, which the caller must keep.
+reserved(shelf: Shelf, units: Int) -> Shelf = Shelf(sku: shelf.sku, units: shelf.units, reserved: shelf.reserved + units)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit lamps = Shelf(sku: "LAMP-01", units: 5, reserved: 0)
+  let updated = reserved(lamps, units: 2)
+  @console.print("{lamps.reserved} of {lamps.units} reserved")
+```
+
+`una run .` prints:
+
+```text include="steps/04-no-edit/expected/output.txt"
+0 of 5 reserved
+```
+
+Nothing was reserved. The reservation went into `updated`, which nothing reads, and the program printed `lamps`, which no line changed. The checker cannot know which binding the caller meant to update. And to give back a second result as well, such as a line for a report, the function would have to return a record of both, which every caller unpacks by hand.
+
+An `edit` parameter removes both problems: the call names the binding it updates, and the function's result is free for something else.
+
+### How to write an `edit` parameter
+
+This step moves stock between the shelves of a SKU. Its kinds:
+
+```una include="steps/05-edit-forms/src/transfer.una#Shelf..PickError" title="steps/05-edit-forms/src/transfer.una" caption="the kinds"
+--- A shelf of the store: the SKU it holds and how many units are on it.
+kind Shelf
+  sku: Text
+  units: Int
+
+--- The two shelves of a SKU: the one customers see, and the one in the stockroom.
+kind Spot
+  front: Shelf
+  back: Shelf
+
+kind PickError = | Short(sku: Text, wanted: Int, left: Int)
+```
+
+#### The `edit` parameter and the call
+
+:::steps
+```una include="steps/05-edit-forms/src/transfer.una#receive" title="steps/05-edit-forms/src/transfer.una"
+--- Adds a delivery to a shelf, and gives back how many units it held before.
+receive(edit shelf: Shelf, units: Int) -> Int
+  ensures shelf.units == old(shelf).units + units
+=
+  let before = shelf.units
+  shelf.units = shelf.units + units
+  before
+```
+
+1. **`edit shelf: Shelf`.** The word `edit` before the parameter's name. In the body, `shelf` is editable: `shelf.units = …` changes it.
+2. **`-> Int`.** The function still has a result of its own: here, the units the shelf held before. A function that has nothing else to give back returns `Unit`.
+3. **`ensures shelf.units == old(shelf).units + units`.** In an `ensures` clause ([chapter 7](/learn/contracts/#s7-2)), `shelf` is the final value, and `old(shelf)` the value on entry. `old` works only there, and only on an `edit` parameter.
+:::
+
+The call writes `edit` before the argument: `let before = receive(edit front, units: 4)`. The argument must be an editable binding, here a `let edit`. When the call returns, `front` holds the shelf with 4 more units, and `before` holds the result.
+
+#### The method form
+
+A call can be written as a method on its first argument ([chapter 3](/learn/functions/#s3-1)). Then `edit` goes before the receiver: `edit front.receive(units: 1)` is the same call as `receive(edit front, units: 1)`. That is the form of `edit shelves.set(…)` in [section 12.1](#s12-1).
+
+#### Several `edit` parameters
+
+```una include="steps/05-edit-forms/src/transfer.una#move" title="steps/05-edit-forms/src/transfer.una"
+--- Moves `units` from one shelf to another: two parameters passed in and out.
+move(edit source: Shelf, edit target: Shelf, units: Int) -> Unit
+  ensures source.units == old(source).units - units
+  ensures target.units == old(target).units + units
+=
+  source.units = source.units - units
+  target.units = target.units + units
+```
+
+A function may have several `edit` parameters, each passed in and out. The call writes `edit` at each: `move(edit back, target: edit front, units: 3)`. The two arguments must be different bindings.
+
+#### A field as the argument
+
+An `edit` argument may be a field of an editable binding: `receive(edit spot.back, units: 5)` changes the `back` field of `spot`, and leaves `front` as it was.
+
+#### The whole run
+
+`main` makes two shelves and calls each form in turn:
+
+```una include="steps/05-edit-forms/src/transfer.una#L48-L61" title="steps/05-edit-forms/src/transfer.una" caption="main"
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit front = Shelf(sku: "LAMP-01", units: 2)
+  let edit back = Shelf(sku: "LAMP-01", units: 10)
+  let before = receive(edit front, units: 4)
+  @console.print("front had {before}, now {front.units}")
+  let earlier = edit front.receive(units: 1)
+  @console.print("front had {earlier}, now {front.units}")
+  move(edit back, target: edit front, units: 3)
+  @console.print("front {front.units}, back {back.units}")
+  let edit spot = Spot(front: front, back: back)
+  let back_before = receive(edit spot.back, units: 5)
+  @console.print("the stockroom had {back_before}, now {spot.back.units}")
+```
+
+```text include="steps/05-edit-forms/expected/output.txt#L1-L4"
+front had 2, now 6
+front had 6, now 7
+front 10, back 7
+the stockroom had 7, now 12
+```
+
+Follow the front shelf: it starts at 2, receives 4 (6), receives 1 (7), and gets 3 from the back (10). The back shelf starts at 10 and gives 3 (7). The `spot` record then copies both shelves, and its back receives 5 (12).
 
 ### Reserving units on a shelf
 
-This step sets units of a shelf aside for orders. A reservation that asks for more units than are free fails, and the shelf must then stay as it was:
+Back to the reservation of [Why a function needs to change its caller's value](#why-a-function-needs-to-change-its-callers-value), with `edit`. A reservation that asks for more units than are free fails, and the shelf must then stay as it was:
 
 :::steps
-```una include="steps/02-edit/src/reserve.una" title="steps/02-edit/src/reserve.una" verified="check, run"
+```una include="steps/06-edit/src/reserve.una" title="steps/06-edit/src/reserve.una" verified="check, run"
 module reserve
 
 --- A shelf of the store: its SKU, the units on it, and the units set aside for orders.
@@ -187,52 +446,226 @@ pub main() -> Unit
   @console.print("{lamps.reserved} of {lamps.units} reserved")
 ```
 
-Walkthrough:
-
 1. **`reserve(edit shelf: Shelf, units: Int) -> Unit`.** The parameter `shelf` is passed in and out. The function returns `Unit`: what it gives back is the changed shelf.
-2. **`ensures shelf.reserved == old(shelf).reserved + units`.** In an `ensures` clause, `shelf` is the final value and `old(shelf)` the value on entry. The verifier proves the promise on every path that returns ([chapter 7, Contracts and the verifier](/learn/contracts/), covers `ensures`).
-3. **`fail NotEnough(…)`.** A `fail` inside an `if` without `else` ends the function there ([chapter 6, Failure](/learn/failure/), covers `fail`).
-4. **`edit lamps.reserve(units: 2)`.** A call written as a method puts `edit` before the receiver. It is the same call as `reserve(edit lamps, units: 2)`.
-5. **`reserve(edit lamps, units: 9)` with `if error use unit`.** Nine units are more than the three that are free, so the call fails, and the clause carries on with `unit`.
+2. **`ensures shelf.reserved == old(shelf).reserved + units`.** The verifier proves the promise on every path that returns.
+3. **`fail NotEnough(…)`.** A `fail` inside an `if` without `else` ends the function there ([chapter 6, Failure](/learn/failure/#s6-1), covers `fail`).
+4. **`edit lamps.reserve(units: 2)`.** The method form. Two units are free to reserve, and the call returns.
+5. **`reserve(edit lamps, units: 9)` with `if error use unit`.** Nine units are more than the three that are free, so the call fails, and the clause carries on with `unit` ([chapter 6](/learn/failure/#s6-2) covers the clauses).
 :::
 
 `una run .` prints:
 
-```text include="steps/02-edit/expected/output.txt"
+```text include="steps/06-edit/expected/output.txt"
 2 of 5 reserved
 ```
 
-### A failed call changes nothing
+### How an `edit` call behaves
 
-Two units are reserved, not eleven. The failed call changed nothing: a call that fails leaves every `edit` argument with the value it had before the call. The function's own assignments are discarded with its failure, so a half-done update never reaches the caller.
+#### A failed call changes nothing
+
+Two units are reserved, not eleven. The failed call changed nothing: a call that fails leaves every `edit` argument with the value it had before the call. The function's own assignments are discarded with its failure, so a half-done update never reaches the caller. A loop whose body fails leaves the bindings it updates at their values from before the loop, for the same reason.
 
 > [!IMPORTANT]
 > Effects are not rolled back. If a function prints, sends a message or writes a file and then fails, those operations stay performed. Only the `edit` arguments go back to their old values.
 
-### The rules of an `edit` argument
+#### The rules of an `edit` argument
 
 An `edit` argument has three rules, each with its own code:
 
 | Rule | Code |
 | --- | --- |
 | The call writes `edit` exactly where the parameter is declared `edit`, and nowhere else | U2020 |
-| The argument is a place: an editable binding or a field of one, such as `ledger` or `cart.skus` | U2019 when the binding is not editable |
+| The argument is a place: an editable binding or a field of one, such as `ledger` or `spot.back` | U2019 when the binding is not editable |
 | No other argument of the same call uses the same binding, even another field of it | U2018 |
 
-A call with an `edit` or `take` argument is also the whole expression of its statement or `let`, as a call that can fail is ([chapter 6, Failure](/learn/failure/)). So it cannot be nested in another call, and it cannot be wrapped in `attempt`. [Wrapping an `edit` call in `attempt`](#wrapping-an-edit-call-in-attempt-u3013) shows the diagnostic.
+The third rule holds even for two different fields. Move stock between the two shelves of one `spot`:
+
+```diff include="steps/05-edit-forms..steps/07-two-fields:src/transfer.una" context="0" title="src/transfer.una"
+--- a/src/transfer.una
++++ b/src/transfer.una
+@@ -59,0 +60 @@
++  move(edit spot.back, target: edit spot.front, units: 2)
+```
+
+```text include="steps/07-two-fields/expected/rendered.txt"
+[U2018] Error: `spot` is passed as `edit` in this call, so the call cannot use it again
+    ╭─[ src/transfer.una:60:37 ]
+    │
+ 60 │   move(edit spot.back, target: edit spot.front, units: 2)
+    │             ────┬────               ─────┬────
+    │                 ╰─────────────────────────────── passed as `edit` here
+    │                                          │
+    │                                          ╰────── `spot` is passed as `edit` in this call, so the call cannot use it again
+    │
+    │ Note: run `una explain U2018` for an explanation
+────╯
+```
+
+The first mark is the first `edit` argument, and the second is the other use of `spot` in the same call. Each `edit` argument is written back when the call returns, so two of them on one binding would both write it, and one change would be lost. Copy one shelf out first, or give `spot` a function of its own.
+
+#### One call per line
+
+A call with an `edit` or `take` argument is the whole expression of its statement or `let`, as a call that can fail is ([chapter 6, Failure](/learn/failure/)). So it cannot be nested in another call or in a text, and it cannot be wrapped in `attempt` (U3013, [Wrapping an `edit` call in `attempt`](#wrapping-an-edit-call-in-attempt-u3013)). A statement call whose result is not `Unit` binds its result with `let`, as `let before = receive(…)` does.
+
+#### Where `edit` is allowed
+
+- An operation of a capability and a handler cannot declare `edit` or `take` parameters (U2020).
+- A function with an `edit` or `take` parameter cannot be used as a value, for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [Reaching `apply` through a copy](#reaching-apply-through-a-copy), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
+
+### Return a new value, or `edit`
+
+:::decide
+**Which to use:**
+
+| You want… | Use |
+| --- | --- |
+| A new value, and the caller keeps the old one | A plain parameter, and return the new value |
+| To change the caller's value, with the change visible at the call | An `edit` parameter |
+| To change a value and give back another result, such as a report line | An `edit` parameter, and the other result as the function's result |
+| To change a value only when the whole update succeeds | An `edit` parameter and `fails`: a failure leaves the argument as it was |
+:::
+
+### Check yourself: a failed call
+
+`pick` takes units off a shelf, and fails when the shelf holds fewer:
+
+```una include="steps/05-edit-forms/src/transfer.una#pick..after_picks" title="steps/05-edit-forms/src/transfer.una"
+--- Takes `units` off a shelf for an order. It fails when the shelf holds fewer.
+pick(edit shelf: Shelf, units: Int) -> Unit
+  fails PickError
+=
+  if units > shelf.units
+    fail Short(sku: shelf.sku, wanted: units, left: shelf.units)
+  shelf.units = shelf.units - units
+
+--- What is left on a shelf of 5 rugs after the orders ask for each number of `wanted` in turn.
+after_picks(wanted: List[Int]) -> Int
+=
+  let edit shelf = Shelf(sku: "RUG-07", units: 5)
+  for units in wanted
+    pick(edit shelf, units: units)
+      if error use unit
+  shelf.units
+```
+
+What does `after_picks([2, 4, 3])` return?
+
+:::answer Show the answer
+```text include="steps/05-edit-forms/expected/output.txt#L5"
+rugs left: 0
+```
+
+The shelf starts with 5 rugs. Picking 2 leaves 3. Picking 4 fails, since 4 is more than 3, and the failed call leaves the shelf at 3: `if error use unit` carries on. Picking 3 leaves 0.
+:::
 
 ## 12.3 Giving a value up: `take`
 
-### Values that must not be used again
+### What `take` is
 
-Some values must not be used after a point. A cart that has been checked out should not take more items, or the order and the cart disagree. A parameter declared `take` consumes its argument: after the call, the caller cannot use the binding, and every use of it is U2017.
+At the till, a customer hands over a gift voucher. The clerk keeps it, and the customer no longer has it: they cannot hand the same voucher over again. A **`take`** parameter is that hand-over. The function receives the argument for good, and after the call the caller's binding is **taken**: no line may use it until it is given a new value.
+
+### Why some values must not be used again
+
+A cart that has been checked out should not take more items, or the order and the cart disagree. Here `checkout` takes a plain parameter, so the caller keeps the cart, and adds to it after the order was made:
+
+```una include="steps/08-no-take/src/checkout.una#checkout..main" title="steps/08-no-take/src/checkout.una"
+--- Turns the cart into an order. The caller keeps the cart, and can still add to it.
+checkout(cart: Cart, number: Int) -> Order = Order(number: number, customer: cart.customer, lines: cart.skus.len, cents: cart.cents)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit cart = Cart(customer: "C-1042", skus: [], cents: 0)
+  edit cart.add(sku: "LAMP-01", cents: 1990)
+  edit cart.add(sku: "DESK-02", cents: 12900)
+  let order = checkout(cart, number: 1001)
+  edit cart.add(sku: "RUG-07", cents: 4500)
+  @console.print("order {order.number}: {order.lines} lines, {order.cents} cents")
+  @console.print("the cart: {cart.skus.len} lines, {cart.cents} cents")
+```
+
+```text include="steps/08-no-take/expected/output.txt"
+order 1001: 2 lines, 14890 cents
+the cart: 3 lines, 19390 cents
+```
+
+The customer sees three items in the cart, and the order has two. The rug was never ordered, and nothing says so. A comment that says "do not use the cart after checkout" is easy to miss. `take` makes it a rule the checker enforces.
+
+### How to write `take`
+
+This step redeems gift vouchers, which can each be used once:
+
+```una include="steps/09-take-forms/src/vouchers.una" title="steps/09-take-forms/src/vouchers.una" verified="check, run"
+module vouchers
+
+--- A gift voucher: a code and what it takes off an order, in cents.
+kind Voucher
+  code: Text
+  cents: Int
+
+--- Redeems a voucher. It takes the voucher, so the same voucher cannot be redeemed twice.
+redeem(take voucher: Voucher) -> Int = voucher.cents
+
+--- Redeems a voucher and says so. It takes its parameter, and passes it on with `take`.
+redeem_text(take voucher: Voucher) -> Text
+=
+  let code = voucher.code
+  let cents = redeem(take voucher)
+  "{code}: {cents} off"
+
+--- Redeems one voucher for each code: each turn makes its own voucher and takes it.
+redeem_codes(codes: List[Text]) -> Int
+=
+  let edit total = 0
+  for code in codes
+    let voucher = Voucher(code: code, cents: 200)
+    let cents = redeem(take voucher)
+    total = total + cents
+  total
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let gift = Voucher(code: "GIFT-10", cents: 1000)
+  let first = redeem(take gift)
+  @console.print("first: {first} off")
+  let edit spare = Voucher(code: "SPRING-5", cents: 500)
+  let second = redeem(take spare)
+  spare = Voucher(code: "SUMMER-5", cents: 500)
+  let third = redeem_text(take spare)
+  @console.print("second: {second} off, then {third}")
+  let codes = ["A-1", "A-2", "A-3"]
+  @console.print("three codes: {redeem_codes(codes)} off")
+```
+
+```text include="steps/09-take-forms/expected/output.txt"
+first: 1000 off
+second: 500 off, then SUMMER-5: 500 off
+three codes: 600 off
+```
+
+#### The `take` parameter and the call
+
+`redeem(take voucher: Voucher)` declares the parameter with `take`, and the call writes `take` before the argument: `redeem(take gift)`. The argument is a binding, never a field: `redeem(take order.voucher)` is U2020.
+
+#### Any local binding can be taken
+
+A plain `let` (`gift`), a `let edit` (`spare`) and a parameter can each be taken. `redeem_text` takes its own parameter and passes it on to `redeem` with `take`, after reading the code it needs.
+
+#### A new value revives a binding
+
+`spare = Voucher(…)` gives a taken `let edit` binding a new value, and it can be used again: `redeem_text(take spare)` redeems the new voucher. A plain `let` binding cannot be assigned, so once taken, it stays taken.
+
+#### A binding declared inside a loop
+
+`redeem_codes` makes a new voucher at each turn of its loop, and takes it in the same turn. Each turn has its own `voucher`, so nothing is taken twice.
 
 ### Checking out a cart
 
-This step adds items to a cart through an `edit` parameter, then turns the cart into an order with `take`:
+Back to the cart, with `take`:
 
 :::steps
-```una include="steps/03-take/src/checkout.una" title="steps/03-take/src/checkout.una" verified="check, run"
+```una include="steps/10-take/src/checkout.una" title="steps/10-take/src/checkout.una" verified="check, run"
 module checkout
 
 --- A customer's cart: the SKUs in it and their total in cents.
@@ -270,26 +703,64 @@ pub main() -> Unit
   @console.print("the new cart has {cart.skus.len} lines")
 ```
 
-Walkthrough:
-
 1. **`add(edit cart: Cart, sku: Text, cents: Int)`.** Adding to the cart changes it, so the cart is an `edit` parameter. Its `ensures` promises one more SKU.
 2. **`checkout(take cart: Cart, number: Int) -> Order`.** The cart goes in and an order comes out. `take` states that the cart is used up.
 3. **`let order = checkout(take cart, number: 1001)`.** The call writes `take`, as `edit` is written for an `edit` parameter. From here on, `cart` is taken.
-4. **`cart = Cart(…)`.** An assignment gives a taken `let edit` binding a new value, and it can be used again. A plain `let` binding stays taken.
+4. **`cart = Cart(…)`.** The customer starts a new cart: an assignment revives the binding.
 :::
 
 `una run .` prints:
 
-```text include="steps/03-take/expected/output.txt"
+```text include="steps/10-take/expected/output.txt"
 order 1001: 2 lines, 14890 cents
 the new cart has 0 lines
 ```
 
+Adding the rug to the old cart after the checkout is now U2017, at the line that uses it. [Using a value after `take`](#using-a-value-after-take-u2017) shows the diagnostic.
+
 ### How the checker follows a taken binding
 
-The checker follows a taken binding through the program. A binding taken in one branch of an `if` or a `when` counts as taken after it. A binding taken inside a loop body must get a new value before the body ends, or be declared inside it, since the next iteration would use it again.
+#### After an `if` or a `when`
 
-`take` also tells the backend that the value is not needed after the call, so it can reuse the value's memory instead of keeping a copy. The program behaves the same either way.
+A binding taken in one branch of an `if` or a `when` counts as taken after it, since the checker cannot know which branch ran. Redeem the gift voucher only on a large order, and print its code afterwards:
+
+```diff include="steps/09-take-forms..steps/11-taken-branch:src/vouchers.una" context="0" title="src/vouchers.una"
+--- a/src/vouchers.una
++++ b/src/vouchers.una
+@@ -32,2 +32,5 @@
+-  let first = redeem(take gift)
+-  @console.print("first: {first} off")
++  let order_cents = 4500
++  let edit first = 0
++  if order_cents >= 3000
++    first = redeem(take gift)
++  @console.print("first: {first} off, with {gift.code}")
+```
+
+```text include="steps/11-taken-branch/expected/rendered.txt"
+[U2017] Error: `gift` was passed by `take`, so it cannot be used afterwards
+    ╭─[ src/vouchers.una:36:45 ]
+    │
+ 35 │     first = redeem(take gift)
+    │                         ──┬─
+    │                           ╰─── passed by `take` here
+ 36 │   @console.print("first: {first} off, with {gift.code}")
+    │                                             ──┬─
+    │                                               ╰─── `gift` was passed by `take`, so it cannot be used afterwards
+    │
+    │ Note: run `una explain U2017` for an explanation
+────╯
+```
+
+The first mark is where the binding was taken, and the second where it is used. Read `gift.code` into a binding of its own before the `if`, and print that.
+
+#### In a loop
+
+A binding taken in a loop body is taken in every turn after the first. So a binding taken in a loop body must get a new value before the body ends, or be declared inside it, as in `redeem_codes`.
+
+#### What `take` means at run time
+
+`take` also tells the backend that the value is not needed after the call, so it can reuse the value's memory instead of keeping a copy. The program behaves the same either way: `take` is checked before the program runs, and leaves no trace in what it computes.
 
 ### Choosing between a plain parameter, `edit` and `take`
 
@@ -306,22 +777,133 @@ Three ways compete for a function that turns one value into another:
 | To change a value only when the whole update succeeds | An `edit` parameter and `fails`: a failure leaves the argument as it was |
 :::
 
-### Passing an `edit` or `take` function as a value (U2021)
+### Check yourself: taking in a loop
 
-A function with an `edit` or `take` parameter cannot be used as a value, for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [Reaching `apply` through a copy](#reaching-apply-through-a-copy), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
+This version of `redeem_codes` makes one voucher before the loop:
+
+```diff include="steps/09-take-forms..steps/12-taken-loop:src/vouchers.una" context="1" title="src/vouchers.una"
+--- a/src/vouchers.una
++++ b/src/vouchers.una
+@@ -17,8 +17,8 @@
+ 
+---- Redeems one voucher for each code: each turn makes its own voucher and takes it.
++--- Redeems a voucher for each code.
+ redeem_codes(codes: List[Text]) -> Int
+ =
++  let voucher = Voucher(code: "A-1", cents: 200)
+   let edit total = 0
+   for code in codes
+-    let voucher = Voucher(code: code, cents: 200)
+     let cents = redeem(take voucher)
+```
+
+Does it check? If not, which line does `una check .` point at?
+
+:::answer Show the answer
+It does not:
+
+```text include="steps/12-taken-loop/expected/rendered.txt"
+[U2017] Error: `voucher` is taken in every iteration of this loop; give it a new value before the end of the body, or declare it inside the loop
+    ╭─[ src/vouchers.una:24:29 ]
+    │
+ 24 │     let cents = redeem(take voucher)
+    │                             ───┬───
+    │                                ╰───── `voucher` is taken in every iteration of this loop; give it a new value before the end of the body, or declare it inside the loop
+    │
+    │ Note: run `una explain U2017` for an explanation
+────╯
+```
+
+The first turn takes `voucher`, and the second would use it again. The message gives both fixes: assign it a new value before the end of the body, or declare it inside the loop, as the original does.
+:::
 
 ## 12.4 Running work at the same time: `together`
 
-### Independent work at the same time
+### What concurrent work is
 
-Asking two warehouses how many units they hold takes two round trips. They do not depend on each other, so they can happen at the same time. A `together` block runs its branches as concurrent tasks, and `together for` runs one task per element of a list. Every task ends before the block does, so no task outlives the code that started it.
+Two clerks can count two aisles at once, and the count of the store is done in the time of the longer aisle, not of both. Work that runs this way is **concurrent**: several pieces of it are in progress at the same time.
+
+In Una, each piece is a **task**: an expression that runs on its own, alongside others, and ends with a result. A `together` block starts its tasks, waits until every one has ended, and then gives their results. No task outlives the block that started it. Running tasks this way, always inside a block that waits for them, is called **structured concurrency**.
+
+### Why Una has `together`
+
+Asking two warehouses how many units they hold takes two round trips over the network, and each one waits for its answer. They do not depend on each other, so they can wait at the same time. Without concurrency, the program waits for each in turn.
+
+In many languages, concurrent work brings two problems. Two threads that write the same counter can lose an update, depending on which one runs first: a **race**. And the result can depend on timing, so a test that passes today fails tomorrow. Una avoids both by its rules: a task cannot assign anything outside itself ([What the result can depend on](#what-the-result-can-depend-on)), and the result of a block is always the result of running its tasks one after another.
+
+### How to write `together`
+
+This step asks three warehouses about a SKU, builds a list of labels, and counts days:
+
+```una include="steps/13-together-forms/src/counts.una" title="steps/13-together-forms/src/counts.una" verified="check, run"
+module counts
+
+--- A warehouse's stock service: the units of a SKU on hand.
+capability Inventory
+  op on_hand(sku: Text) -> Int
+
+--- A warehouse held in memory: 0 for a SKU it does not hold.
+handler shelves(stock: Map[Text, Int]) for Inventory
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- The units of a SKU in one warehouse.
+units_of(sku: Text) -> Int
+  uses @inventory: Inventory[on_hand]
+=
+  @inventory.on_hand(sku)
+
+--- The days in each of the first `weeks` weeks of a sale, counted from day 1.
+last_days(weeks: Int) -> List[Int]
+=
+  let days = together for week in 1..weeks
+    week * 7
+  days
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let north = empty_map().with(key: "LAMP-01", value: 4)
+  let south = empty_map().with(key: "LAMP-01", value: 2)
+  let east = empty_map().with(key: "DESK-02", value: 3)
+  together
+    let up = units_of("LAMP-01") with @inventory = shelves(north)
+    let down = units_of("LAMP-01") with @inventory = shelves(south)
+    let right = units_of("LAMP-01") with @inventory = shelves(east)
+  @console.print("LAMP-01: {up} + {down} + {right} = {up + down + right}")
+  let edit labels: List[Text] = []
+  labels = together for sku in ["LAMP-01", "DESK-02"]
+    let size = sku.len
+    "[{sku}] ({size} characters)"
+  @console.print("{labels}")
+  @console.print("last days: {last_days(3)}")
+  @console.print("no weeks: {last_days(0)}")
+```
+
+```text include="steps/13-together-forms/expected/output.txt"
+LAMP-01: 4 + 2 + 0 = 6
+["[LAMP-01] (7 characters)", "[DESK-02] (7 characters)"]
+last days: [7, 14, 21]
+no weeks: []
+```
+
+#### Branches: `together` with `let` lines
+
+`together` on a line of its own, then two or more indented `let` lines. Each `let` is a **branch**, and its expression is a task. After the block, the branches' bindings are in scope in order, as plain `let` lines would be: here `up`, `down` and `right`. A branch may install a handler with `with`, as each one here installs its own warehouse.
+
+#### One task per element: `together for`
+
+`together for sku in [...]`, then an indented body, as for a `for` loop ([chapter 5](/learn/collections/#s5-2)). It runs one task per element, and gives the list of what each task's body ends with, in the order of the list. It stands where a value goes: after `let`, as in `last_days`, or after `=` in an assignment, as `labels = together for …` in `main`.
+
+#### Over a range
+
+`together for week in 1..weeks` runs one task per whole number of the range. `last_days(0)` walks the empty range `1..0`, starts no task, and gives an empty list.
 
 ### Asking two warehouses at once
 
-This step uses a capability, as in [chapter 8, Capabilities](/learn/capabilities/): `Inventory` is a warehouse's stock service, and each warehouse is a binding of it, `@north` and `@south`. The handler `shelves` answers from a map, and `offline` always fails.
+This step uses a capability that can fail. `Inventory` is a warehouse's stock service, and each warehouse is a binding of it, `@north` and `@south`. The handler `shelves` answers from a map, and `offline` always fails.
 
 :::steps
-```una include="steps/04-together/src/stock.una" title="steps/04-together/src/stock.una" verified="check, run, test"
+```una include="steps/14-together/src/stock.una" title="steps/14-together/src/stock.una" verified="check, run, test"
 module stock
 
 kind StoreError = | Timeout
@@ -380,18 +962,16 @@ example "a warehouse that does not answer fails the whole count"
   expect fails Timeout
 ```
 
-Walkthrough:
-
 1. **`together` with two `let` branches.** Each `let` is a task. A branch sees the bindings in scope before the block, and none of its siblings: the second branch cannot read `up`. After the block, `up` and `down` are bound, in branch order, as two `let` statements would bind them.
 2. **`if error pass` under each branch.** A branch handles its failures as its `let` would outside the block. Here a failure of either warehouse makes the block fail, and `total_on_hand` fails with it.
 3. **`together for sku in skus`.** One task per SKU. The body is a block whose last line is the element's value, so the result is a `List[Text]`, in the order of `skus`, whatever order the tasks finish in.
 4. **Capabilities in tasks.** Each task uses the bindings of the enclosing function's `uses`. `main` installs both handlers for one call with `with`, and every task of that call sees them.
-5. **The example.** `given @south = offline()` makes one warehouse fail, and the example expects the whole count to fail with `Timeout`.
+5. **The example.** `given @south = offline()` makes one warehouse fail, and the example expects the whole count to fail with `Timeout` ([chapter 10, Testing](/learn/testing/#s10-3), covers `given`).
 :::
 
 `una run .` prints:
 
-```text include="steps/04-together/expected/output.txt"
+```text include="steps/14-together/expected/output.txt"
 LAMP-01: 6 units
 DESK-02: 3 units
 CHAIR-09: 0 units
@@ -399,7 +979,7 @@ CHAIR-09: 0 units
 
 `una test .` prints:
 
-```text include="steps/04-together/expected/commands/test.txt#L2-L4"
+```text include="steps/14-together/expected/commands/test.txt#L2-L4"
 example stock "a warehouse that does not answer fails the whole count" ... ok
 
 1 example: 1 passed, 0 failed
@@ -415,26 +995,173 @@ The result of a `together` block is the result of evaluating its tasks one after
 3. **The trace is in task order.** The operations the tasks perform are recorded task by task, in index order, whatever the interleaving. Only the moment each effect reaches the outside world, such as the order of two printed lines, depends on timing.
 :::
 
-### The interpreter and the executable
+#### A task cannot change what is outside it
 
-`una run` runs the tasks one after another, in index order: the interpreter is the reference, and it stays deterministic. An executable built by `una build` runs each task on its own operating-system thread, with its own memory, and copies the values a task reads when it starts and its result when it ends ([chapter 13, Tools](/learn/tools/), shows `una build`). Both give the same result.
+Count the SKUs asked in an outer `let edit`:
 
-### What `together` leaves out
+```diff include="steps/14-together..steps/15-shared-counter:src/stock.una" context="1" title="src/stock.una"
+--- a/src/stock.una
++++ b/src/stock.una
+@@ -36,3 +36,5 @@
+ =
+-  together for sku in skus
++  let edit asked = 0
++  let lines = together for sku in skus
++    asked = asked + 1
+     let units = total_on_hand(sku)
+@@ -40,2 +42,3 @@
+     "{sku}: {units} units"
++  lines.append(item: "{asked} SKUs asked")
+ 
+```
+
+```text include="steps/15-shared-counter/expected/rendered.txt"
+[U2023] Error: `asked` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
+    ╭─[ src/stock.una:39:5 ]
+    │
+ 39 │     asked = asked + 1
+    │     ──┬──
+    │       ╰──── `asked` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
+    │
+    │ Note: run `una explain U2023` for an explanation
+────╯
+```
+
+Each task captured `asked` as it was when the block started, so an assignment could only change a task's copy, and two tasks adding 1 at once would be a race. The message gives the fix: return the value from the task. Here the count is `lines.len`.
+
+#### Two branches or more
+
+```diff include="steps/13-together-forms..steps/16-one-branch:src/counts.una" context="0" title="src/counts.una"
+--- a/src/counts.una
++++ b/src/counts.una
+@@ -32,3 +32 @@
+-    let down = units_of("LAMP-01") with @inventory = shelves(south)
+-    let right = units_of("LAMP-01") with @inventory = shelves(east)
+-  @console.print("LAMP-01: {up} + {down} + {right} = {up + down + right}")
++  @console.print("LAMP-01: {up}")
+```
+
+```text include="steps/16-one-branch/expected/rendered.txt#L1"
+[U2024] Error: `together` needs at least two `let` branches; with one, write a plain `let`
+```
+
+A `together` block has at least two branches, and only `let` branches (U2024). With one task, write a plain `let`. Written after `let`, as `let x = together` with branches, it is U0101: only `together for` gives a value.
+
+#### The interpreter and the executable
+
+`una run` runs the tasks one after another, in index order: the interpreter is the reference, and it stays deterministic. An executable built by `una build` runs each task on its own operating-system **thread**, a line of work the machine runs at the same time as others, with its own memory, and copies the values a task reads when it starts and its result when it ends ([chapter 13, Tools](/learn/tools/#s13-5), shows `una build`). Both give the same result.
+
+#### What `together` leaves out
 
 > [!NOTE]
-> A `together` block has at least two branches, and only `let` branches (U2024). There are no task values, no detached tasks, no timeouts and no channels: `async` and `await` are not part of Una.
+> There are no task values, no detached tasks, no timeouts and no channels: `async` and `await` are not part of Una.
+
+### A loop or `together for`
+
+:::decide
+**Which to use:**
+
+| You want… | Use |
+| --- | --- |
+| One result per element, each computed on its own | `together for` |
+| A running total, or a step that reads what the previous turn left | A `for` loop with `let edit` |
+| A few different pieces of work at once, each bound to a name | `together` with `let` branches |
+| To stop at the first failure, in list order | Either: both stop as a sequential run would |
+:::
+
+### Check yourself: the first failure
+
+`close_sites` closes each site at once, and a site with no count fails:
+
+```una include="steps/17-first-failure/src/closing.una" title="steps/17-first-failure/src/closing.una"
+module closing
+
+kind CloseError = | NotCounted(site: Text)
+
+--- The closing count of a site, from the counts that came in. A site with no count fails.
+closing_count(site: Text, counted: Map[Text, Int]) -> Int
+  fails CloseError
+=
+  counted.get(key: site)
+    if none fail NotCounted(site: site)
+
+--- The closing count of every site, one task per site.
+close_sites(sites: List[Text], counted: Map[Text, Int]) -> List[Int]
+  fails CloseError
+=
+  together for site in sites
+    closing_count(site, counted: counted)
+      if error pass
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let counted = empty_map().with(key: "north", value: 12)
+  let outcome = attempt close_sites(["north", "south", "east"], counted: counted)
+  @console.print("{outcome}")
+```
+
+Only `north` has a count, so the tasks for `south` and `east` both fail. What does `una run .` print, every time?
+
+:::answer Show the answer
+```text include="steps/17-first-failure/expected/output.txt"
+Err(NotCounted("south"))
+```
+
+The block fails with the failure of the lowest-indexed task that failed, `south`, as a run of the tasks one after another would. In an executable the `east` task may fail first, and the answer is the same.
+:::
 
 ## 12.5 Limits: call depth and memory
 
-### Two limits, one code: U6003
+### What the call depth and the memory budget are
 
-Every run has two limits, and crossing either stops the run with U6003. The call depth counts the calls in progress: functions, lambdas, predicates, policies and handler operations. It is 10,000 by default. The memory budget is the memory a run holds beyond what it held at the start, 4096 MiB by default. Both can be changed for one run, with `--max-depth <n>` and `--max-memory <MiB>` on `una run`, `una test` and a built executable.
+When a function calls another, the first one waits until the second returns. A call that is running, or waiting for one it made, is **in progress**. Picture a stack of plates: each call puts a plate on top, and each return takes one off. The **call depth** is the height of the stack: the number of calls in progress at once. Calls of functions, lambdas, predicates, policies and handler operations all count.
+
+**Memory** is where a running program keeps its values. A run's **memory budget** is how much memory it may hold beyond what it held when it started, measured in MiB, mebibytes, of 1,048,576 bytes each.
+
+### Why a run has limits
+
+A recursion that never reaches its base case never stops calling itself. This function counts the weeks a stock lasts, and stops only when the stock is exactly 0:
+
+```una include="steps/18-runaway/src/restock.una" title="steps/18-runaway/src/restock.una"
+module restock
+
+--- How many weeks `stock` units last when `per_week` units sell each week. It stops only when
+--- the stock is exactly 0.
+weeks_left(stock: Int, per_week: Int) -> Int = if stock == 0 then 0 else 1 + weeks_left(stock - per_week, per_week)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("12 units at 3 a week: {weeks_left(12, per_week: 3)} weeks")
+  @console.print("10 units at 3 a week: {weeks_left(10, per_week: 3)} weeks")
+```
+
+With 12 units at 3 a week, the stock reaches 0. With 10 units, it goes 10, 7, 4, 1, −2, and never meets 0. `una --json run .` shows the run as one JSON document:
+
+```text include="steps/18-runaway/expected/commands/run.txt"
+$ una --json run .
+{"schema":"una.run/1","tier":1,"status":"aborted","output":["12 units at 3 a week: 4 weeks"],"failure":null,"diagnostics":[{"schema":"una.diagnostic/1","code":"U6003","severity":"error","domain":"runtime","message":"this call exceeds the maximum call depth of 10000","primary":{"file":"src/restock.una","start":{"line":5,"col":78},"end":{"line":5,"col":116}},"related":[],"repairs":[],"explain":"una explain U6003"}],"trace":[{"seq":1,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"12 units at 3 a week: 4 weeks\""},"outcome":{"kind":"ok","value":"unit"}}]}
+```
+
+The first line was printed, and then `status` is `aborted`, with U6003 at the call that went one level too deep. Without the limit, the program would use memory until the machine ran out. The limit turns that into a clear stop, at the line that caused it. The fix is the base case of [chapter 5](/learn/collections/#una-has-no-while): `if stock < per_week then 0`.
+
+### How the limits are set
+
+Every run has both limits, and crossing either stops it with U6003:
+
+| Limit | Default | Flag |
+| --- | --- | --- |
+| Call depth | 10,000 calls in progress | `--max-depth <n>` |
+| Memory budget | 4096 MiB | `--max-memory <MiB>`, at least 1 |
+
+The flags work on `una run`, `una test` and a built executable, for one run. `--max-depth` can go up to what a stack of 1 GiB holds.
 
 ### A loop is not a call
 
-A loop's iterations are not calls. This step builds 20,000 shelf labels with a `for` loop, and runs with the default depth:
+A loop's turns are not calls. This step builds 20,000 shelf labels with a `for` loop, and runs with the default depth:
 
-```una include="steps/05-loop/src/labels.una" title="steps/05-loop/src/labels.una" verified="check, run"
+```una include="steps/19-loop/src/labels.una" title="steps/19-loop/src/labels.una" verified="check, run"
 module labels
 
 --- The shelf labels SKU-1 to SKU-`count`. A loop builds them: its iterations are not calls,
@@ -457,7 +1184,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/05-loop/expected/output.txt"
+```text include="steps/19-loop/expected/output.txt"
 20000 labels, the last SKU-20000
 ```
 
@@ -465,7 +1192,7 @@ pub main() -> Unit
 
 The same labels built by recursion need one call in progress per label. The program still checks, since the checker does not count calls, but the run stops:
 
-```diff include="steps/05-loop..steps/06-recursion:src/labels.una" title="src/labels.una"
+```diff include="steps/19-loop..steps/20-recursion:src/labels.una" title="src/labels.una"
 --- a/src/labels.una
 +++ b/src/labels.una
 @@ -1,13 +1,7 @@
@@ -486,9 +1213,7 @@ The same labels built by recursion need one call in progress per label. The prog
    uses @console: Console[print]
 ```
 
-`una --json run .` prints the run as one JSON document, with the abort in it:
-
-```text include="steps/06-recursion/expected/commands/run.txt"
+```text include="steps/20-recursion/expected/commands/run.txt"
 $ una --json run .
 {"schema":"una.run/1","tier":1,"status":"aborted","output":[],"failure":null,"diagnostics":[{"schema":"una.diagnostic/1","code":"U6003","severity":"error","domain":"runtime","message":"this call exceeds the maximum call depth of 10000","primary":{"file":"src/labels.una","start":{"line":4,"col":63},"end":{"line":4,"col":80}},"related":[],"repairs":[],"explain":"una explain U6003"}],"trace":[]}
 ```
@@ -501,16 +1226,59 @@ una explain U6003
 
 It explains both limits, and ends with a failing and a fixed example.
 
-### The memory budget
+### How the limits behave
 
-The memory budget is checked at each call and at each iteration of a loop. A run over it stops with U6003 too, and the message names the limit in MiB. Where exactly the memory runs out depends on the machine, so a test should not rely on it. The depth limit is exact.
+#### The memory budget
 
-### Why the checker cannot see the limits
+The memory budget is checked at each call and at each turn of a loop. A run over it stops with U6003 too, and the message names the limit in MiB: `this call exceeds the memory limit of N MiB`. Where exactly the memory runs out depends on the machine, so a test should not rely on it. The depth limit is exact.
+
+#### Why the checker cannot see the limits
 
 The checker cannot see either limit: how deep a recursion goes, and how much a run holds, depend on the values the program meets when it runs. So U6003 is never a diagnostic of `una check`. Under `una test`, an example whose `do` line crosses a limit fails, and its report says that the `do` line aborted.
 
+#### In tasks
+
+Each task of a `together` block counts its call depth from the depth of the block that started it, and the memory of all tasks counts against one budget.
+
 > [!TIP]
-> Build long lists with a `for` loop, as `labels` does, and keep recursion for structures that are shallow, such as a tree of categories. A run that only needs more depth can raise `--max-depth`, up to what a stack of 1 GiB holds.
+> Build long lists with a `for` loop, as `labels` does, and keep recursion for structures that are shallow, such as a tree of categories. A run that only needs more depth can raise `--max-depth`.
+
+### A loop or recursion
+
+:::decide
+**Which to use:**
+
+| You want… | Use |
+| --- | --- |
+| One step per element of a list, or per number of a range | A `for` loop: no depth at all |
+| A long list built step by step | A `for` loop with `let edit` |
+| To walk a shallow structure, such as categories inside categories | Recursion |
+| To repeat until something happens, with no limit known in advance | Recursion, with a base case every path reaches |
+:::
+
+### Check yourself: how deep
+
+The recursive `labels` of [Recursion that goes too deep](#recursion-that-goes-too-deep) now builds 9,000 labels:
+
+```una include="steps/21-depth-9000/src/labels.una#main" title="steps/21-depth-9000/src/labels.una"
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let printed = labels(9000)
+  let last = printed.at(index: 8999)
+    if none use "none"
+  @console.print("{printed.len} labels, the last {last}")
+```
+
+With the default limit, does the run stop with U6003, or print? If it prints, what?
+
+:::answer Show the answer
+```text include="steps/21-depth-9000/expected/output.txt"
+9000 labels, the last SKU-9000
+```
+
+9,000 labels need about 9,000 calls in progress, one per label, plus `main`: fewer than the 10,000 of the default limit. At 20,000, the same function stops. The limit counts calls in progress, not calls made, and a loop counts none.
+:::
 
 ## 12.6 Day-to-day: an end-of-day stock count
 
@@ -896,7 +1664,7 @@ Write `apply(ledger, …)` in `close_day`:
     │ Help: repair 1: write `edit ledger`; edit src/stockcount.una:63:22..63:28 to "edit ledger"
 ```
 
-*Why:* the call must show which bindings it may change, so a reader never has to open `apply` to find out.
+*Why:* the call must show which bindings it may change, so a reader never has to open `apply` to find out. The mark points at the argument that lacks the word.
 
 *Fix:* write `edit ledger`. The repair carries the edit, and `una fix .` applies it.
 
@@ -960,7 +1728,7 @@ Read the ledger's counts after closing it:
 ────╯
 ```
 
-*Why:* `take` gave the ledger to `close`, and the diagnostic shows both places: where it was taken and where it is used.
+*Why:* `take` gave the ledger to `close`, and the diagnostic shows both places: the first mark is where it was taken, and the second where it is used.
 
 *Fix:* use what `close` returns. `report.closing` already holds the counts.
 
@@ -988,7 +1756,7 @@ Keep the outcome of `apply` as a `Result`:
 [U3013] Error: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
 ```
 
-*Why:* a call with an `edit` or `take` argument is the whole expression of its statement, so that the binding it changes is updated on that line and nowhere else.
+*Why:* a call with an `edit` or `take` argument is the whole expression of its statement, so that the binding it changes is updated on that line and nowhere else. The mark covers the whole call, inside the `attempt`.
 
 *Fix:* handle the failure with a clause under the call, as `close_day` does with `if error use`. To pass the failure on, use `if error pass`.
 
@@ -1015,7 +1783,7 @@ Count the closed days in an outer `let edit`:
 [U2023] Error: `closed` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
 ```
 
-*Why:* each task captures the values around it and runs on its own, so an assignment to an outer binding would be a race between tasks.
+*Why:* each task captures the values around it and runs on its own, so an assignment to an outer binding would be a race between tasks ([What the result can depend on](#what-the-result-can-depend-on)). The mark points at the binding being assigned.
 
 *Fix:* return what each task computes, and combine the results after the block. Here the count is `reports.len`.
 
@@ -1041,7 +1809,7 @@ Use `old(ledger)` in the body of `apply`:
 [U2012] Error: `old` is allowed only in `ensures` clauses
 ```
 
-*Why:* `old` names the value on entry for the promise in the header. In the body, the parameter is simply its current value.
+*Why:* `old` names the value on entry for the promise in the header. In the body, the parameter is simply its current value, so the mark points at `old(ledger)`.
 
 *Fix:* write `ledger.applied + 1`. To keep the entry value for later in the body, bind it first: `let before = ledger.applied`.
 

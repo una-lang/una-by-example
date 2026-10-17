@@ -1,0 +1,17 @@
+[U3023] Error: the header of `show_price` lets `@prices.set_price` run, which its lock in `una.toml` does not list
+    ╭─[ src/store/sale.una:14:34 ]
+    │
+ 14 │   uses @prices: PriceList[price, set_price]
+    │                                  ────┬────
+    │                                      ╰────── the header of `show_price` lets `@prices.set_price` run, which its lock in `una.toml` does not list
+    │
+    ├─[ una.toml:14:28 ]
+    │
+ 14 │ "store.sale.show_price" = ["@prices: PriceList[price]"]
+    │                            ─────────────┬─────────────
+    │                                         ╰─────────────── the lock
+    │
+    │ Help: repair 1: list only the operations of the lock in the header's `@prices`
+    │
+    │ Note: run `una explain U3023` for an explanation
+────╯

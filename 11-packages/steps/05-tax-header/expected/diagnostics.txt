@@ -1,0 +1,4 @@
+error U1001 at src/app.una:4:8: module `store.tax.rates` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+error U1001 at src/app.una:10:61: cannot find name `rate_text` in this module, its imports or the prelude
+error U1001 at src/app.una:10:87: cannot find name `tax_cents` in this module, its imports or the prelude
+error U1008 at src/store/tax/rates.una:1:8: module `tax.rates` is in `src/store/tax/rates.una`, which must hold module `store.tax.rates`

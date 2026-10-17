@@ -1,0 +1,9 @@
+[U7002] Error: `version` must be a string, not an integer
+   ╭─[ una.toml:4:11 ]
+   │
+ 4 │ version = 2
+   │           ┬
+   │           ╰── `version` must be a string, not an integer
+   │
+   │ Note: run `una explain U7002` for an explanation
+───╯

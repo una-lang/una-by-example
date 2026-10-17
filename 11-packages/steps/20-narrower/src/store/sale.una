@@ -1,0 +1,14 @@
+module store.sale
+
+--- The price list of the shop.
+pub capability PriceList
+  op set_price(sku: Text, cents: Int) -> Unit
+
+--- Takes `percent` off the price of a product. A dry run changes nothing, and says what it would do.
+pub apply_sale(sku: Text, cents: Int, percent: Int, dry_run: Bool) -> Int
+  uses @prices: PriceList[set_price where not dry_run and percent > 0]
+=
+  let sale = cents - cents * percent / 100
+  if not dry_run and percent > 0
+    @prices.set_price(sku, cents: sale)
+  sale

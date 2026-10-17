@@ -1,0 +1,41 @@
+module counts
+
+--- A warehouse's stock service: the units of a SKU on hand.
+capability Inventory
+  op on_hand(sku: Text) -> Int
+
+--- A warehouse held in memory: 0 for a SKU it does not hold.
+handler shelves(stock: Map[Text, Int]) for Inventory
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- The units of a SKU in one warehouse.
+units_of(sku: Text) -> Int
+  uses @inventory: Inventory[on_hand]
+=
+  @inventory.on_hand(sku)
+
+--- The days in each of the first `weeks` weeks of a sale, counted from day 1.
+last_days(weeks: Int) -> List[Int]
+=
+  let days = together for week in 1..weeks
+    week * 7
+  days
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let north = empty_map().with(key: "LAMP-01", value: 4)
+  let south = empty_map().with(key: "LAMP-01", value: 2)
+  let east = empty_map().with(key: "DESK-02", value: 3)
+  together
+    let up = units_of("LAMP-01") with @inventory = shelves(north)
+    let down = units_of("LAMP-01") with @inventory = shelves(south)
+    let right = units_of("LAMP-01") with @inventory = shelves(east)
+  @console.print("LAMP-01: {up} + {down} + {right} = {up + down + right}")
+  let edit labels: List[Text] = []
+  labels = together for sku in ["LAMP-01", "DESK-02"]
+    let size = sku.len
+    "[{sku}] ({size} characters)"
+  @console.print("{labels}")
+  @console.print("last days: {last_days(3)}")
+  @console.print("no weeks: {last_days(0)}")

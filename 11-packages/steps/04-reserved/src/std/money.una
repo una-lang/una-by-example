@@ -1,0 +1,4 @@
+module std.money
+
+--- Cents as a person reads them.
+pub cents_text(cents: Int) -> Text = "{cents} cents"

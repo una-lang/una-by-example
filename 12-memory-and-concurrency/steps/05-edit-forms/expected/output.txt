@@ -1,0 +1,5 @@
+front had 2, now 6
+front had 6, now 7
+front 10, back 7
+the stockroom had 7, now 12
+rugs left: 0

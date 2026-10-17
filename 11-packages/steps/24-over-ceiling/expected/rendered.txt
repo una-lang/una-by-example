@@ -1,0 +1,9 @@
+[U3021] Error: the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
+   ╭─[ src/store/app.una:9:3 ]
+   │
+ 9 │   print_label("LAMP-01", price: "19.90") with @console = @console, @clock = @clock
+   │   ───────────────────┬──────────────────
+   │                      ╰──────────────────── the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
+   │
+   │ Note: run `una explain U3021` for an explanation
+───╯

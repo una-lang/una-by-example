@@ -1,0 +1,12 @@
+[U2017] Error: `gift` was passed by `take`, so it cannot be used afterwards
+    ╭─[ src/vouchers.una:36:45 ]
+    │
+ 35 │     first = redeem(take gift)
+    │                         ──┬─
+    │                           ╰─── passed by `take` here
+ 36 │   @console.print("first: {first} off, with {gift.code}")
+    │                                             ──┬─
+    │                                               ╰─── `gift` was passed by `take`, so it cannot be used afterwards
+    │
+    │ Note: run `una explain U2017` for an explanation
+────╯

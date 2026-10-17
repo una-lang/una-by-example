@@ -1,0 +1,1 @@
+error U3023 at src/store/sale.una:14:34: the header of `show_price` lets `@prices.set_price` run, which its lock in `una.toml` does not list

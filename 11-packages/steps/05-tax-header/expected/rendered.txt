@@ -1,0 +1,39 @@
+[U1001] Error: module `store.tax.rates` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+   ╭─[ src/app.una:4:8 ]
+   │
+ 4 │ import store.tax.rates (rate_text, tax_cents)
+   │        ───────┬───────
+   │               ╰───────── module `store.tax.rates` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+[U1001] Error: cannot find name `rate_text` in this module, its imports or the prelude
+    ╭─[ src/app.una:10:61 ]
+    │
+ 10 │   @console.print("a lamp costs {format(cents)}, and tax at {rate_text()} adds {format(tax_cents(cents))}")
+    │                                                             ────┬────
+    │                                                                 ╰────── cannot find name `rate_text` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `tax_cents` in this module, its imports or the prelude
+    ╭─[ src/app.una:10:87 ]
+    │
+ 10 │   @console.print("a lamp costs {format(cents)}, and tax at {rate_text()} adds {format(tax_cents(cents))}")
+    │                                                                                       ────┬────
+    │                                                                                           ╰────── cannot find name `tax_cents` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1008] Error: module `tax.rates` is in `src/store/tax/rates.una`, which must hold module `store.tax.rates`
+   ╭─[ src/store/tax/rates.una:1:8 ]
+   │
+ 1 │ module tax.rates
+   │        ────┬────
+   │            ╰────── module `tax.rates` is in `src/store/tax/rates.una`, which must hold module `store.tax.rates`
+   │
+   │ Help: repair 1: declare `module store.tax.rates`, or move the file to match `tax.rates`; edit src/store/tax/rates.una:1:8..1:17 to "store.tax.rates"
+   │
+   │ Note: run `una explain U1008` for an explanation
+───╯
+1 of 4 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

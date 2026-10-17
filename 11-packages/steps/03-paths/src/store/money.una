@@ -1,0 +1,7 @@
+module store.money
+
+--- An amount in cents as a person reads it: 1990 is "19.90".
+pub format(cents: Int) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"

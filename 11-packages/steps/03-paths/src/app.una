@@ -1,0 +1,10 @@
+module app
+
+import store.money (format)
+import store.tax.rates (rate_text, tax_cents)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let cents = 1990
+  @console.print("a lamp costs {format(cents)}, and tax at {rate_text()} adds {format(tax_cents(cents))}")

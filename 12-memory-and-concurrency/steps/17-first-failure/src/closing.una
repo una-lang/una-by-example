@@ -1,0 +1,25 @@
+module closing
+
+kind CloseError = | NotCounted(site: Text)
+
+--- The closing count of a site, from the counts that came in. A site with no count fails.
+closing_count(site: Text, counted: Map[Text, Int]) -> Int
+  fails CloseError
+=
+  counted.get(key: site)
+    if none fail NotCounted(site: site)
+
+--- The closing count of every site, one task per site.
+close_sites(sites: List[Text], counted: Map[Text, Int]) -> List[Int]
+  fails CloseError
+=
+  together for site in sites
+    closing_count(site, counted: counted)
+      if error pass
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let counted = empty_map().with(key: "north", value: 12)
+  let outcome = attempt close_sites(["north", "south", "east"], counted: counted)
+  @console.print("{outcome}")

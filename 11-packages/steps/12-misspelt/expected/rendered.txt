@@ -1,0 +1,9 @@
+[U7002] Error: unknown key `checked_per_modules` in [escape_budget]
+    ╭─[ una.toml:18:1 ]
+    │
+ 18 │ checked_per_modules = 1
+    │ ─────────┬─────────
+    │          ╰─────────── unknown key `checked_per_modules` in [escape_budget]
+    │
+    │ Note: run `una explain U7002` for an explanation
+────╯

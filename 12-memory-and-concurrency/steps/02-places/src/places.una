@@ -1,0 +1,36 @@
+module places
+
+--- Where a customer's orders are shipped.
+kind Address
+  street: Text
+  city: Text
+
+--- A customer of the store, with the loyalty points they hold.
+kind Customer
+  number: Text
+  address: Address
+  points: Int
+
+--- The price on a tag, before and after a markdown of 500 cents.
+markdown() -> Text
+=
+  let edit price = 1990
+  let tag = "LAMP-01 at {price}"
+  let original = price
+  price = price - 500
+  "{tag}; was {original}; now {price}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit points = 120
+  points = points + 30
+  @console.print("points: {points}")
+  let edit customer = Customer(number: "C-1042", address: Address(street: "1 Elm Row", city: "Porto"), points: points)
+  customer.points = customer.points + 10
+  customer.address.city = "Braga"
+  @console.print("customer: {customer.points} points, ships to {customer.address.city}")
+  let edit shelves = [4, 0, 7]
+  edit shelves.set(index: 1, item: 12)
+  @console.print("shelves: {shelves}")
+  @console.print(markdown())

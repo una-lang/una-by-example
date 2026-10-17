@@ -1,0 +1,14 @@
+[package]
+name = "store"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "store.app"
+grants = ["console"]
+
+# Reading a price may only read the price list.
+# A sale may read prices, set them only outside a dry run, and record to the audit log.
+[contracts]
+"store.sale.apply_sale" = ["@prices: PriceList[price, set_price where not dry_run]", "@audit: Audit[record]"]
+"store.sale.show_price" = ["@prices: PriceList[price]"]

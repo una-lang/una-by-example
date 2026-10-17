@@ -1,0 +1,7 @@
+module vendor.labels.fonts
+
+--- Prints a shelf label in large letters.
+pub print_large(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("** {sku} **")

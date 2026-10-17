@@ -1,0 +1,9 @@
+[U2023] Error: `asked` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
+    ╭─[ src/stock.una:39:5 ]
+    │
+ 39 │     asked = asked + 1
+    │     ──┬──
+    │       ╰──── `asked` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
+    │
+    │ Note: run `una explain U2023` for an explanation
+────╯

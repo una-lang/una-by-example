@@ -1,0 +1,2 @@
+a refund of 150 cents, by format: -1.50
+the same refund, by digits: -2.50

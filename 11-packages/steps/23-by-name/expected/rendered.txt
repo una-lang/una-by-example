@@ -1,0 +1,15 @@
+[U3020] Error: `print_label` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
+   ╭─[ src/store/app.una:8:3 ]
+   │
+ 8 │   print_label("LAMP-01", price: "19.90")
+   │   ───────────────────┬──────────────────
+   │                      ╰──────────────────── `print_label` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
+   │
+   ├─[ src/vendor/labels.una:5:3 ]
+   │
+ 5 │   uses @console: Console[print]
+   │   ──────────────┬──────────────
+   │                 ╰──────────────── the boundary's requirement
+   │
+   │ Note: run `una explain U3020` for an explanation
+───╯

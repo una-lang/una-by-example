@@ -1,0 +1,1 @@
+error U3020 at src/store/app.una:8:3: `print_label` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`

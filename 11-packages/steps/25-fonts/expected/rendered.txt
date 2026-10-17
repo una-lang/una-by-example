@@ -1,0 +1,15 @@
+[U3020] Error: `print_large` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
+    ╭─[ src/store/app.una:10:3 ]
+    │
+ 10 │   print_large("LAMP-01")
+    │   ───────────┬──────────
+    │              ╰──────────── `print_large` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
+    │
+    ├─[ src/vendor/labels/fonts.una:5:3 ]
+    │
+  5 │   uses @console: Console[print]
+    │   ──────────────┬──────────────
+    │                 ╰──────────────── the boundary's requirement
+    │
+    │ Note: run `una explain U3020` for an explanation
+────╯

@@ -1,0 +1,1 @@
+error U2017 at src/vouchers.una:24:29: `voucher` is taken in every iteration of this loop; give it a new value before the end of the body, or declare it inside the loop
