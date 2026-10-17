@@ -133,7 +133,7 @@ AUTOLINK = re.compile(r"<(https?://|mailto:)[^>\s]*>")
 TARGETS = {
     "lead": (60, 120), "build": (80, 150), "why": (150, 300), "concept": (300, 2500),
     "day-to-day": (500, 1200), "testing": (200, 400), "agents": (60, 120), "recap": (80, 150),
-    "page": (3000, 12000),
+    "page": (3000, 20000),
 }
 # Counts: mistakes and exercises fail outside (low, high), except that more than 8 mistakes is
 # a warning; recap bullets only warn.
@@ -1089,6 +1089,18 @@ def structure(body, concepts, where, failures, chapter_dir=None):
     return problems
 
 
+def check_yourself(body, concepts, where, warnings):
+    """A warning for each concept section with no `### Check yourself: <topic>` subsection
+    (TEMPLATE.md, "Teaching a concept"). It warns, and does not fail, while the chapters are
+    rewritten to the standard."""
+    _, inside = fences(body)
+    numbered = [(h, lines) for h, lines in sections(body) if h and re.match(r"^## \d+\.\d+ ", h)]
+    for heading, lines in numbered[:concepts]:
+        names = [name for name, _ in subsections(lines, inside)[1:]]
+        if not any(name and name.startswith("Check yourself") for name in names):
+            warnings.append(f"{where}: `{heading[3:]}` has no `### Check yourself: <topic>` subsection")
+
+
 def numbered(body, number):
     """The `## N.M` headings of the page, as their numbers."""
     return [line.split(" ")[1] for _, line in prose_lines(body) if re.match(rf"^## {re.escape(number)}\.\d+ ", line)]
@@ -1240,6 +1252,7 @@ def check_page(root, chapter, fields, body, packages, una_path, codes, failures,
             warnings.append(f"{where}: nothing on the page includes {ref}")
     if concepts is not None:
         structure(body, concepts, where, failures, chapter_dir)
+        check_yourself(body, concepts, where, warnings)
     anchors(body, where, failures)
     parts = sections(body)
     _, inside = fences(body)

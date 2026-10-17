@@ -97,7 +97,7 @@ The headings are fixed. `N` is the chapter's number, and the numbered parts coun
 | | `### Recap` | 5 to 8 bullets, each a rule the reader can apply | 80–150 words |
 | | `### Reference` | Links to the construct pages, std items, error codes and specification sections, all on the site, at the release | list |
 
-Totals: 3,000 to 12,000 words of prose (paragraphs and list text; headings, code and `:::` lines do not count, and the same holds for each part's target), 25 to 60 minutes to read, 60 to 120 minutes with the exercises. A page longer than the site's page budget (40 KiB gzip) splits in two.
+Totals: 3,000 to 20,000 words of prose (paragraphs and list text; headings, code and `:::` lines do not count, and the same holds for each part's target), so that six concept sections at their longest fit with the other parts. The site shows each numbered section as a page of its own, so a long chapter stays readable; the budget of the whole-chapter page (40 KiB gzip) is handled by the site, separately from these targets.
 
 Inside each numbered part, `### ` subsections follow the rules of [Inside a section](#inside-a-section). No other `## ` heading may appear. Every heading is a `#` line at column 0, outside quotes and lists; an underlined (setext) heading fails, so put a blank line before a `---` rule.
 
@@ -132,7 +132,7 @@ The site shows each numbered section (`## N.k`) as a page of its own, and lists 
 
 ## Teaching a concept
 
-Write every concept section for a reader who may never have programmed, and who has never seen Una. Such a reader learns from the page what a construct is, why the language has it, and how to use it; nothing may depend on knowledge the book has not given. A concept section teaches its construct in this order, each part one or more `### ` subsections titled by what it holds:
+Write every concept section for a reader who may never have programmed, and who has never seen Una. Such a reader learns from the page what a construct is, why the language has it, and how to use it; nothing may depend on knowledge the book has not given. When an example needs a construct of a later chapter, it gives that construct a one-clause gloss and a link to where it is taught, as the Style guide asks, and relies on nothing more. A concept section teaches its construct in this order, each part one or more `### ` subsections titled by what it holds:
 
 | Part | What it does | Usual title |
 | --- | --- | --- |
@@ -144,13 +144,15 @@ Write every concept section for a reader who may never have programmed, and who 
 | When to use it, and what instead | The alternatives and how to choose between them, usually as a `:::decide` table. | `### A precondition, a guard or a kind` |
 | Check yourself | One or two short questions, usually "predict the output" or "does it check?", each with its answer in a `:::answer` box. | `### Check yourself: loops` |
 
+The chapters are being rewritten to this standard one by one. Until all are, `check.py` reports a concept section without a `### Check yourself: <topic>` subsection as a warning, not a failure; a section that is not yet rewritten keeps its earlier arc.
+
 Two parts may share a subsection, and a part may take several: a construct with many forms gives "How to write it" a `#### ` part per form, and a long realistic example keeps its own `### `. The order holds.
 
 - **Ground every claim.** A rule stated in the text comes from the specification or a decision record, and each example shows it. Nothing is invented, and nothing is stated only in a comment.
-- **Show, then name.** Show the code and its output first, then name what the reader saw. A term the reader has not met is defined in the sentence that uses it.
+- **Words first, then show, then name.** "What it is" uses words and an analogy, and no code block. From "How to write it" on, show the code and its output first, then name what the reader saw. A term the reader has not met is defined in the sentence that uses it.
 - **Every form is checked.** Each example is an include of a checked package, as everywhere on the page: a step package, an overlay for a broken version, or a function of a step package shown by its name (`#units`) with its line of output (`#L2`). A step package may hold several small functions, one per form, and its `main` prints one line for each.
 - **Diagnostics are read aloud.** When an example fails, the page shows the diagnostic, says which line names the problem, what the marks point at, what the counterexample means, and which repair fits.
-- **Check yourself.** The question comes first, with the code it asks about. The answer follows in `:::answer Show the answer`, folded, with the expected output or diagnostic that proves it and a sentence or two of why. The output a question asks about is not shown earlier in the section.
+- **Check yourself.** The question comes first, with the code it asks about. The answer follows in `:::answer Show the answer`, folded, with the expected output or diagnostic that proves it and a sentence or two of why. The output a question asks about is not shown earlier in the section. A question may ask whether a changed version checks; its answer then shows that version's diagnostic from an overlay, whole or by selected lines (`rendered.txt#L1,L22`). A question about a rule may be answered in prose alone, when the rule is stated earlier in the chapter.
 - **Style.** Clear, warm and precise. Short sentences in the second person, no filler and no hype. An analogy is one or two sentences, from daily life, and never replaces the precise rule that follows it.
 
 ## Blocks are includes
@@ -263,7 +265,7 @@ Failures:
 9. Links are to the site's pages, as above.
 10. Translations, neutrality, commit addresses and tracked bytecode are checked as for every chapter. A translation of a template 2 page also keeps `template`, `time`, `prerequisites`, the `N.M` numbers of its headings, the blocks and the containers, as above, and follows the same markup and link rules.
 
-Warnings, which do not fail the check but are listed in its report: a part outside its target length, more than 8 mistakes, a count of recap bullets outside 5 to 8, and a step that no block includes.
+Warnings, which do not fail the check but are listed in its report: a concept section without a `### Check yourself: <topic>` subsection, a part outside its target length, more than 8 mistakes, a count of recap bullets outside 5 to 8, and a step that no block includes.
 
 ## Style guide
 

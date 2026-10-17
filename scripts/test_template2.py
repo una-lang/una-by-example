@@ -725,6 +725,8 @@ class Chapters(Base):
         self.assertEqual(items, [])
         # The prose is short, so the targets give warnings, never failures.
         self.assertTrue(any("words" in w for w in warnings), warnings)
+        # A concept section without a check-yourself question warns, and does not fail.
+        self.assertTrue(any("`6.1 Declaring a failure` has no `### Check yourself: <topic>` subsection" in w for w in warnings), warnings)
 
     def test_fill_wrote_the_blocks(self):
         text = check.read(self.readme)

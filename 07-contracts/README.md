@@ -67,7 +67,16 @@ A contract has two halves:
 - A **precondition**, written `requires`, is what the caller promises about the arguments. It is this section's subject.
 - A **postcondition**, written `ensures`, is what the function promises about its result. [Section 7.2](#s7-2) covers it.
 
-What makes a contract in Una more than a comment is that una checks both halves, for every caller and every input, before the program runs.
+What makes a contract in Una more than a comment is that `una` checks both halves, for every caller and every input, before the program runs.
+
+### What a precondition states
+
+A precondition states what must hold of the arguments for a call to make sense. `requires count >= 1` on a function that divides by `count` says that a call with 0 is a mistake of the caller, not a case the function handles.
+
+A precondition is a condition: an expression that is `true` or `false`, such as `count >= 1`, `price >= 0` or `skus.len > 0`. It may read every parameter of the function. It is checked at both ends:
+
+- **At every call,** the verifier proves the precondition for the arguments given. A call it cannot prove does not check.
+- **In the body,** the precondition is a fact the verifier assumes. Here it proves that the division never divides by zero.
 
 ### Each step is a package
 
@@ -90,15 +99,6 @@ grants = ["console"]
 una check .
 una run .
 ```
-
-### What a precondition states
-
-A precondition states what must hold of the arguments for a call to make sense. `requires count >= 1` on a function that divides by `count` says that a call with 0 is a mistake of the caller, not a case the function handles.
-
-A precondition is a condition: an expression that is `true` or `false`, such as `count >= 1`, `price >= 0` or `skus.len > 0`. It may read every parameter of the function. It is checked at both ends:
-
-- **At every call,** the verifier proves the precondition for the arguments given. A call it cannot prove does not check.
-- **In the body,** the precondition is a fact the verifier assumes. Here it proves that the division never divides by zero.
 
 ### Why a function needs a precondition
 
@@ -143,11 +143,11 @@ Una does not run it. `una check .` reports:
 ───╯
 ```
 
-Every division by a value that is not a literal must be proven safe: its divisor must not be 0. Here nothing tells una that `count` is never 0, and the line `Note 2` gives the case that breaks: `count = 0`. The function has no way to say "never call me with 0". A precondition is that way.
+Every division by a value that is not a literal must be proven safe: its divisor must not be 0. Here nothing tells `una` that `count` is never 0, and the line `Note 2` gives the case that breaks: `count = 0`. That line is the **counterexample**, and the requirement it breaks is a **proof obligation**, both met in [chapter 2](/learn/values/#s2-1); [What the verifier is](#what-the-verifier-is) explains them. The function has no way to say "never call me with 0". A precondition is that way.
 
 ### What the verifier is
 
-The **verifier** is the part of una that proves things about your program without running it. `una check .` runs it after the other checks pass. It works in three steps:
+The **verifier** is the part of `una` that proves things about your program without running it. `una check .` runs it after the other checks pass. It works in three steps:
 
 1. **It lists what must be true.** Every place where the program relies on a fact becomes a question: "is `count != 0` here, whatever the inputs?" Such a question is a **proof obligation**. A division gives one, each `requires` gives one at every call, and each `ensures` gives one for the body.
 2. **It asks a solver.** A **solver** is a program that answers such questions by reasoning about every possible value at once, not by trying values one after another. Una uses the solver Z3, at the exact version that `verification.lock` names, so every machine gets the same answers.
@@ -160,6 +160,19 @@ A test runs the code on the inputs someone wrote down. A check that runs with th
 A `requires` clause is the word `requires` and a condition, on a line of its own under the header, indented two spaces, before `=`. A function with a clause is written in the long form ([chapter 3](/learn/functions/#s3-2)): the header, the clauses, `=` alone on its line, then the body. A function may have any number of clauses, and every one must hold.
 
 The step of this part shows every form a precondition takes. Each function is small, and `main` calls each one with arguments that meet its precondition:
+
+The step works with two kinds of the store:
+
+```una include="steps/04-clauses/src/checkout.una#CartLine..Zone" title="steps/04-clauses/src/checkout.una" caption="the kinds"
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+kind CartLine
+  sku: Text
+  quantity: Int
+  unit_cents: Int
+
+--- Where a parcel goes.
+kind Zone = Local | National | Abroad
+```
 
 #### One condition
 
@@ -492,7 +505,7 @@ There is a reason the verifier works this way. If it read every body, a change t
 
 ### How to write `ensures`
 
-An `ensures` clause is the word `ensures` and a condition, on its own line under the header, before `=`. It sits with the `requires` clauses, and a function may have any number of each. The condition may read the parameters, as the caller passed them, and `result`, the value the function returns. Like `requires`, it is written in the refinement language.
+An `ensures` clause is the word `ensures` and a condition, on its own line under the header, before `=`. It sits with the `requires` clauses, and a function may have any number of each. The condition may read the parameters, as the caller passed them (an `edit` parameter is the exception, in [The value of an `edit` parameter](#the-value-of-an-edit-parameter-old)), and `result`, the value the function returns. Like `requires`, it is written in the refinement language.
 
 The step of this part shows each form. `main` prints what each function returns:
 
@@ -714,7 +727,7 @@ The standard library has contracts too, and the verifier trusts them without rea
 
 #### What an `ensures` clause may say
 
-`result` is allowed only in `ensures` and in the `expect` lines of examples (U2012 elsewhere). The rest of the rules of a `requires` clause apply: the parameters, the refinement language, no calls but predicates.
+`result` is allowed only in `ensures` and in the `expect` lines of examples (U2012 elsewhere). The rest of the rules of a `requires` clause apply: the parameters, the refinement language, and no calls but of `reflect` predicates.
 
 ### A contract or an example
 
@@ -732,7 +745,7 @@ A postcondition and an example both say something about the result, but not the 
 | Describe what the function is for, in words | a doc comment (`---`) |
 :::
 
-How much to promise is a choice. Promise what the callers need and what will stay true. A promise that states the exact result, as `free_shipping`'s does, gives callers the most, and ties the function's body to it for good. A bound, such as `result <= amount`, leaves the body free to change, for example to round differently.
+How much to promise is a choice. Promise what the callers need and what will stay true. A promise that states the exact result, as `free_shipping`'s does, gives callers the most, and ties the function's body to it for good. A bound, such as `result <= price`, leaves the body free to change, for example to round differently.
 
 ### Check yourself: postconditions
 
@@ -770,9 +783,9 @@ Nothing but its type: the result is a `Shelf`. Both clauses of `status` speak of
 
 ### A rule on the kind
 
-A **type** says what kind of value a name holds: `Int` holds whole numbers, `Text` holds texts. A `kind` declares a type of your own ([chapter 4](/learn/kinds/)). A **refined kind** is a type with a condition attached: a base type, and a rule that every value of the kind obeys. `kind Cents = Int where it >= 0` is the integers that are not negative. In the condition, `it` stands for the value.
+A **type** says what sort of value a name holds: `Int` holds whole numbers, `Text` holds texts. A `kind` declares a type of your own ([chapter 4](/learn/kinds/)). A **refined kind** is a type with a condition attached: a base type, and a rule that every value of the kind obeys. `kind Cents = Int where it >= 0` is the integers that are not negative. In the condition, `it` stands for the value.
 
-Think of a parcel locker that only opens for parcels below a size. You do not check each parcel's size again when you take it out: it got in, so it fits. A refined kind is that locker. A value is checked once, when it enters the kind, and from then on everyone who receives a `Cents` knows it is not negative.
+Think of a parcel locker that only takes parcels below a size. A parcel that got in fits; nobody measures it again. A refined kind is that locker: a value is checked once, when it enters the kind, and everyone who receives a `Cents` knows it is not negative.
 
 A rule that holds of every value of a kind belongs on the kind. `Int in 1..99` is short for `Int where 1 <= it and it <= 99`, and `in 0..<100` would leave out 100.
 
@@ -857,7 +870,7 @@ kind BulkLine = Line where it.quantity >= 10
 
 #### A condition with `where`
 
-`kind Cents = Int where it >= 0` is the general form. Any condition of the refinement language works: comparisons, `and`, `or`, `not`, `implies`, and calls of predicates ([Predicates](#predicates-named-conditions) show them).
+`kind Cents = Int where it >= 0` is the general form. The prelude has a kind like `Cents` already: `Nat`, which is `Int where it >= 0`. Any condition of the refinement language works: comparisons, `and`, `or`, `not`, `implies`, and calls of predicates: `reflect` ones, and in a kind's `where` also `opaque` ones ([Predicates](#predicates-named-conditions) and [Opaque predicates](#opaque-predicates) show them).
 
 #### A range with `in`
 
@@ -872,7 +885,7 @@ The result is a `Slot`, so the verifier proves both branches: `slot + 1` is belo
 
 #### Refinements of refinements, and type arguments
 
-A refinement of a refined kind adds its condition to the first: `kind Small = Cents where it < 100` is both `>= 0` and `< 100`. The prelude already has one: `Nat`, the integers that are not negative. In the step, a staff discount is a `Percent` of at most 50, so a value of it holds both conditions:
+A refinement of a refined kind adds its condition to the first: `kind Small = Cents where it < 100` is both `>= 0` and `< 100`. In the step, a staff discount is a `Percent` of at most 50, so a value of it holds both conditions:
 
 ```una include="steps/11-refined-forms/src/catalog.una#staff_pays" title="steps/11-refined-forms/src/catalog.una"
 --- What a staff member pays, in percent of the price: always at least half.
@@ -885,7 +898,7 @@ staff_pays(rate: StaffDiscount) -> Percent
 `100 - rate` is a `Percent`, and at least 50, because `rate` is between 0 and 50.
 
 > [!IMPORTANT]
-> A refined kind cannot be a type argument: `List[Cents]` and `Option[Quantity]` are ill-formed (U2002). Put the refinement on a field of a record, as `Line` does with `quantity`, and use a list of the records.
+> In editions 0.1 and 0.2, which this book uses, a refined kind cannot be a type argument: `List[Cents]` and `Option[Quantity]` are ill-formed (U2002). Put the refinement on a field of a record, as `Line` does with `quantity`, and use a list of the records. Edition 0.3 allows refined type arguments, such as `List[Cents]` ([chapter 14, Editions](/learn/editions/)).
 
 #### Texts, lists and records
 
@@ -906,7 +919,7 @@ free_units(line: BulkLine) -> Int
 ```
 
 - `Sku` is a text of at least four characters, so `family` can cut four characters with `slice` with no clause of its own: the kind carries the fact.
-- `NonEmpty[T]` takes a type parameter, so it works for a list of any type. `average_units` divides by the length, and the kind proves it is not 0. The argument of `NonEmpty` is a plain type here, `Int`; only a refined kind cannot be a type argument.
+- `NonEmpty[T]` takes a type parameter, so it works for a list of any type. `average_units` divides by the length, and the kind proves it is not 0. The argument of `NonEmpty` is a plain type here, `Int`: in edition 0.2, a refined kind cannot be a type argument.
 - `BulkLine` is a `Line` whose quantity is at least 10, so `free_units` can promise at least one free unit.
 
 #### A range in place
@@ -997,7 +1010,7 @@ shipping 495, then 0
 
 The verifier proves the condition at every place a value enters the kind: an argument, a returned value, a field of a record, and a `let` with the kind written. The other way needs no proof: a `Cents` goes wherever an `Int` goes.
 
-So the work happens at the edges. `shipping` returns 0 or 495, and the verifier proves each is a `Cents`. `Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2)` proves `1990 >= 0` and `2 in 1..99`. A function that only passes a `Cents` along proves nothing at all.
+So the work happens at the edges. `shipping` returns 0 or 495, and the verifier proves each is a `Cents`. `Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2)` proves `1990 >= 0` and `2 in 1..99`. A function that only passes a `Cents` along has nothing new to prove.
 
 #### What a value of the kind gives back
 
@@ -1064,7 +1077,7 @@ The same condition tends to appear in many places: "an order ships free from 50.
 
 `predicate reflect name(parameters) -> Bool = condition`: the word `predicate`, the word `reflect`, a name, typed parameters, the result type `Bool`, and a body of one condition after `=`. `reflect` means the verifier sees the body: when a clause calls the predicate, the verifier reads it as its body with the arguments in place.
 
-A `reflect` predicate is pure, uses no capabilities, cannot fail, and returns a value for every input. Its body is written in the refinement language. It may call other predicates, but never itself, directly or through another predicate (U2015).
+A `reflect` predicate is pure, uses no capabilities, cannot fail, and returns a value for every input. Its body is written in the refinement language. It may call other `reflect` predicates, but never itself, directly or through another predicate (U2015). Calling an `opaque` predicate there is U2016.
 
 #### Where a predicate is used
 
@@ -1190,11 +1203,17 @@ checked_per_module = 1
 not a barcode: 12-34
 ```
 
-`checked(raw.trim, is_barcode(it)) else fail NotABarcode` runs the predicate's body on the trimmed text. When it holds, the value becomes a `Barcode`; when it does not, the function fails with `NotABarcode`. Every `checked` counts against the module's escape budget in `una.toml`, here 1, and appears in the build report: a reviewer sees each place where a run, not a proof, decides.
+The example uses the tools of failure from [chapter 6, Failure](/learn/failure/). In brief:
+
+- **`kind ScanError = | NotABarcode`** is a sum kind with one variant, the one reason a scan is refused. The leading `|` lets a sum have a single variant.
+- **`fails ScanError`** in the header says the function may fail, with a variant of `ScanError`, instead of returning a value; **`fail NotABarcode`** is where it does ([section 6.1](/learn/failure/#s6-1)).
+- **`checked(raw.trim, is_barcode(it)) else fail NotABarcode`** runs the predicate's body on the trimmed text when the program runs. When it holds, the value becomes a `Barcode`; when it does not, the function fails with `NotABarcode` ([section 6.4](/learn/failure/#s6-4)).
+- **`attempt read_barcode(raw)`** keeps the outcome of a call that can fail as a value: `Ok(code)` when it returned `code`, `Err` when it failed. The `when` then handles both ([section 6.3](/learn/failure/#s6-3)).
+- **The escape budget.** Every `checked` counts against the module's budget in `una.toml`, here `checked_per_module = 1`, and appears in the build report: a reviewer sees each place where a run, not a proof, decides ([section 6.4](/learn/failure/#s6-4)).
 
 #### Calling an opaque predicate elsewhere
 
-An opaque predicate may be called only inside `checked`, in the body of another opaque predicate, and named in a `where` clause or a capability operation's clause. Call it in an `if`, and una refuses:
+An opaque predicate may be called only inside `checked`, in the body of another opaque predicate, and named in a `where` clause or a capability operation's clause. Call it in an `if`, and `una` refuses:
 
 ```diff include="steps/15-opaque..steps/16-opaque-call:src/barcodes.una" context="1" title="src/barcodes.una"
 --- a/src/barcodes.una
@@ -1240,9 +1259,9 @@ The test itself is harmless, but a value that passed it would carry a fact the e
 
 ### The refinement language
 
-The condition of a refinement, and every `requires` and `ensures` clause, is written in the **refinement language**, the part of Una the solver decides: integer, boolean and text literals, parameters, `result`, `it`, fields, `.len`, `+`, `-` and unary `-`, `*` when one side is a literal, `/` and `mod` by a literal that is not zero, comparisons, `in`, `is`, `and`, `or`, `not`, `implies`, and calls of predicates. Anything else in a clause, such as the product of two parameters, is U2014 ([a contract outside the refinement language](#a-contract-outside-the-refinement-language-u2014)).
+The condition of a refinement, and every `requires` and `ensures` clause, is written in the **refinement language**, the part of Una the solver decides: integer, boolean and text literals, parameters, `result`, `it`, fields, `.len`, `+`, `-` and unary `-`, `*` when one side is a literal, `/` and `mod` by a literal that is not zero, comparisons, `in`, `is`, `and`, `or`, `not`, `implies`, `old(x)` in `ensures`, and calls of `reflect` predicates. A kind's `where` and a capability operation's clauses may also name an `opaque` predicate. Anything else in a clause, such as the product of two parameters, is U2014 ([a contract outside the refinement language](#a-contract-outside-the-refinement-language-u2014)).
 
-Some things look allowed and are not: ordering two texts with `<`, comparing with a variant by `==` (write `is`), and calls of ordinary functions. A clause that needs one of these needs a different statement of the rule, or an opaque predicate.
+Some things look allowed and are not: ordering two texts with `<`, comparing with a variant by `==` (write `is`), and calls of ordinary functions. A clause that needs one of these needs a different statement of the rule, or an opaque predicate on a refined kind (`where`), whose values come from `checked` ([Opaque predicates](#opaque-predicates)). A function's `requires` or `ensures` cannot call an opaque predicate: that is U2016.
 
 ### A precondition, a refined kind or a runtime check
 
@@ -1290,6 +1309,12 @@ free units: 2
 ```
 
 24 units give two free units: 24 / 10 rounds down to 2. With 9 units the call does not check: `free_units` takes a `BulkLine`, and the verifier refutes the condition of `BulkLine` where the line enters the kind. The program never runs with a bulk line of 9 units.
+:::
+
+Last, the two kinds of predicate. `is_barcode` is the opaque predicate of [How a value gets an opaque fact](#how-a-value-gets-an-opaque-fact). Which of these check: a function with `requires is_barcode(code)`, and the kind `Barcode = Text where is_barcode(it)`?
+
+:::answer Show the answer
+Only the kind. A function's `requires` and `ensures` may call only `reflect` predicates, so `requires is_barcode(code)` is U2016: no caller could ever prove it, since the verifier sees only the predicate's name. A kind's `where` may name an opaque predicate, because it states the fact without proving it. Values of `Barcode` then come from `checked`, which tests the text when the program runs.
 :::
 
 ## 7.4 What the verifier proves

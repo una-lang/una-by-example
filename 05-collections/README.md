@@ -224,7 +224,7 @@ What comes after `in` decides what the loop visits. Una has these forms:
 | `for entry in stock.entries()` | the entries of a map, in key order ([section 5.5](#s5-5)) |
 | `let made = together for sku in skus` | each element, at the same time, building a list of the results ([chapter 12](/learn/memory-and-concurrency/#s12-4)) |
 
-The ends of a range can be any integer expressions, such as `0..<skus.len`. There is no other kind of loop: no `while` and no `loop`. [Una has no `while`](#una-has-no-while) says why.
+In a loop, the ends of a range can be any integer expressions of one type, such as `0..<skus.len`. In a `when` arm or a kind, they are literals. There is no other kind of loop: no `while` and no `loop`. [Una has no `while`](#una-has-no-while) says why.
 
 ### Loops over lists and ranges
 
@@ -347,7 +347,7 @@ numbered(skus: List[Text]) -> List[Text]
 
 #### The characters of a text
 
-Any function that returns a list gives a loop something to walk. `chars()` gives the characters of a text, one text of one character each:
+Any function that returns a list gives a loop something to walk. `chars()` gives the characters of a text, one text of one character each. `is_digits` is true when every character of a text is a digit, 0 to 9:
 
 ```una include="steps/04-loop-forms/src/shelves.una#digits_in" title="steps/04-loop-forms/src/shelves.una"
 --- How many digits a SKU holds: a loop over the characters of a text.
@@ -385,7 +385,7 @@ units in an empty cart: 0
 
 #### Building a list at the same time: `together for`
 
-`together for` runs one task per element, at the same time, and gives the list of what each task's body ends with. It stands where a value goes, after `let` or in an assignment:
+`together for` runs one **task** per element: a piece of work the program may run alongside the others, at the same time, instead of one after another. It gives the list of what each task's body ends with. It stands where a value goes, after `let` or in an assignment:
 
 ```una include="steps/04-loop-forms/src/shelves.una#labels" title="steps/04-loop-forms/src/shelves.una"
 --- A shelf label for each SKU, made at the same time: `together for` builds a list.
@@ -400,7 +400,7 @@ labels(skus: List[Text]) -> List[Text]
 ["label DESK-02", "label LAMP-01"]
 ```
 
-The results come in the order of the list, whatever order the tasks finish in. A task cannot assign a binding declared outside it, so `together for` builds a list and never accumulates. [Chapter 12](/learn/memory-and-concurrency/#s12-4) covers it.
+The results come in the order of the list, whatever order the tasks finish in. A task cannot assign a binding declared outside it, so `together for` cannot keep a running total: it only builds a list. [Chapter 12](/learn/memory-and-concurrency/#s12-4) covers tasks in full.
 
 ### What a loop body can hold
 
@@ -525,7 +525,7 @@ A `for` loop gives no value of its own: it is a statement, and what it computes 
 
 #### A loop is not a call
 
-A loop's turns are not calls, so a loop does not use up the call depth of a run, however many turns it takes ([chapter 12](/learn/memory-and-concurrency/#s12-5)). A recursive function, by contrast, adds one call per step.
+A **call** is one function running another and waiting for its answer. The **call depth** is how many calls are waiting at once, and a run has a limit on it. A loop's turns are not calls, so a loop does not use up the call depth, however many turns it takes ([chapter 12](/learn/memory-and-concurrency/#s12-5)). A function that calls itself, which [Una has no `while`](#una-has-no-while) shows, adds one call per step.
 
 ### Una has no `while`
 
@@ -576,7 +576,7 @@ weeks_of_stock(stock: Int, per_week: Int) -> Int
 10 units at 3 a week last 3 weeks
 ```
 
-With 10 units and 3 sold a week, the function answers 1 + the weeks of 7 units, which is 1 + the weeks of 4 units, which is 1 + the weeks of 1 unit, which is 0: 3 weeks. Each call has a smaller stock, so the calls end. `requires per_week >= 1` keeps a caller from passing 0, which would never make the stock smaller ([chapter 7](/learn/contracts/#s7-1) explains `requires`). When you know an upper limit, such as "at most 52 weeks", a range up to that limit with an `if` in the body is the other choice.
+With 10 units and 3 sold a week, the function answers 1 + the weeks of 7 units, which is 1 + the weeks of 4 units, which is 1 + the weeks of 1 unit, which is 0: 3 weeks. Each call has a smaller stock, so the calls end. `requires per_week >= 1` keeps a caller from passing 0, which would never make the stock smaller ([chapter 3](/learn/functions/#s3-2) introduced `requires`, and [chapter 7](/learn/contracts/#s7-1) explains it). When you know an upper limit, such as "at most 52 weeks", a range up to that limit with an `if` in the body is the other choice.
 
 ### Choosing a loop or a function over the list
 
