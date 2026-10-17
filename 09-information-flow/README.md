@@ -343,7 +343,7 @@ A value may flow into a place with a declared type only if its label is at or be
 ────╯
 ```
 
-Read it from the top. `[U4001]` is the code of a flow into a declared type with a lower label. The message names the place, `` `total` is `Int` ``, and the value, `` `confidential Int` ``. The mark under line 15 points at the value, not at the name. The last clause, *a flow from `confidential` to `public`*, says which way the information would move. The repair is one of two: raise the declared label to `confidential Int`, or lower the value on purpose through a policy ([section 9.5](#s9-5)).
+Read it from the top. `[U4001]` is the code of a flow into a declared type with a lower label. The message names the place, `` `total` is `Int` ``, and the value, `` `confidential Int` ``. The mark under line 15 points at the value, not at the name. The last clause, *a flow from `confidential` to `public`*, says which way the information would move. The repair is one of two: raise the declared label to `confidential Int`, or lower the value on purpose through a policy, a declared release ([section 9.5](#s9-5)).
 
 ### Printing a confidential value
 
