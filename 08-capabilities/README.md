@@ -392,10 +392,10 @@ close_shelf(sku: Text, units: Int) -> Unit
 `read` is not in the list: no callee of `close_shelf` reads a file.
 :::
 
-A second one: which functions of the back room could a test call with no fake at all?
+A second one: may `announce_all` call `copy_count`, without changing its header?
 
 :::answer Show the answer
-Only `shelf_tag`. It has no `uses`, so it touches nothing outside the program, and a test can call it and compare the text it returns. Every other function performs an operation, and an example must give each binding it needs a stand-in, as [section 8.7](#s8-7) shows.
+No. `copy_count` needs `@files` with `read` and `write`, and `announce_all` holds only `@console`. A caller must hold every binding its callees use, so `una check .` reports U3001 at the call: `copy_count` needs `@files`, "which is not in scope here". To make the call, `announce_all` would have to declare `uses @files: Files[read, write]` too, and handle or declare the `FileError` of the call, and every caller of `announce_all` would then need them as well.
 :::
 
 ## 8.2 The host's capabilities and grants
@@ -489,6 +489,9 @@ Each text grants one host capability:
 | `"files:src:write"` | `Files[write]`, inside `src` |
 | `"files:src:read,write"` | both operations, inside `src` |
 | `"files:src/exports:write"` | `Files[write]`, inside `src/exports` only |
+| `"env"` | `Env` |
+| `"keys:<keyfile>"` | `Keys`, with the secret keys read from that file |
+| `"http:<origin>"` or `"http:<origin>:<methods>"` | `Http`, toward that origin only, such as `https://api.example.invalid`, and only those methods when they are listed (edition `0.2`) |
 
 A `Files` grant always carries a directory and a mode, so it says where the program may read or write, and which of the two.
 
@@ -912,14 +915,16 @@ The diagnostic is U5001, the refuted postcondition of [chapter 7](/learn/contrac
 
 `una report .` lists each capability the package declares under `assumptions`, with its operations, since the program assumes that each service does what its declaration says. Under `authority` and `handler authority` it lists what each function and each handler may use:
 
-```text include="steps/10-handlers/expected/commands/report.txt#L5-L9,L12-L13"
+```text include="steps/10-handlers/expected/commands/report.txt#L5-L10,L12-L14"
 obligations: 0 proven, 0 refuted, 0 unknown; 0 cached
 authority:
   receipts.main (pub): @console: Console[print]
   receipts.send_receipt (private): @mailer: Mailer[send]
 handler authority:
+  receipts.printed for receipts.Mailer (private): @console: Console[print]
 escapes:
 assumptions:
+  receipts.Mailer: send
 ```
 
 ### A capability, a host capability or a pure function
@@ -1092,7 +1097,7 @@ pub main() -> Unit
 2. **`uses @customers: Customers[find]` on `greeting`.** The `directory` handler implements both operations, but `greeting` holds only `find`. An `@customers.forget(id)` in its body would not check.
 3. **`if none use Customer(id: id, name: "guest")`.** `find` returns an `Option`, so the handling clauses of [chapter 6](/learn/failure/) apply to an operation as to any call.
 4. **`uses @audit: Console[print]` on `erase`.** The audit trail is a console here, under the name `@audit`, so the header says what the console is for.
-5. **`let page = greeting("C-17") with @customers = directory(customers)`.** A `with` at the end of a `let`: it installs the handler for that call.
+5. **`let page = greeting("C-17") with @customers = directory(customers)`.** A `with` at the end of a `let`: it installs the handler for that call. The line above it, `empty_map().with(key: …, value: …)`, is something else: the map method of [chapter 5](/learn/collections/#s5-5) that adds an entry, not the `with` clause.
 6. **`with @customers = directory(customers), @audit = @console`.** Two bindings. The first installs a handler. The second is a rebinding: the callee's `@audit` is the caller's `@console`. `main` holds no `@audit` of its own, so without the rebinding the call would not check.
 :::
 
@@ -1169,7 +1174,7 @@ U3004 marks `@console` inside the lambda: the lambda's type comes from the param
 
 #### How to write `uses of` and `fails of`
 
-In edition `0.2`, a header names the parameter whose effects it takes on: `uses of action` means "this function may do whatever `action` does", and `fails of action` means "this function fails as `action` fails". Both go with the other clauses, `uses of` among the `uses` lines and `fails of` in the place of `fails`. The parameter's type is written without `uses` or `fails` of its own:
+In edition `0.2`, a header names the parameter whose effects it takes on: `uses of action` means "this function may do whatever `action` does", and `fails of action` means "this function fails as `action` fails". `uses of` goes among the `uses` lines, and `fails of` goes where `fails` goes. A header may have both `fails E` and `fails of action`; the argument must then fail with the header's own kind, `E`, or the call is U3009. The parameter's type is written without `uses` or `fails` of its own:
 
 ```una include="steps/16-uses-of/src/shelf.una" title="steps/16-uses-of/src/shelf.una" verified="check, run"
 module shelf
@@ -1227,7 +1232,7 @@ saved: Ok(unit)
 | The caller holds the capability under the callee's name | Nothing |
 | The caller holds it under another name | `with @callee_name = @caller_name` |
 | The caller must choose a provider, or holds none | `with @x = handler(args)` |
-| The caller wants the callee to use fewer operations | Nothing: the callee's header already limits it |
+| The caller wants the callee to use fewer operations | Nothing: the callee's header already limits it. In edition `0.3`, `with @x = @y[op]` also narrows at the call ([section 8.5](#s8-5)) |
 | The callee runs a function it is given, which may have effects | `uses of p` and `fails of p` on the callee (edition `0.2`) |
 :::
 
@@ -1251,10 +1256,11 @@ No. With `uses of action`, a call of `each_sku` performs the effects of its argu
 
 ### What edition 0.3 adds
 
-An **edition** is a version of the language that a package chooses. Edition `0.3` is a preview: a package opts in with `edition = "0.3"` in `una.toml`, and [chapter 14, Editions](/learn/editions/), explains what that means. It adds two ways to say more about authority:
+An **edition** is a version of the language that a package chooses. Edition `0.3` is a preview: a package opts in with `edition = "0.3"` in `una.toml`, and [chapter 14, Editions](/learn/editions/), explains what that means. It adds three ways to say more about authority:
 
 - A **condition on an operation**: the header says not only what a function may do, but when.
 - A **boundary**: a module from outside the store's own code, such as a vendored library, receives only what each call grants it, up to a ceiling written in `una.toml`.
+- A **narrowed rebinding**: `with @x = @y[ops]` hands a callee the caller's `@y` restricted to the operations in brackets, at any call. A caller that holds `@directory: Customers` can write `greeting("C-17") with @customers = @directory[find]`, and `greeting` receives only `find`. In editions `0.1` and `0.2` the brackets are a syntax error, U0101. At a boundary it matters most: the ceiling counts every operation a binding permits after narrowing.
 
 ### Why an operation needs a condition
 
@@ -1262,7 +1268,7 @@ A function often has a mode in which it must not act: a dry run, a preview, a re
 
 ### How to write a condition
 
-After the operation's name in the brackets of `uses`, write `where` and a condition over the function's parameters: `uses @supplier: Supplier[order where not dry_run]` lets the function place an order only where `dry_run` is false. The condition is written in the refinement language of [chapter 7](/learn/contracts/#s7-3), like a `requires` clause, and must be a `Bool`. It reads the parameters only: they never change during a call, so the condition's value is fixed for the whole call. Operations without `where` in the same brackets are unconditioned.
+After the operation's name in the brackets of `uses`, write `where` and a condition over the function's parameters: `uses @supplier: Supplier[order where not dry_run]` lets the function place an order only where `dry_run` is false. The condition is written in the refinement language of [chapter 7](/learn/contracts/#s7-3), like a `requires` clause, and must be a `Bool`. It reads the arguments the caller passed, so its value is fixed for the whole call, even if the body changes an `edit` parameter: a parameter the function may change for its caller ([chapter 12](/learn/memory-and-concurrency/#s12-2)). A handler's `uses` may carry conditions too. Operations without `where` in the same brackets are unconditioned.
 
 ### A restock with a dry run
 
@@ -1571,7 +1577,7 @@ pub dispatch(shipments: List[Shipment]) -> Unit
     @log.print(log_line(shipment, outcome: outcome))
 ```
 
-`dispatch` calls the log `@log`, not `@console`. The name says what the binding is for, and the caller decides what it is: the console in `main`, a fake in a test, or one day a log service with a handler of its own. `dispatch` holds the union of what it does itself and what `notify` needs, and nothing more. `una report .` lists, under `authority`, the bindings of every public function, so a reviewer can read the service's whole reach in one place.
+`dispatch` calls the log `@log`, not `@console`. The name says what the binding is for, and the caller decides what it is: the console in `main`, a fake in a test, or one day a log service with a handler of its own. `dispatch` holds the union of what it does itself and what `notify` needs, and nothing more. `una report .` lists, under `authority`, the bindings of every function, public or private, so a reviewer can read the service's whole reach in one place.
 
 ### The handlers
 
@@ -1990,7 +1996,7 @@ In the step of [An end-of-day stock export](#an-end-of-day-stock-export), remove
    │ Help: repair 1 (widens grant: the program then gets this host authority when it runs): grant `now` of `Clock` in `[run] grants` of `una.toml`, or with `--grant`
 ```
 
-*Why:* grants are easy to forget when a `uses` line is added to `main`. The mark is on the `uses` line that is not granted, and the help line widens the grant, which is for the package's owner to decide.
+*Why:* grants are easy to forget when a `uses` line is added to `main`. The mark is on the `uses` line that is not granted, and the help line widens the grant, which is for the people who maintain the package to decide.
 
 *Fix:* grant `"clock"` if the program needs the time. Otherwise remove the `uses` line and the call.
 :::

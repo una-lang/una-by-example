@@ -1372,7 +1372,7 @@ Each line is one question, answered on its own. `una --json obligations .` print
 
 ### The kinds of obligations
 
-Each kind comes from one construct. The step's functions, one per kind:
+Edition `0.2` has six kinds, and each comes from one construct. The step's functions, one per kind:
 
 #### `precondition`: at every call of a function with `requires`
 
@@ -1461,7 +1461,7 @@ proven   ob-17951dbe35f9 exhaustive    src/stockroom.una:28:3 units == 0 or unit
 
 A `when` on numbers must have an arm for every value, or an `else`. The goal joins the arms with `or`: every `units` the parameter's kind allows matches one of them. `units` is `Int in 0..999`, so the three arms cover it.
 
-#### `overflow`: at arithmetic on a fixed-width integer
+#### `overflow`: at arithmetic on a fixed-width integer, and at a conversion to a narrower one
 
 ```una include="steps/17-obligation-kinds/src/stockroom.una#next_shelf" title="steps/17-obligation-kinds/src/stockroom.una"
 --- The next shelf of a rack of 201 shelves. `U8` holds 0 to 255: an overflow obligation.
@@ -1472,7 +1472,11 @@ next_shelf(shelf: U8) -> U8 = if shelf < 200 then shelf + 1 else 0
 proven   ob-7ed451ea7768 overflow      src/stockroom.una:34:51 shelf + 1 in 0..255
 ```
 
-A `U8` holds the whole numbers 0 to 255 ([chapter 2](/learn/values/#s2-5)). `shelf + 1` must stay in that range; the guard `shelf < 200` proves it does.
+A `U8` holds the whole numbers 0 to 255 ([chapter 2](/learn/values/#s2-5)). `shelf + 1` must stay in that range; the guard `shelf < 200` proves it does. A conversion of a value to a narrower fixed-width type raises the same kind of obligation: the value must fit.
+
+#### Two more kinds in edition `0.3`
+
+Edition `0.3`, a preview of the next version of the language, adds two kinds. `effect_condition` is raised wherever an operation whose `uses` carry a `where` condition may run, such as "never place an order in a dry run"; [chapter 8](/learn/capabilities/#s8-5) shows it. `contract_lock` comes from a lock in `una.toml` that fixes what the `uses` of a public function may allow. Packages on edition `0.2`, as every step of this chapter is, never see them.
 
 #### Running the step
 
@@ -1526,7 +1530,7 @@ The identity, such as `ob-2a5905c8f53d`, comes from the module, the function, th
 
 #### A pinned solver
 
-The answers come from the solver Z3 at the version `verification.lock` names, with a fixed step budget, the most work it may do on one question. The same program and the same lock give the same answers on every machine.
+The answers come from the solver Z3 at the version `verification.lock` names, with a fixed step budget, the most work it may do on one question. Within the step budget, the same program and the same lock give the same answers on every machine.
 
 ### When the solver cannot decide: U5002
 
@@ -1653,7 +1657,7 @@ units: 5
 
 The day-to-day program's `subtotal` uses the same move, with `let edit total: Cents = 0`.
 
-U5002 has one more source: a question that runs out of the step budget in `verification.lock`. The reason then says so. It is rare in code of this size; split the function, or state an intermediate fact with a `let` and a guard, so that each question is smaller.
+U5002 has two more sources: a question that runs out of the step budget in `verification.lock`, and, rarely, one that runs out of the wall-clock limit of one question (`--solver-wallclock`, 60 seconds by default), whose result can differ between machines. The reason says which. Both are rare in code of this size; split the function, or state an intermediate fact with a `let` and a guard, so that each question is smaller. In edition `0.3`, an `effect_condition` or `contract_lock` obligation can be unknown too.
 
 ### A guard, a stronger type or `checked`
 
@@ -1906,7 +1910,7 @@ pub main() -> Unit
 Once `parse_rate` exists, a `Percent` can come from nowhere but a proof: a literal the verifier checks, a computation it proves, or this function, whose `else` branch is itself a proof.
 
 > [!SECURITY]
-> A refined kind turns "every function must remember to check the rate" into "one function checks it, and the checker refuses every other way in". A new function that takes a `Percent` cannot receive 150, whoever calls it.
+> A refined kind turns "every function must remember to check the rate" into "one function checks it, and the checker refuses every unproven way in". A new function that takes a `Percent` cannot receive 150, whoever calls it.
 
 #### The fact survives `attempt` and `when`
 
@@ -1934,7 +1938,7 @@ A contract says what the code does: `ensures result <= paid`. It does not say wh
 
 #### The declaration
 
-A requirement is the word `requirement`, an identifier in capitals, and four fields, one per line, indented two spaces:
+A requirement is the word `requirement`, an identifier, and four fields. The identifier is in capital letters, with words joined by `_`, and ends with `_` and a number, such as `REFUND_1`; `TAXES` alone is U1005. The fields go one per line, indented two spaces:
 
 ```una include="steps/26-requirements/src/refunds.una#L3-L7" title="steps/26-requirements/src/refunds.una"
 requirement REFUND_1
@@ -2911,6 +2915,6 @@ The repairs of U5001 and U5002 carry no `edit`, since only the author knows whet
 - Construct pages: [`requires`](/docs/language/functions/requires/), [`ensures`](/docs/language/functions/ensures/), [`where` and refinements](/docs/language/types/where/), [`predicate`](/docs/language/types/predicate/), [`kind`](/docs/language/types/kind/), [`checked` and the escape budget](/docs/language/errors/checked/), [`requirement`](/docs/language/requirements/requirement/), [`example`](/docs/language/examples/example/), [verification](/docs/language/verification/)
 - Prelude: [`Nat`, `Option`, `Result`, `to_int`](/docs/std/)
 - Commands: [`una check`](/docs/cli/check/), [`una obligations`](/docs/cli/obligations/), [`una trace`](/docs/cli/trace/), [`una report`](/docs/cli/report/)
-- Diagnostics: [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/) (a name declared twice), [U1006](/docs/errors/U1006/), [U1007](/docs/errors/U1007/), [U2002](/docs/errors/U2002/), [U2012](/docs/errors/U2012/) (`result` or `old` outside `ensures`), [U2014](/docs/errors/U2014/), [U2015](/docs/errors/U2015/) (a predicate body that is not allowed), [U2016](/docs/errors/U2016/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U5003](/docs/errors/U5003/) (the solver is missing or not the pinned version)
+- Diagnostics: [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/) (a name declared twice), [U1005](/docs/errors/U1005/) (a requirement identifier of the wrong form), [U1006](/docs/errors/U1006/), [U1007](/docs/errors/U1007/), [U2002](/docs/errors/U2002/), [U2012](/docs/errors/U2012/) (`result` or `old` outside `ensures`), [U2014](/docs/errors/U2014/), [U2015](/docs/errors/U2015/) (a predicate body that is not allowed), [U2016](/docs/errors/U2016/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U5003](/docs/errors/U5003/) (the solver is missing or not the pinned version)
 - Specification: [functions and contracts](/docs/spec/04-functions-and-contracts/), [types](/docs/spec/03-types/), [verification](/docs/spec/12-verification/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [errors](/docs/spec/06-errors/)
 :::
