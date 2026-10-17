@@ -2857,14 +2857,14 @@ The repair of U2007 has a description and no `edit`, because the right arm depen
 ### Recap
 
 :::recap
-- A list holds values of one type in order, and positions count from 0. `append` and `sort` return new lists; `edit xs.set(...)` replaces an element in place. Read a position with `at` or `first`.
-- A binding that changes is `let edit`, and a loop updates it with assignments. A plain `let` names one value.
-- `for x in xs` runs its body once per element, in order; `a..b` includes `b` and `a..<b` leaves it out. There is no `while`: repeat with a range, or with recursion.
-- `first`, `at`, `get`, `first_where` and `to_int` return an `Option`. Use it through a `when` with both arms, or `or_else` when a default is right.
-- Use `map`, `filter`, `fold` and `first_where` when each step is one expression, and `for` when it needs several lines.
-- Group with a map: read the total so far with `get` and `or_else`, then write it with `edit m.set(...)`.
-- A map lists its keys in order, so output built from it is sorted. Its keys need an order, and records have none.
-- Parsed JSON is a `Json`: parse it with a clause or `attempt`, read it with `when` and `get` into typed records, write it with `to_json`, and keep money in whole cents.
+- A list holds values of one type, from position 0. `append` and `sort` return new lists; `at` and `first` read one.
+- A binding that changes is `let edit`; a plain `let` names one value.
+- `for x in xs` runs once per element; `a..b` includes `b`, `a..<b` does not. Without `while`, repeat with a range or recursion.
+- `first`, `at`, `get`, `first_where` and `to_int` return an `Option`: use it with `when` or `or_else`.
+- Use `map`, `filter`, `fold` and `first_where` for one-expression steps, and `for` for longer ones.
+- Group with a map: `get` and `or_else`, then `edit m.set(...)`.
+- A map lists its keys in order; its keys need an order.
+- Parse JSON with a clause or `attempt`, read it with `when` and `get`, write it with `to_json`.
 :::
 
 ### Reference
