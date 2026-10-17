@@ -1,0 +1,48 @@
+module counts
+
+--- What a shelf label shows for a count that may be missing: `when` with both arms.
+shown(count: Option[Int]) -> Text
+=
+  when count
+    is Some(units) -> "{units} on the shelf"
+    is None -> "not counted yet"
+
+--- Whether a shelf holds more than 10 units: `when` with an `else` arm.
+well_stocked(count: Option[Int]) -> Bool
+=
+  when count
+    is Some(units) -> units > 10
+    else -> false
+
+--- The units to order for a shelf: a missing count orders a full shelf of 12.
+to_order(count: Option[Int]) -> Int = 12 - count.or_else(default: 0)
+
+--- Whether a shelf still needs counting: a test of the variant, in a condition.
+needs_count(count: Option[Int]) -> Bool = count is None
+
+--- The units typed by a clerk, or 0 when the text is not a number: `if none use`.
+typed_units(raw: Text) -> Int
+=
+  let units = raw.trim.to_int()
+    if none use 0
+  units
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let counted = Some(14)
+  let missing: Option[Int] = None
+  @console.print("{counted} {missing}")
+  @console.print("{shown(counted)} / {shown(missing)}")
+  @console.print("{well_stocked(counted)} {well_stocked(missing)}")
+  @console.print("{to_order(Some(5))} {to_order(missing)}")
+  @console.print("{needs_count(missing)} {missing.is_some()}")
+  let typed = typed_units(" 7 ")
+  let spelled = typed_units("seven")
+  @console.print("{typed} {spelled}")
+  @console.print("{counted == Some(14)} {missing == None}")
+  let sku = "LAMP-01"
+  let dash = sku.find(text: "-")
+  let number = sku.slice(start: 5, end: 7).to_int()
+  @console.print("{dash} {number} {sku.chars().first()}")
+  @console.print("{shown(Some(0))} / {to_order(Some(12))} / {well_stocked(Some(10))}")

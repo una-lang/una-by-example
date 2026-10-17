@@ -1,0 +1,3 @@
+lighting: 5
+textiles: 1
+10 units sold in all

@@ -1,0 +1,60 @@
+module records
+
+--- What a parsed value is: one arm for each variant of `Json`.
+describe(json: Json) -> Text
+=
+  when json
+    is Null -> "null"
+    is Boolean(value) -> "yes or no: {value}"
+    is Number(value) -> "a whole number: {value}"
+    is Decimal(text) -> "a number with a fraction: {text}"
+    is Str(value) -> "a string: {value}"
+    is Array(items) -> "an array of {items.len} items"
+    is Object(fields) -> "an object with the fields {fields.keys()}"
+
+--- The tags of a product record: the strings in its array `tags`, or `[]` when it has none.
+tags(record: Json) -> List[Text]
+=
+  let listed = when record
+    is Object(fields) -> fields.get(key: "tags").or_else(default: Null)
+    else -> Null
+  let items = when listed
+    is Array(items) -> items
+    else -> []
+  let edit found: List[Text] = []
+  for item in items
+    when item
+      is Str(value) ->
+        found = found.append(item: value)
+      else -> unit
+  found
+
+--- A text read as JSON, kept as a value: `Ok` with the JSON, or `Err` with where it broke.
+parsed(text: Text) -> Result[Json, JsonError] = attempt text.parse_json()
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let inputs = ["null", "true", "1990", "19.90", "\"LAMP-01\"", "[1, 2, 3]", "\{\"sku\": \"LAMP-01\", \"cents\": 1990\}"]
+  for text in inputs
+    let value = text.parse_json()
+      if error use Null
+    @console.print(describe(value))
+  let record = "\{\"sku\": \"LAMP-01\", \"tags\": [\"new\", 7, \"sale\"]\}".parse_json()
+    if error use Null
+  @console.print("tags: {tags(record)} and {tags(Null)}")
+  let trailing = parsed("[1, 2,]")
+  let twice = parsed("\{\"sku\": \"LAMP-01\", \"sku\": \"RUG-07\"\}")
+  let empty = parsed("")
+  @console.print("{trailing} {twice} {empty}")
+  let edit fields: Map[Text, Json] = empty_map()
+  edit fields.set(key: "sku", value: Str(value: "LAMP-01"))
+  edit fields.set(key: "tags", value: Array(items: [Str(value: "new"), Null]))
+  edit fields.set(key: "on_sale", value: Boolean(value: false))
+  @console.print(Object(fields).to_json())
+  let note = "a \"bright\" lamp"
+  @console.print(note.quote_json())
+  let input = "\{\"sku\": \"RUG-07\", \"cents\": 4500, \"active\": true\}"
+  let product = input.parse_json()
+    if error use Null
+  @console.print(product.to_json())

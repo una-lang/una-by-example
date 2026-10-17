@@ -1,0 +1,22 @@
+module batch
+
+--- The units of every typed quantity, added up. One quantity that is not a number fails the
+--- whole batch.
+total_units(typed: List[Text]) -> Int
+  fails ParseError
+=
+  let edit total = 0
+  for raw in typed
+    let units = raw.parse_int()
+      if error pass
+    total = total + units
+  total
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let good = total_units(["12", "3"])
+    if error use -1
+  let mixed = total_units(["12", "", "3", "3x"])
+    if error use -1
+  @console.print("{good} and {mixed}")

@@ -1,0 +1,1 @@
+error U2001 at src/prices.una:16:48: expected `Bool`, found `Int`

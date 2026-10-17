@@ -1,0 +1,9 @@
+[U2001] Error: expected `Bool`, found `Int`
+    ╭─[ src/prices.una:16:48 ]
+    │
+ 16 │   let above = prices.filter(keep: fn(cents) -> cents - limit)
+    │                                                ──────┬──────
+    │                                                      ╰──────── expected `Bool`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

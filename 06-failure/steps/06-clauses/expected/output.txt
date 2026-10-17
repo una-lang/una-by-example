@@ -1,0 +1,4 @@
+7 0 / 3 units / 'x' is not a count
+Err(BadShelf(shelf: "A-12", cause: Unreadable("seven")))
+7 0 -1
+12 units / 0

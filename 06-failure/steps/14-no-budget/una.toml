@@ -1,0 +1,9 @@
+[package]
+name = "sku"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "sku"
+grants = ["console"]
+

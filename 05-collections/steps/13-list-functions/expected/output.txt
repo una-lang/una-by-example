@@ -1,0 +1,9 @@
+map: [2189, 4950, 935]
+map: ["lamp-01", "rug-07", "mug-11"]
+map: [false, true, false]
+filter: [4500] ["MUG-11"]
+fold: 7340 and 4500
+first_where: Some("RUG-07") and None
+chained: 3124
+empty: [] 0 None
+question: [24, 16] 7

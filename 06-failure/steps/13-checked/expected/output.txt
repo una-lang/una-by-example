@@ -1,0 +1,4 @@
+sku LAMP-01
+not a sku: lamp 1
+sku LAMP-02
+not a sku: RUG-07

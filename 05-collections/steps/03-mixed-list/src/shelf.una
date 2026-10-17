@@ -1,0 +1,31 @@
+module shelf
+
+--- The size of a T-shirt. Its variants carry no data, so they have an order: the order of
+--- their declaration.
+kind Size = Small | Medium | Large
+
+--- The counts on a shelf, after a recount of the shelf at `position`.
+recount(counts: List[Int], position: Int, counted: Int) -> List[Int]
+  requires 0 <= position and position < counts.len
+=
+  let edit fixed = counts
+  edit fixed.set(index: position, item: counted)
+  fixed
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let empty: List[Text] = []
+  let counts = [4, "zero", 7]
+  let sizes = [Large, Small, Medium]
+  let aisles = [[1, 2], [3]]
+  @console.print("{empty.len} {counts.len} {sizes.len} {aisles.len}")
+  @console.print("{empty.is_empty()} {counts.is_empty()}")
+  @console.print("{counts.first()} {counts.at(index: 2)} {counts.at(index: 3)} {empty.first()}")
+  let receipt = empty.join(separator: ", ")
+  @console.print("{counts.contains(item: 0)} {counts.sum()} '{receipt}'")
+  @console.print("{counts.sort()} {sizes.sort()}")
+  @console.print("{recount(counts, position: 1, counted: 5)} {counts}")
+  @console.print("{counts == [4, 0, 7]} {counts == [0, 4, 7]}")
+  let shelf = [3, 1, 2]
+  @console.print("{shelf.append(item: 1).sort()} {shelf.len}")

@@ -1,0 +1,1 @@
+error U3007 at src/shelves.una:20:15: `read_count` can fail with `CountError`; handle the failure with an `if error` clause, or wrap the call in `attempt`

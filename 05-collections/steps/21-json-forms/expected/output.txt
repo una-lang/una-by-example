@@ -1,0 +1,12 @@
+null
+yes or no: true
+a whole number: 1990
+a number with a fraction: 19.90
+a string: LAMP-01
+an array of 3 items
+an object with the fields ["cents", "sku"]
+tags: ["new", "sale"] and []
+Err(Syntax(6)) Err(DuplicateKey(19)) Err(Syntax(0))
+{"on_sale":false,"sku":"LAMP-01","tags":["new",null]}
+"a \"bright\" lamp"
+{"active":true,"cents":4500,"sku":"RUG-07"}

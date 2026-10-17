@@ -1,0 +1,9 @@
+[U2001] Error: expected `Int`, found `Text`
+    ╭─[ src/shelf.una:19:20 ]
+    │
+ 19 │   let counts = [4, "empty", 7]
+    │                    ───┬───
+    │                       ╰───── expected `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

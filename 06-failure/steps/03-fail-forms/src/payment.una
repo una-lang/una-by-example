@@ -1,0 +1,57 @@
+module payment
+
+--- How the payment service can fail. A kind with one variant starts with `|`.
+kind ServiceError = | Timeout
+
+--- Why a card payment was refused. Variants with data and without data can mix.
+kind PaymentError = Declined | Expired(month: Int) | OverLimit(limit: Int, asked: Int)
+
+--- The amount charged: `fail` in one branch of an `if`, the value in the other.
+charge(cents: Int, limit: Int) -> Int
+  fails PaymentError
+=
+  if cents > limit
+    fail OverLimit(limit: limit, asked: cents)
+  else
+    cents
+
+--- The month a card expires, if it is not before `today`: a variant with one field.
+valid_until(month: Int, today: Int) -> Int
+  fails PaymentError
+=
+  if month < today
+    fail Expired(month)
+  else
+    month
+
+--- A payment service that is always down: `fail` as the whole body.
+always_down(cents: Int) -> Int
+  fails ServiceError
+=
+  fail Timeout
+
+--- A refusal with no detail: a variant without data.
+refuse(cents: Int) -> Int
+  fails PaymentError
+=
+  fail Declined
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let paid = charge(4500, limit: 10000)
+    if error use 0
+  let refused = charge(24000, limit: 10000)
+    if error use 0
+  let until = valid_until(11, today: 10)
+    if error use 0
+  let expired = valid_until(3, today: 10)
+    if error use 0
+  let offline = always_down(4500)
+    if error use 0
+  let declined = refuse(4500)
+    if error use 0
+  @console.print("{paid} {refused} {until} {expired} {offline} {declined}")
+  let this_month = valid_until(10, today: 10)
+    if error use 0
+  @console.print("card valid until month {this_month}")
