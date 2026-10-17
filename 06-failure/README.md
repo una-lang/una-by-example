@@ -332,6 +332,81 @@ So a private function without `fails` can still fail. Its contract is the inferr
 
 Some problems never reach the program as failures, because they are ruled out before it runs. A division by zero, or a call that breaks a function's `requires`, is a proof obligation that the verifier must prove ([chapter 7](/learn/contracts/)): a program with one it cannot prove does not run. A few problems outside the program's logic, such as running out of memory, stop the run instead; [Reference](#reference) lists them.
 
+### Failing as the function you are given: `fails of`
+
+#### What `fails of` is
+
+A function may take another function as a parameter, as `map` takes the function it applies ([chapter 3](/learn/functions/#s3-5), [chapter 5](/learn/collections/#s5-4)). Then whether it can fail depends on what it is given. Think of a cashier who rings up a cart with whatever price list the manager hands over: with the regular list, a SKU missing from it stops the sale; with a sale sign that prices everything at 5.00, nothing can go wrong. `fails of price`, a line of the header, says exactly that: this function fails when, and only when, its parameter `price` fails, and with the same kind.
+
+#### Why a parameter's failures need a clause
+
+A parameter of a function type such as `fn(Text) -> Int` is a function that gives an `Int` and cannot fail. Here is a `pub` function that totals a cart with a price function, without `fails of`, called with a price list that fails for an unknown SKU:
+
+```diff include="steps/06-fails-of..steps/05-no-fails-of:src/pricing.una" context="1" title="src/pricing.una"
+--- a/src/pricing.una
++++ b/src/pricing.una
+@@ -8,3 +8,2 @@
+ pub total_with(skus: List[Text], price: fn(Text) -> Int) -> Int
+-  fails of price
+ =
+```
+
+`una check .` reports, once for each call that passes `listed`:
+
+```text include="steps/05-no-fails-of/expected/rendered.txt#L1-L8"
+[U3009] Error: this function can fail with `PriceError`, which the expected function type does not allow
+    ╭─[ src/pricing.una:34:57 ]
+    │
+ 34 │   let known = total_with(["LAMP-01", "DESK-02"], price: listed)
+    │                                                         ───┬──
+    │                                                            ╰──── this function can fail with `PriceError`, which the expected function type does not allow
+    │
+    │ Note: run `una explain U3009` for an explanation
+```
+
+The mark points at the argument, `listed`. The message says that `listed` can fail with `PriceError`, and that the type of the parameter, `fn(Text) -> Int`, allows no failure. Writing `fails PriceError` on `total_with` would not help: the parameter's type would still allow no failure, and every call would need a clause, even with a price function that never fails.
+
+#### How to write `fails of`
+
+`fails of p` goes under the header, as `fails` does, and names a parameter `p` whose type is a function type written without `fails`. In the body, a call of `p` that can fail takes a clause, and `if error pass` hands its failure on:
+
+```una include="steps/06-fails-of/src/pricing.una#total_with" title="steps/06-fails-of/src/pricing.una"
+--- The total of a cart, with each SKU priced by `price`. It fails when, and only when,
+--- `price` fails, and with the same error kind.
+pub total_with(skus: List[Text], price: fn(Text) -> Int) -> Int
+  fails of price
+=
+  let edit total = 0
+  for sku in skus
+    let cents = price(sku)
+      if error pass
+    total = total + cents
+  total
+```
+
+At each call of `total_with`, the failure is that of the argument. `listed` fails with `PriceError`, so a call with `listed` needs a clause; `flat` and the lambda cannot fail, so a call with them needs none:
+
+```una include="steps/06-fails-of/src/pricing.una#L35-L39" title="steps/06-fails-of/src/pricing.una"
+  let known = total_with(["LAMP-01", "DESK-02"], price: listed)
+    if error use -1
+  let flat_total = total_with(["LAMP-01", "VASE-03"], price: flat)
+  let lambda_total = total_with(["LAMP-01"], price: fn(sku) -> sku.len * 100)
+  @console.print("{known} {flat_total} {lambda_total}")
+```
+
+```text include="steps/06-fails-of/expected/output.txt#L1"
+17890 1000 700
+```
+
+The lambda prices each SKU at 100 cents per character of its code, so `LAMP-01` costs 700.
+
+#### How `fails of` behaves
+
+- `fails of p` and `uses of p`, its twin for capabilities ([chapter 8](/learn/capabilities/)), exist from edition `0.2` on.
+- A header may also have its own `fails E`. Then the argument for `p` must fail with `E` too, so that the function keeps one error kind (U3009 at the argument).
+- A private function may leave `fails of p` out, and the checker infers it when the body only passes on the failures of `p`, as it infers `fails` ([Public functions declare; private ones may infer](#public-functions-declare-private-ones-may-infer)). That is why `total_with` is `pub` here: the line is what its callers rely on.
+- In edition `0.2`, `map`, `filter`, `fold` and `first_where` declare `fails of` their function parameter, so they accept a function that fails, and stop at its first failure.
+
 ### Check yourself: failures
 
 `valid_until` fails when the month is before `today`. A card expires this month:
@@ -352,6 +427,23 @@ card valid until month 10
 The condition in `valid_until` is `month < today`, and 10 < 10 is false, so the `else` branch runs and gives the month: the call does not fail. `if error use 0` gives its value only when the call fails.
 :::
 
+And one about `fails of`. `VASE-03` is not in the price list:
+
+```una include="steps/06-fails-of/src/pricing.una#L40-L41" title="steps/06-fails-of/src/pricing.una"
+  let unknown = attempt total_with(["LAMP-01", "VASE-03"], price: listed)
+  @console.print("{unknown}")
+```
+
+What does it print?
+
+:::answer Show the answer
+```text include="steps/06-fails-of/expected/output.txt#L2"
+Err(NoPrice("VASE-03"))
+```
+
+`total_with` declares `fails of price`, so with `listed` it fails as `listed` does: the loop reaches `VASE-03`, `listed` fails with `NoPrice`, `if error pass` hands that failure on, and `attempt` keeps it as `Err`. The total of `LAMP-01` alone is never returned.
+:::
+
 ## 6.2 Handling a failure: the five clauses
 
 ### What a handling clause is
@@ -369,7 +461,7 @@ The word after `if error` or `if none` is the decision: **use** a value and carr
 
 Una passes no failure on by itself. A call that can fail with no clause under it does not check. Leave out the clause under `read_count`:
 
-```diff include="steps/06-clauses..steps/05-no-clause:src/shelves.una" context="1" title="src/shelves.una"
+```diff include="steps/08-clauses..steps/07-no-clause:src/shelves.una" context="1" title="src/shelves.una"
 --- a/src/shelves.una
 +++ b/src/shelves.una
 @@ -20,3 +20,2 @@
@@ -380,7 +472,7 @@ Una passes no failure on by itself. A call that can fail with no clause under it
 
 `una check .` reports:
 
-```text include="steps/05-no-clause/expected/rendered.txt"
+```text include="steps/07-no-clause/expected/rendered.txt"
 [U3007] Error: `read_count` can fail with `CountError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
     ╭─[ src/shelves.una:20:15 ]
     │
@@ -406,7 +498,7 @@ The message names the call, `read_count`, and the kind it can fail with, `CountE
 
 The step of this part has one function per clause, around a shelf count that a clerk types:
 
-```una include="steps/06-clauses/src/shelves.una#CountError..read_count" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#CountError..read_count" title="steps/08-clauses/src/shelves.una"
 --- Why a shelf count could not be used.
 kind CountError = NotCounted(shelf: Text) | Unreadable(raw: Text)
 
@@ -428,7 +520,7 @@ read_count(raw: Text) -> Int
 
 #### Carry on with a value: `if error use`
 
-```una include="steps/06-clauses/src/shelves.una#count_or_zero" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#count_or_zero" title="steps/08-clauses/src/shelves.una"
 --- `if error use`: carry on with 0 when the count cannot be read.
 count_or_zero(raw: Text) -> Int
 =
@@ -441,7 +533,7 @@ When `read_count` fails, `units` is 0, and the function goes on. `count_or_zero`
 
 #### Pass it on: `if error pass`
 
-```una include="steps/06-clauses/src/shelves.una#count_label" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#count_label" title="steps/08-clauses/src/shelves.una"
 --- `if error pass`: the same kind, `CountError`, so the failure goes to the caller as it is.
 count_label(raw: Text) -> Text
   fails CountError
@@ -455,7 +547,7 @@ count_label(raw: Text) -> Text
 
 #### Use the failure in the value: `error`
 
-```una include="steps/06-clauses/src/shelves.una#shown" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#shown" title="steps/08-clauses/src/shelves.una"
 --- `if error use`, with `error` in the value: a failure becomes a sentence.
 shown(raw: Text) -> Text
 =
@@ -466,7 +558,7 @@ shown(raw: Text) -> Text
 
 Inside a clause, the name `error` holds the failure that happened, here a `CountError`. `if error use explain(error)` turns it into a sentence. `explain` is an ordinary function with a `when` over the variants, declared in the same module:
 
-```una include="steps/06-clauses/src/shelves.una#explain" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#explain" title="steps/08-clauses/src/shelves.una"
 --- What a person reads about a count that could not be used.
 explain(failure: CountError) -> Text
 =
@@ -477,7 +569,7 @@ explain(failure: CountError) -> Text
 
 #### Translate it: `if error fail`
 
-```una include="steps/06-clauses/src/shelves.una#audit" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#audit" title="steps/08-clauses/src/shelves.una"
 --- `if error fail`: a `CountError` becomes an `AuditError` that names the shelf.
 audit(shelf: Text, raw: Text) -> Int
   fails AuditError
@@ -490,7 +582,7 @@ audit(shelf: Text, raw: Text) -> Int
 
 #### Carry on when a value is missing: `if none use`
 
-```una include="steps/06-clauses/src/shelves.una#counted..required" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#counted..required" title="steps/08-clauses/src/shelves.una"
 --- `if none use`: a shelf missing from the counts counts as 0.
 counted(counts: Map[Text, Int], shelf: Text) -> Int
 =
@@ -513,7 +605,7 @@ A map's `get` gives an `Option`. `counted` treats a missing shelf as 0 units wit
 
 `main` calls each function. To print what `audit` failed with, it uses `attempt`, which keeps a failure as a value that can be printed, `Err(…)`; [section 6.3](#s6-3) explains it.
 
-```una include="steps/06-clauses/src/shelves.una#L71-L83" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#L71-L83" title="steps/08-clauses/src/shelves.una"
   let typed = count_or_zero(" 7 ")
   let spelled = count_or_zero("seven")
   let three = shown("3")
@@ -529,7 +621,7 @@ A map's `get` gives an `Option`. `counted` treats a missing shelf as 0 units wit
   @console.print("{found} {absent} {missing}")
 ```
 
-```text include="steps/06-clauses/expected/output.txt#L1-L3"
+```text include="steps/08-clauses/expected/output.txt#L1-L3"
 7 0 / 3 units / 'x' is not a count
 Err(BadShelf(shelf: "A-12", cause: Unreadable("seven")))
 7 0 -1
@@ -542,7 +634,7 @@ The second line shows translation at work: the `AuditError` names the shelf, and
 Most programs have layers: a low-level parser, a line reader above it, a batch report above that. Each layer has its own error kind, because each layer knows different things. The quantity parser knows the text was not a number, and the line reader also knows the line number. `if error fail` translates, and `error` keeps the original failure as a payload, so nothing is lost. This step uses a smaller `QuantityError` than [section 6.1](#s6-1), with one variant for both bounds, which is enough here:
 
 :::steps
-```una include="steps/07-translate/src/upload.una" title="steps/07-translate/src/upload.una" verified="check, run"
+```una include="steps/09-translate/src/upload.una" title="steps/09-translate/src/upload.una" verified="check, run"
 module upload
 
 kind QuantityError = NotANumber(raw: Text) | OutOfRange(value: Int)
@@ -599,7 +691,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/07-translate/expected/output.txt"
+```text include="steps/09-translate/expected/output.txt"
 line 1: 2 units
 line 2: no quantity
 line 3: 'lots' is not a number
@@ -620,7 +712,7 @@ Walkthrough:
 
 This step uses four constructs that [chapter 8, Capabilities](/learn/capabilities/), covers in full. A `capability` names a set of operations, each declared with `op`, as the host's `Console` names `print`. A function that performs them says so with `uses`. A `handler … for Catalog` gives the operations their code: `fixed` answers with one price, and `down` always fails. `with @catalog = fixed(…)` runs one call with that handler, and `given @catalog = …` does the same for an example. The kind `StoreError = | Timeout` has one variant, and a sum kind with one variant starts with `|`.
 
-```una include="steps/08-defaults/src/prices.una" title="steps/08-defaults/src/prices.una" verified="check, run, test"
+```una include="steps/10-defaults/src/prices.una" title="steps/10-defaults/src/prices.una" verified="check, run, test"
 module prices
 
 kind StoreError = | Timeout
@@ -667,7 +759,7 @@ example "a catalog that is down shows 0, and does not fail"
 
 `una run .` prints:
 
-```text include="steps/08-defaults/expected/output.txt"
+```text include="steps/10-defaults/expected/output.txt"
 1990 0 0
 ```
 
@@ -684,7 +776,7 @@ example "a catalog that is down shows 0, and does not fail"
 
 `una test .` prints:
 
-```text include="steps/08-defaults/expected/commands/test.txt#L2-L5"
+```text include="steps/10-defaults/expected/commands/test.txt#L2-L5"
 example prices "an unknown SKU shows 0" ... ok
 example prices "a catalog that is down shows 0, and does not fail" ... ok
 
@@ -734,14 +826,14 @@ Prefer `fail` with your own variant over `use` with a value that only looks like
 
 `shown` passes through `count_label`, and `count_or_zero` recovers with 0. Predict the line:
 
-```una include="steps/06-clauses/src/shelves.una#L84-L86" title="steps/06-clauses/src/shelves.una"
+```una include="steps/08-clauses/src/shelves.una#L84-L86" title="steps/08-clauses/src/shelves.una"
   let padded = shown(" 12 ")
   let blank = count_or_zero("")
   @console.print("{padded} / {blank}")
 ```
 
 :::answer Show the answer
-```text include="steps/06-clauses/expected/output.txt#L4"
+```text include="steps/08-clauses/expected/output.txt#L4"
 12 units / 0
 ```
 
@@ -765,7 +857,7 @@ The handling clauses of [section 6.2](#s6-2) decide on the spot, at the call. So
 
 A batch is a list of items processed one after another, such as the quantities typed into an order form. With `if error pass`, the first item that fails ends the whole function, and every later item is lost:
 
-```una include="steps/09-batch-stops/src/batch.una" title="steps/09-batch-stops/src/batch.una" verified="check, run"
+```una include="steps/11-batch-stops/src/batch.una" title="steps/11-batch-stops/src/batch.una" verified="check, run"
 module batch
 
 --- The units of every typed quantity, added up. One quantity that is not a number fails the
@@ -792,7 +884,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/09-batch-stops/expected/output.txt"
+```text include="steps/11-batch-stops/expected/output.txt"
 15 and -1
 ```
 
@@ -808,7 +900,7 @@ The usual form binds the outcome: `let outcome = attempt raw.parse_int()`. `atte
 
 A function whose body is only `attempt` returns the outcome, and cannot fail itself:
 
-```una include="steps/10-attempt/src/batch.una#parse_typed" title="steps/10-attempt/src/batch.una"
+```una include="steps/12-attempt/src/batch.una#parse_typed" title="steps/12-attempt/src/batch.una"
 --- A typed quantity as a number, or the reason it is not one. The whole body is `attempt`.
 parse_typed(raw: Text) -> Result[Int, ParseError] = attempt raw.parse_int()
 ```
@@ -817,7 +909,7 @@ Its result type is written out: `Result[Int, ParseError]`, the type of `parse_in
 
 #### Taking a `Result` apart: `when`
 
-```una include="steps/10-attempt/src/batch.una#describe" title="steps/10-attempt/src/batch.una"
+```una include="steps/12-attempt/src/batch.una#describe" title="steps/12-attempt/src/batch.una"
 --- One line of the report for a typed quantity.
 describe(raw: Text, outcome: Result[Int, ParseError]) -> Text
 =
@@ -837,7 +929,7 @@ describe(raw: Text, outcome: Result[Int, ParseError]) -> Text
 This step checks quantities typed by a person with the prelude's own failing function, `parse_int`, which fails with `ParseError`. `ParseError` is a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, and `NotADigit(at)` with the position of the first wrong character, counted from 0. The step reports every quantity and counts the good ones:
 
 :::steps
-```una include="steps/10-attempt/src/batch.una#L1-L32" title="steps/10-attempt/src/batch.una"
+```una include="steps/12-attempt/src/batch.una#L1-L32" title="steps/12-attempt/src/batch.una"
 module batch
 
 --- A typed quantity as a number, or the reason it is not one. The whole body is `attempt`.
@@ -880,7 +972,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/10-attempt/expected/output.txt#L1-L5"
+```text include="steps/12-attempt/expected/output.txt#L1-L5"
 '12': 12 units
 '': nothing was typed
 '-': a sign with no digits
@@ -896,7 +988,7 @@ Every item gets its line, with its own reason. The last value interpolates as `O
 
 `attempt` applies to the whole expression after it, and that expression must be one call. It is tempting to write `attempt` and a question about the outcome on one line:
 
-```diff include="steps/10-attempt..steps/11-attempt-expression:src/batch.una" context="1" title="src/batch.una"
+```diff include="steps/12-attempt..steps/13-attempt-expression:src/batch.una" context="1" title="src/batch.una"
 --- a/src/batch.una
 +++ b/src/batch.una
 @@ -26,3 +26,3 @@
@@ -908,7 +1000,7 @@ Every item gets its line, with its own reason. The last value interpolates as `O
 
 `una check .` reports three errors. The first is the one to read:
 
-```text include="steps/11-attempt-expression/expected/rendered.txt#L1-L8"
+```text include="steps/13-attempt-expression/expected/rendered.txt#L1-L8"
 [U2001] Error: argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
     ╭─[ src/batch.una:27:27 ]
     │
@@ -953,13 +1045,13 @@ The table compares the handling clauses, `attempt`, and `checked`, which [sectio
 
 `parse_int` does not trim spaces. Predict what this prints:
 
-```una include="steps/10-attempt/src/batch.una#L33-L34" title="steps/10-attempt/src/batch.una"
+```una include="steps/12-attempt/src/batch.una#L33-L34" title="steps/12-attempt/src/batch.una"
   let padded = parse_typed(" 5")
   @console.print("{padded}")
 ```
 
 :::answer Show the answer
-```text include="steps/10-attempt/expected/output.txt#L6"
+```text include="steps/12-attempt/expected/output.txt#L6"
 Err(NotADigit(0))
 ```
 
@@ -986,7 +1078,7 @@ Three constructs of [chapter 7](/learn/contracts/) appear here, briefly:
 
 `shelf_label` takes a `Sku`, so it never prints a label for a malformed code. Pass it the text a person typed, and the verifier refuses:
 
-```diff include="steps/13-checked..steps/12-unchecked:src/sku.una" context="1" title="src/sku.una"
+```diff include="steps/15-checked..steps/14-unchecked:src/sku.una" context="1" title="src/sku.una"
 --- a/src/sku.una
 +++ b/src/sku.una
 @@ -19,8 +19,3 @@
@@ -1003,7 +1095,7 @@ Three constructs of [chapter 7](/learn/contracts/) appear here, briefly:
 
 `una check .` reports:
 
-```text include="steps/12-unchecked/expected/rendered.txt"
+```text include="steps/14-unchecked/expected/rendered.txt"
 [U5001] Error: refinement `well_formed(raw)` is refuted
     ╭─[ src/sku.una:20:39 ]
     │
@@ -1046,7 +1138,7 @@ Read it from the top. The first line says that the refinement `well_formed(raw)`
 
 The step's module turns outside text into a `Sku` with `checked`, then prints a shelf label for a well-formed SKU and `not a sku: lamp 1` for the bad input:
 
-```una include="steps/13-checked/src/sku.una" title="steps/13-checked/src/sku.una" verified="check, run"
+```una include="steps/15-checked/src/sku.una" title="steps/15-checked/src/sku.una" verified="check, run"
 module sku
 
 --- A SKU as the warehouse prints it: seven characters, ending in a dash and two digits, as in `LAMP-01`.
@@ -1084,7 +1176,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/13-checked/expected/output.txt#L1-L2"
+```text include="steps/15-checked/expected/output.txt#L1-L2"
 sku LAMP-01
 not a sku: lamp 1
 ```
@@ -1096,7 +1188,7 @@ not a sku: lamp 1
 > [!WARNING]
 > `checked` replaces a proof with a test, so `una.toml` budgets it per module, and `una report .` counts the uses of each module under `escapes`.
 
-```toml include="steps/13-checked/una.toml" title="steps/13-checked/una.toml"
+```toml include="steps/15-checked/una.toml" title="steps/15-checked/una.toml"
 [package]
 name = "sku"
 version = "0.1.0"
@@ -1112,7 +1204,7 @@ checked_per_module = 1
 
 The budget is a line of the manifest, so raising it is a change a reviewer sees. `checked_per_module = 1` allows one use in each module. `una report .` lists the use, next to the budget:
 
-```text include="steps/13-checked/expected/commands/report.txt#L2,L10-L11"
+```text include="steps/15-checked/expected/commands/report.txt#L2,L10-L11"
 package sku 0.1.0
 escapes:
   sku: 1 checked, budget 1
@@ -1120,7 +1212,7 @@ escapes:
 
 Without an `[escape_budget]` table the budget is 0. Remove the table, and the first `checked` in a module does not check:
 
-```text include="steps/14-no-budget/expected/rendered.txt#L1,L8-L12"
+```text include="steps/16-no-budget/expected/rendered.txt#L1,L8-L12"
 [U7003] Error: module `sku` uses `checked` 1 time, and `[escape_budget] checked_per_module` allows 0
     │ Help 1: repair 1: state the fact in a refined type or a `requires` clause, so that the solver proves it, and remove the `checked`
     │
@@ -1165,13 +1257,13 @@ When the condition does not hold, the function fails with the variant after `els
 
 `well_formed` wants seven characters, a dash at position 4, and two digits. What do these two lines print?
 
-```una include="steps/13-checked/src/sku.una#L32-L33" title="steps/13-checked/src/sku.una"
+```una include="steps/15-checked/src/sku.una#L32-L33" title="steps/15-checked/src/sku.una"
   @console.print(show(" LAMP-02 "))
   @console.print(show("RUG-07"))
 ```
 
 :::answer Show the answer
-```text include="steps/13-checked/expected/output.txt#L3-L4"
+```text include="steps/15-checked/expected/output.txt#L3-L4"
 sku LAMP-02
 not a sku: RUG-07
 ```
@@ -1992,7 +2084,7 @@ Every diagnostic of [Common mistakes](#s6-7) is available as JSON with `una --js
 
 :::recap
 - A failure is a value of a sum kind you declare. Its variants carry what someone needs to act on it.
-- A header declares at most one error kind with `fails`. A `pub` function must declare it, and a private one may let the checker infer it.
+- A header declares at most one error kind with `fails`, or fails as a function parameter does with `fails of p`. A `pub` function must declare it, and a private one may let the checker infer it.
 - A call that can fail is the whole expression of its statement, and its handling clauses follow on their own lines: `if error` first, then `if none`.
 - `use` recovers, `pass` hands on the same kind, `fail V(cause: error)` translates between layers.
 - `attempt` keeps the outcome of one call as a `Result`, for batches, counts and fallbacks.
