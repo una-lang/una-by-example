@@ -52,6 +52,8 @@ pub main() -> Unit
   let declined = refuse(4500)
     if error use 0
   @console.print("{paid} {refused} {until} {expired} {offline} {declined}")
-  let this_month = valid_until(10, today: 10)
-    if error use 0
-  @console.print("card valid until month {this_month}")
+  let over = charge(30000, limit: 10000)
+    if error use -1
+  let lapsed = valid_until(3, today: 10)
+    if error use 99
+  @console.print("{over} {lapsed}")

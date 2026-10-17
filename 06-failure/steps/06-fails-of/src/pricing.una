@@ -37,5 +37,6 @@ pub main() -> Unit
   let flat_total = total_with(["LAMP-01", "VASE-03"], price: flat)
   let lambda_total = total_with(["LAMP-01"], price: fn(sku) -> sku.len * 100)
   @console.print("{known} {flat_total} {lambda_total}")
-  let unknown = attempt total_with(["LAMP-01", "VASE-03"], price: listed)
+  let unknown = total_with(["LAMP-01", "VASE-03"], price: listed)
+    if error use -1
   @console.print("{unknown}")

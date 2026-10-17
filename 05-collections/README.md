@@ -67,19 +67,11 @@ A few words name the parts, and the rest of this chapter uses them:
 - A **position**, also called an **index**, counts from 0. In `[2, 1, 3]`, the element at position 0 is 2, and the element at position 2 is 3.
 - The **length** of a list is how many elements it holds. `[2, 1, 3]` has a length of 3, and `[]`, the **empty list**, a length of 0.
 
-The **prelude** is the set of functions and types that every module has without importing anything. It gives lists most of what a program needs: adding an element, adding up, sorting, searching. You call these functions with method syntax ([chapter 3](/learn/functions/#s3-1)): `more.sum()` is the call `sum(more)`.
+The **prelude** is the set of functions and types that every module has without importing anything. It gives lists most of what a program needs: adding an element, adding up, sorting, searching. You call these functions with method syntax ([chapter 3](/learn/functions/#s3-1)): `[2, 1, 3].sum()` is the call `sum([2, 1, 3])`.
 
 ### Why a program needs lists
 
-Without a list, every value needs a name of its own. A cart of three lines needs three names, and a function that totals a cart needs three parameters. Here is such a function, from [section 5.2](#s5-2):
-
-```una include="steps/04-no-loop/src/receipt.una#total_of_three" title="steps/04-no-loop/src/receipt.una"
---- What a cart of exactly three lines costs, in cents. A cart of two lines, or of four, does
---- not fit this function.
-total_of_three(one: CartLine, two: CartLine, three: CartLine) -> Int = one.quantity * one.cents + two.quantity * two.cents + three.quantity * three.cents
-```
-
-It prices a cart of exactly three lines. A real cart may hold any number of lines, and the program learns that number only when it runs. A list solves that: `List[CartLine]` is one type for a cart of any size, so one name and one parameter hold the whole cart, and the functions of this chapter work on it whatever its length.
+Without a list, every value needs a name of its own. A cart of three lines needs three names, and a function that totals a cart needs three parameters, one per line: [Why programs repeat work](#why-programs-repeat-work), in section 5.2, shows such a function. It prices a cart of exactly three lines. A real cart may hold any number of lines, and the program learns that number only when it runs. A list solves that: `List[CartLine]` is one type for a cart of any size, so one name and one parameter hold the whole cart, and the functions of this chapter work on it whatever its length.
 
 ### Each step is a package
 
@@ -96,7 +88,7 @@ entry = "cart"
 grants = ["console"]
 ```
 
-Every package of this chapter uses edition `0.2`, the edition in which maps, `sort` and JSON are part of the prelude; in a package of edition `0.1` they do not exist. `verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `05-collections.tar.gz`. Then, in the package's directory:
+Every package of this chapter uses edition `0.2`, the edition that brings `for` loops, `let edit`, list `set`, `together for`, maps, `sort`, the text functions and JSON; a package of edition `0.1` has none of them. `verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `05-collections.tar.gz`. Then, in the package's directory:
 
 ```sh
 una check .
@@ -128,7 +120,7 @@ pub main() -> Unit
 
 1. **`[2, 1, 3]`.** A list literal. Every element has the same type, here `Int`, so the list is a `List[Int]`.
 2. **`quantities.append(item: 4)`.** This returns a new list with `4` at the end. `quantities` itself does not change: the first line of the output shows both lists.
-3. **`more.len`.** The number of elements, written without parentheses, as on `Text`. A function that takes nothing but its receiver may be called without parentheses: `raw.trim` and `raw.trim()` are the same call. This tutorial writes `.len` and `.trim` without them.
+3. **`more.len`.** The number of elements, as on `Text`. `.len` is built in and is always written without parentheses: `more.len()` does not check. A function that takes only its receiver may also drop them: `raw.trim` and `raw.trim()` are the same call. This tutorial writes `.trim` without them.
 4. **`more.sum()` and `more.contains(item: 3)`.** The sum of a list of integers, and whether an element is in the list. `Int` has no upper bound, so a sum never overflows.
 5. **`skus.sort().join(separator: ", ")`.** `sort` returns the elements in ascending order, and `join` puts a list of texts together with a separator. `receipt` is a function of one expression, written after `=` on its header line.
 :::
@@ -302,6 +294,10 @@ Positions count from 0, so the last element of a list of length n is at position
 
 > [!NOTE]
 > A list is a value, but `append` does not copy the whole list each time. When nothing else holds the list, it is updated in place, so a loop that appends one element at a time takes time in proportion to the number of elements.
+
+### A list or something else
+
+Use a list when the values come in an order and the same value may appear twice, as the lines of a receipt. When you need to find a value by a key, such as the stock of a SKU, use a map instead: [A map or a list](#a-map-or-a-list), in section 5.5, compares the two.
 
 ### Check yourself: lists
 
@@ -848,7 +844,7 @@ Some questions have no answer. Ask a catalog for the price of a SKU it does not 
 - `Some(value)` holds one value of the type `T`. A price lookup that finds the price gives `Some(1990)`, an `Option[Int]`.
 - `None` holds nothing. It means "there is no value here".
 
-`T` is a **type parameter**: it stands for whatever type the option may hold. `Option[Int]` may hold an `Int`, and `Option[Product]` a `Product`. An `Option[Int]` is not an `Int`, and you cannot add it, compare it or print it as a number until you have said what happens when it is `None`.
+`T` is a **type parameter**: it stands for whatever type the option may hold. `Option[Int]` may hold an `Int`, and `Option[Product]` a `Product`. An `Option[Int]` is not an `Int`: you cannot add it to a number, compare it with `<`, or use it where an `Int` is expected until you have said what happens when it is `None`.
 
 ### Why absence needs its own type
 
@@ -1866,7 +1862,7 @@ tags(record: Json) -> List[Text]
 tags: ["new", "sale"] and []
 ```
 
-The `7` in the array is a `Number`, not a `Str`, so the `else` arm skips it. `Null`, which is not an object, has no tags.
+The `7` in the array is a `Number`, not a `Str`, so the `else` arm skips it: it gives `unit`, the only value of the type `Unit`, which does nothing. `Null`, which is not an object, has no tags.
 
 #### Keeping the failure: `attempt` and `JsonError`
 
@@ -1980,7 +1976,7 @@ The first line is the interpolation of a `Json`, which shows the Una value, not 
 
 #### Strict reading
 
-`parse_json` reads exactly one JSON value, with spaces allowed around it, and nothing else. It refuses what JSON does not allow: comments, a comma after the last item, single quotes, `NaN`, a leading `+` or a leading zero on a number, and a field named twice.
+`parse_json` reads exactly one JSON value, with spaces allowed around it, and nothing else. It refuses what JSON does not allow: comments, a comma after the last item, single quotes, `NaN`, a leading `+`, or a leading zero before other digits, as in `01`, and a field named twice.
 
 #### Interpolation shows the Una value
 

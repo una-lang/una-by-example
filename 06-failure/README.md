@@ -241,7 +241,7 @@ charge(cents: Int, limit: Int) -> Int
     cents
 ```
 
-`fail OverLimit(limit: limit, asked: cents)` names the variant and gives each field by its label. When a variant has one field, its value may be given without the label, as `fail Expired(month)` in `valid_until` does.
+`fail OverLimit(limit: limit, asked: cents)` names the variant and gives each field by its label. When a variant has one field, its value may be given without the label, as `fail Expired(month)` in `valid_until` does. And a bare name that equals a field's name counts as that field's label, so [section 6.2](#s6-2)'s `BadShelf(shelf, cause: error)` is `BadShelf(shelf: shelf, cause: error)`.
 
 #### `fail` as the whole body
 
@@ -340,6 +340,29 @@ A function may take another function as a parameter, as `map` takes the function
 
 #### Why a parameter's failures need a clause
 
+The step of this part prices a cart with one of two price functions. `listed` knows two SKUs and fails with `NoPrice` for any other; `flat` prices everything at 500 and never fails:
+
+```una include="steps/06-fails-of/src/pricing.una#PriceError" title="steps/06-fails-of/src/pricing.una"
+--- Why a price list has no price for a SKU.
+kind PriceError = | NoPrice(sku: Text)
+```
+
+```una include="steps/06-fails-of/src/pricing.una#listed..flat" title="steps/06-fails-of/src/pricing.una"
+--- The store's price list. It knows two SKUs, and fails for any other.
+listed(sku: Text) -> Int
+  fails PriceError
+=
+  if sku == "LAMP-01"
+    1990
+  else if sku == "DESK-02"
+    15900
+  else
+    fail NoPrice(sku)
+
+--- A flat price for every SKU, during a sale. It never fails.
+flat(sku: Text) -> Int = 500
+```
+
 A parameter of a function type such as `fn(Text) -> Int` is a function that gives an `Int` and cannot fail. Here is a `pub` function that totals a cart with a price function, without `fails of`, called with a price list that fails for an unknown SKU:
 
 ```diff include="steps/06-fails-of..steps/05-no-fails-of:src/pricing.una" context="1" title="src/pricing.una"
@@ -407,30 +430,45 @@ The lambda prices each SKU at 100 cents per character of its code, so `LAMP-01` 
 - A private function may leave `fails of p` out, and the checker infers it when the body only passes on the failures of `p`, as it infers `fails` ([Public functions declare; private ones may infer](#public-functions-declare-private-ones-may-infer)). That is why `total_with` is `pub` here: the line is what its callers rely on.
 - In edition `0.2`, `map`, `filter`, `fold` and `first_where` declare `fails of` their function parameter, so they accept a function that fails, and stop at its first failure.
 
+### A sentinel, an `Option` or a failure
+
+:::decide
+**Which to use:**
+
+| When the function cannot give a normal answer… | Use |
+| --- | --- |
+| Never | a sentinel value such as 0 or -1, which a caller can mistake for an answer |
+| And "no answer" is a normal outcome, with nothing more to say | an `Option` ([chapter 5](/learn/collections/#s5-3)) |
+| And the caller needs to know why, to act on it | `fails` with an error kind |
+:::
+
+A price lookup for a SKU the catalog does not sell gives `None`: that is a normal answer. A quantity typed as `"three"` is a failure with a reason, `NotANumber`, which a form shows to the customer.
+
 ### Check yourself: failures
 
-`valid_until` fails when the month is before `today`. A card expires this month:
+Both calls fail. Predict the line:
 
-```una include="steps/03-fail-forms/src/payment.una#L55-L57" title="steps/03-fail-forms/src/payment.una"
-  let this_month = valid_until(10, today: 10)
-    if error use 0
-  @console.print("card valid until month {this_month}")
+```una include="steps/03-fail-forms/src/payment.una#L55-L59" title="steps/03-fail-forms/src/payment.una"
+  let over = charge(30000, limit: 10000)
+    if error use -1
+  let lapsed = valid_until(3, today: 10)
+    if error use 99
+  @console.print("{over} {lapsed}")
 ```
-
-What does the line print: the month, or the `0` of the clause?
 
 :::answer Show the answer
 ```text include="steps/03-fail-forms/expected/output.txt#L2"
-card valid until month 10
+-1 99
 ```
 
-The condition in `valid_until` is `month < today`, and 10 < 10 is false, so the `else` branch runs and gives the month: the call does not fail. `if error use 0` gives its value only when the call fails.
+30000 is over the limit, so `charge` runs `fail OverLimit(…)`: the function ends there and gives no value, and the clause under the call gives `-1` instead. The card expired in month 3, before month 10, so `valid_until` fails with `Expired`, and its own clause gives `99`. Each call's clause decides what a failure becomes at that call.
 :::
 
 And one about `fails of`. `VASE-03` is not in the price list:
 
-```una include="steps/06-fails-of/src/pricing.una#L40-L41" title="steps/06-fails-of/src/pricing.una"
-  let unknown = attempt total_with(["LAMP-01", "VASE-03"], price: listed)
+```una include="steps/06-fails-of/src/pricing.una#L40-L42" title="steps/06-fails-of/src/pricing.una"
+  let unknown = total_with(["LAMP-01", "VASE-03"], price: listed)
+    if error use -1
   @console.print("{unknown}")
 ```
 
@@ -438,10 +476,10 @@ What does it print?
 
 :::answer Show the answer
 ```text include="steps/06-fails-of/expected/output.txt#L2"
-Err(NoPrice("VASE-03"))
+-1
 ```
 
-`total_with` declares `fails of price`, so with `listed` it fails as `listed` does: the loop reaches `VASE-03`, `listed` fails with `NoPrice`, `if error pass` hands that failure on, and `attempt` keeps it as `Err`. The total of `LAMP-01` alone is never returned.
+`total_with` declares `fails of price`, so with `listed` it fails as `listed` does: the loop reaches `VASE-03`, `listed` fails with `NoPrice`, and `if error pass` hands that failure on. So the call fails, and the clause under it gives `-1`. The total of `LAMP-01` alone is never returned.
 :::
 
 ## 6.2 Handling a failure: the five clauses
@@ -797,7 +835,7 @@ A call that can fail must be the whole expression of its statement or `let`, so 
 
 #### What each clause requires
 
-- `use v`: `v` has the type of the statement's value, since it takes the value's place. A text where an `Order` goes is U2001 ([a default of the wrong type](#a-default-of-the-wrong-type-u2001)).
+- `use v`: `v` has the type of the statement's value, since it takes the value's place. A value of another type, such as a text where an `Order` goes, is U2001: the message names the type expected and the type found.
 - `pass`: the call fails with the same kind as your function. Another kind is U3008 ([passing a failure of another kind](#passing-a-failure-of-another-kind-u3008)).
 - `fail V(...)`: `V` is a variant of your function's kind, as for any `fail`.
 - `error` is a name only inside an `if error` clause, where it holds the failure.
@@ -854,6 +892,8 @@ The handling clauses of [section 6.2](#s6-2) decide on the spot, at the call. So
 `attempt` itself never fails: a failure becomes an `Err`, which a `when` ([chapter 4](/learn/kinds/#s4-3)) takes apart like any sum kind.
 
 ### Why a batch needs failures as values
+
+The examples of this section read quantities with the prelude's own failing function, `parse_int`, which turns a text into an `Int` and fails with `ParseError`, a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, and `NotADigit(at)` with the position of the first wrong character, counted from 0. Unlike `to_int`, it says why a text is not a number. Both exist from edition `0.2` on.
 
 A batch is a list of items processed one after another, such as the quantities typed into an order form. With `if error pass`, the first item that fails ends the whole function, and every later item is lost:
 
@@ -926,7 +966,7 @@ describe(raw: Text, outcome: Result[Int, ParseError]) -> Text
 
 ### Reporting every typed quantity
 
-This step checks quantities typed by a person with the prelude's own failing function, `parse_int`, which fails with `ParseError`. `ParseError` is a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, and `NotADigit(at)` with the position of the first wrong character, counted from 0. The step reports every quantity and counts the good ones:
+This step checks quantities typed by a person with `parse_int`. It reports every quantity, with the reason `ParseError` gives, and counts the good ones:
 
 :::steps
 ```una include="steps/12-attempt/src/batch.una#L1-L32" title="steps/12-attempt/src/batch.una"
@@ -1062,7 +1102,7 @@ The space at position 0 is not a digit, so `parse_int` fails with `NotADigit(at:
 
 ### What `checked` is
 
-Before a program runs, una's **verifier** proves facts about it: that a division never divides by zero, that a call meets the conditions its function states ([chapter 7](/learn/contracts/) covers it). Some facts depend on data that arrives only while the program runs, such as the text a person types, and on rules the verifier does not see inside. For those, `checked` tests the fact when the program runs, once, and from then on the value carries the fact in its type.
+Before a program runs, Una's **verifier** proves facts about it: that a division never divides by zero, that a call meets the conditions its function states ([chapter 7](/learn/contracts/) covers it). Some facts depend on data that arrives only while the program runs, such as the text a person types, and on rules the verifier does not see inside. For those, `checked` tests the fact when the program runs, once, and from then on the value carries the fact in its type.
 
 Think of a ticket check at the door of a hall. Inside, nobody asks again: being inside means the ticket was checked. A value that has passed `checked` is like a guest inside. Its type says that the test passed, and every function that takes that type can rely on it.
 
@@ -1753,7 +1793,7 @@ Remove `fails OrderError` from `parse_order`:
     │ Help: repair 1: declare `fails OrderError` in the header; edit src/orders.una:20:37..20:37 to "\n  fails OrderError"
 ```
 
-una reports this once for every `fail` in the body, five times here.
+`una check` reports this once for every `fail` in the body, five times here.
 
 *Why:* a private function may leave out `fails`, so it is easy to forget that a `pub` one may not: a `pub` header is a reviewed contract. The message is reported at each `fail` of the body, and the help line gives the exact edit, the line to add and where.
 
@@ -1860,30 +1900,6 @@ After `attempt`, write `is Err(failure) -> fail failure`:
 *Why:* after `attempt`, the failure is in a binding, and handing it on with `fail` looks natural. But `fail` takes a variant of the error kind, at the place the failure is decided, not a stored value: the parser expected a variant name where `failure` stands. The help line explains both ways out.
 
 *Fix:* if you only want to pass the failure on, do not `attempt`; use `if error pass`. [Exercise 3](#exercise-3-fall-back-to-the-backup) shows a fallback that needs no re-raise.
-:::
-
-### A default of the wrong type (U2001)
-
-:::mistake
-Write `if error use "none"` under `let order = parse_order(line)`, a call that gives an `Order`:
-
-```diff include="day-to-day..mistakes/9:src/orders.una" context="1" title="src/orders.una"
---- a/src/orders.una
-+++ b/src/orders.una
-@@ -56,3 +56,3 @@
-   let order = parse_order(line)
--    if error pass
-+    if error use "none"
-   check_stock(order)
-```
-
-```text include="mistakes/9/expected/rendered.txt#L1"
-[U2001] Error: expected `Order`, found `Text`
-```
-
-*Why:* `use` gives the statement's value on failure, so it must have the statement's type. The message says what was expected, `Order`, the type of `parse_order`'s value, and what was found, `Text`.
-
-*Fix:* use an `Order`, or handle the failure with `fail` or `pass`.
 :::
 
 ## 6.8 Exercises
@@ -2084,7 +2100,7 @@ Every diagnostic of [Common mistakes](#s6-7) is available as JSON with `una --js
 
 :::recap
 - A failure is a value of a sum kind you declare. Its variants carry what someone needs to act on it.
-- A header declares at most one error kind with `fails`, or fails as a function parameter does with `fails of p`. A `pub` function must declare it, and a private one may let the checker infer it.
+- A header declares at most one error kind with `fails`, and may also fail as a function parameter does with `fails of p` (the argument must then fail with the same kind). A `pub` function must declare it, and a private one may let the checker infer it.
 - A call that can fail is the whole expression of its statement, and its handling clauses follow on their own lines: `if error` first, then `if none`.
 - `use` recovers, `pass` hands on the same kind, `fail V(cause: error)` translates between layers.
 - `attempt` keeps the outcome of one call as a `Result`, for batches, counts and fallbacks.
