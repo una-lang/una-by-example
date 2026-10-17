@@ -15,7 +15,7 @@
     │
     │ Note 1: obligation ob-3376a2cf2fdd (postcondition) is refuted: result >= 0
     │
-    │ Note 2: counterexample: card = 0, due = 0, price = 1, result = -1
+    │ Note 2: counterexample: card = 0, price = 0, result = -1
     │
     │ Note 3: run `una explain U5001` for an explanation
 ────╯

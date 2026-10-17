@@ -17,7 +17,7 @@
     │
     │ Note 1: obligation ob-2a5905c8f53d (refinement) is refuted: (line.quantity + 1) in 1..99
     │
-    │ Note 2: counterexample: line = Line#0, line.quantity = 99
+    │ Note 2: counterexample: line = Line#0, line.quantity = 99, line.sku = Text#0, line.unit_cents = 0
     │
     │ Note 3: run `una explain U5001` for an explanation
 ────╯

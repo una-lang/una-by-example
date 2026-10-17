@@ -137,7 +137,7 @@ Una does not run it. `una check .` reports:
    │
    │ Note 1: obligation ob-69e79e4e9a3b (division) is refuted: count != 0
    │
-   │ Note 2: counterexample: count = 0, total = 0
+   │ Note 2: counterexample: count = 0
    │
    │ Note 3: run `una explain U5001` for an explanation
 ───╯
@@ -480,13 +480,13 @@ Read the body of `after_coupon`, and the promise of `left_on_card` holds: the co
     │
     │ Note 1: obligation ob-3376a2cf2fdd (postcondition) is refuted: result >= 0
     │
-    │ Note 2: counterexample: card = 0, due = 0, price = 1, result = -1
+    │ Note 2: counterexample: card = 0, price = 0, result = -1
     │
     │ Note 3: run `una explain U5001` for an explanation
 ────╯
 ```
 
-The verifier does not read the body of `after_coupon` when it checks `left_on_card`. It reads only its header, and the header says nothing about the result, so `due` could be any integer. `Note 2` shows values of `card`, `price` and `due` that make `card - (price - due)` negative. They are not a run: the real `after_coupon` never returns that `due`. They are what the header allows.
+The verifier does not read the body of `after_coupon` when it checks `left_on_card`. It reads only its header, and the header says nothing about the result, so `due` could be any integer. `Note 2` shows a card of 0 and a price of 0 for which the result is −1. For that, `due` must be −1, which the counterexample leaves out. It is not a run: the real `after_coupon` never returns a negative `due`. It is what the header allows.
 
 There is a reason the verifier works this way. If it read every body, a change to `after_coupon`'s body could silently break a proof in `left_on_card`, or in any of a hundred callers. By reading headers only, each function is checked once, against its own contract, and a caller depends on the promise, not on the code behind it. So a function promises in its header exactly what its callers need.
 
@@ -1044,13 +1044,13 @@ Take the guard out of `one_more`, and add a unit whatever the quantity:
     │
     │ Note 1: obligation ob-2a5905c8f53d (refinement) is refuted: (line.quantity + 1) in 1..99
     │
-    │ Note 2: counterexample: line = Line#0, line.quantity = 99
+    │ Note 2: counterexample: line = Line#0, line.quantity = 99, line.sku = Text#0, line.unit_cents = 0
     │
     │ Note 3: run `una explain U5001` for an explanation
 ────╯
 ```
 
-The goal is the condition of `Quantity` with the new value in place of `it`: `(line.quantity + 1) in 1..99`. The mark on `1..99` is labeled `range`, the declaration it comes from. The counterexample is a line of 99 units, the most a line may hold: one more would be 100. `Line#0` stands for some line the solver chose, a record shown only by its fields.
+The goal is the condition of `Quantity` with the new value in place of `it`: `(line.quantity + 1) in 1..99`. The mark on `1..99` is labeled `range`, the declaration it comes from. The counterexample is a line of 99 units, the most a line may hold: one more would be 100. `Line#0` and `Text#0` stand for a line and a text the solver chose, and `line.unit_cents = 0` is one value it picked; only `line.quantity` matters here.
 
 ### Predicates: named conditions
 

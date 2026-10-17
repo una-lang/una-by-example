@@ -9,7 +9,7 @@
    │
    │ Note 1: obligation ob-69e79e4e9a3b (division) is refuted: count != 0
    │
-   │ Note 2: counterexample: count = 0, total = 0
+   │ Note 2: counterexample: count = 0
    │
    │ Note 3: run `una explain U5001` for an explanation
 ───╯

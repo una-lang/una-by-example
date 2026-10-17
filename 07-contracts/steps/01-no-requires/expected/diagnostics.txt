@@ -1,2 +1,2 @@
 error U5001 at src/installments.una:4:46: division obligation `count != 0` is refuted
-  counterexample: count = 0, total = 0
+  counterexample: count = 0

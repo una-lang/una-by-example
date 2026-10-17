@@ -1,2 +1,2 @@
 error U5001 at src/coupons.una:17:3: postcondition of `left_on_card` is refuted
-  counterexample: card = 0, due = 0, price = 1, result = -1
+  counterexample: card = 0, price = 0, result = -1
