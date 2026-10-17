@@ -3,7 +3,7 @@ learn: "6"
 title: Failure
 editions: ["0.2"]
 codes: [U0101, U0102, U1001, U2001, U2007, U3007, U3008, U3009, U3013, U5001, U7003]
-time: 40
+time: 45
 builds: An order-intake step that accepts or rejects each line of an order batch
 prerequisites: ["3", "4", "5"]
 template: 2

@@ -3,7 +3,7 @@ learn: "5"
 title: Collections
 editions: ["0.2"]
 codes: [U0007, U0101, U0103, U1001, U2001, U2007, U2019, U2020, U2025, U3007]
-time: 45
+time: 55
 builds: A daily sales report that reads order lines from JSON, groups them by category and sums them up
 prerequisites: ["2", "3", "4"]
 template: 2
@@ -280,9 +280,9 @@ A list holds values of one type. Write a count as a word in the middle of a list
 [U2001] Error: expected `Int`, found `Text`
     ╭─[ src/shelf.una:19:20 ]
     │
- 19 │   let counts = [4, "empty", 7]
-    │                    ───┬───
-    │                       ╰───── expected `Int`, found `Text`
+ 19 │   let counts = [4, "zero", 7]
+    │                    ───┬──
+    │                       ╰──── expected `Int`, found `Text`
     │
     │ Note: run `una explain U2001` for an explanation
 ────╯
@@ -389,7 +389,7 @@ total(lines: List[CartLine]) -> Int
 ```
 
 1. **`let edit sum = 0`.** Before the loop, a binding that will hold the running total. A **binding** is a name for a value ([chapter 2](/learn/values/#s2-4)). A plain `let` names one value for good; `let edit` makes a binding you may give new values. A binding that a loop builds up turn by turn is often called an **accumulator**. It starts at the answer for an empty cart: 0.
-2. **`for`.** The keyword that starts a loop.
+2. **`for`.** The keyword that starts a loop. A **keyword** is a word that Una reserves for its own syntax, such as `let`, `if`, `when` and `for`, so it cannot name a binding or a function.
 3. **`line`.** The loop variable. You choose the name; a good name says what one item is.
 4. **`in lines`.** What the loop walks: here the parameter `lines`, a list.
 5. **The indented line.** The body, indented two spaces under `for`. It runs once for each element, with `line` holding that element.
@@ -1330,7 +1330,7 @@ The three loops of [Why the prelude walks the list for you](#why-the-prelude-wal
 
 `map`, `filter`, `fold` and `first_where` call their function on the elements from first to last, at most once per element. `first_where` stops after the first element it accepts, so the elements after it are never tested.
 
-#### An empty list
+#### Functions over an empty list
 
 Each one has a plain answer for an empty list. `map` gives `[]`, `fold` gives its `initial` value, `first_where` gives `None`, and `sum` gives 0:
 
