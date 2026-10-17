@@ -1,0 +1,36 @@
+[U0101] Error: unexpected end of line, expected `else`
+   ╭─[ src/receipt.una:9:29 ]
+   │
+ 9 │   if units >= 10 then "bulk"
+   │                             ┬
+   │                             ╰── unexpected end of line, expected `else`
+   │
+   │ Help 1: repair 1: write the `if` with blocks: `if` and its condition, the indented branch, `else`, then the indented branch; edit src/receipt.una:9:1..11:1 to "  if units >= 10\n    \"bulk\"\n  else\n    \"single\"\n"
+   │
+   │ Help 2: repair 2: an `if` with `then` needs `else`; to fail early, make the rest of the body its `else` branch, as in `if x < 0 then fail Broke else x`, or use the block form, whose `else` block holds the rest
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+[U0001] Error: invalid character `_`; names start with a letter
+    ╭─[ src/receipt.una:15:7 ]
+    │
+ 15 │   let _total = line_cents(2, unit_cents: 1990)
+    │       ┬
+    │       ╰── invalid character `_`; names start with a letter
+    │
+    │ Help: repair 1: rename `_total` to `total2` in its declaration: a name starts with a letter; edit src/receipt.una:15:7..16:42 to "total2 = line_cents(2, unit_cents: 1990)\n  @console.print(\"{size_label(2)} {total2"
+    │
+    │ Note: run `una explain U0001` for an explanation
+────╯
+[U0001] Error: invalid character `_`; names start with a letter
+    ╭─[ src/receipt.una:16:36 ]
+    │
+ 16 │   @console.print("{size_label(2)} {_total}")
+    │                                    ┬
+    │                                    ╰── invalid character `_`; names start with a letter
+    │
+    │ Help: repair 1: rename `_total` to `total2` in its declaration: a name starts with a letter; edit src/receipt.una:15:7..16:42 to "total2 = line_cents(2, unit_cents: 1990)\n  @console.print(\"{size_label(2)} {total2"
+    │
+    │ Note: run `una explain U0001` for an explanation
+────╯
+3 of 3 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

@@ -1,0 +1,20 @@
+module parcel
+
+--- A unit of weight.
+measure Gram
+
+--- A thousand grams.
+measure Kilogram = 1000 * Gram
+
+--- What one lamp weighs.
+lamp_weight() -> Int of Gram = 1200
+
+--- The weight of a parcel of `units` lamps.
+parcel_weight(units: Int) -> Int of Gram = units * lamp_weight()
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weight = parcel_weight(3)
+  let limit: Int of Kilogram = 5
+  @console.print("{weight} grams, within the limit: {weight <= limit}")

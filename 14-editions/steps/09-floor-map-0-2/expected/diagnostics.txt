@@ -1,0 +1,1 @@
+error U1002 at src/shelf.una:4:6: `Map` is a built-in type of maps from edition 0.2, so a kind cannot take its name

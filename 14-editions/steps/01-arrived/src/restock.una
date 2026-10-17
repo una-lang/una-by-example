@@ -1,0 +1,9 @@
+module restock
+
+--- How many units arrived: the count `new` on the shelf now, less the count `old` from before.
+arrived(old: Int, new: Int) -> Int = new - old
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{arrived(4, new: 10)} units arrived")

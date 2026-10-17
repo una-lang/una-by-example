@@ -1,0 +1,2 @@
+error U5001 at src/discount.una:7:35: refinement `result >= 0` is refuted
+  counterexample: result = -1, typed = -2

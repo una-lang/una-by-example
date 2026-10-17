@@ -1,0 +1,48 @@
+module discount
+
+requirement PRICING_1
+  text "A sale price is never below what the store paid for the product"
+  source human
+  owner pricing
+  status active
+
+--- An amount of money in cents, never negative.
+pub kind Cents = Int where it >= 0
+
+--- A discount in percent, from 0 to 90.
+pub kind Percent = Int in 0..90
+
+--- Why a typed percent was rejected.
+kind PercentError = NotANumber(raw: Text) | OutOfRange(value: Int)
+
+--- The price after `off` percent, never below `cost`.
+pub sale_price(price: Cents, cost: Cents, off: Percent) -> Cents
+  ensures result >= cost
+  derived from PRICING_1
+=
+  let discounted = price - price * off / 100
+  if discounted < cost then cost else discounted
+
+--- A percent typed by a person, such as "30".
+parse_percent(raw: Text) -> Percent
+=
+  let n = raw.trim.to_int()
+    if none fail NotANumber(raw)
+  checked(n, it in 0..90) else fail OutOfRange(value: n)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let off = parse_percent(" 30")
+    if error use 0
+  let lamp = sale_price(1990, cost: 1200, off: off)
+  let desk = sale_price(12900, cost: 11000, off: off)
+  @console.print("LAMP-01 {lamp}, DESK-02 {desk}")
+
+example "30 percent off a lamp"
+  do sale_price(1990, cost: 1200, off: 30)
+  expect result == 1393
+
+example "a typed percent above 90 is OutOfRange"
+  do parse_percent("95")
+  expect fails OutOfRange

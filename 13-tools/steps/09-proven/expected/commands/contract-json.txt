@@ -1,0 +1,2 @@
+$ una --json contract discount.parse_percent
+{"schema":"una.contract/1","function":"discount.parse_percent","public":false,"docs":["A percent typed by a person, such as \"30\"."],"header":"parse_percent(raw: Text) -> Percent","constraints":[],"result_labels":[],"of_raises":[],"requires":[],"ensures":[],"uses":[],"fails":{"kind":"PercentError","inferred":true},"derived_from":[]}

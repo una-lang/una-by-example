@@ -1,0 +1,2 @@
+error U2002 at src/shelves.una:7:18: this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used
+error U2002 at src/shelves.una:10:23: this type argument is the refined kind `Units`, and a refined type cannot instantiate a type parameter; write its base type `Int` and check the refinement where the value is used

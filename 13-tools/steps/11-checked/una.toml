@@ -1,0 +1,11 @@
+[package]
+name = "discount"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "discount"
+grants = ["console"]
+
+[escape_budget]
+checked_per_module = 1

@@ -1,0 +1,12 @@
+module discount
+
+--- An amount of money in cents, never negative.
+pub kind Cents = Int where it >= 0
+
+--- The price after a coupon worth `off` cents.
+pub after_coupon(price: Cents, off: Cents) -> Cents = price - off
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("LAMP-01 {after_coupon(1990, off: 500)}")

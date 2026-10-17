@@ -1,0 +1,13 @@
+$ una obligations .
+proven   ob-a1f2aa4dc27a refinement    src/discount.una:19:5 result >= 0
+refuted  ob-8a05af02a5f7 postcondition src/discount.una:20:11 result >= cost
+proven   ob-ab12d15138b8 refinement    src/discount.una:27:1 result in 0..90
+proven   ob-973036ad50b4 refinement    src/discount.una:41:25 1990 >= 0
+proven   ob-d4bc9c2cf5f2 refinement    src/discount.una:41:37 1200 >= 0
+proven   ob-a1fc2815567e refinement    src/discount.una:41:48 off in 0..90
+proven   ob-f4b448300879 refinement    src/discount.una:42:25 12900 >= 0
+proven   ob-118790a80d6d refinement    src/discount.una:42:38 11000 >= 0
+proven   ob-a1fc2815567e refinement    src/discount.una:42:50 off in 0..90
+proven   ob-5b991b13fcbf refinement    src/discount.una:46:17 1990 >= 0
+proven   ob-44bcd7b237f7 refinement    src/discount.una:46:29 1200 >= 0
+proven   ob-effe966d12dd refinement    src/discount.una:46:40 30 in 0..90

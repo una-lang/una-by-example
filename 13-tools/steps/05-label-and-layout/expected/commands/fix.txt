@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+fixed src/receipt.una:11:31 U2004 label it `sku`

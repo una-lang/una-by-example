@@ -1,0 +1,9 @@
+[U7002] Error: [package] has no `edition`
+   ╭─[ una.toml:1:2 ]
+   │
+ 1 │ [package]
+   │  ───┬───
+   │     ╰───── [package] has no `edition`
+   │
+   │ Note: run `una explain U7002` for an explanation
+───╯

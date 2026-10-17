@@ -1,0 +1,7 @@
+[package]
+name = "restock"
+version = "0.1.0"
+
+[run]
+entry = "restock"
+grants = ["console"]

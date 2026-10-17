@@ -1,0 +1,2 @@
+3650 grams, limit 5000 grams, within: true
+postage: 365 cents

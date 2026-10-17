@@ -1,0 +1,14 @@
+[U7001] Error: lines 4 to 6 are not in canonical form
+   ╭─[ src/receipt.una:4:1 ]
+   │
+ 4 │ ╭─▶ line_text(units: Int, sku: Text, cents: Int) -> Text
+   ┆ ┆
+ 6 │ ├─▶   "{units} x {sku}  {cents}"
+   │ │
+   │ ╰────────────────────────────────── lines 4 to 6 are not in canonical form
+   │
+   │     Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/receipt.una:4:1..7:1 to "line_text(units: Int, sku: Text, cents: Int) -> Text = \"{units} x {sku}  {cents}\"\n"
+   │
+   │     Note: run `una explain U7001` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

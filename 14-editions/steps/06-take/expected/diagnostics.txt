@@ -1,0 +1,3 @@
+error U0103 at src/shelf.una:4:18: `take` is reserved for v0.2 (memory model)
+error U0103 at src/shelf.una:4:46: `take` is reserved for v0.2 (memory model)
+error U0103 at src/shelf.una:9:29: `take` is reserved for v0.2 (memory model)
