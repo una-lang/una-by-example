@@ -389,7 +389,7 @@ total(lines: List[CartLine]) -> Int
 ```
 
 1. **`let edit sum = 0`.** Before the loop, a binding that will hold the running total. A **binding** is a name for a value ([chapter 2](/learn/values/#s2-4)). A plain `let` names one value for good; `let edit` makes a binding you may give new values. A binding that a loop builds up turn by turn is often called an **accumulator**. It starts at the answer for an empty cart: 0.
-2. **`for`.** The keyword that starts a loop. A **keyword** is a word that Una reserves for its own syntax, such as `let`, `if`, `when` and `for`, so it cannot name a binding or a function.
+2. **`for`.** The keyword that starts a loop: a word with a fixed meaning in the language ([chapter 1](/learn/hello/#s1-3)), which cannot name a binding.
 3. **`line`.** The loop variable. You choose the name; a good name says what one item is.
 4. **`in lines`.** What the loop walks: here the parameter `lines`, a list.
 5. **The indented line.** The body, indented two spaces under `for`. It runs once for each element, with `line` holding that element.
