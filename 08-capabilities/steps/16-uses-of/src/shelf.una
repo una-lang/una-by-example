@@ -1,0 +1,27 @@
+module shelf
+
+--- Runs `action` once for each SKU of a shelf. It may do what `action` does, and fails as
+--- `action` fails.
+pub each_sku(skus: List[Text], action: fn(Text) -> Unit) -> Unit
+  uses of action
+  fails of action
+=
+  for sku in skus
+    action(sku)
+      if error pass
+
+--- Saves a shelf label to a file of its own.
+save_label(sku: Text) -> Unit
+  uses @files: Files[write]
+  fails FileError
+=
+  @files.write("{sku}.txt", content: "label {sku}")
+    if error pass
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[write]
+=
+  each_sku(["LAMP-01", "DESK-02"], action: fn(sku) -> @console.print("label {sku}"))
+  let saved = attempt each_sku(["LAMP-01", "DESK-02"], action: save_label)
+  @console.print("saved: {saved}")

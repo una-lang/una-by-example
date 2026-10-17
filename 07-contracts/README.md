@@ -2896,14 +2896,13 @@ The repairs of U5001 and U5002 carry no `edit`, since only the author knows whet
 ### Recap
 
 :::recap
-- `requires` states what a caller must prove; the body may assume it.
-- `ensures` states what every return promises; callers know a function by its header alone.
-- A counterexample shows where a contract breaks; calls in it follow their headers, not their bodies. Fix the code or the contract, and keep a real case as an example.
-- Put a rule that holds of every value on its kind, `Int where it >= 0`, never on a type argument. Name a rule that several clauses share with a `reflect` predicate; a rule only a run can decide is an `opaque` predicate, established with `checked`.
-- Clauses multiply and divide only by literals. A guard for a case the solver cannot rule out is yours to confirm from the kinds; a loop keeps only the refined types of what it updates.
-- `una obligations .` lists every question the verifier answered, with its status. U5001: refuted, with a counterexample; U5002: no proof and no real counterexample, after a product of two values or a loop that forgets a fact. Both are errors.
-- Check data from outside once, where it enters, and give it a refined kind there.
-- Record business rules as requirements, with their source and owner; a generated one stays `proposed`. Read their proofs with `una trace`, and the gaps in `una report .`.
+- `requires` is what a caller must prove; `ensures` is what every return promises. Callers know a function by its header alone.
+- A counterexample shows where a contract breaks. Fix the code or the contract, and keep a real case as an example.
+- Put a rule that holds of every value on its kind, `Int where it >= 0`; name a shared rule with a `reflect` predicate, and a rule only a run decides with an `opaque` one and `checked`.
+- Clauses multiply and divide only by literals; a loop keeps only the refined types of what it updates.
+- `una obligations .` lists every question and its status. U5001 is refuted, U5002 unknown; both are errors.
+- Check outside data once, where it enters, and give it a refined kind there.
+- Record business rules as requirements, and follow them with `una trace`.
 :::
 
 ### Reference

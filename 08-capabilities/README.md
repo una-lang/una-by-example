@@ -981,6 +981,8 @@ Three things can happen at a call:
 
 And whatever the callee receives, it may use only the operations its own header lists: authority narrows on its way down.
 
+A capability can also travel inside a function that is passed as an argument, such as a lambda that prints. Edition `0.2` lets a header say so, with `uses of` and `fails of`, as [Authority inside a function argument](#authority-inside-a-function-argument-uses-of) shows.
+
 ### Why authority moves only downward
 
 If a capability were a value, a function could keep it: store it in a record, return it, or pass it to code that its header never mentions. A reviewer would then have to follow every value to know who can print or send mail. Una forbids it. Try to keep the console in a variable:
@@ -1125,6 +1127,96 @@ A rebinding needs the same capability on both sides, and a handler must implemen
 > [!IMPORTANT]
 > Narrowing is a promise you can check. Because `greeting` holds `Customers[find]`, no change to its body can make it erase a customer without a change to its header, which a reviewer sees.
 
+### Authority inside a function argument: `uses of`
+
+#### What a function argument may carry
+
+A function can take another function as an argument ([chapter 3](/learn/functions/#s3-5)): `each_sku` below runs an `action` once for each SKU of a shelf. The function it receives, often a **lambda**, a function written in place as `fn(sku) -> …`, may do something outside the program, such as print a label. Then the effect happens inside `each_sku`, so its header must say so.
+
+#### Why the parameter's type is not enough
+
+The type `fn(Text) -> Unit` says nothing about effects, and a function type with no `uses` is pure. Pass a lambda that prints:
+
+```una include="steps/15-pure-parameter/src/shelf.una" title="steps/15-pure-parameter/src/shelf.una"
+module shelf
+
+--- Runs `action` once for each SKU of a shelf. Its parameter's type says nothing about
+--- effects, so `action` must be pure.
+pub each_sku(skus: List[Text], action: fn(Text) -> Unit) -> Unit
+=
+  for sku in skus
+    action(sku)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  each_sku(["LAMP-01", "DESK-02"], action: fn(sku) -> @console.print("label {sku}"))
+```
+
+```text include="steps/15-pure-parameter/expected/rendered.txt"
+[U3004] Error: `@console` is used in a lambda whose type declares no `uses`, so the lambda is pure; pass it directly as an argument for a parameter whose type or `uses of` clause allows the effect
+    ╭─[ src/shelf.una:13:55 ]
+    │
+ 13 │   each_sku(["LAMP-01", "DESK-02"], action: fn(sku) -> @console.print("label {sku}"))
+    │                                                       ────┬───
+    │                                                           ╰───── `@console` is used in a lambda whose type declares no `uses`, so the lambda is pure; pass it directly as an argument for a parameter whose type or `uses of` clause allows the effect
+    │
+    │ Note: run `una explain U3004` for an explanation
+────╯
+```
+
+U3004 marks `@console` inside the lambda: the lambda's type comes from the parameter, `fn(Text) -> Unit`, which declares no `uses`, so the lambda is pure. The message also names the way out: a parameter "whose type or `uses of` clause allows the effect". Writing `uses @console: Console[print]` on `each_sku` would be wrong too: `each_sku` does not print, its argument does, and another caller may pass an action that writes a file instead.
+
+#### How to write `uses of` and `fails of`
+
+In edition `0.2`, a header names the parameter whose effects it takes on: `uses of action` means "this function may do whatever `action` does", and `fails of action` means "this function fails as `action` fails". Both go with the other clauses, `uses of` among the `uses` lines and `fails of` in the place of `fails`. The parameter's type is written without `uses` or `fails` of its own:
+
+```una include="steps/16-uses-of/src/shelf.una" title="steps/16-uses-of/src/shelf.una" verified="check, run"
+module shelf
+
+--- Runs `action` once for each SKU of a shelf. It may do what `action` does, and fails as
+--- `action` fails.
+pub each_sku(skus: List[Text], action: fn(Text) -> Unit) -> Unit
+  uses of action
+  fails of action
+=
+  for sku in skus
+    action(sku)
+      if error pass
+
+--- Saves a shelf label to a file of its own.
+save_label(sku: Text) -> Unit
+  uses @files: Files[write]
+  fails FileError
+=
+  @files.write("{sku}.txt", content: "label {sku}")
+    if error pass
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[write]
+=
+  each_sku(["LAMP-01", "DESK-02"], action: fn(sku) -> @console.print("label {sku}"))
+  let saved = attempt each_sku(["LAMP-01", "DESK-02"], action: save_label)
+  @console.print("saved: {saved}")
+```
+
+`una run .` prints:
+
+```text include="steps/16-uses-of/expected/output.txt"
+label LAMP-01
+label DESK-02
+saved: Ok(unit)
+```
+
+#### How it behaves
+
+- **The caller pays.** At each call, the effects of `each_sku` are its own `uses` plus those of the argument given for `action`. The first call in `main` prints, so `main` must hold `@console`; the second saves files, so `main` must hold `@files`. Each lambda runs on the bindings of the code where it is written.
+- **A named function works too.** The second call passes `save_label` by its name. It writes a file and can fail with `FileError`, and `main` holds `@files`, so the call checks.
+- **One error kind.** `fails of action` lets `each_sku` fail with whatever the argument fails with: nothing for the printing lambda, `FileError` for `save_label`, which `attempt` keeps as a value.
+- **Nothing escapes.** Inside `each_sku`, `action` may only be called, or passed on to a parameter that is itself named by an `of` clause. It cannot be stored or returned, so the authority it carries never outlives the call.
+- **Private functions infer it.** A private function without `uses` gets `uses of p` inferred for a function parameter `p` that its body only calls.
+
 ### Pass, rebind or install
 
 :::decide
@@ -1136,6 +1228,7 @@ A rebinding needs the same capability on both sides, and a handler must implemen
 | The caller holds it under another name | `with @callee_name = @caller_name` |
 | The caller must choose a provider, or holds none | `with @x = handler(args)` |
 | The caller wants the callee to use fewer operations | Nothing: the callee's header already limits it |
+| The callee runs a function it is given, which may have effects | `uses of p` and `fails of p` on the callee (edition `0.2`) |
 :::
 
 Name bindings after what they are for, as `@audit` and `@log` are. A rebinding at the call then reads as a decision: "the audit trail is the console, here".
@@ -1148,10 +1241,10 @@ In the step, remove `@audit = @console` from the last line of `main`, so that it
 No. `erase` needs `@audit: Console[print]`, and `main` holds no binding named `@audit`: bindings are found by name, never by type, so `@console` does not count. `una check .` reports U3001 at the call, as [forgetting to hand over a binding](#forgetting-to-hand-over-a-binding-u3001) shows for the day-to-day program.
 :::
 
-A second one: `main` holds `@console: Console[print]`. It calls `greeting("C-17")` with no `with` at all. What does `una check .` say?
+A second one: `main` in [Authority inside a function argument](#authority-inside-a-function-argument-uses-of) gives `each_sku` the function `save_label`, which writes files. Remove `uses @files: Files[write]` from the header of `main`. Does it check?
 
 :::answer Show the answer
-U3001 again. `greeting` needs `@customers`, and `main` holds none. A handler exists only where `with` installs it, so the call must install one, as the step does.
+No. With `uses of action`, a call of `each_sku` performs the effects of its argument, so the second call writes files on behalf of `main`, through `save_label`, which needs `@files`, and `main` no longer holds it. `una check .` reports U3001, as for any binding that is not in scope: authority still comes only from the caller's header.
 :::
 
 ## 8.5 Edition 0.3 preview: conditions and boundaries
@@ -1175,7 +1268,7 @@ After the operation's name in the brackets of `uses`, write `where` and a condit
 
 The step's `reorder` may place an order only when `dry_run` is false:
 
-```toml include="steps/15-conditions/una.toml" title="steps/15-conditions/una.toml"
+```toml include="steps/17-conditions/una.toml" title="steps/17-conditions/una.toml"
 [package]
 name = "restock"
 version = "0.1.0"
@@ -1186,7 +1279,7 @@ entry = "restock"
 grants = ["console"]
 ```
 
-```una include="steps/15-conditions/src/restock.una" title="steps/15-conditions/src/restock.una" verified="check, run"
+```una include="steps/17-conditions/src/restock.una" title="steps/17-conditions/src/restock.una" verified="check, run"
 module restock
 
 --- The supplier's ordering service.
@@ -1220,7 +1313,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/15-conditions/expected/output.txt"
+```text include="steps/17-conditions/expected/output.txt"
 would order 20 x LAMP-01
 ordered 20 x LAMP-01
 ```
@@ -1244,7 +1337,7 @@ A package often holds code it did not write, such as a vendored library that pri
 
 Under `[boundaries]` in `una.toml`, one line per module: its name in quotes, `=`, and the list of what it may receive. Here the vendored module is `barcode`, and its ceiling allows `Console[print]`:
 
-```toml include="steps/16-boundaries/una.toml" title="steps/16-boundaries/una.toml"
+```toml include="steps/18-boundaries/una.toml" title="steps/18-boundaries/una.toml"
 [package]
 name = "shelf"
 version = "0.1.0"
@@ -1262,7 +1355,7 @@ grants = ["console"]
 
 This is the vendored module. Its function needs `@console`, which the store's code must grant it:
 
-```una include="steps/16-boundaries/src/barcode.una" title="steps/16-boundaries/src/barcode.una" verified="check, run"
+```una include="steps/18-boundaries/src/barcode.una" title="steps/18-boundaries/src/barcode.una" verified="check, run"
 module barcode
 
 --- Prints a shelf label with the SKU spelled out for a barcode font. This module is code from
@@ -1275,7 +1368,7 @@ pub print_label(sku: Text) -> Unit
 
 The store's own module calls it, and grants the console at each call with `with`:
 
-```una include="steps/16-boundaries/src/shelf.una" title="steps/16-boundaries/src/shelf.una" verified="check, run"
+```una include="steps/18-boundaries/src/shelf.una" title="steps/18-boundaries/src/shelf.una" verified="check, run"
 module shelf
 
 import barcode (print_label)
@@ -1289,7 +1382,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/16-boundaries/expected/output.txt"
+```text include="steps/18-boundaries/expected/output.txt"
 *LAMP-01*
 *DESK-02*
 ```
@@ -1300,7 +1393,7 @@ pub main() -> Unit
 
 A call into a boundary takes nothing by name. The caller grants each capability with `with`, so every call shows what the boundary receives. Leave out the `with` on the second call:
 
-```diff include="steps/16-boundaries..steps/17-boundary-call:src/shelf.una" context="1" title="src/shelf.una"
+```diff include="steps/18-boundaries..steps/19-boundary-call:src/shelf.una" context="1" title="src/shelf.una"
 --- a/src/shelf.una
 +++ b/src/shelf.una
 @@ -8,2 +8,2 @@
@@ -1309,7 +1402,7 @@ A call into a boundary takes nothing by name. The caller grants each capability 
 +  print_label("desk-02")
 ```
 
-```text include="steps/17-boundary-call/expected/rendered.txt"
+```text include="steps/19-boundary-call/expected/rendered.txt"
 [U3020] Error: `print_label` is in the boundary `barcode` and needs `@console: Console[print]`, which a call into it grants only with `with`
    ╭─[ src/barcode.una:6:3 ]
    │
@@ -1930,7 +2023,7 @@ Remove `given @log = quiet()` from the last example:
 :::mistake
 In the step of [A restock with a dry run](#a-restock-with-a-dry-run), place the order without the dry-run branch:
 
-```diff include="steps/15-conditions..mistakes/7:src/restock.una" context="1" title="src/restock.una"
+```diff include="steps/17-conditions..mistakes/7:src/restock.una" context="1" title="src/restock.una"
 --- a/src/restock.una
 +++ b/src/restock.una
 @@ -13,4 +13,2 @@
@@ -2156,14 +2249,14 @@ The compact rule: *every effect is `@binding.op(...)` on a binding of the header
 ### Recap
 
 :::recap
-- A function's `uses` list everything it may do outside the program. A `pub` function without `uses` is pure.
-- List the operations a function needs in brackets. A callee holds only the operations its own header lists.
-- Bindings pass by name. `with @x = @y` rebinds, and `with @x = handler(args)` installs a handler, for one statement.
-- The host's capabilities reach `main` only as `una run` grants them: `[run] grants` in `una.toml`, plus any `--grant` flags of that run.
-- Declare each outside service as a `capability`, and give it one handler for production and fakes for tests. A handler implements every operation, and is held to each operation's `ensures`.
-- A capability is never a value: it moves only downward, by name or through `with`, for one statement.
-- Every example installs its fakes with `given`, and checks effects with `expect performed` and `expect not performed`.
-- In edition `0.3`, `where` puts a condition on an operation, and `[boundaries]` limits what outside code receives.
+- A function's `uses` list everything it may do outside the program; a `pub` function without `uses` is pure.
+- List the operations a function needs; a callee holds only those its header lists.
+- Bindings pass by name, or through `with` for one statement; a capability is never a value.
+- Host capabilities reach `main` only as `[run] grants` and `--grant` allow.
+- Declare each outside service as a `capability`, with handlers for production and for tests.
+- A function argument with effects needs `uses of` and `fails of` (edition `0.2`).
+- Examples install every binding with `given`, and check effects with `expect performed`.
+- Edition `0.3` adds conditions on operations and `[boundaries]`.
 :::
 
 ### Reference

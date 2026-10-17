@@ -1,0 +1,9 @@
+[U3004] Error: `@console` is used in a lambda whose type declares no `uses`, so the lambda is pure; pass it directly as an argument for a parameter whose type or `uses of` clause allows the effect
+    ╭─[ src/shelf.una:13:55 ]
+    │
+ 13 │   each_sku(["LAMP-01", "DESK-02"], action: fn(sku) -> @console.print("label {sku}"))
+    │                                                       ────┬───
+    │                                                           ╰───── `@console` is used in a lambda whose type declares no `uses`, so the lambda is pure; pass it directly as an argument for a parameter whose type or `uses of` clause allows the effect
+    │
+    │ Note: run `una explain U3004` for an explanation
+────╯
