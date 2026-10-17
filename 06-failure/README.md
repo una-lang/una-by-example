@@ -2100,7 +2100,7 @@ Every diagnostic of [Common mistakes](#s6-7) is available as JSON with `una --js
 
 :::recap
 - A failure is a value of a sum kind you declare. Its variants carry what someone needs to act on it.
-- A header declares at most one error kind with `fails`, and may also fail as a function parameter does with `fails of p` (the argument must then fail with the same kind). A `pub` function must declare it, and a private one may let the checker infer it.
+- A header declares at most one error kind with `fails`, and may add `fails of p` to fail as the parameter `p` does. A `pub` function must declare it, and a private one may let the checker infer it.
 - A call that can fail is the whole expression of its statement, and its handling clauses follow on their own lines: `if error` first, then `if none`.
 - `use` recovers, `pass` hands on the same kind, `fail V(cause: error)` translates between layers.
 - `attempt` keeps the outcome of one call as a `Result`, for batches, counts and fallbacks.
