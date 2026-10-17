@@ -1,0 +1,15 @@
+[U5001] Error: division obligation `people != 0` is refuted
+   ╭─[ src/split.una:4:45 ]
+   │
+ 4 │ pub share(total: Int, people: Int) -> Int = total / people
+   │                                             ───────┬──────
+   │                                                    ╰──────── division obligation `people != 0` is refuted
+   │
+   │ Help: repair 1: guard the division with `if people != 0`
+   │
+   │ Note 1: obligation ob-7797c5169054 (division) is refuted: people != 0
+   │
+   │ Note 2: counterexample: people = 0
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯

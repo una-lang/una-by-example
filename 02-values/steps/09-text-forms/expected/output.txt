@@ -1,0 +1,8 @@
+[lamp-01 ] and [LAMP-01] are equal: false
+a quote ", a backslash \ and braces { }
+before a tab:	after it
+Café table
+LAMP-01-XL
+[] has 0 characters, [LAMP-01] has 7
+8
+CAFé

@@ -1,0 +1,9 @@
+[U2001] Error: `==` needs operands of one type, and these are `Int` and `Text`
+    ╭─[ src/notice.una:21:10 ]
+    │
+ 21 │   expect result == "18"
+    │          ───────┬──────
+    │                 ╰──────── `==` needs operands of one type, and these are `Int` and `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

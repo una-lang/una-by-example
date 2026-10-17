@@ -1,0 +1,10 @@
+module split
+
+--- What each of `people` pays when they share a bill of `total` cents, rounded down.
+pub share(total: Int, people: Int) -> Int = total / people
+
+--- Prints one share of a bill.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{share(9000, people: 4)} cents each")

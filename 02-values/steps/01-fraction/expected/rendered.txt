@@ -1,0 +1,9 @@
+[U0101] Error: `19.90` is a fractional literal; Una's integer literals are decimal
+   ╭─[ src/shelf.una:7:17 ]
+   │
+ 7 │   let lamp = 19.90
+   │                 ─┬
+   │                  ╰── `19.90` is a fractional literal; Una's integer literals are decimal
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯

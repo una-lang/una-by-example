@@ -1,0 +1,18 @@
+[U1001] Error: capability `Console` has no operation `write`
+   ╭─[ src/hello.una:7:12 ]
+   │
+ 7 │   @console.write("The store is open")
+   │            ──┬──
+   │              ╰──── capability `Console` has no operation `write`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+[U1001] Error: capability `Console` has no operation `show`
+   ╭─[ src/hello.una:8:12 ]
+   │
+ 8 │   @console.show("Orders placed before 18:00 ship today")
+   │            ──┬─
+   │              ╰─── capability `Console` has no operation `show`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯

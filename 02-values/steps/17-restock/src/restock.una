@@ -1,0 +1,11 @@
+module restock
+
+--- Prints the stock of a shelf after a sale and a delivery.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit stock = 10
+  stock = stock - 3
+  let sold = 10 - stock
+  stock = stock + 5
+  @console.print("{stock} in stock, {sold} sold")

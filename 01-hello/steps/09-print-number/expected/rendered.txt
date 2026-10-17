@@ -1,0 +1,9 @@
+[U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
+   ╭─[ src/hello.una:7:18 ]
+   │
+ 7 │   @console.print(18)
+   │                  ─┬
+   │                   ╰── argument `line` of operation `Console.print` must be `Text`, found `Int`
+   │
+   │ Note: run `una explain U2001` for an explanation
+───╯

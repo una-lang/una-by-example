@@ -1,0 +1,9 @@
+[U2001] Error: expected `Int`, found `Text`
+    ╭─[ src/till.una:11:11 ]
+    │
+ 11 │   items = "one"
+    │           ──┬──
+    │             ╰──── expected `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
