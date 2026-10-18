@@ -1,0 +1,10 @@
+module wrapping
+
+--- The gift-wrapping fee of an order: nothing without a gift, 150 cents a unit, 500 at most.
+wrap_fee(units: Int, gift: Bool) -> Int = if not gift then 0 else if units > 3 then 500 else 150 * units
+
+--- Prints the fee for three orders.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{wrap_fee(2, gift: true)}, {wrap_fee(5, gift: true)}, {wrap_fee(5, gift: false)}")

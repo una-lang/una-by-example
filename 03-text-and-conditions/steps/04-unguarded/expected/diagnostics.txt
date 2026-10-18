@@ -1,2 +1,0 @@
-error U5001 at src/names.una:4:36: precondition `0 <= 0 and 0 <= 24 and 24 <= name.len` of this call is refuted
-  counterexample: name = "Text#0", name.len = 0

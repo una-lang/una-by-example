@@ -1,0 +1,11 @@
+module packs
+
+--- Whether each unit of a pack costs less than 500 cents. An empty pack has no unit, and is
+--- not cheap.
+pub cheap_each(cents: Int, units: Int) -> Bool = units > 0 and cents / units < 500
+
+--- Prints the answer for three packs.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{cheap_each(900, units: 6)} {cheap_each(900, units: 1)} {cheap_each(900, units: 0)}")

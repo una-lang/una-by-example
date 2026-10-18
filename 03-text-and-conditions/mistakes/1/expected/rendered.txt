@@ -1,27 +1,36 @@
 [U2001] Error: an operand of `+` must be `Int`, found `Text`
-    ╭─[ src/labels.una:43:3 ]
+    ╭─[ src/labels.una:49:14 ]
     │
- 43 │   regular_label(sku, name: name, cents: cents) + " ({money(kilo)} per kg)"
-    │   ──────────────────────┬─────────────────────
-    │                         ╰─────────────────────── an operand of `+` must be `Int`, found `Text`
-    │
-    │ Note: run `una explain U2001` for an explanation
-────╯
-[U2001] Error: `weight_label` returns `Text`, found `Int`
-    ╭─[ src/labels.una:43:3 ]
-    │
- 43 │   regular_label(sku, name: name, cents: cents) + " ({money(kilo)} per kg)"
-    │   ────────────────────────────────────┬───────────────────────────────────
-    │                                       ╰───────────────────────────────────── `weight_label` returns `Text`, found `Int`
+ 49 │   let line = sku + " | " + fit_name(name)
+    │              ─┬─
+    │               ╰─── an operand of `+` must be `Int`, found `Text`
     │
     │ Note: run `una explain U2001` for an explanation
 ────╯
 [U2001] Error: an operand of `+` must be `Int`, found `Text`
-    ╭─[ src/labels.una:43:50 ]
+    ╭─[ src/labels.una:49:20 ]
     │
- 43 │   regular_label(sku, name: name, cents: cents) + " ({money(kilo)} per kg)"
-    │                                                  ────────────┬────────────
-    │                                                              ╰────────────── an operand of `+` must be `Int`, found `Text`
+ 49 │   let line = sku + " | " + fit_name(name)
+    │                    ──┬──
+    │                      ╰──── an operand of `+` must be `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
+[U2001] Error: an operand of `+` must be `Int`, found `Text`
+    ╭─[ src/labels.una:49:28 ]
+    │
+ 49 │   let line = sku + " | " + fit_name(name)
+    │                            ───────┬──────
+    │                                   ╰──────── an operand of `+` must be `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
+[U2001] Error: expected `Text`, found `Int`
+    ╭─[ src/labels.una:50:69 ]
+    │
+ 50 │   let noted = if units < 5 then "{line} | {stock_note(units)}" else line
+    │                                                                     ──┬─
+    │                                                                       ╰─── expected `Text`, found `Int`
     │
     │ Note: run `una explain U2001` for an explanation
 ────╯

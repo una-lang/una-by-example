@@ -1,2 +1,2 @@
-error U5001 at src/labels.una:22:47: division obligation `grams != 0` is refuted
-  counterexample: cents = 0, grams = 0
+error U0006 at src/labels.una:60:32: text literal inside interpolation; bind it with `let` and interpolate the name
+error U0006 at src/labels.una:60:49: text literal inside interpolation; bind it with `let` and interpolate the name

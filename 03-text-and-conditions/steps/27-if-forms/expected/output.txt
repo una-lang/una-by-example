@@ -1,0 +1,5 @@
+heavy, light
+home, neighbors, world
+490, 190
+1 unit
+a regular order

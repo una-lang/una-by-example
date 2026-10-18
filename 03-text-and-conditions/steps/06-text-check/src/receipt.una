@@ -1,0 +1,12 @@
+module receipt
+
+--- Prints a line of a gift receipt, and two more lines.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let sku = "RUG-07"
+  let units = 2
+  let empty = ""
+  @console.print("{units} x {sku} \{gift\}")
+  @console.print("[{empty}] has {empty.len} characters, {sku} has {sku.len}")
+  @console.print("Thank you\nCome again")

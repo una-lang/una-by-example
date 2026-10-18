@@ -1,0 +1,4 @@
+module shipping
+
+--- Whether an order ships for free: 10000 cents of goods or more, to a domestic address.
+pub ships_free(cents: Int, domestic: Bool) -> Bool = cents and domestic

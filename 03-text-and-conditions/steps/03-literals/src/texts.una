@@ -1,0 +1,15 @@
+module texts
+
+--- Prints one text of each form: plain, empty, and with each escape.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Desk lamp, brass")
+  @console.print("Café table, 2 × 1 m")
+  @console.print("")
+  @console.print("The sign says \"SALE\"")
+  @console.print("A backslash: \\")
+  @console.print("Braces: \{ and \}")
+  @console.print("Aisle 4\nAisle 5")
+  @console.print("LAMP-01\t19.90")
+  @console.print("Caf\u{e9} table")

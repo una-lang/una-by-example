@@ -1,9 +1,9 @@
-[U2022] Error: the literal `300` does not fit `U8`, which holds `0` to `255`
-    ╭─[ src/labels.una:62:30 ]
+[U0101] Error: comparisons cannot be chained; join them with `and`, as in `a < b and b < c`
+    ╭─[ src/labels.una:23:50 ]
     │
- 62 │   printed = printed + copies(300).to_int()
-    │                              ─┬─
-    │                               ╰─── the literal `300` does not fit `U8`, which holds `0` to `255`
+ 23 │ pub on_sale(percent: Int) -> Bool = 1 <= percent <= 90
+    │                                                  ─┬
+    │                                                   ╰── comparisons cannot be chained; join them with `and`, as in `a < b and b < c`
     │
-    │ Note: run `una explain U2022` for an explanation
+    │ Note: run `una explain U0101` for an explanation
 ────╯

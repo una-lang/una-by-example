@@ -1,0 +1,10 @@
+module till
+
+--- Compares the SKU typed at the till with the SKU of the catalog.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let typed = " lamp-01"
+  let catalog = "LAMP-01"
+  @console.print("[{typed}] and [{catalog}]")
+  @console.print("the same SKU: {typed == catalog}")

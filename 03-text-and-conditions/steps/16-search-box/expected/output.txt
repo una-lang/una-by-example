@@ -1,0 +1,5 @@
+[LAMP ] in Desk lamp, Brass: true
+[LAMP ] in Wool rug, natural: false
+[ wool] in Wool rug, natural: true
+[brass] in Desk lamp, Brass: true
+example.invalid/products/desk-lamp-brass

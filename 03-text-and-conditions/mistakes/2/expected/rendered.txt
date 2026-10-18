@@ -1,15 +1,18 @@
-[U5001] Error: division obligation `grams != 0` is refuted
-    ╭─[ src/labels.una:22:47 ]
+[U0006] Error: text literal inside interpolation; bind it with `let` and interpolate the name
+    ╭─[ src/labels.una:60:32 ]
     │
- 22 │ pub per_kilo(cents: Int, grams: Int) -> Int = cents * 1000 / grams
-    │                                               ──────────┬─────────
-    │                                                         ╰─────────── division obligation `grams != 0` is refuted
+ 60 │   @console.print("{shelf_label("DESK-02", name: "Oak writing desk", cents: 15900, percent: 0, grams: 0, units: 0)}")
+    │                                ────┬────
+    │                                    ╰────── text literal inside interpolation; bind it with `let` and interpolate the name
     │
-    │ Help: repair 1: guard the division with `if grams != 0`
+    │ Note: run `una explain U0006` for an explanation
+────╯
+[U0006] Error: text literal inside interpolation; bind it with `let` and interpolate the name
+    ╭─[ src/labels.una:60:49 ]
     │
-    │ Note 1: obligation ob-912172bdc46e (division) is refuted: grams != 0
+ 60 │   @console.print("{shelf_label("DESK-02", name: "Oak writing desk", cents: 15900, percent: 0, grams: 0, units: 0)}")
+    │                                                 ─────────┬────────
+    │                                                          ╰────────── text literal inside interpolation; bind it with `let` and interpolate the name
     │
-    │ Note 2: counterexample: cents = 0, grams = 0
-    │
-    │ Note 3: run `una explain U5001` for an explanation
+    │ Note: run `una explain U0006` for an explanation
 ────╯

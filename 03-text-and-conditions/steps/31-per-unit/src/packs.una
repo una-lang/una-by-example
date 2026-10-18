@@ -1,0 +1,10 @@
+module packs
+
+--- The price of one unit of a pack, in cents, rounded down. An empty pack gives 0.
+per_unit(cents: Int, units: Int) -> Int = if units > 0 then cents / units else 0
+
+--- Prints the price of one unit for three packs.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{per_unit(900, units: 6)}, {per_unit(1_000, units: 3)}, {per_unit(900, units: 0)}")

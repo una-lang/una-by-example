@@ -1,0 +1,8 @@
+module delivery
+
+--- Prints where a parcel goes, with the postal code as a text.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let postal_code = "02134"
+  @console.print("Deliver to {postal_code}")
