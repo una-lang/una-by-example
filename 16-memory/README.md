@@ -13,12 +13,12 @@ nav: ["Values, not references", "edit", "take", "Call depth and memory limits", 
 # 16 Memory
 
 
-A store's day ends with a count. Every site replays the sales and deliveries its tills recorded, rejects the movements that do not add up, and reports what is left on the shelves. That work changes values step by step, and the sites are independent of each other, so they can be counted at the same time. This chapter shows how Una lets a function change a value without sharing it, how a value is given up for good, how independent work runs concurrently with a result that never depends on timing, and what stops a run that grows too deep or too large.
+A store's day ends with a count. Every site replays the sales and deliveries its tills recorded, rejects the movements that do not add up, and reports what is left on the shelves. That work changes a value step by step: the count of each SKU. This chapter shows what a value is in Una, and why two names never share one; how a function changes its caller's value, in plain sight at the call, and leaves it alone when it fails; how a value is given up for good; and what stops a run that grows too deep or too large.
 
 ## What you'll build
 
 :::build
-An end-of-day stock count for a store with two sites. Each site's ledger takes its movements one by one, a movement that does not add up leaves the ledger as it was, and both sites are closed at the same time:
+An end-of-day stock count for a store with two sites. Each site's ledger takes its movements one by one, a movement that does not add up leaves the ledger as it was, and both sites are closed at the same time, as in chapter 15:
 
 ```text include="day-to-day/expected/output.txt"
 north: 2 applied, 1 rejected
@@ -34,26 +34,26 @@ south: 1 applied, 1 rejected
 
 You will learn to:
 
-- update a value in place with `let edit`, and know that no other binding sees the change;
+- tell a copy from a shared reference, and know that no other binding sees a change you make;
 - pass a value in and out of a function with an `edit` parameter, and rely on it being left unchanged when the call fails;
+- state what such a function did, with `old(name)` in its `ensures` clause;
 - give a value up with `take`, so that no code can use it afterwards;
-- run independent work concurrently with `together` and `together for`, with the result of a sequential run;
 - recognize U6003, the stop at the call depth or memory limit, and avoid it with loops.
 :::
 
 ## Why it works this way
 
-Most languages let two parts of a program hold the same object. A function that receives a list can change it under its caller, a cache can change a record that a report is still reading, and two threads can write the same counter at once. Reading a function then means asking who else holds what it holds, and concurrent code needs locks, or a type system of lifetimes and borrows, to stay correct.
+Most languages let two parts of a program hold the same object. A function that receives a list can change it under its caller, and a cache can change a record that a report is still reading. Reading a function then means asking who else holds what it holds, and a change made in one place can show up in another, far from the line that made it. Some languages add rules of lifetimes and borrows to keep this in check.
 
 Una takes another route. Three rules do it:
 
 :::steps
 1. **Values are values.** There are no references and no lifetimes. A `let` binding is a value, and copying it into another binding gives that binding its own value.
-2. **Change is local and visible.** A binding declared `let edit` can be rebound, and a parameter declared `edit` passes a value in and out. The call says `edit` too, so a reader sees at the call which bindings it may change.
-3. **Concurrent tasks share nothing.** A `together` task reads the values of the bindings around it, and cannot assign them. Each task returns its result, and the block's result is the result of running the tasks one after another.
+2. **Change is local and visible.** A binding declared `let edit` can be rebound, and a parameter declared `edit` passes a value in and out. The call says `edit` too, so a reader sees at the call which bindings it may change. A call that fails changes none of them.
+3. **A value given up stays given up.** A parameter declared `take` uses its argument up, and the checker refuses every later use of the caller's binding.
 :::
 
-The price is that two parts of a program never share a changing value: one of them returns a new value, or takes it with `edit`. In return, a value cannot change behind your back, and concurrency changes when the work happens, not what it computes. The backend may still update a value in place when nothing else holds it, without anything the program can observe.
+The price is that two parts of a program never share a changing value: one of them returns a new value, or takes it with `edit`. In return, a value cannot change behind your back, which is also why the tasks of [chapter 15](/learn/concurrency/) share nothing that changes. These rules fix what a program computes; how its memory is used is left to una, and nothing the program can observe depends on it.
 
 > [!KEY]
 > In Una, the only bindings a call can change are the ones it names with `edit`, and only if the call returns. A failed call leaves them as they were.
@@ -63,35 +63,13 @@ The price is that two parts of a program never share a changing value: one of th
 
 ### What a value is
 
-A **value** is a piece of data: the number 4, the text `"LAMP-01"`, a list `[4, 0, 7]`, or a record such as a shelf with its SKU and its units. A **binding** gives a value a name, with `let` ([chapter 2, Values](/learn/numbers/#s2-1)).
+A **value** is a piece of data: the number 4, the text `"LAMP-01"`, a list `[4, 0, 7]`, or a record such as a shelf with its SKU and its units. A **binding** is a name for a value, made with `let` ([section 2.1](/learn/numbers/#s2-1)) or `let edit` ([section 9.2](/learn/loops/#s9-2)), and a parameter is a binding too. You have used values and bindings since chapter 2. This section says what happens when one binding is made from another.
 
 Think of a stock sheet on paper. When a clerk photocopies it and writes on the copy, the original does not change: the copy is a sheet of its own. Una's values work like the photocopy. Writing `let snapshot = current` gives `snapshot` its own copy of `current`'s value, and nothing that later happens to `current` reaches it.
 
-Many languages work like a shared whiteboard instead. There, a name holds a **reference**, an address where the data lives, and two names can hold the same address. Two such names are called **aliases**: write through one, and the other sees the change. Una has no references, so two bindings are never aliases. To **mutate** a value, meaning to change it after it was made, you rebind a name that you declared editable, and only that name sees the change.
+Many languages work like a shared whiteboard instead. There, a name holds a **reference**, an address where the data lives, and two names can hold the same address. Two such names share the data: write through one, and the other sees the change. Una has no references, so two bindings never share a value that changes. To **mutate** a value, meaning to change it after it was made, you rebind a name that you declared editable, and only that name sees the change.
 
-The constructs of this chapter, `let edit` among them, exist in packages of edition `0.2` and later, the edition every example here names. Edition `0.1` has none of them ([chapter 14, Editions](/learn/editions/)).
-
-### Each step is a package
-
-Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): `una.toml`, `verification.lock` and the module under `src/`. Every package of this chapter uses edition `0.2`, which the manifest names:
-
-```toml include="steps/01-values/una.toml" title="steps/01-values/una.toml"
-[package]
-name = "shelf"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "shelf"
-grants = ["console"]
-```
-
-`verification.lock` is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `12-memory-and-concurrency.tar.gz`. Then, in the package's directory:
-
-```sh
-una check .
-una run .
-```
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `16-memory.tar.gz`, holds them all. Every package of this chapter uses edition `0.2`, the edition that brings `let edit`, loops and the parameter modes `edit` and `take`; a package of edition `0.1` has none of them ([chapter 19](/learn/editions/) covers editions).
 
 ### Why Una has no shared references
 
@@ -124,10 +102,10 @@ pub main() -> Unit
 ```
 
 1. **`let opening = Shelf(…)`.** A plain `let` binds a value for good. Assigning `opening` later is U2019, the code of an assignment to a binding that is not editable.
-2. **`let edit current = opening`.** An editable binding, as in [chapter 2, Values](/learn/numbers/#s2-1), starts as a copy of `opening`'s value. Its type is fixed by that first value: it stays a `Shelf`.
+2. **`let edit current = opening`.** An editable binding, as in [section 9.2](/learn/loops/#s9-2), starts as a copy of `opening`'s value. Its type is fixed by that first value: it stays a `Shelf`.
 3. **`current.units = current.units + 6`.** Assigning a field of an editable record rebinds `current` to a record with that field changed. `opening` keeps its own value, since it is another binding.
 4. **`let snapshot = current`.** The snapshot is the value `current` has on this line. The next assignment to `current` does not reach it.
-5. **`edit counts.set(index: 1, item: 12)`.** A list element changes through `set`, never by assignment, and the call says `edit`. `set` requires an index inside the list, and the verifier proves it here from the list's length.
+5. **`edit counts.set(index: 1, item: 12)`.** A list element changes through `set`, never by assignment, and the call says `edit`, as in [section 10.1](/learn/collections/#s10-1). `set` requires an index inside the list, and the verifier proves it here from the list's length.
 :::
 
 `una run .` prints:
@@ -138,11 +116,11 @@ counts [4, 12, 7]
 Shelf(sku: "LAMP-01", units: 7)
 ```
 
-Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were aliases of one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation shows any value that `==` can compare, a record, a list or a map included, except a hash of a secret.
+Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were references to one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation writes out a whole record, list or map, a record with the names and values of its fields.
 
 ### How to change a binding
 
-Only an editable binding changes, and only by an **assignment**: the binding, or a part of it, then `=`, then the new value. The part on the left of `=` is a **place**: an editable binding, or a field of one, as deep as the record goes. This step shows each form:
+[Section 9.2](/learn/loops/#s9-2) taught the **assignment**: the binding, then `=`, then the new value. Only an editable binding changes, and only by an assignment or by a call that says `edit`. The part on the left of `=` is a **place**: an editable binding, or a field of one, as deep as the record goes. The word matters in [section 16.2](#s16-2), where an `edit` argument must be a place too. This step shows each form:
 
 ```una include="steps/02-places/src/places.una#L1-L12" title="steps/02-places/src/places.una" caption="the kinds"
 module places
@@ -191,7 +169,7 @@ shelves: [4, 12, 7]
 
 #### An element of a list: `set`
 
-A list has no assignable positions: `shelves[1] = 12` is not Una. The prelude function `set` changes one element, and since it changes the list it is given, it takes the list as an `edit` parameter, which [section 16.2](#s16-2) explains. You write `edit` before the list: `edit shelves.set(index: 1, item: 12)`. Positions count from 0, so index 1 is the second element.
+A list has no assignable positions: `shelves[1] = 12` is not Una. The prelude function `set` of [section 10.1](/learn/collections/#s10-1) changes one element, and since it changes the list it is given, it takes the list as an `edit` parameter, which [section 16.2](#s16-2) explains. You write `edit` before the list: `edit shelves.set(index: 1, item: 12)`. Positions count from 0, so index 1 is the second element. A map changes the same way, with `edit stock.set(key: …, value: …)` or `edit stock.remove(key: …)` ([section 10.4](/learn/collections/#s10-4)), or by assigning the new map that `with` gives back.
 
 ### How values behave
 
@@ -201,7 +179,7 @@ A list has no assignable positions: `shelves[1] = 12` is not Una. The prelude fu
 
 #### An editable binding keeps its type
 
-A `let edit` binding takes its type from its first value, and every later value must have that type. Assign a text to `points`:
+A `let edit` binding takes its type from its first value, and every later value must have that type, as [section 9.2](/learn/loops/#an-editable-name-keeps-its-type) showed for a number. The rule holds for every place, a field included. Assign a text to `points`:
 
 ```diff include="steps/02-places..steps/03-fixed-type:src/places.una" context="0" title="src/places.una"
 --- a/src/places.una
@@ -223,20 +201,20 @@ A `let edit` binding takes its type from its first value, and every later value 
 ────╯
 ```
 
-The mark points at the new value: the binding is an `Int`, and the value is a `Text`. A binding that holds a refined kind, such as `Cents` of [chapter 5](/learn/contracts/#s5-3), keeps its condition only when you write the type: `let edit total: Cents = 0`. Without it, the binding is a plain `Int`.
+The mark points at the new value: the binding is an `Int`, and the value is a `Text`. A binding that holds a refined kind, such as `Cents` of [chapter 5](/learn/contracts/#s5-3), keeps its condition only when you write the type: `let edit total: Cents = 0`, as [section 9.3](/learn/loops/#keeping-a-fact-through-the-loop-a-refined-type) did with `Units`. Without it, the binding is a plain `Int`.
 
 #### Only an editable binding changes
 
-Assigning a plain `let` binding, a parameter declared without `edit`, the variable of a `for` loop or, inside a lambda, a binding it captured is U2019 ([chapter 2](/learn/numbers/#s2-1) shows the message).
+Assigning a plain `let` binding, a parameter declared without `edit`, the variable of a `for` loop or, inside a lambda, a binding it captured is U2019 ([section 9.2](/learn/loops/#s9-2); [Assigning a plain `let`](/learn/loops/#assigning-a-plain-let-u2019) shows the message). A lambda keeps a copy of each value it captures when it is made ([section 10.2](/learn/collections/#s10-2)), so a later assignment outside it does not reach it either.
 
 #### No `+=` and no `while`
 
-There are no compound assignments such as `+=`: write `points = points + 30`. And there is no `while` loop: a `for` loop, or **recursion**, a function that calls itself, does the repeating ([chapter 5, Collections](/learn/loops/#s9-1), covers both).
+There are no compound assignments such as `+=`: write `points = points + 30`. And there is no `while` loop: a `for` loop, or **recursion**, a function that calls itself, does the repeating ([section 9.1](/learn/loops/#s9-1) covers both).
 
-#### Copies at run time
+#### What a copy means when the program runs
 
-> [!NOTE] Copies are cheap.
-> A copy need not duplicate the shelf's memory when the program runs. The backends of una share a value until one binding changes it, and change it in place when nothing else holds it. None of this is observable: the output is the output of the copies.
+> [!NOTE] A copy is a rule about results.
+> The rules of this section say what a program computes: each binding has its own value. They do not say how una lays out the memory. The specification lets una share a value's memory between bindings and update a value in place when nothing else holds it. None of this is observable: the output is always the output of the copies.
 
 ### `let` or `let edit`
 
@@ -285,7 +263,7 @@ LAMP-01 at 1990; was 1990; now 1490
 
 You hand a clerk your shopping list and ask them to add what is missing. They write on it and hand it back. If they cannot finish, they hand back your list exactly as you gave it. An `edit` parameter works the same way.
 
-A **parameter** declared `edit` is passed in and out: the function receives the caller's value, works on it as on a `let edit` binding, and when it returns, the caller's binding receives the final value. The caller writes `edit` at the call too, so the change is visible where it happens. When the function fails ([chapter 6, Failure](/learn/failure/)), the caller's binding keeps the value it had before the call.
+A **parameter** declared `edit` is passed in and out: the function receives the caller's value, works on it as on a `let edit` binding, and when it returns, the caller's binding receives the final value. The caller writes `edit` at the call too, so the change is visible where it happens. When the function fails ([chapter 7, Results and failures](/learn/failure/#s7-2)), the caller's binding keeps the value it had before the call.
 
 ### Why a function needs to change its caller's value
 
@@ -354,10 +332,20 @@ receive(edit shelf: Shelf, units: Int) -> Int
 
 1. **`edit shelf: Shelf`.** The word `edit` before the parameter's name. In the body, `shelf` is editable: `shelf.units = …` changes it.
 2. **`-> Int`.** The function still has a result of its own: here, the units the shelf held before. A function that has nothing else to give back returns `Unit`.
-3. **`ensures shelf.units == old(shelf).units + units`.** In an `ensures` clause ([chapter 5](/learn/contracts/#s5-2)), `shelf` is the final value, and `old(shelf)` the value on entry. `old` works only there, and only on an `edit` parameter.
+3. **`ensures shelf.units == old(shelf).units + units`.** A promise about what the call did to `shelf`, which the next part explains.
 :::
 
 The call writes `edit` before the argument: `let before = receive(edit front, units: 4)`. The argument must be an editable binding, here a `let edit`. When the call returns, `front` holds the shelf with 4 more units, and `before` holds the result.
+
+#### Naming the value on entry: `old`
+
+An `ensures` clause ([section 5.2](/learn/contracts/#s5-2)) states what is true when the function returns. For a plain parameter that is simple, since the parameter never changes. An `edit` parameter has two values: the one the caller passed in, and the one the function hands back. So inside `ensures`, the parameter's name means its final value, and `old(name)` means its value on entry:
+
+- `shelf.units` in the clause of `receive` is the units the caller gets back;
+- `old(shelf).units` is the units the caller passed in;
+- so `shelf.units == old(shelf).units + units` promises the caller exactly `units` more, and the verifier proves it from the body, as it proves every `ensures`.
+
+`old` has three rules. It is allowed only in an `ensures` clause; in the body, the parameter is simply its current value, and a binding made at the start, such as `let before = shelf.units`, keeps the entry value. It applies only to an `edit` parameter, since a plain parameter has one value. And a `requires` clause reads the values on entry already, so `old` is not allowed there. Anywhere else, `old(…)` is U2012, which [`old` outside `ensures`](#old-outside-ensures-u2012) shows.
 
 #### The method form
 
@@ -451,7 +439,7 @@ pub main() -> Unit
 
 1. **`reserve(edit shelf: Shelf, units: Int) -> Unit`.** The parameter `shelf` is passed in and out. The function returns `Unit`: what it gives back is the changed shelf.
 2. **`ensures shelf.reserved == old(shelf).reserved + units`.** The verifier proves the promise on every path that returns.
-3. **`fail NotEnough(…)`.** A `fail` inside an `if` without `else` ends the function there ([chapter 6, Failure](/learn/failure/#s7-2), covers `fail`).
+3. **`fail NotEnough(…)`.** A `fail` inside an `if` without `else` ends the function there ([section 7.2](/learn/failure/#s7-2) covers `fail`).
 4. **`edit lamps.reserve(units: 2)`.** The method form. Two units are free to reserve, and the call returns.
 5. **`reserve(edit lamps, units: 9)` with `if error use unit`.** Nine units are more than the three that are free, so the call fails, and the clause carries on with `unit` ([chapter 7](/learn/failure/#s7-3) covers the clauses).
 :::
@@ -508,12 +496,12 @@ The first mark is the first `edit` argument, and the second is the other use of 
 
 #### One call per line
 
-A call with an `edit` or `take` argument is the whole expression of its statement or `let`, as a call that can fail is ([chapter 6, Failure](/learn/failure/)). So it cannot be nested in another call or in a text, and it cannot be wrapped in `attempt` (U3013, [Wrapping an `edit` call in `attempt`](#wrapping-an-edit-call-in-attempt-u3013)). A statement call whose result is not `Unit` binds its result with `let`, as `let before = receive(…)` does.
+A call with an `edit` argument, or a `take` argument ([section 16.3](#s16-3)), is the whole expression of its statement or `let`, as a call that can fail is ([section 7.3](/learn/failure/#s7-3)). So it cannot be nested in another call or in a text, and it cannot be wrapped in `attempt` (U3013, [Wrapping an `edit` call in `attempt`](#wrapping-an-edit-call-in-attempt-u3013)). A statement call whose result is not `Unit` binds its result with `let`, as `let before = receive(…)` does.
 
 #### Where `edit` is allowed
 
-- An operation of a capability and a handler cannot declare `edit` or `take` parameters (U2020).
-- A function with an `edit` or `take` parameter cannot be used as a value, for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [Reaching `apply` through a copy](#reaching-apply-through-a-copy), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
+- An operation of a capability and a handler ([chapter 12](/learn/capabilities/#s12-3)) cannot declare `edit` or `take` parameters (U2020).
+- A function with an `edit` or `take` parameter cannot be used as a value ([section 10.2](/learn/collections/#s10-2)), for example as the function given to `map` (U2021). Wrap the call in a function with plain parameters, as `applied` does in [Reaching `apply` through a copy](#reaching-apply-through-a-copy), and pass that function instead. A lambda cannot do it: its body is not a statement, so a call with `edit` or `take` there is U3013.
 
 ### Return a new value, or `edit`
 
@@ -826,7 +814,7 @@ The first turn takes `voucher`, and the second would use it again. The message g
 
 ### What the call depth and the memory budget are
 
-When a function calls another, the first one waits until the second returns. A call that is running, or waiting for one it made, is **in progress**. Picture a stack of plates: each call puts a plate on top, and each return takes one off. The **call depth** is the height of the stack: the number of calls in progress at once. Calls of functions, lambdas, predicates, policies and handler operations all count.
+When a function calls another, the first one waits until the second returns. A call that is running, or waiting for one it made, is **in progress**. Picture a stack of plates: each call puts a plate on top, and each return takes one off. The **call depth** is the height of the stack: the number of calls in progress at once. Calls of functions, lambdas, predicates and the operations of handlers all count.
 
 **Memory** is where a running program keeps its values. A run's **memory budget** is how much memory it may hold beyond what it held when it started, measured in MiB, mebibytes, of 1,048,576 bytes each.
 
@@ -870,7 +858,9 @@ The flags work on `una run`, `una test` and a built executable, for one run. `--
 
 ### A loop is not a call
 
-A loop's turns are not calls. This step builds 20,000 shelf labels with a `for` loop, and runs with the default depth:
+A **call** is one function running another and waiting for its answer, and only calls in progress count toward the call depth. A loop's turns are not calls: the body runs again, in the same function, and nothing waits for it. So a loop does not use up the call depth, however many turns it takes, while a function that calls itself, as `weeks_of_stock` of [section 9.1](/learn/loops/#una-has-no-while) does, adds one call in progress per step. For the same reason, a value has no depth limit of its own: a loop can build a list, or a structure inside a structure, much deeper than the call depth.
+
+This step builds 20,000 shelf labels with a `for` loop, and runs with the default depth:
 
 ```una include="steps/14-loop/src/labels.una" title="steps/14-loop/src/labels.una" verified="check, run"
 module labels
@@ -949,7 +939,7 @@ The checker cannot see either limit: how deep a recursion goes, and how much a r
 
 #### In tasks
 
-Each task of a `together` block counts its call depth from the depth of the block that started it, and the memory of all tasks counts against one budget.
+Each task of a `together` block ([chapter 15](/learn/concurrency/)) counts its call depth from the depth of the block that started it, and the memory of all tasks counts against one budget.
 
 > [!TIP]
 > Build long lists with a `for` loop, as `labels` does, and keep recursion for structures that are shallow, such as a tree of categories. A run that only needs more depth can raise `--max-depth`.
@@ -997,7 +987,7 @@ With the default limit, does the run stop with U6003, or print? If it prints, wh
 
 Now the program from the start of the chapter. Two sites close their day. Each has the counts it opened with and the movements its tills recorded: sales, which lower a count, and deliveries, which raise it. A movement for a SKU the site does not stock, or a sale of more units than are counted, is rejected and reported, and must leave the count as it was. The sites are independent, so they are closed at the same time.
 
-The design follows from that. One `Ledger` per site holds the running counts, and one function applies a movement to it through an `edit` parameter. When the day is done, the ledger is closed into a `Report` with `take`, and `together for` closes every site at once.
+The design follows from that. One `Ledger` per site holds the running counts, and one function applies a movement to it through an `edit` parameter. When the day is done, the ledger is closed into a `Report` with `take`, and `together for` of [section 15.2](/learn/concurrency/#s15-2) closes every site at once.
 
 ### The kinds
 
@@ -1031,7 +1021,7 @@ pub kind Report
   closing: Map[Text, Int]
 ```
 
-A `Movement` holds a signed change, so a sale and a delivery are one kind. `CountError` carries what a person needs to correct the count: the SKU, and for an oversold item the units sold and counted. `Report` keeps the closing counts as a map, which [chapter 5, Collections](/learn/collections/), introduced.
+A `Movement` holds a signed change, so a sale and a delivery are one kind. `CountError` carries what a person needs to correct the count: the SKU, and for an oversold item the units sold and counted. `Report` keeps the closing counts as a map, which [section 10.4](/learn/collections/#s10-4) introduced.
 
 ### Applying one movement
 
@@ -1096,7 +1086,7 @@ Why an `edit` parameter, and not a function that returns a new ledger? Both woul
 
 ### Closing every site at once
 
-One task per day. Each task builds its own ledger inside `close_day`, so the tasks share nothing that changes, and the reports come back in the order of `days`.
+One task per day, with `together for` as [section 15.2](/learn/concurrency/#s15-2) taught it. Each task builds its own ledger inside `close_day`, so the tasks share nothing that changes, and the reports come back in the order of `days`. This is where the rules of this chapter meet those of chapter 15: a task cannot assign a binding outside it, so a ledger that each task changes must be made inside the task.
 
 ```una include="day-to-day/src/stockcount.una#close_all" title="day-to-day/src/stockcount.una"
 --- Closes every site's day at once, one task per site. The reports come back in site order.
@@ -1332,7 +1322,7 @@ Each example checks one fact of the chapter:
 - **"a sale lowers the count of its SKU"** checks `apply` through `applied`: the count and the number of applied movements.
 - **"selling more than is counted is Oversold"** expects the failure with `expect fails Oversold`. `applied` passes the failure on with `if error pass`, so the example sees it.
 - **"a rejected movement leaves the counts as they were"** closes a day whose only movement fails, and checks that the closing counts are the opening counts.
-- **"closing every day at once gives the reports in site order"** compares `close_all` with closing the days one after another. This is the guarantee of `together for`, stated as an example.
+- **"closing every day at once gives the reports in site order"** compares `close_all` with closing the days one after another. This is the guarantee of `together for` ([section 15.3](/learn/concurrency/#s15-3)), stated as an example.
 
 ### No fakes needed
 
@@ -1671,7 +1661,7 @@ A movement that fails ends the loop and the function. The ledger the loop change
 ### Exercise 3: a strict close
 
 ::::exercise
-Head office wants a stricter close: every movement of every site must apply, or the close fails and names the first site, in list order, that did not add up. The start package has `strict_day`, which fails at a site's first bad movement, a kind for the failure, a stub of `close_strict`, and `blamed`, which runs `close_strict` and names the site it blames, or `none` when it does not fail:
+The store wants a stricter close: every movement of every site must apply, or the close fails and names the first site, in list order, that did not add up. The start package has `strict_day`, which fails at a site's first bad movement, a kind for the failure, a stub of `close_strict`, and `blamed`, which runs `close_strict` and names the site it blames, or `none` when it does not fail:
 
 ```una include="exercises/3/start/src/stockcount.una#CloseError..site_of" title="exercises/3/start/src/stockcount.una"
 --- Why a strict close failed: the first site, in list order, with a movement that did not apply.
@@ -1747,7 +1737,7 @@ Replace the body:
  
 ```
 
-Two tasks fail, and the block fails with the failure of the lowest-indexed one, as a sequential run would. In an executable, the tasks may finish in any order, and the answer is the same.
+Two tasks fail, and the block fails with the failure of the lowest-indexed one, as a sequential run would ([section 15.3](/learn/concurrency/#s15-3)). In an executable, the tasks may finish in any order, and the answer is the same.
 :::
 ::::
 
@@ -1762,7 +1752,7 @@ Two tasks fail, and the block fails with the failure of the lowest-indexed one, 
 {"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2020","severity":"error","domain":"types","message":"parameter `ledger` of `apply` is declared `edit`, so its argument is written `edit ledger`","primary":{"file":"src/stockcount.una","start":{"line":63,"col":22},"end":{"line":63,"col":28}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `edit ledger`","edit":{"file":"src/stockcount.una","start":{"line":63,"col":22},"end":{"line":63,"col":28},"replacement":"edit ledger"}}],"explain":"una explain U2020"}],"fixable":1}
 ```
 
-The repair carries an `edit` that `una fix .` applies, so the document reports `"fixable":1`. U2017, U2019 and U2023 carry no edit: the right change depends on intent. `una --json run .` reports U6003 with `"status":"aborted"`, as in [section 16.4](#s16-4). The compact rule: *a call that changes a binding names it with `edit`, on a line of its own; a binding given with `take` is not used again until it is assigned; a `together` task returns its result and never assigns what is outside it.*
+The repair carries an `edit` that `una fix .` applies, so the document reports `"fixable":1`. U2012, U2017, U2019 and U3013 carry no edit: the right change depends on intent. `una --json run .` reports U6003 with `"status":"aborted"`, as in [section 16.4](#s16-4). The compact rule: *a call that changes a binding names it with `edit`, on a line of its own; a binding given with `take` is not used again until it is assigned; `old(x)` appears only in `ensures`, on an `edit` parameter.*
 :::
 
 ### Recap
@@ -1773,17 +1763,16 @@ The repair carries an `edit` that `una fix .` applies, so the document reports `
 - An `edit` parameter passes a value in and out. The call writes `edit`, and a failed call leaves the argument unchanged.
 - `old(x)` is an `edit` parameter's value on entry, and only `ensures` may use it.
 - After `take x`, `x` is not used again until it is assigned.
-- `together` and `together for` give the result of a sequential run, and the first failure in order wins.
-- A task returns its result and never assigns the bindings around it.
+- A loop's turns are not calls: only calls in progress count toward the call depth.
 - U6003 stops a run at the call depth or the memory budget. Build long lists with loops.
 :::
 
 ### Reference
 
 :::reference
-- Construct pages: [`let edit` and `edit` parameters](/docs/language/control-flow/let-edit/), [`take`](/docs/language/control-flow/take/), [`together`](/docs/language/control-flow/together/), [`for`](/docs/language/control-flow/for/), [`ensures`](/docs/language/functions/ensures/), [`attempt`](/docs/language/errors/attempt/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`example`](/docs/language/examples/example/)
+- Construct pages: [`let edit` and `edit` parameters](/docs/language/control-flow/let-edit/), [`take`](/docs/language/control-flow/take/), [`for`](/docs/language/control-flow/for/), [`ensures`](/docs/language/functions/ensures/), [`attempt`](/docs/language/errors/attempt/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`example`](/docs/language/examples/example/)
 - Prelude: [`set`, `append`, `Map` and `with`](/docs/std/)
-- Diagnostics: [U2012](/docs/errors/U2012/), [U2017](/docs/errors/U2017/), [U2018](/docs/errors/U2018/), [U2019](/docs/errors/U2019/), [U2020](/docs/errors/U2020/), [U2021](/docs/errors/U2021/), [U2023](/docs/errors/U2023/), [U2024](/docs/errors/U2024/), [U3013](/docs/errors/U3013/), and at run time [U6003](/docs/errors/U6003/) (call depth or memory)
+- Diagnostics: [U2012](/docs/errors/U2012/), [U2017](/docs/errors/U2017/), [U2018](/docs/errors/U2018/), [U2019](/docs/errors/U2019/), [U2020](/docs/errors/U2020/), [U2021](/docs/errors/U2021/), [U3013](/docs/errors/U3013/), and at run time [U6003](/docs/errors/U6003/) (call depth or memory)
 - Command line: [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una build`](/docs/cli/build/)
-- Specification: [memory model](/docs/spec/17-memory-model/), [structured concurrency](/docs/spec/19-structured-concurrency/), [dynamic semantics, limits](/docs/spec/11-dynamic-semantics/), [native backend](/docs/spec/16-native-backend/)
+- Specification: [memory model](/docs/spec/17-memory-model/), [dynamic semantics, limits](/docs/spec/11-dynamic-semantics/), [native backend](/docs/spec/16-native-backend/)
 :::
