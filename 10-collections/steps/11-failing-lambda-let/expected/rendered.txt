@@ -1,0 +1,9 @@
+[U3009] Error: this code declares no error kind, so it cannot fail with `NoPrice`; declare `fails` in its header
+    ╭─[ src/prices.una:46:86 ]
+    │
+ 46 │   let no_gifts_rule = fn(sku: Text) -> if sku.starts_with(prefix: "GIFT-") then fail NoPrice(sku) else 500
+    │                                                                                      ───┬───
+    │                                                                                         ╰───── this code declares no error kind, so it cannot fail with `NoPrice`; declare `fails` in its header
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯
