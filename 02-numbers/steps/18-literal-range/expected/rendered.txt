@@ -1,0 +1,9 @@
+[U2022] Error: the literal `300` does not fit `U8`, which holds `0` to `255`
+   ╭─[ src/widths.una:7:20 ]
+   │
+ 7 │   let copies: U8 = 300
+   │                    ─┬─
+   │                     ╰─── the literal `300` does not fit `U8`, which holds `0` to `255`
+   │
+   │ Note: run `una explain U2022` for an explanation
+───╯

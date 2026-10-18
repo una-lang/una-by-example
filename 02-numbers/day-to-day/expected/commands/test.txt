@@ -4,7 +4,11 @@ example slip "the address line holds the customer number and the email" ... ok
 example slip "an item line is indented and starts with the quantity" ... ok
 example slip "a line costs its quantity times the unit price" ... ok
 example slip "a line of zero units costs nothing" ... ok
+example slip "an odd number of units needs one box more than half of them" ... ok
+example slip "an even number of units fills every box" ... ok
+example slip "no units need no box" ... ok
 example slip "the count line gives units and lines" ... ok
+example slip "the box line gives the number of boxes" ... ok
 example slip "the total is in cents" ... ok
 
-7 examples: 7 passed, 0 failed
+11 examples: 11 passed, 0 failed

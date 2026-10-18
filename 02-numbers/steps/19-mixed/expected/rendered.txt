@@ -1,0 +1,9 @@
+[U2001] Error: an operand of `+` must be `U8`, found `Int`
+    ╭─[ src/widths.una:14:29 ]
+    │
+ 14 │   @console.print("{copies + count} in all")
+    │                             ──┬──
+    │                               ╰──── an operand of `+` must be `U8`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

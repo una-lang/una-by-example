@@ -1,0 +1,16 @@
+module widths
+
+--- Prints values of fixed-width types, and what their methods give.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let copies: U8 = 200
+  let offset: I8 = -128
+  let largest: U64 = 18_446_744_073_709_551_615
+  @console.print("{copies}, {offset} and {largest}")
+  @console.print("{copies.to_int() + 100} as an Int")
+  @console.print("{copies.wrapping_add(by: 100)} wrapped, {copies.saturating_add(by: 100)} saturated")
+  let count = 42
+  @console.print("{copies + count} in all")
+  let roll: U16 = 500
+  @console.print("{roll.saturating_sub(by: 600)} and {roll.wrapping_sub(by: 600)}")

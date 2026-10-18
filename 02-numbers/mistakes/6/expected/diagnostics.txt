@@ -1,0 +1,4 @@
+error U1002 at src/slip.una:40:7: `lamps` is already bound in this scope; a local cannot rebind another
+error U1001 at src/slip.una:41:23: cannot find name `rugs` in this module, its imports or the prelude
+error U1001 at src/slip.una:43:30: cannot find name `rugs` in this module, its imports or the prelude
+error U1001 at src/slip.una:47:23: cannot find name `rugs` in this module, its imports or the prelude

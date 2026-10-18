@@ -3,11 +3,12 @@ module slip
 -- A packing slip: the sheet that goes into the box with an order, so that the customer
 -- can check what arrived. This version prints the slip of one sample order.
 
---- The first line of a slip: the order the box holds.
-pub title(order: Int) -> Text = "Packing slip for order {order}"
+--- The first line of a slip: the order the box holds. The warehouse keeps an order's
+--- number as an unsigned 32-bit number, so it is a `U32`.
+pub title(order: U32) -> Text = "Packing slip for order {order}"
 
---- Where the box goes: the customer's number and email address.
-pub ship_to(customer: Int, email: Text) -> Text = "Ship to customer {customer} <{email}>"
+--- Where the box goes: the customer's number, a `U32` as well, and email address.
+pub ship_to(customer: U32, email: Text) -> Text = "Ship to customer {customer} <{email}>"
 
 --- One line of the order: how many units of a SKU, and what the SKU is.
 pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  {name}"
@@ -15,8 +16,14 @@ pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  
 --- What one line of the order costs, in cents.
 pub line_cents(quantity: Int, cents: Int) -> Int = quantity * cents
 
---- How much the box holds.
+--- How many boxes the units need, at most two units to a box: half the units, rounded up.
+pub boxes(units: Int) -> Int = (units + 1) / 2
+
+--- How much the order holds.
 pub count_line(units: Int, lines: Int) -> Text = "{units} units in {lines} lines"
+
+--- How many boxes the order ships in.
+pub box_line(count: Int) -> Text = "Boxes in this shipment: {count}"
 
 --- What the customer paid for the goods, in cents.
 pub total_line(cents: Int) -> Text = "Total paid: {amount(cents)}"
@@ -28,15 +35,18 @@ pub closing() -> Text = "Questions? Write to orders@example.invalid and quote th
 pub main() -> Unit
   uses @console: Console[print]
 =
+  let order: U32 = 1042
   let lamps = 2
   let rugs = 1
+  let units = lamps + rugs
   let lamp_cents = line_cents(lamps, cents: 1990)
   let rug_cents = line_cents(rugs, cents: 4500)
-  @console.print(title(1042))
+  @console.print(title(order))
   @console.print(ship_to(318, email: "customer318@example.invalid"))
   @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
-  @console.print(count_line(lamps + rugs, lines: 2))
+  @console.print(count_line(units, lines: 2))
+  @console.print(box_line(boxes(units)))
   @console.print(total_line(lamp_cents + rug_cents))
   @console.print(closing())
 
@@ -60,9 +70,25 @@ example "a line of zero units costs nothing"
   do line_cents(0, cents: 1990)
   expect result == 0
 
+example "an odd number of units needs one box more than half of them"
+  do boxes(3)
+  expect result == 2
+
+example "an even number of units fills every box"
+  do boxes(4)
+  expect result == 2
+
+example "no units need no box"
+  do boxes(0)
+  expect result == 0
+
 example "the count line gives units and lines"
   do count_line(3, lines: 2)
   expect result == "3 units in 2 lines"
+
+example "the box line gives the number of boxes"
+  do box_line(2)
+  expect result == "Boxes in this shipment: 2"
 
 example "the total is an amount"
   do total_line(8480)

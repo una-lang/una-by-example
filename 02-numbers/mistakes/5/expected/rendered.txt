@@ -1,0 +1,9 @@
+[U2022] Error: the literal `5000000000` does not fit `U32`, which holds `0` to `4294967295`
+    ╭─[ src/slip.una:38:20 ]
+    │
+ 38 │   let order: U32 = 5_000_000_000
+    │                    ──────┬──────
+    │                          ╰──────── the literal `5000000000` does not fit `U32`, which holds `0` to `4294967295`
+    │
+    │ Note: run `una explain U2022` for an explanation
+────╯

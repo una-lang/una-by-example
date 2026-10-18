@@ -1,1 +1,1 @@
-steps/01-hello
+steps/01-closing

@@ -1,1 +1,1 @@
-error U2001 at src/hello.una:7:18: argument `line` of operation `Console.print` must be `Text`, found `Int`
+error U2001 at src/closing.una:7:18: argument `line` of operation `Console.print` must be `Text`, found `Int`

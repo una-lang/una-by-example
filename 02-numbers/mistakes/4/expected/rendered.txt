@@ -1,0 +1,9 @@
+[U2001] Error: argument `order` of `title` must be `U32`, found `Int`
+    ╭─[ src/slip.una:44:24 ]
+    │
+ 44 │   @console.print(title(order))
+    │                        ──┬──
+    │                          ╰──── argument `order` of `title` must be `U32`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

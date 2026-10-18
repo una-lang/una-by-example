@@ -1,0 +1,1 @@
+error U2022 at src/widths.una:7:20: the literal `300` does not fit `U8`, which holds `0` to `255`

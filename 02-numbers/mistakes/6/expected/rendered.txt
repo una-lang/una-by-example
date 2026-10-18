@@ -1,0 +1,39 @@
+[U1002] Error: `lamps` is already bound in this scope; a local cannot rebind another
+    ╭─[ src/slip.una:40:7 ]
+    │
+ 39 │   let lamps = 2
+    │       ──┬──
+    │         ╰──── first defined here
+ 40 │   let lamps = 1
+    │       ──┬──
+    │         ╰──── `lamps` is already bound in this scope; a local cannot rebind another
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯
+[U1001] Error: cannot find name `rugs` in this module, its imports or the prelude
+    ╭─[ src/slip.una:41:23 ]
+    │
+ 41 │   let units = lamps + rugs
+    │                       ──┬─
+    │                         ╰─── cannot find name `rugs` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `rugs` in this module, its imports or the prelude
+    ╭─[ src/slip.una:43:30 ]
+    │
+ 43 │   let rug_cents = line_cents(rugs, cents: 4500)
+    │                              ──┬─
+    │                                ╰─── cannot find name `rugs` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `rugs` in this module, its imports or the prelude
+    ╭─[ src/slip.una:47:23 ]
+    │
+ 47 │   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
+    │                       ──┬─
+    │                         ╰─── cannot find name `rugs` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
