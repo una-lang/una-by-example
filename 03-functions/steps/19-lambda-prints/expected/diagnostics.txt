@@ -1,0 +1,2 @@
+error U3001 at src/pricing.una:12:3: no caller of `logged` binds `@console`, so its capability cannot be inferred
+error U3003 at src/pricing.una:19:40: this function uses `@console: ?[print]`, which the expected function type does not allow

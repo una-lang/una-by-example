@@ -1,0 +1,31 @@
+[U1002] Error: `AtDoor` is defined twice in this module, both times as a variant
+    ╭─[ src/carriers.una:10:22 ]
+    │
+  7 │ kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text, opens: Int)
+    │                 ───┬──
+    │                    ╰──── first defined here
+    │
+ 10 │ kind Packing = Box | AtDoor
+    │                      ───┬──
+    │                         ╰──── `AtDoor` is defined twice in this module, both times as a variant
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯
+[U2009] Error: variant `AtLocker` needs its fields: `locker`
+    ╭─[ src/carriers.una:27:17 ]
+    │
+ 27 │   let pending = AtLocker
+    │                 ────┬───
+    │                     ╰───── variant `AtLocker` needs its fields: `locker`
+    │
+    │ Note: run `una explain U2009` for an explanation
+────╯
+[U2001] Error: `<` orders `Int`, `Text` and variants without fields, not `Delivery`
+    ╭─[ src/carriers.una:28:15 ]
+    │
+ 28 │   let first = locker < store
+    │               ───────┬──────
+    │                      ╰──────── `<` orders `Int`, `Text` and variants without fields, not `Delivery`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

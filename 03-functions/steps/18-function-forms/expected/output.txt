@@ -1,0 +1,5 @@
+3 for 2: 3980
+10 off: 1800, 25 off: 1500
+clearance: 1500
+10 off twice: 810
+markup: 1200, markup now 200

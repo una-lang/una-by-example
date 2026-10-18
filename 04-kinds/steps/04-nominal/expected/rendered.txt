@@ -1,0 +1,9 @@
+[U2001] Error: argument `address` of `redirect` must be `Address`, found `Warehouse`
+    ╭─[ src/labels.una:33:41 ]
+    │
+ 33 │   let moved = redirect(parcel, address: office)
+    │                                         ───┬──
+    │                                            ╰──── argument `address` of `redirect` must be `Address`, found `Warehouse`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

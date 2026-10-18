@@ -1,0 +1,30 @@
+module bundles
+
+--- A product the store sells: one item, or a kit of two products, each of which may be a kit.
+kind Bundle = Item(sku: Text, cents: Int) | Kit(first: Bundle, second: Bundle)
+
+--- The price of a bundle: an item's price, or the prices of a kit's two parts added up.
+price(bundle: Bundle) -> Int
+=
+  when bundle
+    is Item(cents) -> cents
+    is Kit(first, second) -> price(first) + price(second)
+
+--- How many items a bundle holds. Check yourself: what does `main` print for `office`?
+items(bundle: Bundle) -> Int
+=
+  when bundle
+    is Item -> 1
+    is Kit(first, second) -> items(first) + items(second)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Item(sku: "LAMP-01", cents: 1990)
+  let bulb = Item(sku: "BULB-02", cents: 350)
+  let reading = Kit(first: lamp, second: Kit(first: bulb, second: bulb))
+  @console.print("reading kit: {price(reading)} cents")
+  @console.print("{reading}")
+  let desk = Item(sku: "DESK-02", cents: 15900)
+  let office = Kit(first: desk, second: reading)
+  @console.print("office kit: {items(office)} items")

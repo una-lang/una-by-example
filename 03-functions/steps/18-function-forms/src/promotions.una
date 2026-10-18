@@ -1,0 +1,24 @@
+module promotions
+
+--- The price of a line under a rule for whole lines: a function of two parameters.
+line_price(unit_cents: Int, units: Int, rule: fn(Int, Int) -> Int) -> Int = rule(unit_cents, units)
+
+--- A promotion that takes `percent` percent off: a function that returns a function.
+percent_off(percent: Int) -> fn(Int) -> Int = fn(cents) -> cents * (100 - percent) / 100
+
+--- Prints one line for each form of a function value.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("3 for 2: {line_price(1_990, units: 3, rule: fn(cents, units) -> cents * (units - units / 3))}")
+  let ten_off = percent_off(10)
+  let quarter_off = percent_off(25)
+  @console.print("10 off: {ten_off(2_000)}, 25 off: {quarter_off(2_000)}")
+  let clearance = fn(cents: Int) -> cents - 500
+  @console.print("clearance: {clearance(2_000)}")
+  let twice = fn(cents: Int) -> ten_off(ten_off(cents))
+  @console.print("10 off twice: {twice(1_000)}")
+  let edit markup = 120
+  let raised = fn(cents: Int) -> cents * markup / 100
+  markup = 200
+  @console.print("markup: {raised(1_000)}, markup now {markup}")

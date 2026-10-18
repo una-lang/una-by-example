@@ -1,0 +1,23 @@
+module kits
+
+--- A gift set of any number of products, each of which may be a set. The kind contains itself
+--- through a list, and the empty list is where a set stops.
+kind GiftSet
+  sku: Text
+  parts: List[GiftSet]
+
+--- A product category, inside a larger one or at the top. The kind contains itself through
+--- an `Option`, and `None` is where the chain stops.
+kind Category
+  name: Text
+  parent: Option[Category]
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let bulb = GiftSet(sku: "BULB-02", parts: [])
+  let lamp = GiftSet(sku: "LAMP-01", parts: [bulb, bulb])
+  @console.print("{lamp.sku} holds {lamp.parts.len} parts")
+  let lighting = Category(name: "Lighting", parent: None)
+  let lamps = Category(name: "Lamps", parent: Some(lighting))
+  @console.print("{lamps}")

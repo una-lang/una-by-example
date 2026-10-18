@@ -1,0 +1,20 @@
+[U3001] Error: no caller of `logged` binds `@console`, so its capability cannot be inferred
+    ╭─[ src/pricing.una:12:3 ]
+    │
+ 12 │   @console.print("pricing {cents}")
+    │   ────┬───
+    │       ╰───── no caller of `logged` binds `@console`, so its capability cannot be inferred
+    │
+    │ Help: repair 1: declare `uses @console: <capability>[print]` in the header; this states authority its callers are already charged for
+    │
+    │ Note: run `una explain U3001` for an explanation
+────╯
+[U3003] Error: this function uses `@console: ?[print]`, which the expected function type does not allow
+    ╭─[ src/pricing.una:19:40 ]
+    │
+ 19 │   @console.print("{priced(2_050, rule: logged)}")
+    │                                        ───┬──
+    │                                           ╰──── this function uses `@console: ?[print]`, which the expected function type does not allow
+    │
+    │ Note: run `una explain U3003` for an explanation
+────╯

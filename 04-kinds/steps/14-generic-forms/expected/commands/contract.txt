@@ -1,0 +1,4 @@
+$ una contract forms.differs
+--- Whether two values differ. It is private and writes no constraint: the checker infers it.
+differs[T: Eq](before: T, after: T) -> Bool -- inferred
+-- result labels: top from T

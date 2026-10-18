@@ -1,0 +1,2 @@
+error U1001 at src/carriers.una:10:19: cannot find type `NoCarrier` in this module, its imports or the prelude
+error U1001 at src/carriers.una:23:20: cannot find name `NoCarrier` in this module, its imports or the prelude

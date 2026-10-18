@@ -1,0 +1,9 @@
+[U2002] Error: kind `Crate` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
+   ╭─[ src/bundles.una:7:6 ]
+   │
+ 7 │ kind Crate = | Holds(inner: Crate)
+   │      ──┬──
+   │        ╰──── kind `Crate` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
+   │
+   │ Note: run `una explain U2002` for an explanation
+───╯

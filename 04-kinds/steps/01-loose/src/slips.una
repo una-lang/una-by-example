@@ -1,0 +1,10 @@
+module slips
+
+--- The line printed on a parcel's label, from five loose values.
+label(order: Text, grams: Int, name: Text, street: Text, city: Text) -> Text = "{order}: {name}, {street}, {city}, {grams} g"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(label("A-1001", grams: 1200, name: "Corner Bakery", street: "12 Elm Road", city: "Northfield"))
+  @console.print(label("A-1002", grams: 300, name: "12 Elm Road", street: "Northfield", city: "Corner Bakery"))

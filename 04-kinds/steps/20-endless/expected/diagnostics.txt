@@ -1,0 +1,1 @@
+error U2002 at src/bundles.una:7:6: kind `Crate` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
