@@ -309,7 +309,7 @@ A `pub` function writes every `uses` itself, and one with no `uses` is pure. A p
 | One operation of a capability | `uses @x: C[op]` |
 | Several operations | `uses @x: C[op1, op2]` |
 | Every operation, now and when the capability gains more | `uses @x: C`, without brackets |
-| A private helper whose effects are obvious from its callers | No `uses` line; let the checker infer it |
+| A private helper whose effects are obvious from its body | No `uses` line; let the checker infer it |
 :::
 
 List the operations you need. A header with brackets also tells the reader what the function does not do, and it keeps saying so when the capability gains an operation.
@@ -388,7 +388,7 @@ grants = ["console"]
 The store is open
 ```
 
-The two halves work together. The `uses @console: Console[print]` line of `main` is a promise to callers and reviewers: this function prints, and does nothing else outside the program. The line `grants = ["console"]` is the decision of whoever runs the program: this run may print. A store's keycard works the same way: the card lists the doors, and the building still decides which doors are open tonight.
+The two halves work together. The `uses @console: Console[print]` line of `main` is a promise to callers and reviewers: this function prints, and does nothing else outside the program. The line `grants = ["console"]` is the package's decision, in its manifest, about what a run may do: this run may print. A store's keycard works the same way: the card lists the doors, and the building still decides which doors are open tonight.
 
 ### Why a program needs grants
 
@@ -524,7 +524,7 @@ and leaves the export in `src/stock-export.csv`. The time in it changes on every
 
 When `una.toml` lists grants under `[run]`, `una check` compares them with the `uses` of `main`: a host operation that the grants do not cover is U3012, as [Why a program needs grants](#why-a-program-needs-grants) showed.
 
-`una run` grants the union of `[run] grants` and its `--grant` flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too, and the program does not start. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest has no grants at all, or `grants = []`, gives `una check` nothing to compare, so its check passes, yet `una run .` stops with U3012 until a grant is added. A package whose manifest lacks `"clock"` fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
+`una run` grants the union of `[run] grants` and its `--grant` flags, for that run only, and it checks the `uses` of `main` against that union before anything runs: a host operation that neither grants is U3012 there too, and the program does not start. `una check` takes no `--grant` flag, so it reads only the manifest. A package whose manifest has no `grants` line gives `una check` no list to compare with, so its check passes. Whatever the manifest says, `una run .` stops with U3012 before anything runs when a host operation of `main` is not granted, until a grant is added in `una.toml` or with `--grant`. A package whose `grants` list lacks `"clock"`, as in [Using a host capability that is not granted](#using-a-host-capability-that-is-not-granted-u3012), fails `una check`, yet `una run . --grant clock` runs it. What a run may do is the manifest plus the command line, so read both.
 
 #### Paths stay inside the grant
 
@@ -1632,7 +1632,7 @@ example "a skipped shipment says why in the log"
 
 ### Stand-in services for every path
 
-An example cannot write `with`, since its `do` line is a single call, so it installs each handler its `do` line needs with a `given` line, such as `given @mailer = outbox()`, which [section 14.3](/learn/testing/#s14-3) covers in full. With the handlers of this chapter, every path of `notify` can be tested on demand: a customer who wants notices, an unknown customer, a customer who opted out, a directory that does not answer, and a mail service that does not answer.
+An example cannot write `with`, since its `do` line is a single call. The direct way for it to install each handler its `do` line needs is a `given` line, such as `given @mailer = outbox()`, which [section 14.3](/learn/testing/#s14-3) covers in full. With the handlers of this chapter, every path of `notify` can be tested on demand: a customer who wants notices, an unknown customer, a customer who opted out, a directory that does not answer, and a mail service that does not answer.
 
 ```una include="day-to-day/src/notices.una#L110-L138" title="day-to-day/src/notices.una" caption="the examples of notify"
 example "a customer who wants notices gets one"
