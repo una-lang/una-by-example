@@ -1,0 +1,59 @@
+module prices
+
+--- Why a price list has no price for a SKU.
+kind PriceError = | NoPrice(sku: Text)
+
+--- The store's price list. It knows two SKUs, and fails for any other.
+listed(sku: Text) -> Int
+  fails PriceError
+=
+  if sku == "LAMP-01"
+    1990
+  else if sku == "DESK-02"
+    15900
+  else
+    fail NoPrice(sku)
+
+--- The total of a cart, each SKU priced by `price`. It fails when, and only when, `price`
+--- fails, and with the same error kind.
+pub total_with(skus: List[Text], price: fn(Text) -> Int) -> Int
+  fails of price
+=
+  let edit total = 0
+  for sku in skus
+    let cents = price(sku)
+      if error pass
+    total = total + cents
+  total
+
+--- The total of a cart, each SKU priced by `price`, whose type says that it may fail.
+pub strict_total(skus: List[Text], price: fn(Text) -> Int fails PriceError) -> Int
+  fails PriceError
+=
+  let edit total = 0
+  for sku in skus
+    let cents = price(sku)
+      if error pass
+    total = total + cents
+  total
+
+--- Prints the totals of one cart under several price functions.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let cart = ["LAMP-01", "GIFT-50"]
+  let flat = total_with(cart, price: fn(sku) -> 500)
+  let no_gifts_rule = fn(sku: Text) -> if sku.starts_with(prefix: "GIFT-") then fail NoPrice(sku) else 500
+  let no_gifts = total_with(cart, price: no_gifts_rule)
+    if error use -1
+  let known = total_with(["LAMP-01", "DESK-02"], price: listed)
+    if error use -1
+  @console.print("{flat} {no_gifts} {known}")
+  let strict = strict_total(["LAMP-01"], price: fn(sku) -> 500)
+    if error use -1
+  @console.print("strict: {strict}")
+  let found = ["LAMP-01", "DESK-02"].map(each: listed)
+    if error use []
+  let unknown = ["LAMP-01", "VASE-03"].map(each: listed)
+    if error use []
+  @console.print("map: {found} {unknown}")

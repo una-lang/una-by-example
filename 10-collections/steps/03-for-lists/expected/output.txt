@@ -1,0 +1,13 @@
+on the shelf list: LAMP-01
+on the shelf list: RUG-07
+on the shelf list: DESK-02
+LAMP-01: 2 units, bulk
+RUG-07: 1 unit
+total: 8480 cents
+an empty cart: 0 cents
+label LAMP-01-S
+label LAMP-01-L
+label RUG-07-S
+label RUG-07-L
+label DESK-02-S
+label DESK-02-L
