@@ -29,12 +29,6 @@ line_cents(line: CartLine) -> Int
 =
   line.quantity * line.unit_cents
 
---- The average units of the lines of a delivery, rounded down.
-average_units(quantities: List[Int]) -> Int
-  requires quantities.len > 0
-=
-  quantities.sum() / quantities.len
-
 --- The product family of a SKU: its first four characters, as `LAMP` in `LAMP-01`.
 family(sku: Text) -> Text
   requires sku.len >= 4
@@ -65,7 +59,6 @@ pub main() -> Unit
   @console.print("after a coupon: {after_coupon(1990, off: 500)}")
   let one_line = line_cents(CartLine(sku: "LAMP-01", quantity: 2, unit_cents: 1990))
   @console.print("one line: {one_line}")
-  @console.print("average units: {average_units([2, 1, 3])}")
   let sku = "LAMP-01"
   @console.print("family of {sku}: {family(sku)}")
   @console.print("shipping: {shipping_cents(National, grams: 2300)} and {shipping_cents(Abroad, grams: 1500)}")

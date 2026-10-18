@@ -23,12 +23,6 @@ free_shipping(total: Int) -> Bool
 =
   total >= 5000
 
---- The SKUs of a cart, with one more at the end.
-add_sku(skus: List[Text], sku: Text) -> List[Text]
-  ensures result.len == skus.len + 1
-=
-  skus.append(item: sku)
-
 --- How `units` units pack in boxes of 6. The clauses speak of the fields of the result.
 pack(units: Int) -> Packing
   requires units >= 0
@@ -36,13 +30,6 @@ pack(units: Int) -> Packing
   ensures result.loose >= 0 and result.loose < 6
 =
   Packing(boxes: units / 6, loose: units mod 6)
-
---- Adds `units` to the count of a shelf. `old(shelf)` is the count before the call.
-restock(edit shelf: Int, units: Int) -> Unit
-  requires units >= 0
-  ensures shelf == old(shelf) + units
-=
-  shelf = shelf + units
 
 --- The loyalty points of an order: one for each whole 1.00, and at most 100.
 points(total: Int) -> Int
@@ -57,12 +44,6 @@ pub main() -> Unit
 =
   @console.print("{status(0)} {status(4)} {status(12)}")
   @console.print("free shipping at 4999: {free_shipping(4999)}, at 5000: {free_shipping(5000)}")
-  let skus = ["LAMP-01"]
-  let rug = "RUG-07"
-  @console.print("{add_sku(skus, sku: rug)}")
   let packed = pack(20)
   @console.print("20 units: {packed.boxes} boxes and {packed.loose} loose")
-  let edit lamps = 4
-  restock(edit lamps, units: 6)
-  @console.print("lamps on the shelf: {lamps}")
   @console.print("points for 250.00: {points(25000)}")

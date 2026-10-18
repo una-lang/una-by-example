@@ -1,11 +1,11 @@
 [U5001] Error: precondition `500 <= price` of this call is refuted
-    ╭─[ src/checkout.una:59:3 ]
+    ╭─[ src/checkout.una:53:3 ]
     │
  22 │   requires off <= price
     │            ──────┬─────
     │                  ╰─────── requires clause
     │
- 59 │   after_coupon(price, off: 500)
+ 53 │   after_coupon(price, off: 500)
     │   ──────────────┬──────────────
     │                 ╰──────────────── precondition `500 <= price` of this call is refuted
     │

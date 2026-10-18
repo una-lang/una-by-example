@@ -1,11 +1,11 @@
 [U5001] Error: postcondition of `discount` is refuted
-    ╭─[ src/billing.una:68:25 ]
+    ╭─[ src/billing.una:64:25 ]
     │
- 62 │   ensures result <= amount
+ 58 │   ensures result <= amount
     │           ────────┬───────
     │                   ╰───────── ensures clause
     │
- 68 │     is CentsOff(off) -> off
+ 64 │     is CentsOff(off) -> off
     │                         ─┬─
     │                          ╰─── postcondition of `discount` is refuted
     │

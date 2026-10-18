@@ -1,7 +1,6 @@
 one unit of a pack of 4: 497
 after a coupon: 1490
 one line: 3980
-average units: 2
 family of LAMP-01: LAMP
 shipping: 995 and 2800
 weekly price: 1490 and 0

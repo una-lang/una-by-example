@@ -22,13 +22,8 @@ with_fee(price: Cents) -> Cents = price + 495
 --- A share of a bill. The guard proves the division obligation.
 share(total: Int, people: Int) -> Int = if people == 0 then total else total / people
 
---- How full a bin is. A `when` on ranges with no `else` gives an exhaustive obligation.
-fill(units: Int in 0..999) -> Text
-=
-  when units
-    is 0 -> "empty"
-    in 1..9 -> "low"
-    in 10..999 -> "stocked"
+--- How full a bin of at most 999 units is. Its parameter has a refined type.
+fill(units: Int in 0..999) -> Text = if units == 0 then "empty" else if units < 10 then "low" else "stocked"
 
 --- The next shelf of a rack of 201 shelves. `U8` holds 0 to 255: an overflow obligation.
 next_shelf(shelf: U8) -> U8 = if shelf < 200 then shelf + 1 else 0

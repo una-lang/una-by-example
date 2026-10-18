@@ -4,7 +4,7 @@ requirement BILLING_2 (active)
   source policy "Store billing rules"
   owner billing
 billing.refund
+  requires asked <= paid
   ensures result <= paid
   proven   ob-204eda00affc refinement    result >= 0
   proven   ob-ef9bbe64fc88 postcondition result <= paid
-  proven   ob-258d17d765c8 refinement    paid >= 0

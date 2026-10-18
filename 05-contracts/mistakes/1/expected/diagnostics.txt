@@ -1,2 +1,2 @@
-error U5001 at src/billing.una:68:25: postcondition of `discount` is refuted
+error U5001 at src/billing.una:64:25: postcondition of `discount` is refuted
   counterexample: amount = 0, coupon = "CentsOff", coupon.amount = 1, coupon.rate = 101, result = 1

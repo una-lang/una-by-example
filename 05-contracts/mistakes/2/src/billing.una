@@ -1,5 +1,8 @@
 module billing
 
+-- The billing step of a store: it prices an invoice, takes a coupon off, splits the payment
+-- between store credit and card, and checks each refund against what was paid.
+
 requirement BILLING_1
   text "A coupon or store credit never makes a customer pay less than 0 or more than the subtotal"
   source policy "Store billing rules"
@@ -32,9 +35,6 @@ pub kind Payment
   credit: Cents
   card: Cents
 
---- Why a refund was refused.
-pub kind RefundError = | MoreThanPaid(paid: Cents)
-
 --- What one line costs. The guard handles a case that cannot happen, since both factors
 --- are at least 0; the solver cannot see that for itself.
 pub line_total(line: Line) -> Cents
@@ -42,15 +42,11 @@ pub line_total(line: Line) -> Cents
   let total = line.unit_cents * line.quantity
   if total < 0 then 0 else total
 
---- The sum of every line.
-pub subtotal(lines: List[Line]) -> Cents
-=
-  let edit total: Cents = 0
-  for line in lines
-    total = total + line_total(line)
-  total
+--- The sum of an invoice of two lines.
+pub subtotal(first: Line, second: Line) -> Cents = line_total(first) + line_total(second)
 
---- `rate` percent of `amount`, rounded down. The guard cannot fire: both factors are at least 0, and `rate` is at most 100.
+--- `rate` percent of `amount`, rounded down. The guard cannot fire: both factors are at
+--- least 0, and `rate` is at most 100.
 percent_of(amount: Cents, rate: Percent) -> Cents
   ensures result <= amount
 =
@@ -74,13 +70,13 @@ pub pay(total: Cents, credit: Cents) -> Payment
 =
   if credit >= total then Payment(credit: total, card: 0) else Payment(credit: credit, card: total - credit)
 
---- What a refund pays back: what was asked, if the customer paid at least that much.
+--- What a refund pays back: what was asked, which may not be more than what was paid.
 pub refund(paid: Cents, asked: Cents) -> Cents
+  requires asked <= paid
   ensures result <= paid
-  fails RefundError
   derived from BILLING_2
 =
-  if asked > paid then fail MoreThanPaid(paid) else asked
+  asked
 
 --- An amount for a person to read, such as 19.90.
 pub money(cents: Cents) -> Text
@@ -88,26 +84,27 @@ pub money(cents: Cents) -> Text
   let rest = cents mod 100
   if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
 
---- One line of the refund report.
+--- One line of the invoice as it is printed.
+pub line_text(line: Line) -> Text = "{line.quantity} x {line.sku} at {money(line.unit_cents)}: {money(line_total(line))}"
+
+--- One line of the refund report: the refund, or why it is refused.
 pub refund_line(paid: Cents, asked: Cents) -> Text
 =
-  let outcome = attempt refund(paid, asked: asked)
-  when outcome
-    is Ok(back) -> "refund {money(back)}: paid back"
-    is Err(failure) -> "refund {money(asked)}: refused, {why(failure)}"
+  if asked > paid
+    "refund {money(asked)}: refused, only {money(paid)} was paid"
+  else
+    let back = refund(paid, asked: asked)
+    "refund {money(back)}: paid back"
 
-why(failure: RefundError) -> Text
-=
-  when failure
-    is MoreThanPaid(paid) -> "only {money(paid)} was paid"
-
+--- Prices an invoice of two lines, pays it, and checks two refunds.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let lines = [Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2), Line(sku: "DESK-02", unit_cents: 14900, quantity: 1)]
-  for line in lines
-    @console.print("{line.quantity} x {line.sku} at {money(line.unit_cents)}: {money(line_total(line))}")
-  let gross = subtotal(lines)
+  let lamp = Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2)
+  let desk = Line(sku: "DESK-02", unit_cents: 14900, quantity: 1)
+  @console.print(line_text(lamp))
+  @console.print(line_text(desk))
+  let gross = subtotal(lamp, second: desk)
   let off = discount(gross, coupon: PercentOff(rate: 10))
   let total: Cents = gross - off
   let payment = pay(total, credit: 5000)
@@ -115,6 +112,10 @@ pub main() -> Unit
   @console.print("store credit {money(payment.credit)}, card {money(payment.card)}")
   @console.print(refund_line(total, asked: 3980))
   @console.print(refund_line(total, asked: 20000))
+
+example "two lines add up"
+  do subtotal(Line(sku: "LAMP-01", unit_cents: 1990, quantity: 2), second: Line(sku: "DESK-02", unit_cents: 14900, quantity: 1))
+  expect result == 18880
 
 example "a coupon worth more than the invoice takes the whole invoice"
   do discount(1000, coupon: CentsOff(amount: 1500))
@@ -133,10 +134,14 @@ example "credit larger than the total leaves nothing for the card"
   do pay(1990, credit: 5000)
   expect result.card == 0
 
-example "a refund of more than was paid is refused"
-  do refund(16992, asked: 20000)
-  expect fails MoreThanPaid
+example "a refund within what was paid pays back what was asked"
+  do refund(16992, asked: 3980)
+  expect result == 3980
 
-example "an empty invoice costs nothing"
-  do subtotal([])
-  expect result == 0
+example "a refund of more than was paid is refused"
+  do refund_line(16992, asked: 20000)
+  expect result == "refund 200.00: refused, only 169.92 was paid"
+
+example "an amount below 10 cents keeps its zero"
+  do money(1905)
+  expect result == "19.05"
