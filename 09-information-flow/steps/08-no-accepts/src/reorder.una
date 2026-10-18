@@ -1,0 +1,26 @@
+module reorder
+
+--- The supplier's ordering service, declared as in chapter 8.
+capability Supplier
+  op submit(order: Text) -> Unit
+
+--- Sends the reorder list to the supplier.
+send_list(list: internal Text) -> Unit
+  uses @supplier: Supplier[submit]
+=
+  @supplier.submit(list)
+
+--- A supplier that accepts every order, for this run.
+handler accepting() for Supplier
+  op submit(order) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[read, write]
+=
+  @files.write("reorder.csv", content: "LAMP-01,20\nDESK-02,5\n")
+    if error use unit
+  let list = @files.read("reorder.csv")
+    if error use ""
+  send_list(list) with @supplier = accepting()
+  @console.print("reorder list sent to the supplier")

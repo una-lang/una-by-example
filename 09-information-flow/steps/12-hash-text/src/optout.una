@@ -1,0 +1,34 @@
+module optout
+
+import std.testing (fake_hash)
+
+--- Whether an address is on the do-not-mail list. The list keeps no addresses, only their
+--- keyed hashes, made with the key `optout`, so a copy of the list reveals no one.
+opted_out(address: secret Text, list: List[internal Hashed]) -> secret Bool
+  uses @keys: Keys[hmac]
+  fails KeyError
+=
+  let hashed = @keys.hmac(key_name: "optout", data: address)
+    if error pass
+  let shown: secret Text = "hash {hashed}"
+  list.filter(keep: fn(entry) -> entry == hashed).len > 0
+
+--- A stand-in for the key service, for the examples: one address hashes to the seed 1, and
+--- every other address to the seed 2.
+handler fake_keys() for Keys
+  op hmac(key_name, data) = if data == "rita@example.invalid" then fake_hash(1) else fake_hash(2)
+
+example "an address on the list is found"
+  given @keys = fake_keys()
+  do opted_out("rita@example.invalid", list: [fake_hash(1)])
+  expect result == true
+
+example "an address that is not on the list is not found"
+  given @keys = fake_keys()
+  do opted_out("tom@example.invalid", list: [fake_hash(1)])
+  expect result == false
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("the do-not-mail list keeps hashes, not addresses")

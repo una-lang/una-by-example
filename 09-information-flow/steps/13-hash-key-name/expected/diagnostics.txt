@@ -1,0 +1,1 @@
+error U4003 at src/optout.una:11:37: `@keys.hmac` accepts `public` data, and this argument is `secret`

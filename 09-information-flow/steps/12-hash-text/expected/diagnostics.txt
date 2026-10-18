@@ -1,0 +1,1 @@
+error U2001 at src/optout.una:13:35: interpolation writes values that hold no function and no `Hashed`, and this value is a `Hashed`

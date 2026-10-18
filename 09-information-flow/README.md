@@ -2,7 +2,7 @@
 learn: "9"
 title: Information flow
 editions: ["0.2"]
-codes: [U1001, U4001, U4002, U4003, U4004, U4005, U4007, U7005]
+codes: [U1001, U2001, U3015, U4001, U4002, U4003, U4004, U4005, U4007, U7005]
 time: 60
 builds: The shipping-notice service with customer data labeled, and a policy that releases a masked address to the log
 prerequisites: ["4", "5", "6", "8"]
@@ -314,7 +314,7 @@ Reading a field gives the field's label, raised by the label of the record it co
 
 `.len` has the label of the whole it measures, not of its elements. `cost_list(...).len` is public, since the list of costs is public and only its elements are labeled. `renegotiating().len` is confidential, since the whole list is labeled.
 
-Whole values work the same way. Comparing two products with `==`, or interpolating a whole product with `"{product}"`, reads every field, `cost` included. So, in edition `0.2` and later, both results carry the label of the most sensitive field of the kind.
+Whole values work the same way. Comparing two products with `==`, or interpolating a whole product with `"{product}"`, reads every field, `cost` included. So both results carry the label of the most sensitive field of the kind. (Interpolating a whole record needs edition `0.2`.)
 
 #### A declared type is a checkpoint
 
@@ -457,18 +457,40 @@ Each sink has a **ceiling**: the highest label it accepts. Think of a mail slot 
 
 ### Why a sink needs a ceiling
 
-The store's supplier needs the reorder list, which the program reads from a file. Here is the supplier's service declared as in chapter 8, with no ceiling:
+The store's supplier needs the reorder list, which the program reads from a file. Here is a program that sends it. The supplier's service is a capability declared as in chapter 8, with nothing about labels:
 
-```diff include="steps/08-sinks..steps/09-no-accepts:src/reorder.una" context="1" title="src/reorder.una"
---- a/src/reorder.una
-+++ b/src/reorder.una
-@@ -5,3 +5,2 @@
-   op submit(order: Text) -> Unit
--    accepts internal
- 
+```una include="steps/08-no-accepts/src/reorder.una" title="steps/08-no-accepts/src/reorder.una"
+module reorder
+
+--- The supplier's ordering service, declared as in chapter 8.
+capability Supplier
+  op submit(order: Text) -> Unit
+
+--- Sends the reorder list to the supplier.
+send_list(list: internal Text) -> Unit
+  uses @supplier: Supplier[submit]
+=
+  @supplier.submit(list)
+
+--- A supplier that accepts every order, for this run.
+handler accepting() for Supplier
+  op submit(order) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+  uses @files: Files[read, write]
+=
+  @files.write("reorder.csv", content: "LAMP-01,20\nDESK-02,5\n")
+    if error use unit
+  let list = @files.read("reorder.csv")
+    if error use ""
+  send_list(list) with @supplier = accepting()
+  @console.print("reorder list sent to the supplier")
 ```
 
-```text include="steps/09-no-accepts/expected/rendered.txt#L1-L8"
+`main` writes the list to a file, reads it back into `list`, and hands it to `send_list`, which submits it to the supplier. The parameter of `send_list` says `internal Text`: data read from a file is `internal`, as the next subsections explain. `una check .` refuses the call in `send_list`:
+
+```text include="steps/08-no-accepts/expected/rendered.txt#L1-L8"
 [U4003] Error: `@supplier.submit` accepts `public` data, and this argument is `internal`
     ╭─[ src/reorder.una:11:20 ]
     │
@@ -492,19 +514,20 @@ The operations the host provides ([chapter 8](/learn/capabilities/#s8-2)) have f
 | `Env.get(name)` | `public` | an `Option[internal Text]` |
 | `Files.read(path)` | `public` | an `internal Text` |
 | `Files.write(path, content)` | `internal` | nothing |
+| `Http.get`, `post`, `put` and `delete` ([chapter 8](/learn/capabilities/#s8-2)) | `internal`, for every argument | an `internal Response` |
 | `Keys.hmac(key_name, data)` | `public` for the key name, any label for the data | a `Hashed`, labeled `internal` and the label of the data ([A keyed hash](#a-keyed-hash-keyshmac-and-hashed)) |
 
-So a program may print only public data, and may write to a file what it read from one, but no more than `internal`.
+So a program may print only public data, and may write to a file, or send to a web service, what it read from one, but no more than `internal`.
 
 ### Data from outside is `internal`
 
-Data read from files or the environment is labeled `internal`. `Files.read` returns `internal Text`, and `Env.get` returns `internal` values: a file or an environment variable may hold anything, so the program may pass what it read to the store's own systems, but may not print it. A count of what was read, such as its length, carries the same label, as [Check yourself: sinks](#check-yourself-sinks-and-keyed-hashes) shows.
+Data read from files, the environment or the network is labeled `internal`. `Files.read` returns `internal Text`, `Env.get` returns `internal` values, and an `Http` request, a message to a web service, returns an `internal Response`: a file, an environment variable or a web service may hold anything, so the program may pass what it read to the store's own systems, but may not print it. A count of what was read, such as its length, carries the same label, as [Check yourself: sinks and keyed hashes](#check-yourself-sinks-and-keyed-hashes) shows.
 
 ### How to write `accepts`
 
 An operation of your own states its ceiling with an `accepts` clause, the word `accepts` and a label, on its own line under the operation. The clause belongs only to an `op` of a `capability`: a function has no ceiling of its own, since what it may send is bounded by the operations it calls.
 
-```una include="steps/08-sinks/src/reorder.una#Supplier" title="steps/08-sinks/src/reorder.una"
+```una include="steps/09-sinks/src/reorder.una#Supplier" title="steps/09-sinks/src/reorder.una"
 --- The supplier's ordering service. It may receive the store's internal data, and no more.
 capability Supplier
   op submit(order: Text) -> Unit
@@ -521,7 +544,7 @@ capability Supplier
 This step passes a reorder list from a file to the supplier, whose service accepts `internal` data:
 
 :::steps
-```una include="steps/08-sinks/src/reorder.una" title="steps/08-sinks/src/reorder.una" verified="check, run"
+```una include="steps/09-sinks/src/reorder.una" title="steps/09-sinks/src/reorder.una" verified="check, run"
 module reorder
 
 --- The supplier's ordering service. It may receive the store's internal data, and no more.
@@ -562,7 +585,7 @@ Walkthrough:
 
 `una run .` prints:
 
-```text include="steps/08-sinks/expected/output.txt"
+```text include="steps/09-sinks/expected/output.txt"
 reorder list sent to the supplier
 ```
 
@@ -580,7 +603,7 @@ An argument's label includes the labels inside it. A `List[confidential Int]` se
 
 A handler of an operation ([chapter 8](/learn/capabilities/#s8-3)) receives what callers send. The checker does not know which caller will run it, so it checks the handler for the most sensitive caller the `accepts` clause allows. Here the fake supplier prints a fixed line each time it is called:
 
-```diff include="steps/08-sinks..steps/10-printing-handler:src/reorder.una" context="1" title="src/reorder.una"
+```diff include="steps/09-sinks..steps/10-printing-handler:src/reorder.una" context="1" title="src/reorder.una"
 --- a/src/reorder.una
 +++ b/src/reorder.una
 @@ -13,5 +13,6 @@
@@ -628,7 +651,7 @@ Raise a ceiling only to the label the real service may receive. An `accepts` cla
 
 #### What a keyed hash is
 
-A fingerprint card tells you whether two cards come from the same person, and it does not tell you the person's name or address. A **hash** is that card for a piece of data: a short value computed from a text, such that the same text always gives the same hash, and the hash does not give the text back. A **keyed hash** also mixes in a secret key that the host keeps outside the program, so that someone who has a copy of the hashes, and no key, cannot hash a guess and compare. The standard way to compute one is called HMAC.
+A fingerprint card tells you whether two cards come from the same person, and it does not tell you the person's name or address. A **hash** is that card for a piece of data: a short value computed from a text, such that the same text always gives the same hash, and the hash does not give the text back. A **keyed hash** also mixes in a secret key that the host keeps outside the program, so that someone who has a copy of the hashes, and no key, cannot hash a guess and compare. The standard way to compute one is called HMAC, short for *hash-based message authentication code*.
 
 In Una the host's `Keys` capability computes keyed hashes, with its operation `hmac`, and the result has the built-in type `Hashed`. A `Hashed` is opaque: the program can compare two of them, and can do nothing else with them.
 
@@ -665,9 +688,19 @@ opted_out(address: secret Text, list: List[internal Hashed]) -> secret Bool
 
 #### How a hash behaves
 
-- **It keeps the label of what it hashed.** Hashing does not lower a label. The hash of a `secret` address is `secret`, and a public answer computed from it is U4001, as [Check yourself: sinks and keyed hashes](#check-yourself-sinks-and-keyed-hashes) shows. To send a hash where its label may not go, release it through a policy ([section 9.5](#s9-5)).
-- **Only `==` and `!=`.** A `Hashed` cannot be interpolated: `"hash {hashed}"` is U2001, *interpolation writes values that hold no function and no `Hashed`*. Its bytes never reach a text.
-- **The key name is public.** `hmac` accepts `public` data for `key_name` and any label for `data`. A labeled key name is U4003, *`@keys.hmac` accepts `public` data*, since whether the call fails with `UnknownKey` depends on the key name alone.
+**It keeps the label of what it hashed.** Hashing does not lower a label. The hash of a `secret` address is `secret`, and a public answer computed from it is U4001, as [Check yourself: sinks and keyed hashes](#check-yourself-sinks-and-keyed-hashes) shows. To send a hash where its label may not go, release it through a policy ([section 9.5](#s9-5)).
+
+**Only `==` and `!=`.** A `Hashed` cannot be interpolated, so its bytes never reach a text. Add `let shown: secret Text = "hash {hashed}"` to `opted_out`:
+
+```text include="steps/12-hash-text/expected/rendered.txt#L1"
+[U2001] Error: interpolation writes values that hold no function and no `Hashed`, and this value is a `Hashed`
+```
+
+**The key name is public.** `hmac` accepts `public` data for `key_name` and any label for `data`, since whether the call fails with `UnknownKey` depends on the key name alone. Hash with `key_name: address`:
+
+```text include="steps/13-hash-key-name/expected/rendered.txt#L1"
+[U4003] Error: `@keys.hmac` accepts `public` data, and this argument is `secret`
+```
 
 #### Testing it with a stand-in
 
@@ -690,9 +723,14 @@ example "an address that is not on the list is not found"
   expect result == false
 ```
 
-- **`fake_keys`** is a handler of `Keys` ([chapter 8](/learn/capabilities/#s8-3)). It makes hashes with `fake_hash`, from the standard module `std.testing`, which the file imports with `import std.testing (fake_hash)`: equal seeds give equal hashes, so `fake_hash(1)` stands for the hash of the listed address.
+- **`fake_keys`** is a handler of `Keys` ([chapter 8](/learn/capabilities/#s8-3)). It makes hashes with `fake_hash(seed)`, from the standard module `std.testing`, which the file imports with `import std.testing (fake_hash)`. The **seed** is a number that picks which fake hash you get: the same seed always gives the same hash, so `fake_hash(1)` stands for the hash of the listed address.
 - **`given @keys = fake_keys()`** installs the handler for one example only. [Section 10.3](/learn/testing/#s10-3) teaches `given` and fakes in full.
-- **Only in examples.** A function of `std.testing` may be called only in example lines and in handlers that only `given` installs. A handler that uses it, installed by `with` in `main`, is U3015, so fake hashes never reach a real run.
+
+**Only in examples.** A function of `std.testing` may be called only in example lines and in handlers that only `given` installs, so fake hashes never reach a real run. Install `fake_keys` in `main`, with `opted_out("rita@example.invalid", list: []) with @keys = fake_keys()`:
+
+```text include="steps/14-hash-fake-in-main/expected/rendered.txt#L1"
+[U3015] Error: this `with` binding installs a handler that uses `std.testing`, which only `given` lines of examples may install
+```
 
 `una test .` prints:
 
@@ -709,7 +747,7 @@ Use a keyed hash to recognize or match a value without keeping it, such as a do-
 
 The reorder program prints how many characters it sent, instead of a fixed message:
 
-```diff include="steps/08-sinks..steps/12-length:src/reorder.una" context="1" title="src/reorder.una"
+```diff include="steps/09-sinks..steps/15-length:src/reorder.una" context="1" title="src/reorder.una"
 --- a/src/reorder.una
 +++ b/src/reorder.una
 @@ -26,2 +26,2 @@
@@ -723,7 +761,7 @@ Does `una check .` pass?
 :::answer Show the answer
 No:
 
-```text include="steps/12-length/expected/rendered.txt#L1"
+```text include="steps/15-length/expected/rendered.txt#L1"
 [U4003] Error: `@console.print` accepts `public` data, and this argument is `internal`
 ```
 
@@ -732,7 +770,7 @@ No:
 
 Second, someone declares the answer of `opted_out` public, reasoning that a hash reveals nothing:
 
-```diff include="steps/11-hashed..steps/13-hashed-public:src/optout.una" context="1" title="src/optout.una"
+```diff include="steps/11-hashed..steps/16-hashed-public:src/optout.una" context="1" title="src/optout.una"
 --- a/src/optout.una
 +++ b/src/optout.una
 @@ -6,3 +6,3 @@
@@ -747,7 +785,7 @@ Does `una check .` pass?
 :::answer Show the answer
 No:
 
-```text include="steps/13-hashed-public/expected/rendered.txt#L1"
+```text include="steps/16-hashed-public/expected/rendered.txt#L1"
 [U4001] Error: the result of `opted_out` is `Bool`, and this value is `secret Bool`: a flow from `secret` to `public`
 ```
 
@@ -768,17 +806,14 @@ The checker tracks implicit flows with the label of the **program counter**: the
 
 Give a loyalty card a badge, decided by what the customer spent, and declare the badge public:
 
-```diff include="steps/14-pc-forms..steps/15-badge:src/loyalty.una" context="1" title="src/loyalty.una"
---- a/src/loyalty.una
-+++ b/src/loyalty.una
-@@ -6,3 +6,3 @@
- --- `if … then … else` on a labeled condition: the badge printed on a loyalty card.
--badge(spent: confidential Int) -> confidential Text = if spent >= 50000 then "gold" else "standard"
-+badge(spent: confidential Int) -> Text = if spent >= 50000 then "gold" else "standard"
- 
+```una include="steps/17-badge/src/loyalty.una#badge" title="steps/17-badge/src/loyalty.una"
+--- `if … then … else` on a labeled condition: the badge printed on a loyalty card.
+badge(spent: confidential Int) -> Text = if spent >= 50000 then "gold" else "standard"
 ```
 
-```text include="steps/15-badge/expected/rendered.txt#L1-L6"
+`una check .` reports:
+
+```text include="steps/17-badge/expected/rendered.txt#L1-L6"
 [U4001] Error: the result of `badge` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`
    ╭─[ src/loyalty.una:7:45 ]
    │
@@ -795,14 +830,14 @@ Every construct that chooses a way by a value raises the program counter by that
 
 #### `if … then … else`
 
-```una include="steps/14-pc-forms/src/loyalty.una#badge" title="steps/14-pc-forms/src/loyalty.una"
+```una include="steps/18-pc-forms/src/loyalty.una#badge" title="steps/18-pc-forms/src/loyalty.una"
 --- `if … then … else` on a labeled condition: the badge printed on a loyalty card.
 badge(spent: confidential Int) -> confidential Text = if spent >= 50000 then "gold" else "standard"
 ```
 
 #### An `if` block
 
-```una include="steps/14-pc-forms/src/loyalty.una#points" title="steps/14-pc-forms/src/loyalty.una"
+```una include="steps/18-pc-forms/src/loyalty.una#points" title="steps/18-pc-forms/src/loyalty.una"
 --- An `if` block on a labeled condition: the points a purchase of `cents` earns.
 points(spent: confidential Int, cents: Int) -> confidential Int
 =
@@ -819,7 +854,7 @@ Both branches of the block run under the condition's label: `doubled`, computed 
 
 A `when` ([chapter 4](/learn/kinds/)) chooses an arm by the variant of a value. On a labeled value, which arm runs reveals the variant:
 
-```una include="steps/14-pc-forms/src/loyalty.una#discount" title="steps/14-pc-forms/src/loyalty.una"
+```una include="steps/18-pc-forms/src/loyalty.una#discount" title="steps/18-pc-forms/src/loyalty.una"
 --- A `when` on a labeled value: the discount of a tier, in percent.
 discount(tier: confidential Tier) -> confidential Int
 =
@@ -833,7 +868,7 @@ discount(tier: confidential Tier) -> confidential Int
 
 Whether an `Option` ([chapter 5](/learn/collections/#s5-3)) is `None` is information too, so the value chosen by `if none use` carries the option's label:
 
-```una include="steps/14-pc-forms/src/loyalty.una#spending" title="steps/14-pc-forms/src/loyalty.una"
+```una include="steps/18-pc-forms/src/loyalty.una#spending" title="steps/18-pc-forms/src/loyalty.una"
 --- `if none use` on a labeled `Option`: what a customer spent, or 0 for a new customer.
 spending(found: confidential Option[Int]) -> confidential Int
 =
@@ -846,7 +881,7 @@ spending(found: confidential Option[Int]) -> confidential Int
 
 The examples look at each labeled result:
 
-```una include="steps/14-pc-forms/src/loyalty.una#L38-L52" title="steps/14-pc-forms/src/loyalty.una" caption="the examples"
+```una include="steps/18-pc-forms/src/loyalty.una#L38-L52" title="steps/18-pc-forms/src/loyalty.una" caption="the examples"
 example "a customer who spent 720.00 gets the gold badge"
   do badge(72000)
   expect result == "gold"
@@ -864,7 +899,7 @@ example "a new customer has spent nothing"
   expect result == 0
 ```
 
-```text include="steps/14-pc-forms/expected/commands/test.txt#L2-L7"
+```text include="steps/18-pc-forms/expected/commands/test.txt#L2-L7"
 example loyalty "a customer who spent 720.00 gets the gold badge" ... ok
 example loyalty "a gold customer earns double points" ... ok
 example loyalty "a silver customer gets 5 percent off" ... ok
@@ -878,7 +913,7 @@ example loyalty "a new customer has spent nothing" ... ok
 This step charges a shipping fee. Loyal customers, those who spent at least 50000 cents, ship for free, and what a customer spent is confidential:
 
 :::steps
-```una include="steps/16-branches/src/shipping.una" title="steps/16-branches/src/shipping.una" verified="check, run"
+```una include="steps/19-branches/src/shipping.una" title="steps/19-branches/src/shipping.una" verified="check, run"
 module shipping
 
 --- The payment provider. It may receive confidential amounts.
@@ -917,7 +952,7 @@ Walkthrough:
 
 `una run .` prints:
 
-```text include="steps/16-branches/expected/output.txt"
+```text include="steps/19-branches/expected/output.txt"
 shipping charged for 2 orders
 ```
 
@@ -929,7 +964,7 @@ A branch on labeled data may compute values, and those values carry the label. I
 
 Whether a function fails is something its caller observes ([chapter 6](/learn/failure/)). A `fail` inside a branch on labeled data would reveal the condition to every caller, through the failure. So `fail`, and handling clauses that fail or pass a failure on, are allowed only where the program counter is `public`. Add a free-shipping code that fails for customers who did not spend enough:
 
-```diff include="steps/16-branches..steps/17-fail:src/shipping.una" context="1" title="src/shipping.una"
+```diff include="steps/19-branches..steps/20-fail:src/shipping.una" context="1" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -10,2 +10,13 @@
@@ -948,7 +983,7 @@ Whether a function fails is something its caller observes ([chapter 6](/learn/fa
  
 ```
 
-```text include="steps/17-fail/expected/rendered.txt#L1-L10"
+```text include="steps/20-fail/expected/rendered.txt#L1-L10"
 [U4002] Error: this `fail` depends on `confidential` data, so its failure would reveal it; return a labeled value instead of failing
     ╭─[ src/shipping.una:19:5 ]
     │
@@ -967,13 +1002,13 @@ The diagnostic has two marks. The first, "the labeled condition", is the branch 
 
 Here is the repair. The code is an `Option`: `Some` with the code for a loyal customer, `None` for anyone else, and the whole answer is confidential:
 
-```una include="steps/18-labeled-answer/src/shipping.una#free_shipping_code" title="steps/18-labeled-answer/src/shipping.una" verified="check, run, test"
+```una include="steps/21-labeled-answer/src/shipping.una#free_shipping_code" title="steps/21-labeled-answer/src/shipping.una" verified="check, run, test"
 --- The free-shipping code of a loyal customer, or `None`. The answer carries the label of
 --- what decided it, so the caller learns it only where `confidential` data may go.
 free_shipping_code(spent: confidential Int) -> confidential Option[Text] = if spent < 50000 then None else Some("FREESHIP")
 ```
 
-```text include="steps/18-labeled-answer/expected/commands/test.txt#L2-L5"
+```text include="steps/21-labeled-answer/expected/commands/test.txt#L2-L5"
 example shipping "a loyal customer has a code" ... ok
 example shipping "another customer has none" ... ok
 
@@ -986,7 +1021,7 @@ The caller receives the answer with its label, and decides what to do with it un
 
 An operation performed inside the branch is seen by its sink, so the sink must accept the condition's label. Thank loyal customers on the console:
 
-```diff include="steps/16-branches..steps/19-effect-under-branch:src/shipping.una" context="1" title="src/shipping.una"
+```diff include="steps/19-branches..steps/22-effect-under-branch:src/shipping.una" context="1" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -17,2 +17,9 @@
@@ -1001,7 +1036,7 @@ An operation performed inside the branch is seen by its sink, so the sink must a
  --- A payment provider that accepts every charge, for this run.
 ```
 
-```text include="steps/19-effect-under-branch/expected/rendered.txt#L1-L9"
+```text include="steps/22-effect-under-branch/expected/rendered.txt#L1-L9"
 [U4003] Error: `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
     ╭─[ src/shipping.una:23:5 ]
     │
@@ -1019,7 +1054,7 @@ The printed text is a literal, but whether it is printed reveals the branch. The
 
 The same rule covers calls of your own functions. Under a labeled program counter, a function may call another only if the callee cannot fail, and every operation it may perform accepts that label. A pure function, one with no `uses` that does nothing but compute its result, such as `shipping_fee`, may be called anywhere if it cannot fail. Move the print of the last step into a function of its own, `thank`, and call it from the branch:
 
-```diff include="steps/16-branches..steps/20-call-under-branch:src/shipping.una" context="1" title="src/shipping.una"
+```diff include="steps/19-branches..steps/23-call-under-branch:src/shipping.una" context="1" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -21,2 +21,15 @@
@@ -1040,7 +1075,7 @@ The same rule covers calls of your own functions. Under a labeled program counte
  pub main() -> Unit
 ```
 
-```text include="steps/20-call-under-branch/expected/rendered.txt#L1-L9"
+```text include="steps/23-call-under-branch/expected/rendered.txt#L1-L9"
 [U4002] Error: `thank` has effects that accept at most `public` data, and it is called under a `confidential` condition, which would be revealed
     ╭─[ src/shipping.una:33:5 ]
     │
@@ -1075,7 +1110,7 @@ The program counter rises only inside the branch. The lines after the `if` or th
 
 A bulky item costs 15.00 to ship for every customer. Someone writes it with the same shape as `shipping_fee`, and declares it public:
 
-```diff include="steps/16-branches..steps/21-flat-fee:src/shipping.una" context="1" title="src/shipping.una"
+```diff include="steps/19-branches..steps/24-flat-fee:src/shipping.una" context="1" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -10,2 +10,5 @@
@@ -1091,7 +1126,7 @@ Both branches give 1500. Does `una check .` pass?
 :::answer Show the answer
 No:
 
-```text include="steps/21-flat-fee/expected/rendered.txt#L1"
+```text include="steps/24-flat-fee/expected/rendered.txt#L1"
 [U4001] Error: the result of `bulky_fee` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`
 ```
 
@@ -1110,7 +1145,7 @@ You write categories in square brackets after the level: `secret[PII] Text` is s
 
 A courier needs a customer's phone number, so that the driver can call at the door. The analytics service records bookings, and it may receive secret data, such as the store's sales figures. Here is a route booking with a level and no category:
 
-```una include="steps/22-no-category/src/courier.una" title="steps/22-no-category/src/courier.una" verified="check, run"
+```una include="steps/25-no-category/src/courier.una" title="steps/25-no-category/src/courier.una" verified="check, run"
 module courier
 
 --- A stop on a delivery route. The phone number is secret, and nothing says it is personal.
@@ -1156,7 +1191,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/22-no-category/expected/output.txt"
+```text include="steps/25-no-category/expected/output.txt"
 route booked and recorded
 ```
 
@@ -1168,7 +1203,7 @@ It checks, and every customer's phone number now sits in the analytics records. 
 
 A package declares its categories in `una.toml`, under the table `[labels]`, as a list of names:
 
-```toml include="steps/23-categories/una.toml" title="steps/23-categories/una.toml"
+```toml include="steps/26-categories/una.toml" title="steps/26-categories/una.toml"
 [package]
 name = "courier"
 version = "0.1.0"
@@ -1182,7 +1217,7 @@ entry = "courier"
 grants = ["console"]
 ```
 
-A category's name starts with a capital letter, such as `PII` or `Location`.
+A category's name is written in UpperCamelCase: it starts with a capital letter, and each word in it does too, such as `PII` or `Location`. Any other name, such as `pii`, is U1005.
 
 #### On a type
 
@@ -1197,7 +1232,7 @@ A ceiling can name categories too: `accepts secret[PII]` accepts secret data tha
 The step books a courier, whose service may receive personal data:
 
 :::steps
-```una include="steps/23-categories/src/courier.una" title="steps/23-categories/src/courier.una" verified="check, run"
+```una include="steps/26-categories/src/courier.una" title="steps/26-categories/src/courier.una" verified="check, run"
 module courier
 
 --- A stop on a delivery route. The phone number is personal data.
@@ -1245,7 +1280,7 @@ Walkthrough:
 
 `una run .` prints:
 
-```text include="steps/23-categories/expected/output.txt"
+```text include="steps/26-categories/expected/output.txt"
 route booked: Recife, Olinda
 ```
 
@@ -1257,7 +1292,7 @@ The analytics service of [Why a level is not enough](#why-a-level-is-not-enough)
 
 A label flows into another only if its level is at or below the other's, *and* its categories are among the other's. So `secret[PII]` flows into `secret[PII]` and `restricted[PII]`, but not into `secret`. Give the courier `accepts secret`:
 
-```diff include="steps/23-categories..steps/24-no-category-ceiling:src/courier.una" context="1" title="src/courier.una"
+```diff include="steps/26-categories..steps/27-no-category-ceiling:src/courier.una" context="1" title="src/courier.una"
 --- a/src/courier.una
 +++ b/src/courier.una
 @@ -12,3 +12,3 @@
@@ -1267,7 +1302,7 @@ A label flows into another only if its level is at or below the other's, *and* i
  
 ```
 
-```text include="steps/24-no-category-ceiling/expected/rendered.txt#L1"
+```text include="steps/27-no-category-ceiling/expected/rendered.txt#L1"
 [U4003] Error: `@courier.book` accepts `secret` data, and this argument is `secret[PII]`
 ```
 
@@ -1277,7 +1312,7 @@ The levels match, and the category does not. Personal data never loses its categ
 
 When values combine, the result takes the higher level and every category of either. Declare a second category, `Location`, for the door of each stop, and send the courier the phone and the door in one text:
 
-```diff include="steps/23-categories..steps/25-two-categories:src/courier.una" context="1" title="src/courier.una"
+```diff include="steps/26-categories..steps/28-two-categories:src/courier.una" context="1" title="src/courier.una"
 --- a/src/courier.una
 +++ b/src/courier.una
 @@ -2,3 +2,3 @@
@@ -1301,7 +1336,7 @@ When values combine, the result takes the higher level and every category of eit
    book_route(route) with @courier = accepting()
 ```
 
-```text include="steps/25-two-categories/expected/rendered.txt#L1-L6"
+```text include="steps/28-two-categories/expected/rendered.txt#L1-L6"
 [U4003] Error: `@courier.book` accepts `secret[PII]` data, and this argument is `secret[Location, PII]`
     ╭─[ src/courier.una:21:38 ]
     │
@@ -1316,7 +1351,7 @@ The text joins `secret[PII]` and `confidential[Location]` into `secret[Location,
 
 A category that `[labels] categories` does not declare is U4007. A misspelt category cannot create a new, unchecked kind of data:
 
-```diff include="steps/23-categories..steps/26-misspelt:src/courier.una" context="1" title="src/courier.una"
+```diff include="steps/26-categories..steps/29-misspelt:src/courier.una" context="1" title="src/courier.una"
 --- a/src/courier.una
 +++ b/src/courier.una
 @@ -6,3 +6,3 @@
@@ -1326,7 +1361,7 @@ A category that `[labels] categories` does not declare is U4007. A misspelt cate
  
 ```
 
-```text include="steps/26-misspelt/expected/rendered.txt#L1-L6"
+```text include="steps/29-misspelt/expected/rendered.txt#L1-L6"
 [U4007] Error: label category `PIl` is not declared in `[labels] categories` of `una.toml`
    ╭─[ src/courier.una:7:17 ]
    │
@@ -1359,7 +1394,7 @@ Declare few categories, each for a kind of data that a law, a contract or a prom
 
 A fraud-screening service accepts the highest level, `restricted`, and no category. Give it the courier's booking:
 
-```diff include="steps/23-categories..steps/27-restricted:src/courier.una" context="1" title="src/courier.una"
+```diff include="steps/26-categories..steps/30-restricted:src/courier.una" context="1" title="src/courier.una"
 --- a/src/courier.una
 +++ b/src/courier.una
 @@ -12,3 +12,3 @@
@@ -1374,7 +1409,7 @@ Does the phone, `secret[PII]`, reach it?
 :::answer Show the answer
 No:
 
-```text include="steps/27-restricted/expected/rendered.txt#L1"
+```text include="steps/30-restricted/expected/rendered.txt#L1"
 [U4003] Error: `@courier.book` accepts `restricted` data, and this argument is `secret[PII]`
 ```
 
@@ -1393,7 +1428,7 @@ In a well-run office, a confidential document leaves the building only through o
 
 The reorder list of [section 9.2](#s9-2) is `internal`. The report wants only how many SKUs it holds. Try to count them into a public `Int`:
 
-```diff include="steps/28-policy..steps/29-unreleased-count:src/reorder.una" context="1" title="src/reorder.una"
+```diff include="steps/31-policy..steps/32-unreleased-count:src/reorder.una" context="1" title="src/reorder.una"
 --- a/src/reorder.una
 +++ b/src/reorder.una
 @@ -1,4 +1,2 @@
@@ -1408,7 +1443,7 @@ The reorder list of [section 9.2](#s9-2) is `internal`. The report wants only ho
 +  @console.print("{count} SKUs to reorder")
 ```
 
-```text include="steps/29-unreleased-count/expected/rendered.txt#L1-L6"
+```text include="steps/32-unreleased-count/expected/rendered.txt#L1-L6"
 [U4001] Error: `count` is `Int`, and this value is `internal Int`: a flow from `internal` to `public`
     ╭─[ src/reorder.una:11:20 ]
     │
@@ -1423,7 +1458,7 @@ The count is computed from the list, so it is `internal`, and the annotation say
 
 A policy has five lines, all required, and a function that it names:
 
-```una include="steps/28-policy/src/release.una#line_count..count_lines" title="steps/28-policy/src/release.una"
+```una include="steps/31-policy/src/release.una#line_count..count_lines" title="steps/31-policy/src/release.una"
 --- Releases how many lines a list has, and nothing of what they say.
 pub policy line_count
   from internal Text
@@ -1460,7 +1495,7 @@ They are not checked against the code: they are for people. The build report pri
 
 A policy may live only in a **trusted module**: a module whose code the guarantee relies on, and which a reviewer reads with care. A module is trusted only when it says so twice: `trusted module` in its header, and its name under `[trusted] modules` in `una.toml`:
 
-```toml include="steps/28-policy/una.toml" title="steps/28-policy/una.toml"
+```toml include="steps/31-policy/una.toml" title="steps/31-policy/una.toml"
 [package]
 name = "reorder"
 version = "0.1.0"
@@ -1480,7 +1515,7 @@ The rest of a trusted module's code is checked as usual. Only the bodies of its 
 
 The program reads the list, which is `internal`, and prints only what the policy releases:
 
-```una include="steps/28-policy/src/reorder.una" title="steps/28-policy/src/reorder.una" verified="check, run"
+```una include="steps/31-policy/src/reorder.una" title="steps/31-policy/src/reorder.una" verified="check, run"
 module reorder
 
 import release (line_count)
@@ -1500,7 +1535,7 @@ pub main() -> Unit
 
 `una run .` prints:
 
-```text include="steps/28-policy/expected/output.txt"
+```text include="steps/31-policy/expected/output.txt"
 2 SKUs to reorder
 ```
 
@@ -1508,7 +1543,7 @@ pub main() -> Unit
 
 `una report .` prints the build report ([chapter 13](/learn/tools/#s13-4)): what the package was proven to do, and what it trusts. Two of its sections are about releases:
 
-```text include="steps/28-policy/expected/commands/report.txt#L2,L9-L12,L15-L16"
+```text include="steps/31-policy/expected/commands/report.txt#L2,L9-L12,L15-L16"
 package reorder 0.1.0
 information:
   release.line_count at src/release.una:14:6, purpose "report the size of the reorder list", owner purchasing
@@ -1529,7 +1564,7 @@ Adding a trusted module is a change to the manifest, and each new release adds a
 
 A policy's result is lower than what it read, so a call under a labeled branch would reveal the condition. Call the policy only when the list is not empty:
 
-```diff include="steps/28-policy..steps/30-release-under-branch:src/reorder.una" context="1" title="src/reorder.una"
+```diff include="steps/31-policy..steps/33-release-under-branch:src/reorder.una" context="1" title="src/reorder.una"
 --- a/src/reorder.una
 +++ b/src/reorder.una
 @@ -12,2 +12,3 @@
@@ -1539,7 +1574,7 @@ A policy's result is lower than what it read, so a call under a labeled branch w
 +  @console.print("{shown} SKUs to reorder")
 ```
 
-```text include="steps/30-release-under-branch/expected/rendered.txt#L1-L8"
+```text include="steps/33-release-under-branch/expected/rendered.txt#L1-L8"
 [U4002] Error: policy `line_count` lowers data to `public`, and it is called under an `internal` condition, which its result would reveal
     ╭─[ src/reorder.una:13:36 ]
     │
@@ -1556,7 +1591,7 @@ A policy's result is lower than what it read, so a call under a labeled branch w
 
 Remove `trusted` from the header of `release`:
 
-```diff include="steps/28-policy..steps/31-untrusted-header:src/release.una" context="1" title="src/release.una"
+```diff include="steps/31-policy..steps/34-untrusted-header:src/release.una" context="1" title="src/release.una"
 --- a/src/release.una
 +++ b/src/release.una
 @@ -1,2 +1,2 @@
@@ -1575,7 +1610,7 @@ Remove `trusted` from the header of `release`:
 -  expect result == 3
 ```
 
-```text include="steps/31-untrusted-header/expected/diagnostics.txt"
+```text include="steps/34-untrusted-header/expected/diagnostics.txt"
 error U4004 at src/release.una:4:12: policy `line_count` is declared in module `release`, which is not trusted
 error U7005 at una.toml:7:12: [trusted] modules lists `release`, whose header does not say `trusted module`
 ```
@@ -1623,7 +1658,7 @@ The `via` function must be private, used only through its policy, of the same ty
 
 First, the main idea. Someone thinks the policy is too much ceremony, drops the import, and writes the counting function in `reorder` itself:
 
-```diff include="steps/28-policy..steps/32-plain-function:src/reorder.una" context="1" title="src/reorder.una"
+```diff include="steps/31-policy..steps/35-plain-function:src/reorder.una" context="1" title="src/reorder.una"
 --- a/src/reorder.una
 +++ b/src/reorder.una
 @@ -2,3 +2,4 @@
@@ -1643,7 +1678,7 @@ Does `una check .` pass?
 :::answer Show the answer
 No:
 
-```text include="steps/32-plain-function/expected/rendered.txt#L1"
+```text include="steps/35-plain-function/expected/rendered.txt#L1"
 [U4001] Error: the result of `count_lines` is `Int`, and this value is `internal Int`: a flow from `internal` to `public`
 ```
 
@@ -1652,7 +1687,7 @@ The body is the same as `count_lines` in `release.una`, but here it is an ordina
 
 Second, a detail of this policy. `release.una` ends with two examples of the policy. The second gives it a list with a blank line between two SKUs:
 
-```una include="steps/28-policy/src/release.una#L17-L19" title="steps/28-policy/src/release.una"
+```una include="steps/31-policy/src/release.una#L17-L19" title="steps/31-policy/src/release.una"
 example "a list of three SKUs, with a blank line between two of them"
   do line_count("LAMP-01,20\n\nMUG-03,40\nDESK-02,5")
   expect result == 3
@@ -1663,7 +1698,7 @@ What does `line_count` return for that text, and does the example pass?
 :::answer Show the answer
 It returns 3, and the example passes:
 
-```text include="steps/28-policy/expected/commands/test.txt#L2-L5"
+```text include="steps/31-policy/expected/commands/test.txt#L2-L5"
 example release "a list of two SKUs has two lines" ... ok
 example release "a list of three SKUs, with a blank line between two of them" ... ok
 
@@ -1717,7 +1752,7 @@ pub notice(customer: Customer, shipment: Shipment) -> secret[PII] Text = "Hello 
 
 In chapter 8, `notify` returned the address it wrote to, and the log printed it. Keep that design, with the label it now needs, and the checker finds the log line:
 
-```diff include="day-to-day..steps/33-leak:src/notices.una" context="1" title="src/notices.una"
+```diff include="day-to-day..steps/36-leak:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
 +++ b/src/notices.una
 @@ -37,5 +37,4 @@
@@ -1740,7 +1775,7 @@ In chapter 8, `notify` returned the address it wrote to, and the log printed it.
  =
 ```
 
-```text include="steps/33-leak/expected/rendered.txt#L1-L6"
+```text include="steps/36-leak/expected/rendered.txt#L1-L6"
 [U4003] Error: `@log.print` accepts `public` data, and this argument is `secret[PII]`
     ╭─[ src/notices.una:78:16 ]
     │
@@ -2098,9 +2133,9 @@ Remove `accepts secret[PII]` from `Mailer`:
 ### A branch that decides a public result (U4001)
 
 :::mistake
-In [step 16](#a-fee-decided-by-a-branch), declare the fee as a plain `Int`:
+In [step 19](#a-fee-decided-by-a-branch), declare the fee as a plain `Int`:
 
-```diff include="steps/16-branches..mistakes/3:src/shipping.una" context="1" title="src/shipping.una"
+```diff include="steps/19-branches..mistakes/3:src/shipping.una" context="1" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -9,3 +9,3 @@
@@ -2122,9 +2157,9 @@ In [step 16](#a-fee-decided-by-a-branch), declare the fee as a plain `Int`:
 ### A category that is not declared (U4007)
 
 :::mistake
-In [step 23](#a-courier-that-may-receive-a-phone-number), remove the `[labels]` table from `una.toml`:
+In [step 26](#a-courier-that-may-receive-a-phone-number), remove the `[labels]` table from `una.toml`:
 
-```diff include="steps/23-categories..mistakes/4:una.toml" context="1" title="una.toml"
+```diff include="steps/26-categories..mistakes/4:una.toml" context="1" title="una.toml"
 --- a/una.toml
 +++ b/una.toml
 @@ -5,5 +5,2 @@
@@ -2377,7 +2412,7 @@ The policy releases one bit of personal data, on purpose, and the report lists t
 :::agents
 `una --json check .` reports the U4xxx codes in the domain `security`. For [the leak the checker stops](#the-leak-the-checker-stops):
 
-```json include="steps/33-leak/expected/commands/json.txt#L2"
+```json include="steps/36-leak/expected/commands/json.txt#L2"
 {"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U4003","severity":"error","domain":"security","message":"`@log.print` accepts `public` data, and this argument is `secret[PII]`","primary":{"file":"src/notices.una","start":{"line":78,"col":16},"end":{"line":78,"col":52}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"send `@log.print` only data labeled `public` or lower, or send this value to an operation that accepts `secret[PII]`","edit":null},{"rank":2,"escape_cost":1,"escape":{"kind":"trusted","cost":"the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review"},"description":"declassify the value through a policy of a trusted module","edit":null}],"explain":"una explain U4003"}],"fixable":0}
 ```
 
@@ -2402,7 +2437,7 @@ Neither repair has an `edit`, so `una fix` changes nothing: each needs a decisio
 - Construct pages: [labels](/docs/language/information-flow/labels/), [`policy`](/docs/language/information-flow/policy/), [trusted modules](/docs/language/information-flow/trusted/), [host capabilities](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)
 - Configuration: [`[labels] categories`](/docs/configure/labels/categories/), [`[trusted] modules`](/docs/configure/trusted/modules/)
 - Standard library: [the prelude and the host capabilities](/docs/std/)
-- Diagnostics: [U1001](/docs/errors/U1001/), [U4001](/docs/errors/U4001/), [U4002](/docs/errors/U4002/), [U4003](/docs/errors/U4003/), [U4004](/docs/errors/U4004/), [U4005](/docs/errors/U4005/), [U4007](/docs/errors/U4007/), [U7005](/docs/errors/U7005/)
+- Diagnostics: [U1001](/docs/errors/U1001/), [U2001](/docs/errors/U2001/), [U3015](/docs/errors/U3015/), [U4001](/docs/errors/U4001/), [U4002](/docs/errors/U4002/), [U4003](/docs/errors/U4003/), [U4004](/docs/errors/U4004/), [U4005](/docs/errors/U4005/), [U4007](/docs/errors/U4007/), [U7005](/docs/errors/U7005/)
 - Specification: [information flow](/docs/spec/07-information-flow/), including [labels](/docs/spec/07-information-flow/#s2), [declassification policies](/docs/spec/07-information-flow/#s5) (rule 3: inside `via` functions labels are not checked, and they are part of the trusted computing base) and [checking](/docs/spec/07-information-flow/#s7) (rules 3 to 6), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [standard library](/docs/spec/14-standard-library/) (the host capabilities and their labels), [diagnostics and ABI](/docs/spec/13-diagnostics-and-abi/)
 - Security model: [what is proven, trusted and outside the model](/docs/security/)
 :::

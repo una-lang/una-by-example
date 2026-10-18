@@ -1,0 +1,13 @@
+[U4003] Error: `@keys.hmac` accepts `public` data, and this argument is `secret`
+    ╭─[ src/optout.una:11:37 ]
+    │
+ 11 │   let hashed = @keys.hmac(key_name: address, data: address)
+    │                                     ───┬───
+    │                                        ╰───── `@keys.hmac` accepts `public` data, and this argument is `secret`
+    │
+    │ Help 1: repair 1: send `@keys.hmac` only data labeled `public` or lower, or send this value to an operation that accepts `secret`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯
