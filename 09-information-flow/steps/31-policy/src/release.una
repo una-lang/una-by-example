@@ -1,0 +1,19 @@
+trusted module release
+
+--- Releases how many lines a list has, and nothing of what they say.
+pub policy line_count
+  from internal Text
+  to Int
+  via count_lines
+  purpose "report the size of the reorder list"
+  owner purchasing
+
+count_lines(list: internal Text) -> Int = list.split(on: "\n").filter(keep: fn(line) -> line.len > 0).len
+
+example "a list of two SKUs has two lines"
+  do line_count("LAMP-01,20\nDESK-02,5\n")
+  expect result == 2
+
+example "a list of three SKUs, with a blank line between two of them"
+  do line_count("LAMP-01,20\n\nMUG-03,40\nDESK-02,5")
+  expect result == 3

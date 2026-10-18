@@ -1,0 +1,5 @@
+$ una test .
+example shipping "a loyal customer has a code" ... ok
+example shipping "another customer has none" ... ok
+
+2 examples: 2 passed, 0 failed

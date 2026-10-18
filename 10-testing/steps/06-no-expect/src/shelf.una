@@ -1,0 +1,57 @@
+module shelf
+
+--- A product on a shelf: its SKU, its price in cents, and how many units are left.
+pub kind Product
+  sku: Text
+  cents: Int
+  units: Int
+
+--- The price of `quantity` units, in cents.
+pub price_of(product: Product, quantity: Int) -> Int = product.cents * quantity
+
+--- Whether a product has at least one unit left.
+pub in_stock(product: Product) -> Bool = product.units > 0
+
+--- The SKUs of the products that have run out, in shelf order.
+pub sold_out(products: List[Product]) -> List[Text] = products.filter(keep: fn(product) -> product.units == 0).map(each: fn(product) -> product.sku)
+
+--- The product with the SKU `sku`, if the shelf holds it.
+pub find(products: List[Product], sku: Text) -> Option[Product] = products.first_where(keep: fn(product) -> product.sku == sku)
+
+--- A label for the shelf edge. Private: only this module calls it.
+edge_label(product: Product) -> Text = "{product.sku} {product.cents}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Product(sku: "LAMP-01", cents: 1990, units: 4)
+  @console.print(edge_label(lamp))
+
+example "three lamps cost 59.70"
+  do price_of(Product(sku: "LAMP-01", cents: 1990, units: 4), quantity: 3)
+  expect result == 5970
+
+example "a price is never below the price of one unit"
+  do price_of(Product(sku: "LAMP-01", cents: 1990, units: 4), quantity: 3)
+  expect result >= 1990
+  expect result != 0
+
+example "a lamp with units left is in stock"
+  do in_stock(Product(sku: "LAMP-01", cents: 1990, units: 4))
+  expect result
+
+example "a mug with no units left is not"
+  do in_stock(Product(sku: "MUG-03", cents: 890, units: 0))
+  expect not result
+
+example "only the mug has run out"
+  do sold_out([Product(sku: "LAMP-01", cents: 1990, units: 4), Product(sku: "MUG-03", cents: 890, units: 0)])
+  expect result.len == 1
+  expect result == ["MUG-03"]
+
+example "a SKU the shelf does not hold is not found"
+  do find([Product(sku: "LAMP-01", cents: 1990, units: 4)], sku: "DESK-02")
+  expect result is None
+
+example "the shelf edge shows the SKU and the price"
+  do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))

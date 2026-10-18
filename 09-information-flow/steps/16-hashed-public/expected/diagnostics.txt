@@ -1,0 +1,1 @@
+error U4001 at src/optout.una:13:3: the result of `opted_out` is `Bool`, and this value is `secret Bool`: a flow from `secret` to `public`

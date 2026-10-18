@@ -1,0 +1,34 @@
+module shipping
+
+--- The payment provider. It may receive confidential amounts.
+capability Payments
+  op charge(order: Text, cents: Int) -> Unit
+    accepts confidential
+
+--- The shipping fee, in cents. Loyal customers ship for free. Which branch runs depends on
+--- what the customer spent, so the fee is confidential, even though 0 and 790 are not.
+shipping_fee(spent: confidential Int) -> confidential Int = if spent >= 50000 then 0 else 790
+
+--- Charges an order's shipping fee.
+charge_shipping(order: Text, spent: confidential Int) -> Unit
+  uses @payments: Payments[charge]
+=
+  @payments.charge(order, cents: shipping_fee(spent))
+
+--- Greets a loyal customer at the checkout.
+greet(spent: confidential Int) -> Unit
+  uses @console: Console[print]
+=
+  if spent >= 50000
+    @console.print("thank you for shopping with us again")
+
+--- A payment provider that accepts every charge, for this run.
+handler accepting() for Payments
+  op charge(order, cents) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  charge_shipping("A-1001", spent: 72000) with @payments = accepting()
+  charge_shipping("A-1002", spent: 1500) with @payments = accepting()
+  @console.print("shipping charged for 2 orders")

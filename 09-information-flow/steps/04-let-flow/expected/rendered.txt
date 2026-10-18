@@ -1,0 +1,9 @@
+[U4001] Error: `total` is `Int`, and this value is `confidential Int`: a flow from `confidential` to `public`
+    ╭─[ src/pricing.una:15:20 ]
+    │
+ 15 │   let total: Int = item.cents * quantity
+    │                    ──────────┬──────────
+    │                              ╰──────────── `total` is `Int`, and this value is `confidential Int`: a flow from `confidential` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯

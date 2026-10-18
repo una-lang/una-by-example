@@ -1,0 +1,4 @@
+$ una test .
+example coupons "SPRING10 takes 10 percent off" ... ok
+
+1 example: 1 passed, 0 failed

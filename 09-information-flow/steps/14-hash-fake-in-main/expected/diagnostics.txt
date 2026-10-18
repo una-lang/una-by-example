@@ -1,0 +1,1 @@
+error U3015 at src/optout.una:33:64: this `with` binding installs a handler that uses `std.testing`, which only `given` lines of examples may install

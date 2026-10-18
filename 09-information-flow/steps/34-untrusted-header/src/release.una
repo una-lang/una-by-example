@@ -1,0 +1,11 @@
+module release
+
+--- Releases how many lines a list has, and nothing of what they say.
+pub policy line_count
+  from internal Text
+  to Int
+  via count_lines
+  purpose "report the size of the reorder list"
+  owner purchasing
+
+count_lines(list: internal Text) -> Int = list.split(on: "\n").filter(keep: fn(line) -> line.len > 0).len

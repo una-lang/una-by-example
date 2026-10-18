@@ -1,0 +1,12 @@
+[U1007] Error: requirement `SHIPPING_1` has source `generated`, so its status must be `proposed`
+   ╭─[ src/shipping.una:7:10 ]
+   │
+ 7 │   status active
+   │          ───┬──
+   │             ╰──── requirement `SHIPPING_1` has source `generated`, so its status must be `proposed`
+   │
+   │ Help: repair 1: mark it `proposed`; a person activates it by changing its source; edit src/shipping.una:7:10..7:16 to "proposed"
+   │
+   │ Note: run `una explain U1007` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

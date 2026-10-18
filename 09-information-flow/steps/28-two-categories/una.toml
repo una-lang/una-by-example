@@ -1,0 +1,11 @@
+[package]
+name = "courier"
+version = "0.1.0"
+edition = "0.2"
+
+[labels]
+categories = ["Location", "PII"]
+
+[run]
+entry = "courier"
+grants = ["console"]

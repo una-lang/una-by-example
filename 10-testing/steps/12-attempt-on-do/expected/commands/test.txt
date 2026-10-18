@@ -1,0 +1,8 @@
+$ una test .
+example coupons "SPRING10 takes 10 percent off" ... ok
+example coupons "an unknown code is Unknown" ... ok
+example coupons "a small cart is BelowMinimum, even with a good code" ... ok
+example coupons "the code is checked before the amount" ... ok
+example coupons "an unknown code, kept as a value" ... ok
+
+5 examples: 5 passed, 0 failed

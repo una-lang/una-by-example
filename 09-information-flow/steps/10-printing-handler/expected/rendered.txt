@@ -1,0 +1,9 @@
+[U4003] Error: `@console.print` accepts `public` data, and it runs in an operation body whose callers may pass `internal` data, which it would reveal
+    ╭─[ src/reorder.una:17:22 ]
+    │
+ 17 │   op submit(order) = @console.print("order received")
+    │                      ────────────────┬───────────────
+    │                                      ╰───────────────── `@console.print` accepts `public` data, and it runs in an operation body whose callers may pass `internal` data, which it would reveal
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯

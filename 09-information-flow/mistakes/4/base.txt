@@ -1,1 +1,1 @@
-steps/06-categories
+steps/26-categories

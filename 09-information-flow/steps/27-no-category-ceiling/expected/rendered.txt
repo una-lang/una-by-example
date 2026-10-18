@@ -1,0 +1,13 @@
+[U4003] Error: `@courier.book` accepts `secret` data, and this argument is `secret[PII]`
+    ╭─[ src/courier.una:20:38 ]
+    │
+ 20 │     @courier.book(stop.order, phone: stop.phone)
+    │                                      ─────┬────
+    │                                           ╰────── `@courier.book` accepts `secret` data, and this argument is `secret[PII]`
+    │
+    │ Help 1: repair 1: send `@courier.book` only data labeled `secret` or lower, or send this value to an operation that accepts `secret[PII]`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯

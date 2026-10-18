@@ -1,0 +1,25 @@
+$ una report .
+package reorder 0.1.0
+lock: z3 5.1.0, sha256 3ae01f54b3b40760c00b7537ac3ba510a2288a5a4dd42a583dab76ea66719c3c
+proven: 1 semantic obligations; security and authority by typing
+obligations: 1 proven, 0 refuted, 0 unknown; 0 cached
+authority:
+  reorder.main (pub): @console: Console[print], @files: Files[read, write]
+handler authority:
+information:
+  release.line_count at src/release.una:14:6, purpose "report the size of the reorder list", owner purchasing
+  release.line_count at src/release.una:18:6, purpose "report the size of the reorder list", owner purchasing
+  release.line_count at src/reorder.una:13:20, purpose "report the size of the reorder list", owner purchasing
+escapes:
+assumptions:
+tcb:
+  trusted modules: release (19 lines)
+  host capabilities: Console, Files
+  solver: z3 5.1.0
+  proof cache: .una/cache/
+  proof cache key: ~/.una/proof-cache.key
+requirements:
+coverage: 1 pub functions, 0 with ensures, 0 with derived from, 0 trivial ensures
+native: aarch64-apple-darwin
+  arbitrary precision: release.count_lines.result
+out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks

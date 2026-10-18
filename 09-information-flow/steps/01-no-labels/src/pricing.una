@@ -1,0 +1,17 @@
+module pricing
+
+--- A product of the catalog: its SKU, the price customers pay, and what the store pays its supplier.
+kind Product
+  sku: Text
+  price: Int
+  cost: Int
+
+--- The margin of a product, in cents.
+margin(product: Product) -> Int = product.price - product.cost
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let catalog = [Product(sku: "LAMP-01", price: 4990, cost: 2100), Product(sku: "DESK-02", price: 18900, cost: 12600)]
+  let margins = catalog.map(each: margin)
+  @console.print("margins: {margins}")

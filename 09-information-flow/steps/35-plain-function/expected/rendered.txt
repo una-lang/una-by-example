@@ -1,0 +1,9 @@
+[U4001] Error: the result of `count_lines` is `Int`, and this value is `internal Int`: a flow from `internal` to `public`
+   ╭─[ src/reorder.una:4:43 ]
+   │
+ 4 │ count_lines(list: internal Text) -> Int = list.split(on: "\n").filter(keep: fn(line) -> line.len > 0).len
+   │                                           ───────────────────────────────┬───────────────────────────────
+   │                                                                          ╰───────────────────────────────── the result of `count_lines` is `Int`, and this value is `internal Int`: a flow from `internal` to `public`
+   │
+   │ Note: run `una explain U4001` for an explanation
+───╯

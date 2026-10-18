@@ -1,0 +1,9 @@
+[U2001] Error: interpolation writes values that hold no function and no `Hashed`, and this value is a `Hashed`
+    ╭─[ src/optout.una:13:35 ]
+    │
+ 13 │   let shown: secret Text = "hash {hashed}"
+    │                                   ───┬──
+    │                                      ╰──── interpolation writes values that hold no function and no `Hashed`, and this value is a `Hashed`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

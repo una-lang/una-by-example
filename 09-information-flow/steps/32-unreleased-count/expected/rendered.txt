@@ -1,0 +1,9 @@
+[U4001] Error: `count` is `Int`, and this value is `internal Int`: a flow from `internal` to `public`
+    ╭─[ src/reorder.una:11:20 ]
+    │
+ 11 │   let count: Int = list.split(on: "\n").filter(keep: fn(line) -> line.len > 0).len
+    │                    ───────────────────────────────┬───────────────────────────────
+    │                                                   ╰───────────────────────────────── `count` is `Int`, and this value is `internal Int`: a flow from `internal` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯

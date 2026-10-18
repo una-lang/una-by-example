@@ -1,0 +1,9 @@
+[U4001] Error: the result of `bulky_fee` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`
+    ╭─[ src/shipping.una:13:48 ]
+    │
+ 13 │ bulky_fee(spent: confidential Int) -> Int = if spent >= 50000 then 1500 else 1500
+    │                                                ───────┬──────
+    │                                                       ╰──────── the result of `bulky_fee` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯

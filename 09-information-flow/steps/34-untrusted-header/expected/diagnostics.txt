@@ -1,0 +1,2 @@
+error U4004 at src/release.una:4:12: policy `line_count` is declared in module `release`, which is not trusted
+error U7005 at una.toml:7:12: [trusted] modules lists `release`, whose header does not say `trusted module`

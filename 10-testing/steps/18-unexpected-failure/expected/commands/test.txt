@@ -1,0 +1,10 @@
+$ una test .
+example quotes "two lamps at a flat price" ... ok
+example quotes "a SKU the list does not hold has no price" ... ok
+example quotes "a catalog that does not answer" ... ok
+example quotes "three mugs from a catalog that knows only mugs" ... ok
+example quotes "main prints, and nothing reaches the terminal" ... ok
+example quotes "a catalog that does not answer was asked" ... FAILED
+  the `do` line failed with `Unavailable`, and no `expect fails` line expects a failure
+
+6 examples: 5 passed, 1 failed

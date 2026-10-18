@@ -1,0 +1,9 @@
+[U4001] Error: the result of `badge` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`
+   ╭─[ src/loyalty.una:7:45 ]
+   │
+ 7 │ badge(spent: confidential Int) -> Text = if spent >= 50000 then "gold" else "standard"
+   │                                             ───────┬──────
+   │                                                    ╰──────── the result of `badge` is `public`, and which value it returns depends on this `confidential` condition: a flow from `confidential` to `public`
+   │
+   │ Note: run `una explain U4001` for an explanation
+───╯

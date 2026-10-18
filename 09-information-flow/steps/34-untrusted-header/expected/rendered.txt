@@ -1,0 +1,24 @@
+[U4004] Error: policy `line_count` is declared in module `release`, which is not trusted
+   ╭─[ src/release.una:4:12 ]
+   │
+ 4 │ pub policy line_count
+   │            ─────┬────
+   │                 ╰────── policy `line_count` is declared in module `release`, which is not trusted
+   │
+   │ Help: repair 1 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declare `trusted module release` in its header and list `release` under `[trusted] modules` in `una.toml`
+   │
+   │ Note: run `una explain U4004` for an explanation
+───╯
+[U7005] Error: [trusted] modules lists `release`, whose header does not say `trusted module`
+   ╭─[ una.toml:7:12 ]
+   │
+ 7 │ modules = ["release"]
+   │            ────┬────
+   │                ╰────── [trusted] modules lists `release`, whose header does not say `trusted module`
+   │
+   │ Help 1: repair 1: remove `release` from `[trusted] modules`; its policies are then U4004: move them into a trusted module
+   │
+   │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): write `trusted module release` in the header of `release`
+   │
+   │ Note: run `una explain U7005` for an explanation
+───╯

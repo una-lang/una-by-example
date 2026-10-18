@@ -1,0 +1,18 @@
+module coupons
+
+--- The percent that a coupon code takes off. An unknown code takes nothing off.
+pub percent_off(code: Text) -> Int = if code == "SPRING10" then 10 else if code == "VIP25" then 25 else 0
+
+--- The price of a cart after a coupon, in cents.
+pub apply_coupon(code: Text, cents: Int) -> Int = cents - cents * percent_off(code) / 100
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let spring = apply_coupon("SPRING10", cents: 5000)
+  let winter = apply_coupon("WINTER5", cents: 5000)
+  @console.print("SPRING10: {spring}, WINTER5: {winter}")
+
+example "SPRING10 takes 10 percent off"
+  do apply_coupon("SPRING10", cents: 5000)
+  expect result == 4500

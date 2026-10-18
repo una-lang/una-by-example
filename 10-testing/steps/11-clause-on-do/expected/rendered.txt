@@ -1,0 +1,9 @@
+[U0101] Error: unexpected indentation, expected `expect`
+    ╭─[ src/coupons.una:48:1 ]
+    │
+ 48 │     if error use 0
+    │ ──┬─
+    │   ╰─── unexpected indentation, expected `expect`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

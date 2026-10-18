@@ -1,0 +1,13 @@
+[U3015] Error: this `with` binding installs a handler that uses `std.testing`, which only `given` lines of examples may install
+    ╭─[ src/optout.una:33:64 ]
+    │
+ 18 │   op hmac(key_name, data) = if data == "rita@example.invalid" then fake_hash(1) else fake_hash(2)
+    │                                                                    ──────┬─────
+    │                                                                          ╰─────── the use of `std.testing`
+    │
+ 33 │   let found = opted_out("rita@example.invalid", list: []) with @keys = fake_keys()
+    │                                                                ─────────┬─────────
+    │                                                                         ╰─────────── this `with` binding installs a handler that uses `std.testing`, which only `given` lines of examples may install
+    │
+    │ Note: run `una explain U3015` for an explanation
+────╯

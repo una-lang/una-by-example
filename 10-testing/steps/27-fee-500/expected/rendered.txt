@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `shipping_fee` is refuted
+    ╭─[ src/shipping.una:15:35 ]
+    │
+ 11 │   ensures result >= 0 and result <= 490
+    │           ──────────────┬──────────────
+    │                         ╰──────────────── ensures clause
+    │
+ 15 │   if subtotal >= 5000 then 0 else 500
+    │                                   ─┬─
+    │                                    ╰─── postcondition of `shipping_fee` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 0 and result <= 490` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-0e65adfc62af (postcondition) is refuted: result >= 0 and result <= 490
+    │
+    │ Note 2: counterexample: result = 500, subtotal = 4999
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯
