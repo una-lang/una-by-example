@@ -1,0 +1,32 @@
+module choices
+
+--- Whether a parcel counts as heavy: an `if` as a function's whole body.
+weight_class(grams: Int) -> Text = if grams > 2_000 then "heavy" else "light"
+
+--- The name of a shipping zone: an `else if` chain.
+zone_name(zone: Int) -> Text = if zone == 1 then "home" else if zone == 2 then "neighbors" else "world"
+
+--- The handling fee of an order: an `if` in parentheses, as one part of a sum.
+handling(goods: Int) -> Int = 190 + (if goods >= 10_000 then 0 else 300)
+
+--- The box a parcel needs: an `if` over several lines, with a block in each branch.
+box_for(grams: Int) -> Text
+=
+  if grams <= 1_000
+    "small box"
+  else if grams <= 5_000
+    let kilos = (grams + 999) / 1_000
+    "medium box for {kilos} kg"
+
+--- Prints one line for each place an `if` can stand.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{weight_class(2_300)}, {weight_class(800)}")
+  @console.print("{zone_name(1)}, {zone_name(2)}, {zone_name(7)}")
+  @console.print("{handling(4_500)}, {handling(12_000)}")
+  @console.print("{box_for(800)}; {box_for(3_200)}; {box_for(9_000)}")
+  let units = 1
+  let word = if units == 1 then "unit" else "units"
+  @console.print("{units} {word}")
+  @console.print(if units > 10 then "a bulk order" else "a regular order")

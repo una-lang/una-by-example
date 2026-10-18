@@ -57,33 +57,13 @@ A text can hold the characters of any language, `é`, `ü` and `×` included, si
 
 ### Why a text is not a number
 
-Some values look like numbers but are not amounts: a postal code, a phone number, a SKU's digits. You never add them or multiply them, and their exact characters matter, a leading zero included. Here is a program that keeps a postal code as an `Int`:
+Some values are written in digits but are not amounts: a postal code, a phone number, the digits of a SKU. You never add them, and every character counts, a leading zero included. Keep a postal code as an `Int`, with `let postal_code = 02134`, and `una check .` refuses it:
 
-```una include="steps/01-postal-number/src/delivery.una" title="src/delivery.una"
-module delivery
-
---- Prints where a parcel goes, with the postal code as a number.
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  let postal_code = 02134
-  @console.print("Deliver to {postal_code}")
-```
-
-`una check .` refuses it:
-
-```text include="steps/01-postal-number/expected/rendered.txt#L1-L8"
+```text include="steps/01-postal-number/expected/rendered.txt#L1"
 [U0007] Error: malformed integer literal `02134`
-   ╭─[ src/delivery.una:7:21 ]
-   │
- 7 │   let postal_code = 02134
-   │                     ──┬──
-   │                       ╰──── malformed integer literal `02134`
-   │
-   │ Help: repair 1: write `2134`; edit src/delivery.una:7:21..7:26 to "2134"
 ```
 
-An `Int` literal never starts with a zero ([section 2.2](/learn/numbers/#s2-2)), so `02134` is not a number Una can write, and the `Help` line offers `2134`, which is a different postal code. The value is a text, and as a text it keeps every character:
+This is the error of [A number with a leading zero](/learn/numbers/#a-number-with-a-leading-zero-u0007) in chapter 2: an `Int` literal never starts with a zero. What this section adds is the way out. A code whose zeros matter is a `Text`, and a text keeps every character:
 
 ```una include="steps/02-postal-text/src/delivery.una#main" title="src/delivery.una" verified="check, run"
 --- Prints where a parcel goes, with the postal code as a text.
@@ -158,7 +138,7 @@ Each `print` gives one line of output, except the seventh: `"Aisle 4\nAisle 5"` 
 
 #### Putting values into a text: interpolation
 
-A name or a computation between braces, inside a text literal, puts its value into the text. This is **interpolation**: `"{units} x {sku}"` is the value of `units`, the characters ` x `, and the value of `sku`. It is also how a program prints a number: `print` takes a text, and `"{units}"` is the text of the number.
+You met interpolation in [section 2.1](/learn/numbers/#s2-1): a name or a computation in braces, inside a text, puts its value into the text, as in `"{units} x {sku}"`. Here is the rest of what the braces can hold:
 
 ```una include="steps/04-interpolation/src/receipt.una" title="src/receipt.una" verified="check, run"
 module receipt
@@ -192,14 +172,12 @@ Receipts to print: 2
 LAMP-01LAMP-01
 ```
 
-Between the braces you can write:
+Besides a name and a computation, such as `{units * unit_cents}`, the braces can hold:
 
-- a name, such as `{units}` or `{sku}`;
-- a computation, such as `{units * unit_cents}`, which is worked out first;
-- a call, such as `{lamp_sku()}`;
-- a value of type `Int`, of a fixed-width type such as `U8` ([section 2.3](/learn/numbers/#s2-3)), `Bool` or `Text`. An `Int` goes in as its decimal digits, with no `_`; a `Bool` as `true` or `false`; a text as its characters.
+- a call, such as `{lamp_sku()}`, whose result goes into the text;
+- a value of other types than `Int`: a fixed-width type such as `U8` ([section 2.3](/learn/numbers/#s2-3)), which goes in as its decimal digits, as an `Int` does; a `Bool`, as `true` or `false`; and a `Text`, as its characters.
 
-The braces add nothing of their own: `"{sku}{sku}"` is the two texts side by side, with no space between them.
+The braces add nothing of their own: `"{sku}{sku}"` is the two texts side by side, with no space between them. A brace you want printed is escaped, `\{` and `\}`, and a text literal cannot stand between the braces, as [How text behaves](#how-text-behaves) says.
 
 #### Joining texts
 
@@ -207,7 +185,7 @@ Interpolation is also how you join texts. To put a SKU, a bar and a name in one 
 
 ### The length of a text, and comparing texts
 
-`.len`, written right after a text or a name that holds one, gives the text's **length**: how many characters it has. It is built into the language, and written without parentheses. `==` asks whether two values are equal, and gives `true` or `false`, which [section 3.3](#s3-3) covers.
+`.len`, written right after a text or a name that holds one, gives the text's **length**: how many characters it has. It is built into the language, and written without parentheses. It has no other form: `sku.len()` and `len(sku)` are both U1001, since neither names a function. `==` asks whether two values are equal, and gives `true` or `false`, which [section 3.3](#s3-3) covers.
 
 ```una include="steps/05-lengths/src/lengths.una#main" title="src/lengths.una" verified="check, run"
 --- Prints the length of four texts, and compares texts.
@@ -360,7 +338,7 @@ The first argument goes in front, followed by a dot and the function's name; the
 
 #### Without parentheses: `typed.trim`
 
-When the value before the dot is the only argument, you may leave out the empty parentheses. `typed.trim` is the same call again, and this is how the book writes such calls. The methods of the fixed-width integers keep their parentheses, as `to_int()` does in [section 2.3](/learn/numbers/#s2-3).
+When the value before the dot is the only argument, you may leave out the empty parentheses. `typed.trim` is the same call again, and this is how the book writes such calls. The methods of the fixed-width integers must keep their parentheses, as `to_int()` does in [section 2.3](/learn/numbers/#s2-3). Without them, `copies.to_int` names the prelude's `to_int` for texts, and the check refuses it.
 
 #### A chain: `typed.trim.to_upper`
 
@@ -567,7 +545,7 @@ The message writes out what `slice` needs, with the call's own values in place o
 
 | Function | Gives | What it needs |
 | --- | --- | --- |
-| `t.len` | `Int`, the number of characters | nothing |
+| `t.len`, built in, with no parentheses | `Int`, the number of characters | nothing |
 | `t.trim`, `t.trim_start`, `t.trim_end` | `Text` without the white space at both ends, the start or the end | nothing |
 | `t.to_upper`, `t.to_lower` | `Text` with the letters `a` to `z` changed | nothing |
 | `t.starts_with(prefix: p)`, `t.ends_with(suffix: s)`, `t.contains_text(part: p)` | `Bool` | nothing |
@@ -963,13 +941,12 @@ true
 
 `if` chooses between two values by a condition. Think of a sign at the till: "orders of 100.00 or more ship free; otherwise shipping is 4.90". The clerk checks one fact, and the answer is one of two prices. `if` writes that rule: `if goods >= 10_000 then 0 else 490`.
 
-Three words name its parts:
+Two words name its parts:
 
 - the **condition**, after `if`: a `Bool`;
-- the **branches**: the value after `then`, which is the answer when the condition is `true`, and the value after `else`, which is the answer when it is `false`;
-- only the branch the condition picks is worked out. The other is skipped.
+- the **branches**: the value after `then`, which is the answer when the condition is `true`, and the value after `else`, which is the answer when it is `false`.
 
-An `if` is an **expression**: a piece of code that gives a value, as `2 + 3` or a call does. So an `if` can stand wherever a value goes: as the body of a function, after `let`, as an argument, or as part of a larger expression.
+Only the branch the condition picks is worked out. The other is skipped. An `if` is an **expression**: a piece of code that gives a value, as `2 + 3` or a call does. So an `if` can stand wherever a value goes: as the body of a function, after `let`, as an argument, or as part of a larger expression.
 
 ### Why a program chooses
 
@@ -1090,13 +1067,25 @@ The form has four rules:
 3. **A branch may hold several lines, a block.** Its lines run in order, from the top, and its value is its last line: the lines before it are steps, such as a `let`. The middle branch names `kilos` with `let`, then gives the text. A function's body of several lines works the same way, as [section 6.2](/learn/functions/#s6-2) shows in full.
 4. **The whole `if` still gives one value**, so it still has its `else`, and every branch gives the same type.
 
+A `then` at the end of the `if` line, against rule 1, is U0101, with a repair that `una fix .` applies:
+
+```text include="steps/35-then-at-line-end/expected/rendered.txt#L1"
+[U0101] Error: unexpected end of line, expected an expression
+```
+
+Leave out the last `else`, against rule 4, and the check reports U0101 where the `if` ends, at the next declaration:
+
+```text include="steps/36-block-without-else/expected/rendered.txt#L1"
+[U0101] Error: unexpected end of block, expected `else`
+```
+
 `main` prints the box for 800, 3200 and 9000 grams:
 
 ```text include="steps/27-if-forms/expected/output.txt#L4"
 small box; medium box for 4 kg; large box
 ```
 
-3200 grams is above 1000 and not above 5000, so the middle branch runs: it rounds the weight up to 4 started kilograms. Use this form when a branch needs a `let` or would make one line hard to read. Both forms are canonical: `una fmt .` keeps whichever one you wrote.
+3200 grams is above 1000 and not above 5000, so the middle branch runs: it rounds the weight up to 4 started kilograms. `/` drops the fraction ([section 2.2](/learn/numbers/#s2-2)), so adding 999 grams before dividing counts every started kilogram: 3200 plus 999 is 4199, and 4199 / 1000 is 4. Use this form when a branch needs a `let` or would make one line hard to read. Both forms are canonical: `una fmt .` keeps whichever one you wrote.
 
 Una has one more form of `if`, over several lines and with no `else`, which runs its lines only when the condition holds, and `when`, which chooses by the shape of a value. [Chapter 8](/learn/choices/#s8-1) covers every form of `if`, and [section 4.3](/learn/kinds/#s4-3) introduces `when`.
 
@@ -1316,7 +1305,7 @@ pub on_sale(percent: Int) -> Bool = percent >= 1 and percent <= 90
 pub sale_cents(cents: Int, percent: Int) -> Int = cents * (100 - percent) / 100
 ```
 
-`fit_name` is the guarded cut of [section 3.4](#s3-4). `money` writes cents with two decimals, using `/` and `mod` from [section 2.2](/learn/numbers/#s2-2): 1205 cents is 12, a point, then the two digits 0 and 5, so `12.05` and never `12.5`. Its doc comment says it is for amounts that are not negative. `on_sale` is the store's rule for a discount, and `sale_cents` takes the discount off, multiplying before it divides, so that 15 percent off 1999 cents gives 1699, rounded down.
+`fit_name` is the guarded cut of [section 3.4](#s3-4). `money` is the `amount` of [chapter 2's exercise 3](/learn/numbers/#exercise-3-amounts-with-two-decimals). It writes cents with two decimals, using `/` and `mod` from [section 2.2](/learn/numbers/#s2-2): 1205 cents is 12, a point, then the two digits 0 and 5, so `12.05` and never `12.5`. Its doc comment says it is for amounts that are not negative, and a label shows only prices, which are never below zero, so `money` needs no `if` for a refund. `on_sale` is the store's rule for a discount, and `sale_cents` takes the discount off, multiplying before it divides, so that 15 percent off 1999 cents gives 1699, rounded down.
 
 ### The price part of the label
 
@@ -1708,13 +1697,14 @@ Cut every name to 24 characters, without the `if`:
  
 ```
 
-```text include="mistakes/5/expected/rendered.txt#L1-L6,L16"
+```text include="mistakes/5/expected/rendered.txt#L1-L6,L10,L16"
 [U5001] Error: precondition `0 <= 0 and 0 <= 24 and 24 <= name.len` of this call is refuted
     ╭─[ src/labels.una:17:36 ]
     │
  17 │ pub fit_name(name: Text) -> Text = name.slice(start: 0, end: 24)
     │                                    ──────────────┬──────────────
     │                                                  ╰──────────────── precondition `0 <= 0 and 0 <= 24 and 24 <= name.len` of this call is refuted
+    │ Help 2: repair 2: add a guard (`if` or a `when` arm) that handles the values where `0 <= 0 and 0 <= 24 and 24 <= name.len` does not hold
     │ Note 2: counterexample: name = Text#0, name.len = 0
 ```
 
@@ -1908,7 +1898,7 @@ The first 21 characters of the rug's name end with a space, `Wool rug, 120 by 18
 - A text is written between double quotes on one line; `\"`, `\\`, `\{`, `\}`, `\n`, `\t` and `\u{…}` are its escapes.
 - Build a text from values with interpolation, `"{units} x {sku}"`; there is no `+` for texts, and no text literal inside the braces.
 - `.len` counts characters, and `==` compares texts exactly, case and spaces included.
-- `t.f(args)` is the call `f(t, args)`; chain such calls to clean a text: `typed.trim.to_upper`.
+- For a prelude function `f`, or your own, `t.f(args)` is the call `f(t, args)`; chain such calls: `typed.trim.to_upper`.
 - `slice` needs positions inside the text, and `replace` a pattern that is not empty: the checker proves both at every call.
 - A condition is a `Bool`: compare, then join with `and`, `or` and `not`; the right side of `and` runs, and is proved, only when the left side holds.
 - `if c then a else b` chooses a value: both branches have one type, `else` is required, and the `then` branch knows that `c` holds.
