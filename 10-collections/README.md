@@ -380,7 +380,7 @@ Positions count from 0, so the last element of a list of length n is at position
 #### Adding at the end without copying
 
 > [!NOTE]
-> A list is a value, but `append` does not copy the whole list each time. When nothing else holds the list, it is updated in place, so a loop that appends one element at a time takes time in proportion to the number of elements.
+> A list is a value: `append` gives back a new list, and the old one is unchanged for anyone who still holds it. When nothing else holds the list, una may reuse it and update it in place instead of copying it; whether it does is not something a program can observe, and the language does not promise it.
 
 ### A list, a loop or a function of the prelude
 
