@@ -1,1 +1,1 @@
-error U0103 at src/shelf.una:14:7: `edit` is reserved for v0.2 (memory model)
+error U0103 at src/shelf.una:17:7: `edit` is reserved for v0.2 (memory model)
