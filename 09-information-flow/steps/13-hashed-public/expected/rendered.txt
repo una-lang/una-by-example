@@ -1,0 +1,9 @@
+[U4001] Error: the result of `opted_out` is `Bool`, and this value is `secret Bool`: a flow from `secret` to `public`
+    ╭─[ src/optout.una:13:3 ]
+    │
+ 13 │   list.filter(keep: fn(entry) -> entry == hashed).len > 0
+    │   ───────────────────────────┬───────────────────────────
+    │                              ╰───────────────────────────── the result of `opted_out` is `Bool`, and this value is `secret Bool`: a flow from `secret` to `public`
+    │
+    │ Note: run `una explain U4001` for an explanation
+────╯

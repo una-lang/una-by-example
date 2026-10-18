@@ -1,0 +1,1 @@
+the do-not-mail list keeps hashes, not addresses

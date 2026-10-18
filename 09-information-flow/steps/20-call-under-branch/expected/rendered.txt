@@ -1,0 +1,12 @@
+[U4002] Error: `thank` has effects that accept at most `public` data, and it is called under a `confidential` condition, which would be revealed
+    ╭─[ src/shipping.una:33:5 ]
+    │
+ 32 │   if spent >= 50000
+    │      ───────┬──────
+    │             ╰──────── the labeled condition
+ 33 │     thank()
+    │     ───┬───
+    │        ╰───── `thank` has effects that accept at most `public` data, and it is called under a `confidential` condition, which would be revealed
+    │
+    │ Note: run `una explain U4002` for an explanation
+────╯
