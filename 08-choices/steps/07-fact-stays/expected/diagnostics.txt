@@ -1,0 +1,2 @@
+error U5001 at src/guards.una:23:3: division obligation `units != 0` is refuted
+  counterexample: count = 1, units = 0

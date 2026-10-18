@@ -1,9 +1,12 @@
-[U2001] Error: field `zone` of `Parcel` must be `Zone`, found `Text`
-     ╭─[ src/tracking.una:105:56 ]
+[U2008] Error: this arm follows the `else` arm, so no value reaches it; `else` must be the last arm
+     ╭─[ src/tracking.una:109:5 ]
      │
- 105 │   let vase = Parcel(order: "A-1002", grams: 300, zone: "Abroad")
-     │                                                        ────┬───
-     │                                                            ╰───── field `zone` of `Parcel` must be `Zone`, found `Text`
+ 108 │     else -> 0
+     │     ──┬─
+     │       ╰─── the `else` arm
+ 109 │     is Returned(reason) ->
+     │     ─────────┬─────────
+     │              ╰─────────── this arm follows the `else` arm, so no value reaches it; `else` must be the last arm
      │
-     │ Note: run `una explain U2001` for an explanation
+     │ Note: run `una explain U2008` for an explanation
 ─────╯

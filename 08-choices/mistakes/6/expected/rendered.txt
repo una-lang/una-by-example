@@ -1,12 +1,12 @@
-[U2026] Error: equality on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
-    ╭─[ src/tracking.una:59:45 ]
+[U2009] Error: variant `InTransit` needs its fields: `carrier`, `tracking`
+    ╭─[ src/tracking.una:58:41 ]
     │
- 59 │ pub changed[T](change: Change[T]) -> Bool = change.before != change.after
-    │                                             ──────────────┬──────────────
-    │                                                           ╰──────────────── equality on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
+ 58 │     is DeliveredOn(day) -> if status == InTransit then Delivered(day) else status
+    │                                         ────┬────
+    │                                             ╰────── variant `InTransit` needs its fields: `carrier`, `tracking`
     │
-    │ Help: repair 1: constrain `T` by `Eq`; edit src/tracking.una:59:13..59:14 to "T: Eq"
+    │ Help: repair 1: write `status is InTransit`; edit src/tracking.una:58:31..58:50 to "status is InTransit"
     │
-    │ Note: run `una explain U2026` for an explanation
+    │ Note: run `una explain U2009` for an explanation
 ────╯
 1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

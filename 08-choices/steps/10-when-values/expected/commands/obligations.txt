@@ -1,0 +1,6 @@
+$ una obligations .
+proven   ob-31a6bafaaaa6 exhaustive    src/aisles.una:28:3 gift == true or gift == false
+proven   ob-79340fc876dd exhaustive    src/aisles.una:44:3 units == 0 or units in 1..9 or units in 10..999
+proven   ob-f2cd28675020 refinement    src/aisles.una:94:25 0 in 0..999
+proven   ob-51c1ed0e579b refinement    src/aisles.una:94:36 7 in 0..999
+proven   ob-724f277ef187 refinement    src/aisles.una:94:47 450 in 0..999

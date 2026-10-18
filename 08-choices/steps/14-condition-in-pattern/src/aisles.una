@@ -1,0 +1,102 @@
+module aisles
+
+--- How far a parcel travels.
+kind Zone = Local | National | Abroad
+
+--- Where a customer collects a parcel.
+kind Delivery = AtDoor | AtStore(store: Text)
+
+--- Literal arms: whole numbers, then `else` for every other value.
+aisle_name(aisle: Int) -> Text
+=
+  when aisle
+    is 1 -> "lighting"
+    is 2 -> "rugs"
+    else -> "aisle {aisle}"
+
+--- Literal arms over a text.
+family(sku: Text) -> Text
+=
+  when sku
+    is "LAMP-01" -> "lamps"
+    is "RUG-07" -> "rugs"
+    else -> "other"
+
+--- Literal arms over a `Bool`: `true` and `false` are all its values, so no `else` is needed.
+gift_note(gift: Bool) -> Text
+=
+  when gift
+    is true -> "wrap it"
+    is false -> "no wrapping"
+
+--- Range arms: `..` includes its end, `..<` leaves it out.
+box_size(units: Int) -> Text
+=
+  when units
+    in 1..<10 -> "small box"
+    in 10..49 -> "large box"
+    else -> "pallet"
+
+--- How full a shelf of up to 999 units is. A literal arm and two range arms cover every value
+--- of the parameter's range, with no `else`.
+fill(units: Int in 0..999) -> Text
+=
+  when units
+    is 0 -> "empty"
+    in 1..9 -> "almost empty"
+    in 10..999 -> "stocked"
+
+--- The arms are tried in order: 150 units are in both ranges, and the first arm wins.
+rate(units: Int) -> Text
+=
+  when units
+    in 100..999 -> "pallet rate"
+    in 10..999 -> "case rate"
+    else -> "unit rate"
+
+--- A `when` inside an arm, and an `if` inside another.
+postage(zone: Zone, grams: Int) -> Int
+=
+  when zone
+    is Local if grams > 1_000 -> 400
+    is Local -> 300
+    is National ->
+      when grams
+        in 0..500 -> 450
+        else -> 600
+    is Abroad -> 1200
+
+--- Where to collect a parcel, seen from the store `store`. The arm binds the field `store`
+--- under another name, `other`, since `store` is already the parameter's name.
+pickup(delivery: Delivery, store: Text) -> Text
+=
+  when delivery
+    is AtDoor -> "at the door"
+    is AtStore(store: other) -> if other == store then "here" else "at {other}"
+
+--- The shelf for a number of units. Check yourself: what does `main` print for 0, 5 and 12?
+shelf(units: Int) -> Text
+=
+  when units
+    in 1..4 -> "low shelf"
+    in 5..10 -> "middle shelf"
+    else -> "floor"
+
+--- Prints one line for each function.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{aisle_name(2)}; {aisle_name(7)}")
+  let rug = family("RUG-07")
+  let mug = family("MUG-03")
+  @console.print("{rug}; {mug}")
+  @console.print("{gift_note(true)}; {gift_note(false)}")
+  @console.print("{box_size(9)}; {box_size(10)}; {box_size(50)}")
+  @console.print("{fill(0)}; {fill(7)}; {fill(450)}")
+  @console.print("{rate(150)}; {rate(50)}; {rate(5)}")
+  @console.print("{postage(Local, grams: 1_200)}; {postage(National, grams: 700)}")
+  let home = "Harbour Road"
+  let here = pickup(AtStore(store: home), store: home)
+  let there = pickup(AtStore(store: "Mill Lane"), store: home)
+  @console.print("{here}; {there}")
+  @console.print("{shelf(0)}; {shelf(5)}; {shelf(12)}")

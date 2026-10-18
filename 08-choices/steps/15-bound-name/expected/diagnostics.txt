@@ -1,0 +1,1 @@
+error U1002 at src/aisles.una:74:16: `store` is already bound in this scope; a local cannot rebind another

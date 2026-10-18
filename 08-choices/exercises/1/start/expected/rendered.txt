@@ -1,7 +1,7 @@
 [U1001] Error: cannot find name `Lost` in this module, its imports or the prelude
-     ╭─[ src/tracking.una:131:15 ]
+     ╭─[ src/tracking.una:170:15 ]
      │
- 131 │   do describe(Lost(day: 20))
+ 170 │   do describe(Lost(day: 20))
      │               ──┬─
      │                 ╰─── cannot find name `Lost` in this module, its imports or the prelude
      │
@@ -10,11 +10,11 @@
      │ Note: run `una explain U1001` for an explanation
 ─────╯
 [U1001] Error: cannot find name `Lost` in this module, its imports or the prelude
-     ╭─[ src/tracking.una:135:17 ]
+     ╭─[ src/tracking.una:174:13 ]
      │
- 135 │   do refund_due(Lost(day: 20))
-     │                 ──┬─
-     │                   ╰─── cannot find name `Lost` in this module, its imports or the prelude
+ 174 │   do refund(Lost(day: 20), paid: 4500)
+     │             ──┬─
+     │               ╰─── cannot find name `Lost` in this module, its imports or the prelude
      │
      │ Help: repair 1: names in scope close to `Lost`: `List`, `Post`
      │

@@ -1,0 +1,3 @@
+error U2008 at src/aisles.una:23:5: this literal is already matched by an earlier arm
+error U2008 at src/aisles.una:68:5: variant `Local` is already matched by an earlier arm
+error U2008 at src/aisles.una:69:5: no value reaches this `else`: the arms above match every variant of `Zone`

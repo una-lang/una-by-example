@@ -1,2 +1,0 @@
-LAMP-01 holds 2 parts
-Category(name: "Lamps", parent: Some(Category(name: "Lighting", parent: None)))

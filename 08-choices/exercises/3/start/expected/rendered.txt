@@ -1,16 +1,16 @@
 [U1001] Error: cannot find name `SendTracking` in this module, its imports or the prelude
-     ╭─[ src/tracking.una:138:20 ]
+     ╭─[ src/tracking.una:177:20 ]
      │
- 138 │   expect result == SendTracking(tracking: "PO-7")
+ 177 │   expect result == SendTracking(tracking: "PO-7")
      │                    ──────┬─────
      │                          ╰─────── cannot find name `SendTracking` in this module, its imports or the prelude
      │
      │ Note: run `una explain U1001` for an explanation
 ─────╯
 [U1001] Error: cannot find name `Refund` in this module, its imports or the prelude
-     ╭─[ src/tracking.una:142:20 ]
+     ╭─[ src/tracking.una:181:20 ]
      │
- 142 │   expect result == Refund
+ 181 │   expect result == Refund
      │                    ───┬──
      │                       ╰──── cannot find name `Refund` in this module, its imports or the prelude
      │
@@ -19,18 +19,18 @@
      │ Note: run `una explain U1001` for an explanation
 ─────╯
 [U1001] Error: cannot find name `Restock` in this module, its imports or the prelude
-     ╭─[ src/tracking.una:146:20 ]
+     ╭─[ src/tracking.una:185:20 ]
      │
- 146 │   expect result == Restock
+ 185 │   expect result == Restock
      │                    ───┬───
      │                       ╰───── cannot find name `Restock` in this module, its imports or the prelude
      │
      │ Note: run `una explain U1001` for an explanation
 ─────╯
 [U1001] Error: cannot find name `AskForReview` in this module, its imports or the prelude
-     ╭─[ src/tracking.una:150:20 ]
+     ╭─[ src/tracking.una:189:20 ]
      │
- 150 │   expect result == AskForReview
+ 189 │   expect result == AskForReview
      │                    ──────┬─────
      │                          ╰─────── cannot find name `AskForReview` in this module, its imports or the prelude
      │

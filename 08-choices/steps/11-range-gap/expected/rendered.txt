@@ -1,0 +1,15 @@
+[U5001] Error: exhaustiveness of this `when`, `units in 1..<10 or units in 10..49 or units in 50..1000`, is refuted
+    ╭─[ src/aisles.una:35:3 ]
+    │
+ 35 │   when units
+    │   ──┬─
+    │     ╰─── exhaustiveness of this `when`, `units in 1..<10 or units in 10..49 or units in 50..1000`, is refuted
+    │
+    │ Help: repair 1: add an `else` arm, or arms for the values the others miss
+    │
+    │ Note 1: obligation ob-5dfde361636c (exhaustive) is refuted: units in 1..<10 or units in 10..49 or units in 50..1000
+    │
+    │ Note 2: counterexample: units = 1001
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

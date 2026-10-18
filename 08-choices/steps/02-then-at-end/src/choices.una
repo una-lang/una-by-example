@@ -1,0 +1,76 @@
+module choices
+
+--- Why a quantity typed on an order is refused.
+kind QuantityError = TooFew(units: Int) | TooMany(units: Int)
+
+--- Whether a parcel counts as heavy: an `if` on one line, as section 3.4 wrote it.
+weight_class(grams: Int) -> Text
+=
+  if grams > 2_000 then
+    "heavy"
+  else
+    "light"
+
+--- The packing notes for an order: each `if` without `else` prints its line only when its
+--- condition holds.
+packing_notes(units: Int, fragile: Bool) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{units} units")
+  if units > 10
+    @console.print("  bulk: use a pallet")
+  if fragile
+    @console.print("  fragile: wrap each unit")
+
+--- A stock note: a branch of several lines, with a name of its own and an `if` inside it.
+stock_note(sku: Text, on_hand: Int) -> Unit
+  uses @console: Console[print]
+=
+  if on_hand < 5
+    let missing = 5 - on_hand
+    @console.print("{sku}: order {missing} more")
+    if on_hand == 0
+      @console.print("{sku}: hide it from the shop")
+  @console.print("{sku}: counted")
+
+--- A quantity from 1 to 99. Each `if` without `else` fails when its condition holds, and the
+--- last line gives the value.
+quantity(units: Int) -> Int
+  fails QuantityError
+=
+  if units < 1
+    fail TooFew(units)
+  if units > 99
+    fail TooMany(units)
+  units
+
+--- The labels on a carton. Check yourself: what does `main` print for 3 units, and for 30?
+carton_labels(units: Int) -> Unit
+  uses @console: Console[print]
+=
+  if units > 20
+    @console.print("  heavy: lift with two people")
+  if units > 5
+    @console.print("  stack at most three high")
+  if units < 10
+    @console.print("  fits on a shelf")
+  @console.print("  this side up")
+
+--- Prints the notes, the stock notes, two quantities and the labels.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{weight_class(2_300)}, {weight_class(800)}")
+  packing_notes(4, fragile: false)
+  packing_notes(24, fragile: true)
+  stock_note("LAMP-01", on_hand: 12)
+  stock_note("RUG-07", on_hand: 0)
+  let typed = quantity(12)
+    if error use 0
+  let too_many = quantity(140)
+    if error use 0
+  @console.print("{typed}, {too_many}")
+  @console.print("carton of 3")
+  carton_labels(3)
+  @console.print("carton of 30")
+  carton_labels(30)

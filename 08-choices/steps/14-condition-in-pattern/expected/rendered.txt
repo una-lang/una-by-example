@@ -1,0 +1,9 @@
+[U0101] Error: unexpected keyword `if`, expected `->`
+    ╭─[ src/aisles.una:61:14 ]
+    │
+ 61 │     is Local if grams > 1_000 -> 400
+    │              ─┬
+    │               ╰── unexpected keyword `if`, expected `->`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯
