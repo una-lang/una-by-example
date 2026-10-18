@@ -1,9 +1,11 @@
-[U2009] Error: `Parcel` is missing field `zone`
-    ╭─[ src/tracking.una:97:14 ]
+[U2007] Error: `when` does not match variant `Returned` of `Status`
+    ╭─[ src/tracking.una:83:3 ]
     │
- 97 │   let lamp = Parcel(order: "A-1001", grams: 1200)
-    │              ───┬──
-    │                 ╰──── `Parcel` is missing field `zone`
+ 83 │   when status
+    │   ──┬─
+    │     ╰─── `when` does not match variant `Returned` of `Status`
     │
-    │ Note: run `una explain U2009` for an explanation
+    │ Help: repair 1: add an arm for each missing variant, such as `is Returned`, or an `else` arm
+    │
+    │ Note: run `una explain U2007` for an explanation
 ────╯

@@ -1,7 +1,7 @@
 [U2007] Error: `when` does not match variant `Lost` of `Status`
-    ╭─[ src/tracking.una:64:3 ]
+    ╭─[ src/tracking.una:83:3 ]
     │
- 64 │   when status
+ 83 │   when status
     │   ──┬─
     │     ╰─── `when` does not match variant `Lost` of `Status`
     │

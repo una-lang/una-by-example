@@ -1,1 +1,1 @@
-error U2026 at src/tracking.una:59:45: equality on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
+error U2009 at src/tracking.una:58:41: variant `InTransit` needs its fields: `carrier`, `tracking`

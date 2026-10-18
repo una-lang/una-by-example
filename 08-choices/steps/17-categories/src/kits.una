@@ -1,0 +1,30 @@
+module kits
+
+--- A product category, inside a larger one or at the top. The kind contains itself through
+--- an `Option`, and `None` is where the chain stops.
+kind Category
+  name: Text
+  parent: Option[Category]
+
+--- The full name of a category: its parents' names first, then its own.
+path(category: Category) -> Text
+=
+  when category.parent
+    is Some(parent) -> "{path(parent)} > {category.name}"
+    is None -> category.name
+
+--- How many levels a category sits below the top.
+depth(category: Category) -> Int
+=
+  when category.parent
+    is Some(parent) -> 1 + depth(parent)
+    is None -> 0
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lighting = Category(name: "Lighting", parent: None)
+  let lamps = Category(name: "Lamps", parent: Some(lighting))
+  let desk_lamps = Category(name: "Desk lamps", parent: Some(lamps))
+  @console.print("{lamps}")
+  @console.print("{path(desk_lamps)}, {depth(desk_lamps)} levels down")

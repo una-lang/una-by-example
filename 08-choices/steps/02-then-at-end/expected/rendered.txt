@@ -1,0 +1,12 @@
+[U0101] Error: unexpected end of line, expected an expression
+   ╭─[ src/choices.una:9:24 ]
+   │
+ 9 │   if grams > 2_000 then
+   │                        ┬
+   │                        ╰── unexpected end of line, expected an expression
+   │
+   │ Help: repair 1: write the `if` with blocks: `if` and its condition, the indented branch, `else`, then the indented branch; edit src/choices.una:9:1..13:1 to "  if grams > 2_000\n    \"heavy\"\n  else\n    \"light\"\n"
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

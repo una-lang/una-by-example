@@ -1,0 +1,43 @@
+module guards
+
+--- Why a pack has no price per unit.
+kind PackError = | NoUnits
+
+--- The price of one unit of a pack, or 0 for an empty pack. The division is in the branch
+--- where `units > 0` holds.
+per_unit(pack_cents: Int, units: Int) -> Int = pack_cents / units
+
+--- The same price, failing for an empty pack. The branch that fails never reaches the
+--- division, so after the `if`, `units == 0` is false.
+per_unit_or_fail(pack_cents: Int, units: Int) -> Int
+  fails PackError
+=
+  if units == 0
+    fail NoUnits
+  pack_cents / units
+
+--- The same price, dividing by a count that a guard keeps from being 0.
+per_unit_counted(pack_cents: Int, units: Int) -> Int
+=
+  let count = if units > 0 then units else 1
+  pack_cents / count
+
+--- The same price for a pack of 1 to 12 units. Inside the range arm, `units` is never 0.
+per_unit_boxed(pack_cents: Int, units: Int) -> Int
+=
+  when units
+    in 1..12 -> pack_cents / units
+    else -> 0
+
+--- Prints each guarded price for a pack of 4 units, then for an empty pack.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{per_unit(1_000, units: 4)}, {per_unit(1_000, units: 0)}")
+  let full = per_unit_or_fail(1_000, units: 4)
+    if error use -1
+  let empty = per_unit_or_fail(1_000, units: 0)
+    if error use -1
+  @console.print("{full}, {empty}")
+  @console.print("{per_unit_counted(1_000, units: 4)}, {per_unit_counted(1_000, units: 0)}")
+  @console.print("{per_unit_boxed(1_000, units: 4)}, {per_unit_boxed(1_000, units: 0)}")

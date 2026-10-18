@@ -1,12 +1,14 @@
 $ una test .
 example tracking "a heavy parcel abroad pays the zone and the weight" ... ok
-example tracking "a pickup moves a packed parcel into transit" ... ok
 example tracking "a second pickup scan changes nothing" ... ok
 example tracking "a parcel cannot come back before it was delivered" ... ok
-example tracking "a refused parcel is not refunded" ... ok
+example tracking "a damaged parcel is refunded in full" ... ok
+example tracking "a refused parcel is refunded less the return postage" ... ok
+example tracking "a refund never goes below 0" ... ok
+example tracking "a delivered parcel is not refunded" ... ok
 example tracking "a lost parcel says since when" ... ok
-example tracking "a lost parcel is refunded" ... FAILED
-  src/tracking.una:137: expect result == true
-  it is false, with `result` = `false`
+example tracking "a lost parcel is refunded in full" ... FAILED
+  src/tracking.una:176: expect result == 4500
+  it is false, with `result` = `0`
 
-7 examples: 6 passed, 1 failed
+9 examples: 8 passed, 1 failed

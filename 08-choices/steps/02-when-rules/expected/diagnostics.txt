@@ -1,2 +1,0 @@
-error U2008 at src/desk.una:33:5: this arm follows the `else` arm, so no value reaches it; `else` must be the last arm
-error U2008 at src/desk.una:34:5: this arm follows the `else` arm, so no value reaches it; `else` must be the last arm
