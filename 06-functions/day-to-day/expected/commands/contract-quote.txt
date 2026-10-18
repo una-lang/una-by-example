@@ -1,0 +1,5 @@
+$ una contract shipping.quote
+--- What shipping costs for an order, in cents.
+pub quote(order: Order) -> Int
+  requires order.parcel.grams > 0
+  ensures result >= 0

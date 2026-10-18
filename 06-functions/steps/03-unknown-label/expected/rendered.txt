@@ -1,0 +1,11 @@
+[U2005] Error: `reduced` has no parameter `discount`
+    ╭─[ src/lines.una:17:50 ]
+    │
+ 17 │   @console.print("two arguments: {reduced(1_990, discount: 200)}")
+    │                                                  ────┬───
+    │                                                      ╰───── `reduced` has no parameter `discount`
+    │
+    │ Help: repair 1: the parameters that no other argument gives are `off_cents`
+    │
+    │ Note: run `una explain U2005` for an explanation
+────╯

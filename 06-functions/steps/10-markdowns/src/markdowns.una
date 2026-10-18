@@ -1,0 +1,11 @@
+module markdowns
+
+--- The price after `weeks` weekly markdowns of 10 percent, each rounded down. The function
+--- calls itself, with one week fewer, until no week is left.
+pub marked_down(cents: Int, weeks: Int) -> Int = if weeks <= 0 then cents else marked_down(cents * 90 / 100, weeks: weeks - 1)
+
+--- Prints a price after three weeks of markdowns.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("after 3 weeks: {marked_down(10_000, weeks: 3)}")

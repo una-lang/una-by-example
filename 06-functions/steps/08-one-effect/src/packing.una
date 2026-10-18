@@ -1,0 +1,16 @@
+module packing
+
+--- Prints that a parcel is being packed, and gives back its SKU.
+pack(sku: Text) -> Text
+  uses @console: Console[print]
+=
+  @console.print("packing {sku}")
+  sku
+
+--- Packs two parcels, then says which went first.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let first = pack("LAMP-01")
+  let second = pack("RUG-07")
+  @console.print("{first}, then {second}")

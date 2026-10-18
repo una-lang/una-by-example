@@ -1,0 +1,22 @@
+module lines
+
+--- What `units` units cost at `unit_cents` cents each.
+pub line_total(unit_cents: Int, units: Int) -> Int = unit_cents * units
+
+--- A price with `off_cents` taken off.
+pub reduced(cents: Int, off_cents: Int) -> Int = cents - off_cents
+
+--- Half of an amount, rounded down.
+pub half(cents: Int) -> Int = cents / 2
+
+--- Prints one line for each form of a call.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("one argument: {half(1_990)} and {half(cents: 1_990)}")
+  @console.print("two arguments: {reduced(1_990, discount: 200)}")
+  @console.print("every argument labeled: {reduced(cents: 1_990, off_cents: 200)}")
+  @console.print("labels in any order: {reduced(off_cents: 200, cents: 1_990)}")
+  let units = 3
+  @console.print("punning: {line_total(4_500, units)}")
+  @console.print("a call inside a call: {half(line_total(1_990, units: 2))}")

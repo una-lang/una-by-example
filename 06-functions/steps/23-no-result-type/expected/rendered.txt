@@ -1,0 +1,9 @@
+[U0101] Error: unexpected `=`, expected `->` and the result type
+   ╭─[ src/restock.una:5:41 ]
+   │
+ 5 │ pub to_order(on_hand: Int, target: Int) = if on_hand >= target then 0 else target - on_hand
+   │                                         ┬
+   │                                         ╰── unexpected `=`, expected `->` and the result type
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯

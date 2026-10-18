@@ -1,0 +1,19 @@
+module rates
+
+--- The rate of a parcel of `grams` grams, in cents: 790 up to 2 kg, and 1290 above.
+pub base_rate(grams: Int) -> Int
+  ensures result >= 790
+=
+  if grams <= 2_000 then 790 else 1_290
+
+--- Half of an amount, rounded down. The amount must not be negative.
+pub half(cents: Int) -> Int
+  requires cents >= 0
+=
+  cents / 2
+
+--- Prints the weekend rate of a light parcel: half the rate.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("weekend rate: {half(base_rate(300))}")

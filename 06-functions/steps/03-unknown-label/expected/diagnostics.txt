@@ -1,0 +1,1 @@
+error U2005 at src/lines.una:17:50: `reduced` has no parameter `discount`

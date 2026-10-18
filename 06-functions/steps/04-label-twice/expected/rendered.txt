@@ -1,0 +1,9 @@
+[U2006] Error: parameter `cents` of `reduced` is given twice
+    ╭─[ src/lines.una:17:50 ]
+    │
+ 17 │   @console.print("two arguments: {reduced(1_990, cents: 200)}")
+    │                                                  ─────┬────
+    │                                                       ╰────── parameter `cents` of `reduced` is given twice
+    │
+    │ Note: run `una explain U2006` for an explanation
+────╯
