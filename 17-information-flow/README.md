@@ -18,7 +18,7 @@ The shipping-notice service of [chapter 12](/learn/capabilities/) prints custome
 ## What you'll build
 
 :::build
-The dispatch step of chapter 8, with the customers' names and addresses labeled as personal data. The mail service may receive them. The log may not, so it shows each address masked, through a policy that a reviewer can find in one place:
+The dispatch step of [chapter 12](/learn/capabilities/#s12-5), with the customers' names and addresses labeled as personal data. The mail service may receive them. The log may not, so it shows each address masked, through a policy that a reviewer can find in one place:
 
 ```text include="day-to-day/expected/output.txt"
 sent     A-1001 to r***@example.invalid
@@ -63,7 +63,7 @@ What the checker guarantees has a precise scope. An observer who sees only what 
 
 An office stamps some folders "confidential" and some "for internal use only". The stamp travels with the folder, and anyone who copies a page from it copies the stamp too. A clerk at the front desk sees the stamp and knows that the folder stays behind the counter.
 
-A **label** is that stamp, on a value. It says how sensitive the value is, and who may see it. In Una a label is part of a value's **type**, the description of what the value is ([chapter 2](/learn/numbers/)): `Int` is a whole number, and `confidential Int` is a whole number that is confidential. The checker reads the label wherever the value goes.
+A **label** is that stamp, on a value. It says how sensitive the value is, and who may see it. In Una a label is part of a value's **type**, the description of what the value is ([chapter 2](/learn/numbers/#s2-1)): `Int` is a whole number, and `confidential Int` is a whole number that is confidential. The checker reads the label wherever the value goes.
 
 A label has a **level**. Una has five, from least to most sensitive:
 
@@ -79,29 +79,9 @@ A type with no label is `public`. A label may also name **categories**, which sa
 
 The checker knows only the order of the levels: `public` is below `internal`, which is below `confidential`, and so on up to `restricted`. What each level is meant for, in the right-hand column, is a convention you choose for your store, not a rule of the language.
 
-### Each step is a package
-
-Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
-
-```toml include="steps/01-no-labels/una.toml" title="steps/01-no-labels/una.toml"
-[package]
-name = "pricing"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "pricing"
-grants = ["console"]
-```
-
-`verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `09-information-flow.tar.gz`. Then, in the package's directory:
-
-```sh
-una check .
-una run .
-```
-
 ### Why a program needs labels
+
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `17-information-flow.tar.gz`, holds them all.
 
 Here is a catalog with no labels. The store sells each product at its `price`, and pays its supplier its `cost`. The difference, the margin, is business data the store would rather not show to customers:
 
@@ -141,7 +121,7 @@ You write a label in front of the type it applies to: `confidential Int`, `secre
 
 #### On a field
 
-A field of a kind ([chapter 4](/learn/kinds/)) can carry a label. Every value of the kind then holds a labeled value in that field, next to its unlabeled ones:
+A field of a kind ([chapter 4](/learn/kinds/#s4-1)) can carry a label. Every value of the kind then holds a labeled value in that field, next to its unlabeled ones:
 
 ```una include="steps/02-label-forms/src/pricing.una#UnitCost" title="steps/02-label-forms/src/pricing.una"
 --- What the store pays its supplier for one unit of a SKU. A label on a field: the amount is
@@ -460,12 +440,12 @@ Each sink has a **ceiling**: the highest label it accepts. Think of a mail slot 
 
 ### Why a sink needs a ceiling
 
-The store's supplier needs the reorder list, which the program reads from a file. Here is a program that sends it. The supplier's service is a capability declared as in chapter 8, with nothing about labels:
+The store's supplier needs the reorder list, which the program reads from a file. Here is a program that sends it. The supplier's service is a capability declared as in [chapter 12](/learn/capabilities/#s12-3), with nothing about labels:
 
 ```una include="steps/09-no-accepts/src/reorder.una" title="steps/09-no-accepts/src/reorder.una"
 module reorder
 
---- The supplier's ordering service, declared as in chapter 8.
+--- The supplier's ordering service, declared as in chapter 12.
 capability Supplier
   op submit(order: Text) -> Unit
 
@@ -867,7 +847,7 @@ Both branches of the block run under the condition's label: `doubled`, computed 
 
 #### `when` on a labeled value
 
-A `when` ([chapter 4](/learn/kinds/)) chooses an arm by the variant of a value. On a labeled value, which arm runs reveals the variant:
+A `when` ([chapter 8](/learn/choices/#s8-2)) chooses an arm by the variant of a value. On a labeled value, which arm runs reveals the variant:
 
 ```una include="steps/17-pc-forms/src/loyalty.una#discount" title="steps/17-pc-forms/src/loyalty.una"
 --- A `when` on a labeled value: the discount of a tier, in percent.
@@ -1727,9 +1707,9 @@ example release "a list of three SKUs, with a blank line between two of them" ..
 
 ## 17.6 Day-to-day: shipping notices with labels
 
-### What changes from chapter 8
+### What changes from chapter 12
 
-Now the service from chapter 8, with the customers' data labeled. Four changes make it safe: labels on the fields of `Customer`, an `accepts` clause on `Mailer`, a label on the result of `notice`, and a policy in a new trusted module, `privacy`, which `notify` calls. The rest of the program stays as it was. Each part below says what it is for, and which idea of this chapter it uses.
+Now the service from [chapter 12](/learn/capabilities/#s12-5), with the customers' data labeled. Four changes make it safe: labels on the fields of `Customer`, an `accepts` clause on `Mailer`, a label on the result of `notice`, and a policy in a new trusted module, `privacy`, which `notify` calls. The rest of the program stays as it was. Each part below says what it is for, and which idea of this chapter it uses.
 
 ### Labels on the data
 
@@ -1767,7 +1747,7 @@ pub notice(customer: Customer, shipment: Shipment) -> secret[PII] Text = "Hello 
 
 ### The leak the checker stops
 
-In chapter 8, `notify` returned the address it wrote to, and the log printed it. Keep that design, with the label it now needs, and the checker finds the log line:
+In chapter 12, `notify` returned the address it wrote to, and the log printed it. Keep that design, with the label it now needs, and the checker finds the log line:
 
 ```diff include="day-to-day..steps/36-leak-2:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -1877,9 +1857,9 @@ grants = ["console"]
 
 ### Running it
 
-`una run .` prints the log shown in [What you'll build](#what-youll-build). `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 17.7](#s17-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
+`una run .` prints the log shown in [What you'll build](#what-youll-build). `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 17.7](#s17-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. `dispatch`, `log_line`, `main` and the handlers `directory`, `outbox`, `mail_down` and `directory_down` are those of chapter 12, unchanged. One handler is new: `quiet`, a console that prints nothing, for the tests.
 
-So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change outside the trusted module that prints a name or an address fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 17.5](#s17-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
+So the whole change to the program itself is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change outside the trusted module that prints a name or an address fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 17.5](#s17-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
 
 ### The whole program
 
@@ -2057,7 +2037,7 @@ example "an address the mask cannot read is hidden"
 
 ### Examples of the policy
 
-The examples of chapter 8 still pass, with one change: the first one now expects the masked address, `r***@example.invalid`, which is what `notify` returns. Two new examples test the policy itself:
+The examples of `notify` check what it returns and whether it sends mail, with the fakes and the `expect performed` lines of [chapter 14](/learn/testing/#s14-3). The first one expects the masked address, `r***@example.invalid`, which is what `notify` now returns. Two more examples test the policy itself:
 
 ```una include="day-to-day/src/notices.una#L159-L165" title="day-to-day/src/notices.una" caption="the policy's examples"
 example "the log shows the first letter and the domain of an address"
@@ -2077,7 +2057,7 @@ An `expect` line compares a value whatever its label, and a `do` line is checked
 
 ### The failure paths and their fakes
 
-The examples of the failure paths are those of chapter 8, unchanged: labels do not alter which paths exist or how a fake reaches them. The fakes `outbox` and `mail_down` are handlers of `Mailer`, which now accepts `secret[PII]`. They pass the check because they do nothing with what they receive. A fake mail service that printed each message, as `printed` in chapter 8 did, would be U4003: what it prints could reveal the notice ([A handler is checked for its most sensitive caller](#a-handler-is-checked-for-its-most-sensitive-caller)).
+The examples of the failure paths install the fakes of chapter 12, `directory_down` and `mail_down`, and the batch example installs `quiet` as its log: labels do not alter which paths exist or how a fake reaches them. The fakes `outbox` and `mail_down` are handlers of `Mailer`, which now accepts `secret[PII]`. They pass the check because they do nothing with what they receive. A fake mail service that printed each message, as `printed` in [chapter 12](/learn/capabilities/#s12-3) did, would be U4003: what it prints could reveal the notice ([A handler is checked for its most sensitive caller](#a-handler-is-checked-for-its-most-sensitive-caller)).
 
 ### Running the examples
 
@@ -2142,7 +2122,7 @@ Remove `accepts secret[PII]` from `Mailer`:
 [U4003] Error: `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
 ```
 
-*Why:* an operation accepts `public` data unless it says more. It happens when a capability is declared before its data is labeled, as in chapter 8. una reports the address and the body, one diagnostic each, since each argument is its own sink; the mark points at the argument.
+*Why:* an operation accepts `public` data unless it says more. It happens when a capability is declared before its data is labeled, as in chapter 12. una reports the address and the body, one diagnostic each, since each argument is its own sink; the mark points at the argument.
 
 *Fix:* give the operation the ceiling of the service it stands for. Do not lower the data to fit: the mail service needs the real address.
 :::
