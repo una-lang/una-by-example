@@ -93,14 +93,7 @@ pub main() -> Unit
 
 It works for a cart of exactly three lines. A cart of four lines needs another function, with four parameters, and a cart of one line a third. A real cart may hold any number of lines, and the program learns that number only when it runs. A list solves that: `List[Int]` is one type for any number of quantities, so one name and one parameter hold the whole cart, and the functions of this chapter work on it whatever its length.
 
-### Each step is a package
-
-Each step of this chapter is a package, as in [chapter 1](/learn/hello/#making-the-package): a directory with `una.toml`, `verification.lock` and the module under `src/`. Every package of this chapter uses edition `0.2`, the edition that brings maps, `sort`, `set`, JSON and the functions that take failing functions; a package of edition `0.1` has none of them. You can take each step's package, whole, from the chapter's download, `10-collections.tar.gz`. Then, in the package's directory:
-
-```sh
-una check .
-una run .
-```
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `10-collections.tar.gz`, holds them all. Every package of this chapter uses edition `0.2`, the edition that brings maps, `sort`, `set`, JSON and the functions that take failing functions; a package of edition `0.1` has none of them.
 
 ### How to write a list: a cart and its receipt
 
