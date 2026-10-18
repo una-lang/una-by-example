@@ -1,5 +1,5 @@
 [U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
-   ╭─[ src/hello.una:7:18 ]
+   ╭─[ src/closing.una:7:18 ]
    │
  7 │   @console.print(18)
    │                  ─┬

@@ -4,13 +4,17 @@ example slip "the address line holds the customer number and the email" ... ok
 example slip "an item line is indented and starts with the quantity" ... ok
 example slip "a line costs its quantity times the unit price" ... ok
 example slip "a line of zero units costs nothing" ... ok
+example slip "an odd number of units needs one box more than half of them" ... ok
+example slip "an even number of units fills every box" ... ok
+example slip "no units need no box" ... ok
 example slip "the count line gives units and lines" ... ok
+example slip "the box line gives the number of boxes" ... ok
 example slip "the total is in cents" ... ok
 example slip "a weight shows whole kilograms and the grams left over" ... FAILED
-  src/slip.una:76: expect result == "Parcel weight: 2 kg 350 g"
+  src/slip.una:102: expect result == "Parcel weight: 2 kg 350 g"
   it is false, with `result` = `""`
 example slip "a parcel under one kilogram shows 0 kg" ... FAILED
-  src/slip.una:80: expect result == "Parcel weight: 0 kg 800 g"
+  src/slip.una:106: expect result == "Parcel weight: 0 kg 800 g"
   it is false, with `result` = `""`
 
-9 examples: 7 passed, 2 failed
+13 examples: 11 passed, 2 failed

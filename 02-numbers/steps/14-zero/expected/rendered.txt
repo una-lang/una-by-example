@@ -1,0 +1,11 @@
+[U5001] Error: division obligation `0 != 0` is refuted
+    ╭─[ src/arithmetic.una:15:20 ]
+    │
+ 15 │   @console.print("{units / 0}")
+    │                    ────┬────
+    │                        ╰────── division obligation `0 != 0` is refuted
+    │
+    │ Note 1: obligation ob-5a894be01a58 (division) is refuted: 0 != 0
+    │
+    │ Note 2: run `una explain U5001` for an explanation
+────╯

@@ -1,0 +1,10 @@
+module tags
+
+--- The number of copies, as the label printer reads it: one byte.
+pub copies_byte(copies: Int) -> U8 = copies.to_u8()
+
+--- Prints the byte for 12 copies.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{copies_byte(12)}")

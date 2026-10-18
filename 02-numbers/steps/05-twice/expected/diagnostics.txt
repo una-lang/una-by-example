@@ -1,0 +1,1 @@
+error U1002 at src/values.una:16:7: `lamps` is already bound in this scope; a local cannot rebind another

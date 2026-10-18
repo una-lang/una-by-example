@@ -1,0 +1,1 @@
+error U0101 at src/slip.una:42:48: `19.90` is a fractional literal; Una's integer literals are decimal

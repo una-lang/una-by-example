@@ -1,0 +1,12 @@
+module stock
+
+--- Prints what `abs`, `min` and `max` give for the stock of one SKU.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let on_shelf = 14
+  let reserved = 17
+  let counted = 11
+  @console.print("free to sell: {max(on_shelf - reserved, b: 0)}")
+  @console.print("one customer may buy: {min(on_shelf, b: 10)}")
+  @console.print("the count is off by {abs(counted - on_shelf)}")

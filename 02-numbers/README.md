@@ -2,8 +2,8 @@
 learn: "2"
 title: Numbers
 editions: ["0.2"]
-codes: [U0101, U2001, U2019, U5001]
-time: 35
+codes: [U0007, U0101, U1001, U1002, U2001, U2022, U5001]
+time: 50
 builds: A packing slip that a store prints for the box of one order, with examples that test each line
 prerequisites: ["1"]
 template: 2
@@ -12,8 +12,7 @@ nav: ["Values, types and let", "Whole numbers: Int", "Fixed-width integers", "Da
 
 # 2 Numbers
 
-
-A store's software is mostly small computations on plain values: a price in cents, a discount, a SKU typed with a stray space, a product name too long for its label, a count that a printer reads as one byte. Each of these goes wrong in familiar ways: an integer that silently overflows, a rounding nobody chose, a number used as a yes or no, a cut that runs past the end of a text. This chapter shows the values Una has, `Int`, `Bool`, `Text` and the fixed-width integers, how names hold them, and how the checker catches each of these mistakes before the program runs.
+A store counts all day: units on a shelf, lines of an order, boxes for a parcel, prices in cents. In chapter 1 every value your programs used was a text. This chapter adds numbers. You learn what a value and its type are, how to give a value a name with `let`, and how to print a number. Then you meet Una's whole numbers, `Int`, which never overflow, and the fixed-width integers, such as `U8`, for the places where a number must fit a set size. You end with the packing slip that goes into the box of an order, checked, run and tested.
 
 ## What you'll build
 
@@ -26,185 +25,198 @@ Ship to customer 318 <customer318@example.invalid>
   2 x LAMP-01  Desk lamp, brass
   1 x RUG-07  Wool rug, 120 by 180 cm
 3 units in 2 lines
+Boxes in this shipment: 2
 Total paid: 8480 cents
 Questions? Write to orders@example.invalid and quote the order number.
 ```
 
 You will learn to:
 
-- set up a package from an empty directory: `una.toml`, `verification.lock` and a module;
-- run `una check`, `una run` and `una test`, and read what they report;
-- print on the console, and say in a function's header that it prints;
-- name values, compute with them, and put them into text;
-- write functions with doc comments, and test them with examples.
+- give values names with `let`, and say what type a name holds;
+- put numbers into a text, so that `print` can show them;
+- compute with whole numbers: `+`, `-`, `*`, `/` and `mod`, in the right order;
+- keep money exact, as whole cents;
+- choose a fixed-width type, such as `U32`, when a number must fit a set size.
 :::
 
 ## Why it works this way
 
-In many languages the basic values are where the quiet mistakes live. A whole number has a largest value, and a total that grows past it jumps to a wrong number, often a negative one, with no error. A division of a negative amount can leave a negative remainder. A number, or an empty text, can stand for "no" in a condition. Cutting a piece out of a text at a position past its end stops the program while it runs, or gives back less than the code expected. Each section of this chapter shows one of these in Una.
+In many languages the plain numbers are where quiet mistakes live. A whole number has a largest value, and a total that grows past it jumps to a wrong number, often a negative one, with no error. A price such as 0.10 is stored as an approximation, so that adding prices can give 0.30000000000000004. A division by zero stops the program while it runs, in front of a customer. A number can be turned into a text, or a text into a number, without a word in the code, and the result is not what anyone meant.
 
-Una makes each of these a rule that the checker enforces:
+Una makes each of these a rule that `una check` enforces before the program runs:
 
 :::steps
-1. **`Int` has no bound.** It is a whole number of any size, so a sum or a product is always exact. Where a width matters, you choose a fixed-width type, and the verifier, the part of `una check` that proves facts about the code ([section 2.1](#division-by-zero-a-proof-obligation)), proves that every operation stays in its range.
-2. **Division is defined everywhere it can run.** The remainder of a division is never negative, and a division by a value that may be zero does not check.
-3. **`Bool` is its own type.** A condition must be a `Bool`. An `Int` or a `Text` is never read as true or false.
-4. **Operations state what they need.** Cutting a text requires positions inside it, and the verifier proves it at each call, from the code around the call.
+1. **`Int` has no largest value.** A sum or a product of whole numbers is always exact, however large it grows.
+2. **Money is whole cents.** An amount such as 19.90 is the `Int` 1990, so nothing rounds unless the code says how.
+3. **A division must be safe.** A division by a value that may be zero does not pass the check, and the check says which value breaks it.
+4. **A fixed size is proved.** Where you choose a type with a set size, every operation on it must be proved to stay inside that size.
+5. **No value changes its type on its own.** A number becomes a text only where the code puts it into one.
 :::
 
 > [!KEY]
-> A value in Una means exactly what its type says. No value turns into another type unless the code says so, and no operation can leave the range of its type at run time.
+> A number in Una means exactly what its type says: an `Int` is exact at any size, and a fixed-width value never leaves its range while the program runs.
 
 ## 2.1 Values, types and names: `let`
 
-
 ### What a value is
 
-A **value** is one piece of data: the number `18`, the text `"LAMP-01"`, the answer `true`. A program computes new values from old ones, as `18 - 9` gives `9`, and prints some of them.
+A **value** is one piece of data that a program works with: the number `18`, the text `"LAMP-01"`. A program computes new values from old ones, as `18 - 9` gives `9`, and prints some of them.
 
-Every value has a **type**, which says what kind of value it is, and so what you can do with it. You can multiply two numbers, but not two product names. Think of the fields of a paper form: one box takes a date, another a phone number, and a clerk refuses a form with a name in the date box. Types are those boxes, and `una check` is the clerk. The types of this chapter:
+Every value has a **type**, which says what kind of value it is, and so what you can do with it. You can multiply two numbers, but not two product names. Think of the boxes of a paper form: one box takes a date, another a phone number, and a clerk refuses a form with a name in the date box. Types are those boxes, and `una check` is the clerk.
+
+The types of this chapter:
 
 | Type | Its values | Written as |
 | --- | --- | --- |
-| `Int` | whole numbers, positive, zero or negative | `18`, `1_990`, `-500` |
-| `Text` | a sequence of characters | `"Desk lamp, brass"` |
-| `Bool` | the answer to a yes-or-no question | `true`, `false` |
-| `Unit` | one value only, which carries no information | `unit` |
+| `Int` | whole numbers: positive, zero or negative | `18`, `1_990`, `-500` |
+| `Text` | a sequence of characters, as in chapter 1 | `"Desk lamp, brass"` |
+| `Unit` | one value only, which carries no information; `main` gives it back | `unit` |
 
-A value written out in the code, such as `18` or `"LAMP-01"`, is a **literal**. [Chapter 2](/learn/numbers/) covers each type in full.
+A value written out in the code, such as `18` or `"LAMP-01"`, is a **literal**. [Section 2.3](#s2-3) adds the fixed-width integers, and [chapter 3](/learn/text-and-conditions/#s3-3) adds `Bool`, the type of yes-or-no answers.
 
 ### Why every value has a type
 
-`print` takes a text. Give it a number:
+`print` takes a text. Here is a program that prints when the store closes, and a version that gives `print` the number `18` instead:
 
-```diff include="steps/01-hello..steps/02-print-number:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -1,7 +1,7 @@
- module hello
- 
----- Says that the store is open.
-+--- Says until when the store is open.
+```diff include="steps/01-closing..steps/02-print-number:src/closing.una" title="src/closing.una"
+--- a/src/closing.una
++++ b/src/closing.una
+@@ -4,4 +4,4 @@
  pub main() -> Unit
    uses @console: Console[print]
  =
--  @console.print("The store is open")
+-  @console.print("The store closes at 18:00")
 +  @console.print(18)
 ```
 
-```text include="steps/02-print-number/expected/rendered.txt#L1"
+```text include="steps/02-print-number/expected/rendered.txt"
 [U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
+   ╭─[ src/closing.una:7:18 ]
+   │
+ 7 │   @console.print(18)
+   │                  ─┬
+   │                   ╰── argument `line` of operation `Console.print` must be `Text`, found `Int`
+   │
+   │ Note: run `una explain U2001` for an explanation
+───╯
 ```
 
-`print`'s argument is called `line`, and its type is `Text`; the value given is an `Int`. Some languages would turn the number into a text without a word, and some would refuse only when the line runs. Una refuses before the program runs, and it never turns a value of one type into another unless the code says so. Saying so is easy, as [Putting values into a text](#putting-values-into-a-text) shows.
+The message says that the argument of `print`, which is called `line`, must be a `Text`, and that the value given is an `Int`. Some languages would turn the number into a text without a word, and some would fail only when the line runs. Una refuses before the program runs, and it never turns a value of one type into another unless the code says so. Saying so takes two braces, as [Putting values into a text](#putting-values-into-a-text) shows.
 
 ### How to write values and names
 
 #### Literals
 
-- An `Int` literal is written in decimal digits. An `_` may group them, so `1_990` is 1990 and easier to read. For a negative number, write a minus sign in front: `-500`.
-- A `Text` literal is written between double quotes, on one line: `"Desk lamp, brass"`. A few characters need a backslash before them: `\"` for a quote, `\\` for a backslash, and `\{` and `\}` for braces, since a brace starts an interpolation, as [Putting values into a text](#putting-values-into-a-text) shows.
-- A `Bool` literal is `true` or `false`.
+- An `Int` literal is written in decimal digits: `18`, `1990`. An `_` may group the digits, so `1_990` is 1990, easier to read. For a negative number, write a minus sign in front: `-500`. [Section 2.2](#s2-2) gives every rule.
+- A `Text` literal is written between double quotes, on one line, as in chapter 1: `"Desk lamp, brass"`. [Chapter 3](/learn/text-and-conditions/#s3-1) covers texts in full.
+- The one `Unit` value is written `unit`. You rarely write it: a function whose result type is `Unit`, such as `main`, gives it back on its own.
 
 #### Naming a value: `let`
 
-`let` gives a name to a value, so that later steps can use it:
+`let` gives a name to a value, so that the steps after it can use the value by its name:
 
 - `let lamps = 2` names the value `2` as `lamps`. The type, `Int`, comes from the value.
-- `let lamp_cents: Int = 1_990` writes the type too, after `:`. It is optional, and it tells a reader what the name holds.
+- `let lamp_cents: Int = 1_990` writes the type too, after `:`. It is optional, and it tells a reader what the name holds. When it is written, `una check` holds the value to it.
 
-The name holds that one value from its line to the end of the body. A name of a value starts with a small letter and holds small letters, digits and `_`: `lamps`, `lamp_cents`, `sku2`.
-
-#### Computing with `Int`
-
-`+`, `-` and `*` add, subtract and multiply. `/` divides and drops the remainder, and `mod` gives the remainder (for numbers that are not negative; [chapter 2](#euclidean-division) shows the rest): `3980 / 100` is 39, and `3980 mod 100` is 80. `*`, `/` and `mod` come before `+` and `-`, as in school arithmetic, and parentheses change the order.
+A `let` is a step of a body, on a line of its own, like a call of `print`. Such a name is also called a **binding**: it binds a word to a value. A name of a value follows the rules of a function's name: small letters, digits and `_`, starting with a letter, with no `__` and no `_` at the end: `lamps`, `lamp_cents`, `sku2`.
 
 #### Putting values into a text
 
-A name or a computation in braces, inside a text, puts its value into the text: `"{lamps} x {sku}"`. This is an **interpolation**. Numbers, texts and `true` and `false` can all go in braces, and so can a computation, such as `{lamps * lamp_cents}`. An `Int` goes in as plain decimal digits, with no leading zero and no `_`.
+A name or a computation in braces, inside a text, puts its value into the text: `"{lamps} x {sku}"` is the value of `lamps`, then ` x `, then the value of `sku`. This is an **interpolation**. An `Int` goes in as plain decimal digits, with a minus sign when it is negative, and with no `_`. A computation may stand in the braces too: `"{lamps * lamp_cents} cents"`.
+
+That is how a program prints a number: it puts the number into a text, and prints the text. [Chapter 3](/learn/text-and-conditions/#s3-1) shows the rest of what braces can hold.
+
+### Each step is a package
+
+Each example of this chapter, and of every chapter after it, is a package of its own, made as in [chapter 1, Making the package](/learn/hello/#making-the-package): a directory with `una.toml`, `verification.lock` and the module under `src/`. The book calls these packages the chapter's **steps**. Each one has a name such as `steps/03-values`: the number gives its place in the chapter.
+
+You can type each step, or take it whole from the chapter's download, `02-numbers.tar.gz`, which holds every package of this chapter. To make a step by hand next to the package of chapter 1, go up from that package's directory to your home directory with `cd ..` (`..` is the path of the directory above), then make the new directory as before:
+
+```sh
+cd ..
+mkdir values
+cd values
+mkdir src
+```
+
+Then write `una.toml`, `src/values.una` and `verification.lock` with your editor. `verification.lock` is the same in every package of this book. The manifest names the package and the module that `una run .` starts, here `values`, and grants the console, as in chapter 1.
 
 ### Values in a store
 
-This program names four values, one of each kind it prints, and computes with them:
+This program names four values, two texts and two numbers, and prints them and what it computes from them:
 
 :::steps
 ```una include="steps/03-values/src/values.una" title="steps/03-values/src/values.una" verified="check, run"
 module values
 
---- Prints values of three types, and a few computations on them.
+--- Prints a few values of two types, named with `let`, and what is computed from them.
 pub main() -> Unit
   uses @console: Console[print]
 =
+  let sku = "LAMP-01"
+  let name: Text = "Desk lamp, brass"
   let lamps = 2
   let lamp_cents: Int = 1_990
-  let sku = "LAMP-01"
-  let in_stock = true
+  @console.print(sku)
+  @console.print(name)
+  @console.print("{lamps}")
   @console.print("{lamps} x {sku}")
-  @console.print("in stock: {in_stock}")
-  @console.print("{lamps * lamp_cents} cents")
-  @console.print("{lamps * lamp_cents / 100} units and {lamps * lamp_cents mod 100} cents")
-  @console.print("a brace \{ and a quote \" in a text")
-  let opens = 9
-  let closes = 18
-  @console.print("{closes - opens - 1} hours of trading, without the lunch hour")
-  @console.print("{2 + 3 * 4} and {(2 + 3) * 4}")
+  @console.print("{lamps * lamp_cents} cents for {lamps} lamps")
+  let total = lamps * lamp_cents
+  @console.print("Total: {total} cents")
 ```
 
-1. **`let lamps = 2`.** A name for an `Int`.
-2. **`let lamp_cents: Int = 1_990`.** A name with its type written out. Money is kept in **cents**, whole numbers, so that nothing ever rounds by accident.
-3. **`let sku = "LAMP-01"`.** A `Text`. A **SKU**, a stock keeping unit, is the code a store gives each product.
-4. **`let in_stock = true`.** A `Bool`.
-5. **`"{lamps * lamp_cents / 100} units and {lamps * lamp_cents mod 100} cents"`.** Two computations inside one text.
-6. **`"a brace \{ and a quote \" in a text"`.** Two escapes.
+1. **`let sku = "LAMP-01"`.** A name for a `Text`. A **SKU**, a stock keeping unit, is the code a store gives each product.
+2. **`let name: Text = "Desk lamp, brass"`.** A `Text` with its type written out.
+3. **`let lamps = 2`.** A name for an `Int`.
+4. **`let lamp_cents: Int = 1_990`.** An `Int` with its type written out. Money is kept in **cents**, whole numbers, so that nothing ever rounds by accident; [section 2.2](#s2-2) says why.
+5. **`@console.print(sku)`.** A name of a `Text` can go to `print` as it is.
+6. **`@console.print("{lamps}")`.** A number goes into a text first: the text holds only the number.
+7. **`"{lamps * lamp_cents} cents for {lamps} lamps"`.** A computation and a name inside one text.
+8. **`let total = lamps * lamp_cents`.** A name for a computed value. The computation runs once, at this line, and `total` holds its result.
 :::
 
-`una run .` prints, among other lines:
+`una run .` prints:
 
-```text include="steps/03-values/expected/output.txt#L1-L5"
+```text include="steps/03-values/expected/output.txt"
+LAMP-01
+Desk lamp, brass
+2
 2 x LAMP-01
-in stock: true
-3980 cents
-39 units and 80 cents
-a brace { and a quote " in a text
+3980 cents for 2 lamps
+Total: 3980 cents
 ```
 
 ### Opening hours
 
-Each program from here on is a package of its own, in a directory next to `store`. To make one, go up from `store` to your home directory with `cd ..` (`..` is the path of the directory above), then make the new directory as before:
-
-```sh
-cd ..
-mkdir opening
-cd opening
-mkdir src
-```
-
-Then write `una.toml` and `src/opening.una` with your editor, and make `verification.lock` as in [the first package](/learn/hello/#making-the-package). This program prints the store's opening hours:
+Names make a computation read like the sentence it stands for. This program prints the store's hours from two numbers:
 
 :::steps
-```una include="steps/04-printing/src/opening.una" title="src/opening.una" verified="check, run"
+```una include="steps/04-opening/src/opening.una" title="steps/04-opening/src/opening.una" verified="check, run"
 module opening
 
---- Prints today's opening hours.
+--- Prints today's opening hours, and what follows from them.
 pub main() -> Unit
   uses @console: Console[print]
 =
   let opens = 9
   let closes = 18
-  let hours = closes - opens
   @console.print("Open today from {opens}:00 to {closes}:00")
+  let hours = closes - opens
   @console.print("That is {hours} hours of trading")
-  @console.print("Orders placed before {closes}:00 ship today")
+  let cutoff = closes - 1
+  @console.print("Orders placed before {cutoff}:00 ship today")
 ```
 
-1. **`let hours = closes - opens`.** A name for a computed value: 9.
-2. **`"Open today from {opens}:00 to {closes}:00"`.** A text with interpolations. The `:00` after each brace is plain text.
-3. **Three `print` calls.** Each prints one line, in order.
+1. **`let opens = 9` and `let closes = 18`.** The two hours that everything else comes from.
+2. **`"Open today from {opens}:00 to {closes}:00"`.** A text with two interpolations. The `:00` after each brace is plain text.
+3. **`let hours = closes - opens`.** A computed value, 9, named for what it means.
+4. **`let cutoff = closes - 1`.** The last hour at which an order ships the same day.
 :::
 
-Its manifest names the package and its module `opening`, and grants the console, as the first package's did:
+Its manifest names the package and its module `opening`:
 
-```toml include="steps/04-printing/una.toml" title="una.toml"
+```toml include="steps/04-opening/una.toml" title="steps/04-opening/una.toml"
 [package]
 name = "opening"
 version = "0.1.0"
@@ -217,41 +229,115 @@ grants = ["console"]
 
 `una run .` prints:
 
-```text include="steps/04-printing/expected/output.txt"
+```text include="steps/04-opening/expected/output.txt"
 Open today from 9:00 to 18:00
 That is 9 hours of trading
-Orders placed before 18:00 ship today
+Orders placed before 17:00 ship today
 ```
+
+When the store changes its closing time, one line changes, `let closes = 18`, and the three printed lines follow it.
 
 ### How values and names behave
 
-- **No conversions behind your back.** A value keeps its type. An `Int` becomes a text only where the code puts it in braces.
-- **One name, one value.** A name made with `let` cannot be given another value, and the same name cannot be made twice in one body. [Chapter 2](#s2-1) shows `let edit`, for a value that must change, such as a running total.
-- **A name exists from its line on.** A step can use a name only after the `let` that makes it.
-- **Whole numbers have no size limit.** An `Int` never overflows, however large a total grows ([chapter 2](#s2-2)).
-- **A text literal cannot go inside braces.** Write `let wood = "oak"`, then `"{wood}"`. [Chapter 3](/learn/text-and-conditions/#a-text-inside-an-interpolation-u0006) shows the diagnostic.
-- **Few characters are special.** Besides the quote, the backslash and the braces, every character in a text, `:`, `<`, `x` or a space, prints as it is.
+#### A value keeps its type
 
-### Check yourself: values
+No value turns into another type on its own. An `Int` becomes part of a text only where the code puts it in braces, and a text never turns into a number on its own. A name with a written type holds the value to that type. Write the price as a text, `let lamp_cents: Int = "1990"`, and `una check .` reports:
 
-The last four lines of `values` name two hours, then compute with the names and with parentheses:
-
-```una include="steps/03-values/src/values.una#L16-L19" title="steps/03-values/src/values.una"
-  let opens = 9
-  let closes = 18
-  @console.print("{closes - opens - 1} hours of trading, without the lunch hour")
-  @console.print("{2 + 3 * 4} and {(2 + 3) * 4}")
+```text include="steps/07-declared/expected/rendered.txt#L1-L6"
+[U2001] Error: `lamp_cents` is declared as `Int`, found `Text`
+    ╭─[ src/values.una:10:25 ]
+    │
+ 10 │   let lamp_cents: Int = "1990"
+    │                         ───┬──
+    │                            ╰──── `lamp_cents` is declared as `Int`, found `Text`
 ```
 
-What do the last two lines print?
+The quotes make `"1990"` a `Text`, four characters, not the number. The message names the binding, the type it was given, and the type it got.
+
+#### A name exists from its line on
+
+The steps of a body run in order, from the top, and a name exists only from the `let` that makes it. Move `let hours` of `opening` one line down, under the line that prints it:
+
+```text include="steps/06-before/expected/rendered.txt#L1-L6"
+[U1001] Error: cannot find name `hours` in this module, its imports or the prelude
+    ╭─[ src/opening.una:10:28 ]
+    │
+ 10 │   @console.print("That is {hours} hours of trading")
+    │                            ──┬──
+    │                              ╰──── cannot find name `hours` in this module, its imports or the prelude
+```
+
+At line 10 the name `hours` does not exist yet, so `una check .` cannot find it. The repair is to make the name before the step that uses it.
+
+#### A name is made once
+
+A body makes each name once. Reuse a name for a new value, as `let lamps = lamps * lamp_cents` would in `values`, and `una check .` points at both lines:
+
+```text include="steps/05-twice/expected/rendered.txt"
+[U1002] Error: `lamps` is already bound in this scope; a local cannot rebind another
+    ╭─[ src/values.una:16:7 ]
+    │
+  9 │   let lamps = 2
+    │       ──┬──
+    │         ╰──── first defined here
+    │
+ 16 │   let lamps = lamps * lamp_cents
+    │       ──┬──
+    │         ╰──── `lamps` is already bound in this scope; a local cannot rebind another
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯
+```
+
+If one name could hold two values, a reader would have to know which line they stand on to know what it means. Give the new value a name of its own, such as `total`.
+
+#### A name keeps its value
+
+A name made with `let` holds its value to the end of the body: no later step can give it another. A count that changes as a program works, such as a running total, uses `let edit` and an assignment, which [chapter 9](/learn/loops/#s9-2) teaches with loops. Every name in this chapter keeps its value.
+
+### When to name a value
+
+:::decide
+**Which to use:**
+
+| You want to… | Use |
+| --- | --- |
+| Use a value in several steps of one body | `let`, once, then its name |
+| Give a computation a name that says what it means | `let hours = closes - opens` |
+| State what type a name holds, for the reader and the check | `let lamp_cents: Int = 1_990` |
+| Use the same value in several functions | a function that gives it back, as in [chapter 1](/learn/hello/#s1-4) |
+| Print a number | an interpolation: `"{lamps}"` |
+:::
+
+### Check yourself: values and names
+
+A program counts the places in the boxes of an order of mugs:
+
+```una include="steps/08-names/src/names.una#main" title="steps/08-names/src/names.una"
+--- Prints the labels of a box of mugs.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let mugs = 6
+  let per_box = 4
+  let boxes = 2
+  let places = boxes * per_box
+  let spare = places - mugs
+  @console.print("{mugs} mugs in {boxes} boxes")
+  @console.print("{spare} empty places")
+  @console.print("{places - spare} of {places} places taken")
+```
+
+What does `una run .` print?
 
 :::answer Show the answer
-```text include="steps/03-values/expected/output.txt#L6-L7"
-8 hours of trading, without the lunch hour
-14 and 20
+```text include="steps/08-names/expected/output.txt"
+6 mugs in 2 boxes
+2 empty places
+6 of 8 places taken
 ```
 
-`closes - opens - 1` is computed from the left: 18 − 9 is 9, and 9 − 1 is 8. In `2 + 3 * 4` the multiplication comes first, 12, then 2 + 12 is 14. The parentheses of `(2 + 3) * 4` make the addition come first: 5 × 4 is 20.
+`places` is 2 × 4, 8, and `spare` is 8 − 6, 2. The last line computes `places - spare` inside the braces: 8 − 2 is 6.
 :::
 
 One more, without code. With `lamps` an `Int` and `sku` a `Text`, which of these steps check?
@@ -262,52 +348,14 @@ One more, without code. With `lamps` an `Int` and `sku` a `Text`, which of these
 4. `@console.print("{lamps} x {sku}")`
 
 :::answer Show the answer
-Steps 2 and 4 check. Step 1 gives `print` an `Int` where it takes a `Text`: U2001, as in [Why every value has a type](#why-every-value-has-a-type). Step 3 multiplies a number by a text, which has no meaning, and the checker reports U2001 for it too. In steps 2 and 4 the braces put the values into a text, so `print` gets the `Text` it takes.
+Steps 2 and 4 check. Step 1 gives `print` an `Int` where it takes a `Text`: U2001, as in [Why every value has a type](#why-every-value-has-a-type). Step 3 multiplies a number by a text, which has no meaning, and the check reports U2001 for it too. In steps 2 and 4 the braces put the values into a text, so `print` gets the `Text` it takes.
 :::
-
-
-### What a name is
-
-A **name**, or **binding**, ties a word to a value, so that later lines can use the value by its word. Think of a sticky label on a box: the label says `total`, and the box holds 8480. You met `let` in [chapter 2](#naming-a-value-let). This section shows the two kinds of name and the rules they follow.
-
-### Why names do not change by default
-
-Most values in a function are computed once: a price, a SKU, the result of a call. If any line could give such a name a new value, a reader would have to read every line to know what the name holds at a given point. So a plain `let` name never changes. Try to assign one:
-
-```diff include="steps/05-till..steps/06-assign-let:src/till.una" title="src/till.una" context="1"
---- a/src/till.una
-+++ b/src/till.una
-@@ -7,3 +7,3 @@
-   let lamp = 1_990
--  let edit total = 0
-+  let total = 0
-   let edit items = 0
-```
-
-```text include="steps/06-assign-let/expected/rendered.txt#L1"
-[U2019] Error: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
-```
-
-The message names the problem and both repairs. When a value really must change, as a running total does, you say so where the name is made.
-
-### How to write names
-
-| Write | Meaning |
-| --- | --- |
-| `let lamp = 1_990` | a plain name; its type comes from its value |
-| `let lamp: Int = 1_990` | the same, with its type written after `:` |
-| `let edit total = 0` | an **editable** name, which later lines may give new values |
-| `let edit receipt: Text = "LAMP-01"` | the same, with its type |
-| `total = total + lamp` | an **assignment**: the editable name `total` gets the value on the right |
-
-An assignment is a **statement**: a line that does something instead of giving a value. It stands on its own line, and the right side is computed first, from the name's old value.
 
 ## 2.2 Whole numbers: `Int`
 
-
 ### What an integer is
 
-An **integer** is a whole number: positive, zero or negative, with no fraction. `7`, `0` and `-1205` are integers; `19.90` is not. Una's integer type is `Int`, and it has no limit on its size: an `Int` can be as large as the computer's memory allows.
+An **integer** is a whole number: positive, zero or negative, with no fraction. `7`, `0` and `-1205` are integers; `19.90` is not. Una's integer type is `Int`, and it has no largest value: an `Int` can be as large as the computer's memory allows.
 
 Most numbers in a store are counts of whole things: units on a shelf, lines of an order, labels to print. Money is one too, once you count it in its smallest unit. A price of 19.90 is 1990 **cents**, and an `Int` holds 1990 exactly.
 
@@ -315,7 +363,7 @@ Most numbers in a store are counts of whole things: units on a shelf, lines of a
 
 A price written with a decimal point looks natural, so try it:
 
-```una include="steps/07-fraction/src/shelf.una" title="steps/07-fraction/src/shelf.una"
+```una include="steps/09-fraction/src/shelf.una" title="steps/09-fraction/src/shelf.una"
 module shelf
 
 --- Prints the price of a desk lamp, written with a decimal point.
@@ -326,7 +374,7 @@ pub main() -> Unit
   @console.print("{lamp}")
 ```
 
-```text include="steps/07-fraction/expected/rendered.txt"
+```text include="steps/09-fraction/expected/rendered.txt"
 [U0101] Error: `19.90` is a fractional literal; Una's integer literals are decimal
    ╭─[ src/shelf.una:7:17 ]
    │
@@ -338,20 +386,26 @@ pub main() -> Unit
 ───╯
 ```
 
-The message says that `19.90` is a **fractional literal**, a number with a fraction, and that Una's integer literals are written in decimal digits only. Una has no number type for fractions.
+The message says that `19.90` is a **fractional literal**, a number with a fraction, and that Una's integer literals are written in decimal digits only. Una has no type for numbers with a fraction today.
 
-That is a choice, not a gap. Many languages store a fraction such as 0.1 as a binary approximation, so adding prices gives totals such as 0.30000000000000004, and rounding them is a decision the code makes in a hundred places without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
+For money, that is no loss. Many languages store a fraction such as 0.10 as a binary approximation, so that adding prices gives totals such as 0.30000000000000004, and every program rounds them in its own way, often without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
+
+### Numbers with a fraction: still to come
+
+Two kinds of number with a fraction are planned for Una. A **decimal** type will hold amounts such as 19.90 exactly, in base ten, as people write them. **Floating-point** types will hold approximate values over a very wide range, for measurements and science, where a tiny rounding error does not matter. When they arrive, this chapter gains a section for each. Until then, keep money in cents and measures in whole small units, such as grams or millimeters, all as `Int`.
 
 ### How to write integers and arithmetic
 
 #### Integer literals
 
 - Write an integer in decimal digits: `7`, `1990`.
-- Group the digits with `_` to make large numbers readable: `1_990`, `10_000`, `1_000_000`. The `_` goes only between digits.
-- For a negative number, write a minus sign in front of the literal: `-1205`.
-- A literal has no leading zero, except `0` itself: `007` is a mistake.
+- Group the digits with `_` to make large numbers readable: `1_990`, `10_000`, `1_000_000`. An `_` goes only between two digits: never two in a row, never at the start or the end.
+- For a negative number, write a minus sign in front: `-1205`.
+- A literal has no leading zero, except `0` itself: `007` is not a literal. [A number with a leading zero](#a-number-with-a-leading-zero-u0007) shows what `una check` says.
 
 #### The operators
+
+An **operator** is a sign that computes a value from the values next to it, its **operands**, as `+` does in `7 + 2`.
 
 | Operator | Meaning | `7` and `2` give |
 | --- | --- | --- |
@@ -361,34 +415,45 @@ That is a choice, not a gap. Many languages store a fraction such as 0.1 as a bi
 | `/` | division, dropping the remainder | `7 / 2` is 3 |
 | `mod` | the remainder of the division | `7 mod 2` is 1 |
 
-`*`, `/` and `mod` come before `+` and `-`, and operators of the same level go from left to right. Parentheses change the order. The step tries each operator on 7 units packed 2 to a box:
+#### The order of operations
 
-```una include="steps/08-operators/src/arithmetic.una#L7-L13" title="steps/08-operators/src/arithmetic.una"
+- `*`, `/` and `mod` come before `+` and `-`, as in school arithmetic: `2 + 3 * 4` is 14.
+- Operators of the same level go from left to right: `20 - 6 - 4` is 10.
+- A minus sign in front of one value comes first of all: `-7 / 2` divides minus seven by 2.
+- Parentheses change the order: `(2 + 3) * 4` is 20.
+
+### The operators at work
+
+The step tries each operator on 7 units packed 2 to a box:
+
+```una include="steps/10-operators/src/arithmetic.una#L7-L14" title="steps/10-operators/src/arithmetic.una"
   let units = 7
   let per_box = 2
   @console.print("{units + per_box}, {units - per_box} and {units * per_box}")
   @console.print("{units / per_box} full boxes, {units mod per_box} unit left over")
   @console.print("{-units} and {per_box - units}")
   @console.print("{2 + 3 * 4} and {(2 + 3) * 4}")
+  @console.print("{20 - 6 - 4} and {20 - (6 - 4)}")
   @console.print("{1_000_000 * 1_000_000}")
 ```
 
-```text include="steps/08-operators/expected/output.txt#L1-L5"
+```text include="steps/10-operators/expected/output.txt#L1-L6"
 9, 5 and 14
 3 full boxes, 1 unit left over
 -7 and -5
 14 and 20
+10 and 18
 1000000000000
 ```
 
-`7 / 2` gives 3 full boxes and drops the half, and `7 mod 2` gives the 1 unit left over. `1_000_000 * 1_000_000` is exact, with all its zeros.
+`7 / 2` gives 3 full boxes and drops the half, and `7 mod 2` gives the 1 unit left over. `20 - (6 - 4)` computes the parentheses first: 20 − 2 is 18. `1_000_000 * 1_000_000` is exact, with all its zeros.
 
 ### Money as `Int` cents
 
 A price never needs a fraction, so it never needs rounding until the code chooses one:
 
 :::steps
-```una include="steps/09-prices/src/prices.una" title="src/prices.una" verified="check, run"
+```una include="steps/11-prices/src/prices.una" title="steps/11-prices/src/prices.una" verified="check, run"
 module prices
 
 --- Prints a few computations on prices in cents.
@@ -408,38 +473,74 @@ pub main() -> Unit
 ```
 
 1. **`let order = 2 * lamp + rug`.** Multiplication first, then addition: 2 lamps at 1990 cents and a rug at 4500.
-2. **`order / 100` and `order mod 100`.** Division of two `Int` values gives a whole number and drops the remainder; `mod` gives the remainder. Together they split cents into units and cents.
-3. **`order * 15 / 100`.** A percentage. Multiply first, then divide, so that nothing is lost before the division.
+2. **`order / 100` and `order mod 100`.** Division of two `Int` values gives a whole number and drops the remainder; `mod` gives the remainder. Together they split cents into whole units of money and cents.
+3. **`order * 15 / 100`.** A percentage. Multiply first, then divide, so that nothing is dropped before the division.
 4. **`refund / 100` and `refund mod 100`.** Division of a negative amount.
-5. **`9_223_372_036_854_775_807 + 1`.** The largest value of a 64-bit integer, plus one.
+5. **`9_223_372_036_854_775_807 + 1`.** The largest value that many languages can hold in a whole number, plus one.
 :::
 
 `una run .` prints:
 
-```text include="steps/09-prices/expected/output.txt"
+```text include="steps/11-prices/expected/output.txt"
 order: 8480 cents, or 84 units and 80 cents
 15% off: 1272 cents off, 7208 to pay
 refund: -13 and 95
 no overflow: 9223372036854775808
 ```
 
-The discount is 15 percent of 8480 cents, 1272: the exact value is 1272.0, so nothing is dropped here. Where a percentage does not come out whole, `/` rounds down, and [the sale prices of section 2.6](/learn/text-and-conditions/#sale-prices-and-prices-per-kilogram) show the store choosing that on purpose.
+The discount is 15 percent of 8480 cents, 1272: the exact value is 1272.0, so nothing is dropped. Where a percentage does not come out whole, `/` drops the fraction, and so rounds down. The refund line is the subject of [Euclidean division](#euclidean-division).
+
+### Functions on whole numbers: `abs`, `min` and `max`
+
+Una gives every module a few functions on `Int`, ready to call, without writing them. They belong to the **prelude**, the set of functions every module has, which [section 3.2](/learn/text-and-conditions/#s3-2) presents:
+
+- `abs(x)` is the distance of `x` from zero: `abs(-3)` is 3, and `abs(3)` is 3.
+- `min(a, b: c)` is the smaller of two values, and `max(a, b: c)` the larger. The second argument carries its label, `b`, as every argument after the first does.
+
+The step computes three facts about the stock of one SKU:
+
+:::steps
+```una include="steps/12-int-functions/src/stock.una" title="steps/12-int-functions/src/stock.una" verified="check, run"
+module stock
+
+--- Prints what `abs`, `min` and `max` give for the stock of one SKU.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let on_shelf = 14
+  let reserved = 17
+  let counted = 11
+  @console.print("free to sell: {max(on_shelf - reserved, b: 0)}")
+  @console.print("one customer may buy: {min(on_shelf, b: 10)}")
+  @console.print("the count is off by {abs(counted - on_shelf)}")
+```
+
+1. **`max(on_shelf - reserved, b: 0)`.** 14 − 17 is −3: more units are promised to orders than the shelf holds. `max` with 0 makes the answer 0, never below.
+2. **`min(on_shelf, b: 10)`.** A limit of 10 units per customer, or fewer when the shelf holds fewer.
+3. **`abs(counted - on_shelf)`.** How far a count is off, whichever way: 11 − 14 is −3, and its distance from zero is 3.
+:::
+
+```text include="steps/12-int-functions/expected/output.txt"
+free to sell: 0
+one customer may buy: 10
+the count is off by 3
+```
 
 ### How `Int` behaves
 
 #### No 64-bit limit
 
-The last line shows that `Int` has no 64-bit limit: the sum is exact. Many languages store integers in 64 **bits**, binary digits, and a sum past the largest 64-bit value wraps around to a large negative number, or stops the program. In Una it is just a larger number.
+The last line of `prices` shows that `Int` has no 64-bit limit: the sum is exact. Many languages store whole numbers in 64 **bits**, binary digits, and a sum past the largest 64-bit value wraps around to a large negative number, or stops the program. In Una it is just a larger number.
 
 #### Euclidean division
 
-The refund line shows how Una divides a negative number. Division and `mod` are **Euclidean**: the remainder is never negative, and the quotient is chosen to make that true. So `-1205 / 100` is `-13` and `-1205 mod 100` is `95`, since `-13 * 100 + 95` is `-1205`. Languages that round toward zero give `-12` and `-5` instead. For amounts that are not negative, both rules agree, and that is why the money functions of this chapter state that they take an amount that is not negative.
+The refund line of `prices` shows how Una divides a negative number. Division and `mod` are **Euclidean**: the remainder is never negative, and the quotient is chosen to make that true. So `-1205 / 100` is `-13` and `-1205 mod 100` is `95`, since −13 × 100 + 95 is −1205. Many languages round toward zero instead, and give −12 and −5. For amounts that are not negative, both rules agree, so a function that splits cents into units and cents is right for every amount that is not negative.
 
 #### Division by zero, a proof obligation
 
-Dividing by zero has no answer, so Una does not let a program reach such a division. Here is a function whose divisor comes from a **parameter**, an input of the function ([chapter 1](/learn/hello/#s1-3)):
+Dividing by zero has no answer, so Una does not let a program reach such a division. Here is a function whose divisor comes from a parameter:
 
-```una include="steps/10-division/src/split.una" title="steps/10-division/src/split.una"
+```una include="steps/13-division/src/split.una" title="steps/13-division/src/split.una"
 module split
 
 --- What each of `people` pays when they share a bill of `total` cents, rounded down.
@@ -452,7 +553,7 @@ pub main() -> Unit
   @console.print("{share(9000, people: 4)} cents each")
 ```
 
-```text include="steps/10-division/expected/rendered.txt"
+```text include="steps/13-division/expected/rendered.txt"
 [U5001] Error: division obligation `people != 0` is refuted
    ╭─[ src/split.una:4:45 ]
    │
@@ -470,12 +571,31 @@ pub main() -> Unit
 ───╯
 ```
 
-Read it as [chapter 18](/learn/tools/#s18-2) shows: the message, the place, then the notes. The checker turned the division into a **proof obligation**, a fact that must be proved before the program may run: here, `people != 0`, "people is not zero". The part of `una check` that proves such facts is the **verifier**. It asks the solver Z3, which `verification.lock` pins, whether the fact holds for every value the parameters can take. It does not: the line `Note 2: counterexample: people = 0` gives the value that breaks it. (`Note 1` repeats the obligation with its identifier, `ob-…`, which tools use to name it.) A **counterexample** is that value. The obligation is **refuted**, and the code is U5001.
+Read it in three steps, as in [chapter 1](/learn/hello/#if-una-check-finds-a-mistake):
 
-A literal divisor, such as `100`, proves itself. For a divisor that comes from a parameter, the function must say why it cannot be zero: the `Help` line proposes a **guard**, an `if` that tests the divisor before the division runs, and [section 3.5](/learn/text-and-conditions/#s3-5) shows the other way, a precondition that every caller must meet.
+1. **The message.** `una check` turned the division into a **proof obligation**: a fact that must be proved before the program may run. Here it is `people != 0`, "people is not zero". The part of `una check` that proves such facts is the **verifier**. It asks Z3, the solver you installed in chapter 1, whether the fact holds for every value the parameters can take. It does not, so the obligation is **refuted**, and the code is U5001.
+2. **The place.** The marks point at the whole division, `total / people`.
+3. **The notes.** `Note 2: counterexample: people = 0` gives a value that breaks the obligation, a **counterexample**: a call such as `share(9000, people: 0)` would divide by zero. `Note 1` repeats the obligation with its identifier, `ob-…`, which tools use to name it.
+
+A divisor written as a literal other than zero, such as `100`, needs no proof. For a divisor that comes from a parameter, the function must say why it cannot be zero. The `Help` line proposes a **guard**: an `if` that runs the division only when `people != 0`, "people is not equal to 0", holds ([section 3.4](/learn/text-and-conditions/#s3-4) teaches `if`). The other way is a **precondition**, a rule every caller must meet, such as "people is greater than 0" ([section 5.1](/learn/contracts/#s5-1)).
+
+#### Dividing by the literal 0
+
+A division by the literal `0` can never be safe. Replace `1990 * 3 / 100` in `arithmetic` with `units / 0`:
+
+```text include="steps/14-zero/expected/rendered.txt#L1-L6"
+[U5001] Error: division obligation `0 != 0` is refuted
+    ╭─[ src/arithmetic.una:15:20 ]
+    │
+ 15 │   @console.print("{units / 0}")
+    │                    ────┬────
+    │                        ╰────── division obligation `0 != 0` is refuted
+```
+
+The obligation is `0 != 0`, false whatever the values are, so it needs no counterexample.
 
 > [!NOTE]
-> `Int` arithmetic costs a little more than the computer's own arithmetic on numbers of a fixed size, since an `Int` may grow past that size. Where a number must have a fixed size, such as a number another program reads as one byte, use the fixed-width types of [section 2.3](#s2-3).
+> An `Int` that may grow past the computer's own number size costs a little more to compute with than a number of a fixed size. Where a number must have a fixed size, such as a number another program reads as one byte, use the fixed-width types of [section 2.3](#s2-3).
 
 ### `Int` or something else
 
@@ -485,16 +605,17 @@ A literal divisor, such as `100`, proves itself. For a divisor that comes from a
 | The number is… | Use |
 | --- | --- |
 | A count, a quantity or an amount of money | `Int`, with money in cents |
-| A field that a protocol, a file or a device reads with a fixed width | a fixed-width type ([section 2.3](#s2-3)) |
+| A field that another program, a file or a device reads with a fixed size | a fixed-width type ([section 2.3](#s2-3)) |
 | A code made of digits, such as a postal code with a leading zero | `Text`: you never compute with it, and `01310` is not an integer literal |
-| A price with a fraction | `Int` cents, and a function that writes them with two decimals, as `money` does in [section 3.5](/learn/text-and-conditions/#s3-5) |
+| A price with a fraction | `Int` cents, written with two decimals where the program prints it, as [exercise 3](#exercise-3-amounts-with-two-decimals) does |
+| A measure with a fraction | `Int` in a smaller unit, such as grams or millimeters |
 :::
 
 ### Check yourself: integers
 
 The step `arithmetic` ends with two more lines:
 
-```una include="steps/08-operators/src/arithmetic.una#L14-L15" title="steps/08-operators/src/arithmetic.una"
+```una include="steps/10-operators/src/arithmetic.una#L15-L16" title="steps/10-operators/src/arithmetic.una"
   @console.print("{1990 * 3 / 100}")
   @console.print("{-7 / 2} and {-7 mod 2}")
 ```
@@ -502,22 +623,21 @@ The step `arithmetic` ends with two more lines:
 What do they print? The first is three units at 19.90, in whole units of money.
 
 :::answer Show the answer
-```text include="steps/08-operators/expected/output.txt#L6-L7"
+```text include="steps/10-operators/expected/output.txt#L7-L8"
 59
 -4 and 1
 ```
 
-`1990 * 3` is 5970, and `/ 100` drops the remainder: 59. For `-7 / 2`, Euclidean division keeps the remainder at 0 or above: −4 × 2 is −8, and −7 − (−8) is 1. So the quotient is −4 and the remainder 1.
+`1990 * 3` is 5970, and `/ 100` drops the remainder: 59. In `-7 / 2`, the minus sign comes first, and Euclidean division keeps the remainder at 0 or above: −4 × 2 is −8, and −7 − (−8) is 1. So the quotient is −4 and the remainder 1.
 :::
 
 ## 2.3 Fixed-width integers
 
-
 ### What a fixed-width integer is
 
-An `Int` grows as large as it needs. A **fixed-width integer** has a set number of bits, and so a smallest and a largest value. Think of the counter on a parking ticket machine with three digits: it shows 0 to 999, and nothing past that. A computer stores such a number in 8, 16, 32 or 64 bits, and other programs, file formats and devices often expect exactly that: a byte, 8 bits, holds 0 to 255.
+An `Int` grows as large as it needs. A **fixed-width integer** has a set number of bits, and so a smallest and a largest value. Think of the counter on a parking ticket machine with three digits: it shows 0 to 999, and nothing past that. A computer stores such a number in 8, 16, 32 or 64 bits, and other programs, file formats and devices often expect exactly that: a **byte**, 8 bits, holds 0 to 255.
 
-Una has the **unsigned** types `U8`, `U16`, `U32` and `U64`, which hold 0 and up, and the **signed** types `I8`, `I16`, `I32` and `I64`, which hold negative values too:
+Una has the **unsigned** types `U8`, `U16`, `U32` and `U64`, which hold 0 and up, and the **signed** types `I8`, `I16`, `I32` and `I64`, which hold negative values too. The number is the width in bits:
 
 | Type | Smallest | Largest |
 | --- | --- | --- |
@@ -533,21 +653,21 @@ Una has the **unsigned** types `U8`, `U16`, `U32` and `U64`, which hold 0 and up
 Each is its own type, distinct from `Int` and from the others.
 
 > [!NOTE]
-> The fixed-width types belong to edition `0.2` and later. In a package of edition `0.1`, `U8` and the others are ordinary names.
+> The fixed-width types belong to edition `0.2` and later, the edition of every package in this book. In a package of edition `0.1`, `U8` and the others are ordinary names.
 
 ### Why every operation is proved
 
-In many languages a fixed-width number that passes its largest value **wraps around**: 255 + 1 in a byte gives 0, without an error. A count of 256 labels kept in a byte becomes 0, the label printer prints nothing, and nobody knows why. In Una a fixed-width value never wraps around unless the code asks for it by name. Every `+`, `-`, `*`, `/` and `mod` on one is a proof obligation: the verifier must prove that the exact result fits the type.
+In many languages a fixed-width number that passes its largest value **wraps around**: 255 + 1 in a byte gives 0, with no error. A count of 256 labels kept in a byte becomes 0, the label printer prints nothing, and nobody knows why. In Una a fixed-width value never wraps around unless the code asks for it by name. Every `+`, `-`, `*`, `/`, `mod` and minus sign on one is a proof obligation: the verifier must prove that the exact result fits the type.
 
 A function that adds 1 to a byte, with nothing to say the byte is below 255, does not check:
 
-```una include="steps/12-overflow/src/printer.una#copies" title="steps/12-overflow/src/printer.una"
+```una include="steps/16-overflow/src/printer.una#copies" title="steps/16-overflow/src/printer.una"
 --- How many copies of a label to print: one per facing on the shelf, and one spare.
 --- The label printer reads the count as one byte, so it is a `U8`.
 pub copies(facings: U8) -> U8 = facings + 1
 ```
 
-```text include="steps/12-overflow/expected/rendered.txt#L1,L8,L10,L12,L16"
+```text include="steps/16-overflow/expected/rendered.txt#L1,L8,L10,L12,L16"
 [U5001] Error: overflow obligation `facings + 1 in 0..255` is refuted
    │ Help 1: repair 1: guard the operation with `if facings.to_int() + 1 in 0..255`
    │ Help 2: repair 2: give the values a wider type, converting them explicitly
@@ -555,31 +675,36 @@ pub copies(facings: U8) -> U8 = facings + 1
    │ Note 2: counterexample: facings = 255
 ```
 
-The obligation `facings + 1 in 0..255` says that the sum must lie between 0 and 255, and the counterexample is the one value that breaks it, 255. The repairs list the three honest choices: check the range first, use a wider type, or say that wrapping or saturating is what you mean. Each makes the behavior at the edge of the range visible in the code.
+The obligation `facings + 1 in 0..255` says that the sum must lie between 0 and 255, and the counterexample is the one value that breaks it, 255. The three repairs are the three honest choices: test the range first, with an `if` ([section 3.4](/learn/text-and-conditions/#s3-4)), use a wider type, or say that wrapping or stopping at the end of the range is what you mean. Each makes the behavior at the edge of the range visible in the code.
 
 ### How to write fixed-width values
 
 #### A literal takes the type its place expects
 
-`let copies: U8 = 200` makes 200 a `U8`, since the name says so. A literal also takes the type of the parameter it is passed to, or of the other side of an operator. A literal that does not fit its type is U2022, and [A literal out of range](/learn/text-and-conditions/#a-literal-out-of-range-u2022), in Common mistakes, shows it.
+`let copies: U8 = 200` makes 200 a `U8`, since the name's type says so. A literal also takes the type of the parameter it is passed to, or of the other operand of an operator. A literal that does not fit its type does not check, as [How fixed-width integers behave](#how-fixed-width-integers-behave) shows.
+
+#### Method calls
+
+The operations of this section are **methods**: functions written after a value, with a dot. `copies.to_int()` calls `to_int` on `copies`, as `@console.print(…)` calls `print` on the console. A method call always takes its parentheses here, and a second value goes in them with its label, as in `copies.wrapping_add(by: 100)`. [Section 3.2](/learn/text-and-conditions/#s3-2) covers method calls in full.
 
 #### Converting between integer types
 
 - `x.to_int()` turns any fixed-width value into an `Int`. Every value fits, so it never fails.
-- `x.to_u8()`, `x.to_u16()`, `x.to_i32()` and the others turn a value into another integer type. A conversion that can lose a value, from `Int` or to a smaller range, is a proof obligation that the value fits; one where every value fits, such as `U8` to `U16`, is not.
-- These methods always take their parentheses: `x.to_int` without them names the prelude's `to_int` of a text, and the checker then reports that its argument must be a `Text`.
+- `x.to_u8()`, `x.to_u16()`, `x.to_i32()` and the others turn a value into another integer type. Where every value fits, such as from `U8` to `U16`, the conversion is called **widening**, and it needs no proof. Every other conversion, from `Int` or to a smaller range, is **narrowing**, and the verifier must prove that the value fits.
 - A `U8` and an `Int`, or a `U8` and a `U16`, do not mix in one operation: convert one of them first.
 
 #### Wrapping and saturating, by name
 
 - `a.wrapping_add(by: b)`, `wrapping_sub` and `wrapping_mul` wrap around, as other languages do silently.
-- `a.saturating_add(by: b)`, `saturating_sub` and `saturating_mul` stop at the end of the range: at 0 or at the largest value.
+- `a.saturating_add(by: b)`, `saturating_sub` and `saturating_mul` stop at the end of the range: at the smallest or at the largest value.
 
 These never leave the range, so they need no proof.
 
+### Each form at work
+
 The step writes each form:
 
-```una include="steps/13-fixed-forms/src/widths.una#L1-L14" title="steps/13-fixed-forms/src/widths.una"
+```una include="steps/17-widths/src/widths.una#L1-L14" title="steps/17-widths/src/widths.una"
 module widths
 
 --- Prints values of fixed-width types, and what their methods give.
@@ -596,21 +721,21 @@ pub main() -> Unit
   @console.print("{count.to_u8()} as a U8")
 ```
 
-```text include="steps/13-fixed-forms/expected/output.txt#L1-L4"
+```text include="steps/17-widths/expected/output.txt#L1-L4"
 200, -128 and 18446744073709551615
 300 as an Int
 44 wrapped, 255 saturated
 42 as a U8
 ```
 
-`copies.to_int() + 100` is an `Int`, so 300 is fine. In a `U8`, 200 + 100 wraps to 44 or saturates at 255. `count.to_u8()` narrows the `Int` 42: the verifier knows `count` is 42, so it proves that it fits.
+`copies.to_int() + 100` is an `Int`, so 300 is fine. In a `U8`, 200 + 100 wraps around to 44, since 300 − 256 is 44, or saturates at 255. `count.to_u8()` narrows the `Int` 42: the verifier knows that `count` is 42, so it proves that it fits.
 
 ### Label copies as one byte: `U8`
 
 The module `printer` counts the copies of a shelf label in a `U8`, and a roll of labels in a `U16`:
 
 :::steps
-```una include="steps/11-printer/src/printer.una" title="src/printer.una" verified="check, run"
+```una include="steps/15-printer/src/printer.una" title="steps/15-printer/src/printer.una" verified="check, run"
 module printer
 
 --- How many copies of a label to print: one per facing on the shelf, and one spare.
@@ -636,15 +761,15 @@ pub main() -> Unit
 ```
 
 1. **`pub copies(facings: U8) -> U8`.** The label printer reads the number of copies as one byte, so the result is a `U8`. A **facing** is one row of a product on the front of a shelf.
-2. **`requires facings < 255`.** A **precondition**: a fact every caller must make true, written on its own line under the header, before `=`. It makes `facings + 1` fit in a `U8`, so the verifier proves the addition, and it proves the precondition at each call. [Chapter 5](/learn/contracts/#s5-1) covers preconditions in full.
-3. **`let lamps: U8 = 4`.** A literal takes the type its context expects, here `U8`. A literal that does not fit, such as `300`, does not check.
-4. **`lamp_labels.to_int() + mug_labels.to_int()`.** Two `U8` values turned into `Int` before they are added. Every `U8` fits in an `Int`, so `to_int()` always succeeds; the sum is an `Int` and cannot overflow.
-5. **`roll.saturating_sub(by: 1_200)`.** Subtraction that stops at the bottom of the range, 0, instead of going below it. Methods such as this one say in their names what happens at the ends of the range.
+2. **`requires facings < 255`.** A **precondition**: a rule every caller must meet, written on its own line under the header, before `=`. Here it says that `facings` is less than 255, so that `facings + 1` fits in a `U8`. The verifier proves the addition from it, and checks the rule at each call. [Chapter 5](/learn/contracts/#s5-1) covers preconditions in full.
+3. **`let lamps: U8 = 4`.** A literal takes the type its place expects, here `U8`.
+4. **`lamp_labels.to_int() + mug_labels.to_int()`.** Two `U8` values turned into `Int` before they are added. The sum is an `Int`, and cannot overflow.
+5. **`roll.saturating_sub(by: 1_200)`.** Subtraction that stops at the bottom of the range, 0, instead of going below it.
 :::
 
 `una run .` prints:
 
-```text include="steps/11-printer/expected/output.txt"
+```text include="steps/15-printer/expected/output.txt"
 5 and 13 labels
 18 labels in all
 0 left on a roll of 1000 after 1200
@@ -652,12 +777,59 @@ pub main() -> Unit
 
 ### How fixed-width integers behave
 
-- **No silent wrap.** Every operation that could leave the range is an obligation, and a refuted one does not check.
-- **Literals are checked at once.** A literal that does not fit its type is U2022, before any proof.
-- **A constant computation is proved, not folded.** `250 + 10` where a `U8` is expected is not one literal: it gets an overflow obligation, which is refuted.
-- **Types do not mix.** Operands of two integer types are U2001; convert one with `to_int()` or a narrowing method.
-- **Contracts read the exact value.** In a `requires` clause, a `U8` reads as its mathematical value, so `facings < 255` compares integers and never overflows.
-- **Lengths stay `Int`.** `t.len` and the length of a list are always `Int`.
+#### A literal must fit at once
+
+A literal that does not fit its type is refused before any proof. Write `300` for the `U8` of `widths`:
+
+```text include="steps/18-literal-range/expected/rendered.txt#L1-L6"
+[U2022] Error: the literal `300` does not fit `U8`, which holds `0` to `255`
+   ╭─[ src/widths.una:7:20 ]
+   │
+ 7 │   let copies: U8 = 300
+   │                    ─┬─
+   │                     ╰─── the literal `300` does not fit `U8`, which holds `0` to `255`
+```
+
+The message gives the range of the type, so you can see why: a `U8` holds 0 to 255. A minus sign with its literal counts as one literal, so `-128` fits an `I8`.
+
+#### Types do not mix
+
+An operation takes two values of one type. Add the `Int` `count` to the `U8` `copies`:
+
+```text include="steps/19-mixed/expected/rendered.txt#L1-L6"
+[U2001] Error: an operand of `+` must be `U8`, found `Int`
+    ╭─[ src/widths.una:14:29 ]
+    │
+ 14 │   @console.print("{copies + count} in all")
+    │                             ──┬──
+    │                               ╰──── an operand of `+` must be `U8`, found `Int`
+```
+
+The `U8` came first, so the message asks the other operand to be a `U8` too. Convert one of them: `copies.to_int() + count` is an `Int` sum.
+
+#### A narrowing must be proved
+
+A conversion to a smaller range is proved like an operation. A function that narrows any `Int` to a `U8` does not check:
+
+```una include="steps/20-narrowing/src/tags.una#copies_byte" title="steps/20-narrowing/src/tags.una"
+--- The number of copies, as the label printer reads it: one byte.
+pub copies_byte(copies: Int) -> U8 = copies.to_u8()
+```
+
+```text include="steps/20-narrowing/expected/rendered.txt#L1,L8,L16"
+[U5001] Error: overflow obligation `copies.to_u8() in 0..255` is refuted
+   │ Help 1: repair 1: guard the operation with `if copies in 0..255`
+   │ Note 2: counterexample: copies = -1
+```
+
+The counterexample, `copies = -1`, is an `Int` that no `U8` can hold. A precondition that `copies` lies between 0 and 255 ([chapter 5](/learn/contracts/#s5-1)), or a value the verifier knows, as `count` in `widths`, makes the conversion safe.
+
+#### More rules
+
+- **Every operation, even with literals.** `200 + 100` where a `U8` is expected is not one literal: it gets an overflow obligation, which is refuted.
+- **Division too.** `/` and `mod` on fixed-width values are Euclidean, as on `Int`, and a divisor that may be zero is a division obligation, as in [section 2.2](#division-by-zero-a-proof-obligation).
+- **Interpolation shows the number.** A fixed-width value in braces goes into the text as its decimal digits, as an `Int` does.
+- **Lengths stay `Int`.** The length of a text, which [chapter 3](/learn/text-and-conditions/#s3-2) shows, is always an `Int`.
 
 ### When to use a fixed width
 
@@ -677,7 +849,7 @@ pub main() -> Unit
 
 Change the first line of `widths` so that the `U8` is computed:
 
-```diff include="steps/13-fixed-forms..steps/14-constant-overflow:src/widths.una" title="src/widths.una" context="0"
+```diff include="steps/17-widths..steps/21-constant-overflow:src/widths.una" title="src/widths.una" context="0"
 --- a/src/widths.una
 +++ b/src/widths.una
 @@ -7 +7 @@
@@ -687,7 +859,7 @@ Change the first line of `widths` so that the `U8` is computed:
 
 Does it still check? And in the original step, what does the last line print, with `roll` holding 500?
 
-```una include="steps/13-fixed-forms/src/widths.una#L15-L16" title="steps/13-fixed-forms/src/widths.una"
+```una include="steps/17-widths/src/widths.una#L15-L16" title="steps/17-widths/src/widths.una"
   let roll: U16 = 500
   @console.print("{roll.saturating_sub(by: 600)} and {roll.wrapping_sub(by: 600)}")
 ```
@@ -695,13 +867,13 @@ Does it still check? And in the original step, what does the last line print, wi
 :::answer Show the answer
 It does not check:
 
-```text include="steps/14-constant-overflow/expected/rendered.txt#L1"
+```text include="steps/21-constant-overflow/expected/rendered.txt#L1"
 [U5001] Error: overflow obligation `200 + 100 in 0..255` is refuted
 ```
 
 `200 + 100` is 300, which a `U8` cannot hold, and the verifier proves that the sum leaves the range. The last line of the original prints:
 
-```text include="steps/13-fixed-forms/expected/output.txt#L5"
+```text include="steps/17-widths/expected/output.txt#L5"
 0 and 65436
 ```
 
@@ -712,13 +884,13 @@ It does not check:
 
 ### What the program must do
 
-A packing slip goes into every box the store ships. It names the order and the customer, lists each line of the order with its quantity, counts the units, and gives the total paid. The warehouse prints it as the box is packed.
+A packing slip goes into every box the store ships. It names the order and the customer, lists each line of the order with its quantity, counts the units and the boxes, and gives the total paid. The warehouse prints it as the box is packed.
 
-The design follows from the job and from this chapter's ideas. Each line of the slip comes from its own function, which takes the values the line shows and returns its text. Those functions have no `uses` line, so they cannot print, and an example can test each one by its result. `main` holds the sample order's values, calls the functions, and prints what they return, line by line.
+The design follows from the job and from what you have learned. Each line of the slip comes from its own function, which takes the values the line shows and gives back its text. Those functions have no `uses` line, so they print nothing, and an example can test each one by its result. `main` names the sample order's values with `let`, calls the functions, and prints what they give back, line by line.
 
 ### The slip's package and manifest
 
-The program is one module, `slip`, in a package of its own: make a directory `day-to-day` with its `src`, as in [Opening hours](#opening-hours), add `verification.lock`, and write this manifest, which grants the console:
+The program is one module, `slip`, in a package of its own, made as in [Each step is a package](#each-step-is-a-package), with this manifest:
 
 ```toml include="day-to-day/una.toml" title="day-to-day/una.toml"
 [package]
@@ -733,14 +905,15 @@ grants = ["console"]
 
 ### The lines of the slip
 
-Seven functions, each with a doc comment, each written in the short form, on one line:
+Nine functions, each with a doc comment, each written in the short form, on one line:
 
 ```una include="day-to-day/src/slip.una#title..closing" title="day-to-day/src/slip.una" caption="one function per line of the slip"
---- The first line of a slip: the order the box holds.
-pub title(order: Int) -> Text = "Packing slip for order {order}"
+--- The first line of a slip: the order the box holds. The warehouse keeps an order's
+--- number as an unsigned 32-bit number, so it is a `U32`.
+pub title(order: U32) -> Text = "Packing slip for order {order}"
 
---- Where the box goes: the customer's number and email address.
-pub ship_to(customer: Int, email: Text) -> Text = "Ship to customer {customer} <{email}>"
+--- Where the box goes: the customer's number, a `U32` as well, and email address.
+pub ship_to(customer: U32, email: Text) -> Text = "Ship to customer {customer} <{email}>"
 
 --- One line of the order: how many units of a SKU, and what the SKU is.
 pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  {name}"
@@ -748,8 +921,14 @@ pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  
 --- What one line of the order costs, in cents.
 pub line_cents(quantity: Int, cents: Int) -> Int = quantity * cents
 
---- How much the box holds.
+--- How many boxes the units need, at most two units to a box: half the units, rounded up.
+pub boxes(units: Int) -> Int = (units + 1) / 2
+
+--- How much the order holds.
 pub count_line(units: Int, lines: Int) -> Text = "{units} units in {lines} lines"
+
+--- How many boxes the order ships in.
+pub box_line(count: Int) -> Text = "Boxes in this shipment: {count}"
 
 --- What the customer paid for the goods, in cents.
 pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
@@ -758,54 +937,55 @@ pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
 pub closing() -> Text = "Questions? Write to orders@example.invalid and quote the order number."
 ```
 
-Each function uses one idea of this chapter:
+Each function uses an idea of this chapter:
 
-- `title`, `count_line` and `total_line` put `Int` parameters into a text with interpolation, as in [section 2.1](#s2-1).
-- `ship_to` and `item` take two and three parameters, separated by commas. The angle brackets in `ship_to` and the `x` in `item` are plain characters of the text: only braces are special.
-- `item` starts with two spaces, inside the text, so that the item lines stand out on paper.
-- `line_cents` returns an `Int`, not a text: it multiplies two `Int` values with `*`.
-- `closing` takes no parameters and always returns the same text.
+- `title` and `ship_to` take a `U32`. The warehouse keeps the numbers of orders and customers in 32 bits, so their type says so, and a number that does not fit is refused at the call.
+- `item`, `count_line`, `box_line` and `total_line` put their parameters into a text with interpolation. `item` starts with two spaces, inside the text, so that the item lines stand out on paper.
+- `line_cents` gives back an `Int`, not a text: it multiplies two `Int` values with `*`.
+- `boxes` divides with `/`, which drops the remainder. Adding 1 before dividing by 2 turns "half, rounded down" into "half, rounded up": 3 units need 2 boxes, and 4 units need 2 as well.
+- `closing` takes no parameters and always gives back the same text.
 
-Money is in **cents**, as an `Int`: 1990 is 19 units and 90 cents. Whole cents never round, so the total is exact. [Chapter 2](/learn/numbers/) shows how to print them as an amount with two decimals.
+Money is in cents, as an `Int`: 1990 is 19 units of money and 90 cents. Whole cents never round, so the total is exact. [Exercise 3](#exercise-3-amounts-with-two-decimals) prints them with two decimals.
 
 ### Printing the slip
 
-`main` names the quantities and computes the cost of each line, then prints the slip one line at a time:
+`main` names the order's values, computes what follows from them, then prints the slip one line at a time:
 
-```una include="day-to-day/src/slip.una#main" title="day-to-day/src/slip.una"
+```una include="day-to-day/src/slip.una#main" title="day-to-day/src/slip.una" verified="check, run"
 --- Prints the slip of order 1042: two desk lamps and one rug.
 pub main() -> Unit
   uses @console: Console[print]
 =
+  let order: U32 = 1042
   let lamps = 2
   let rugs = 1
+  let units = lamps + rugs
   let lamp_cents = line_cents(lamps, cents: 1990)
   let rug_cents = line_cents(rugs, cents: 4500)
-  @console.print(title(1042))
+  @console.print(title(order))
   @console.print(ship_to(318, email: "customer318@example.invalid"))
   @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
-  @console.print(count_line(lamps + rugs, lines: 2))
+  @console.print(count_line(units, lines: 2))
+  @console.print(box_line(boxes(units)))
   @console.print(total_line(lamp_cents + rug_cents))
   @console.print(closing())
 ```
 
-Read it in two parts. The four `let` lines name the order's values: how many lamps and rugs, and what each line costs, from `line_cents`. The seven `print` lines then print the slip, each one calling the function of its line. `count_line(lamps + rugs, lines: 2)` computes its first argument, 3, before the call.
+Read it in two parts:
 
-The calls with more than one argument name every argument after the first: `line_cents(lamps, cents: 1990)`, `item(lamps, sku: "LAMP-01", name: "Desk lamp, brass")`, as [section 1.3](/learn/hello/#s1-3) explains. [Chapter 6](/learn/functions/) gives the full rule.
+1. **The six `let` lines** name the order's values. `order` is a `U32`, as `title` takes. `units` is the sum of the two quantities, and `lamp_cents` and `rug_cents` are what `line_cents` gives back for each line.
+2. **The eight `print` lines** print the slip, each one calling the function of its line. `box_line(boxes(units))` calls `boxes` first, and passes its result to `box_line`.
 
-Each `@console.print` call is a line of its own. In Una, a call that prints, or does anything else outside the program, always stands on a line of its own: as a step, as the whole value of a `let`, or as the last line of a body, never hidden inside another computation. A reader who scans the left edge of `main` sees every effect it has, in the order it has them.
+`ship_to(318, …)` passes a literal where a `U32` is expected, so 318 is a `U32`. The calls with more than one argument label every argument after the first, as in chapter 1: `line_cents(lamps, cents: 1990)`.
 
 ### Why one function per line of the slip
 
-Why so many small functions for a program this size? Each one is a line of the slip that someone may want to change: the wording of the closing line, the layout of an item, the email address. A change to one of them touches one line of code and one example, and the header of each tells you, without a look at its body, that it only computes a text or a number. The same program written as one `main` of seven prints, with every text in place, would be shorter, and nothing in it could be tested without reading what it prints.
+Why so many small functions for a program this size? Each one is a line of the slip that someone may want to change: the wording of the closing line, the layout of an item, the size of a box. A change to one of them touches one line of code and its examples, and the header of each says, without a look at its body, that it only computes a text or a number. The same program written as one `main` with every text in place would be shorter, and nothing in it could be tested except by reading what it prints.
 
 ### Running it
 
-In the package's directory, `una run .` prints the slip shown in [What you'll build](#what-youll-build): the order and the customer, two item lines, three units in two lines, and a total of 8480 cents, which is 2 times 1990 plus 4500.
-
-> [!SECURITY]
-> The slip's functions have no `uses` line, so the checker proves they cannot print, read files or reach the network. Only `main` touches the console, and only because its header says so and the run grants it, here through `una.toml`. When this program grows, anything new a function does outside the program shows up in that function's header, where a reviewer sees it.
+In the `day-to-day` directory, `una run .` prints the slip shown in [What you'll build](#what-youll-build): the order and the customer, two item lines, three units in two lines, two boxes, and a total of 8480 cents, which is 2 × 1990 + 4500.
 
 ### The whole program
 
@@ -817,11 +997,12 @@ module slip
 -- A packing slip: the sheet that goes into the box with an order, so that the customer
 -- can check what arrived. This version prints the slip of one sample order.
 
---- The first line of a slip: the order the box holds.
-pub title(order: Int) -> Text = "Packing slip for order {order}"
+--- The first line of a slip: the order the box holds. The warehouse keeps an order's
+--- number as an unsigned 32-bit number, so it is a `U32`.
+pub title(order: U32) -> Text = "Packing slip for order {order}"
 
---- Where the box goes: the customer's number and email address.
-pub ship_to(customer: Int, email: Text) -> Text = "Ship to customer {customer} <{email}>"
+--- Where the box goes: the customer's number, a `U32` as well, and email address.
+pub ship_to(customer: U32, email: Text) -> Text = "Ship to customer {customer} <{email}>"
 
 --- One line of the order: how many units of a SKU, and what the SKU is.
 pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  {name}"
@@ -829,8 +1010,14 @@ pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  
 --- What one line of the order costs, in cents.
 pub line_cents(quantity: Int, cents: Int) -> Int = quantity * cents
 
---- How much the box holds.
+--- How many boxes the units need, at most two units to a box: half the units, rounded up.
+pub boxes(units: Int) -> Int = (units + 1) / 2
+
+--- How much the order holds.
 pub count_line(units: Int, lines: Int) -> Text = "{units} units in {lines} lines"
+
+--- How many boxes the order ships in.
+pub box_line(count: Int) -> Text = "Boxes in this shipment: {count}"
 
 --- What the customer paid for the goods, in cents.
 pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
@@ -842,15 +1029,18 @@ pub closing() -> Text = "Questions? Write to orders@example.invalid and quote th
 pub main() -> Unit
   uses @console: Console[print]
 =
+  let order: U32 = 1042
   let lamps = 2
   let rugs = 1
+  let units = lamps + rugs
   let lamp_cents = line_cents(lamps, cents: 1990)
   let rug_cents = line_cents(rugs, cents: 4500)
-  @console.print(title(1042))
+  @console.print(title(order))
   @console.print(ship_to(318, email: "customer318@example.invalid"))
   @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
-  @console.print(count_line(lamps + rugs, lines: 2))
+  @console.print(count_line(units, lines: 2))
+  @console.print(box_line(boxes(units)))
   @console.print(total_line(lamp_cents + rug_cents))
   @console.print(closing())
 
@@ -874,9 +1064,25 @@ example "a line of zero units costs nothing"
   do line_cents(0, cents: 1990)
   expect result == 0
 
+example "an odd number of units needs one box more than half of them"
+  do boxes(3)
+  expect result == 2
+
+example "an even number of units fills every box"
+  do boxes(4)
+  expect result == 2
+
+example "no units need no box"
+  do boxes(0)
+  expect result == 0
+
 example "the count line gives units and lines"
   do count_line(3, lines: 2)
   expect result == "3 units in 2 lines"
+
+example "the box line gives the number of boxes"
+  do box_line(2)
+  expect result == "Boxes in this shipment: 2"
 
 example "the total is in cents"
   do total_line(8480)
@@ -887,21 +1093,9 @@ example "the total is in cents"
 
 ### One example per function
 
-Every function of the slip returns a value, so every one gets an example. The examples call each function with the sample order's values and state the exact text or number it must return:
+Every function of the slip gives back a value, so every one gets an example, in the form chapter 1 showed: `do` a call, then `expect result ==` the exact value. An example may expect a number as well as a text:
 
-```una include="day-to-day/src/slip.una#L43-L69" title="day-to-day/src/slip.una" caption="the examples"
-example "the title names the order"
-  do title(1042)
-  expect result == "Packing slip for order 1042"
-
-example "the address line holds the customer number and the email"
-  do ship_to(318, email: "customer318@example.invalid")
-  expect result == "Ship to customer 318 <customer318@example.invalid>"
-
-example "an item line is indented and starts with the quantity"
-  do item(2, sku: "LAMP-01", name: "Desk lamp, brass")
-  expect result == "  2 x LAMP-01  Desk lamp, brass"
-
+```una include="day-to-day/src/slip.una#L65-L71" title="day-to-day/src/slip.una" caption="two examples of line_cents"
 example "a line costs its quantity times the unit price"
   do line_cents(2, cents: 1990)
   expect result == 3980
@@ -909,45 +1103,49 @@ example "a line costs its quantity times the unit price"
 example "a line of zero units costs nothing"
   do line_cents(0, cents: 1990)
   expect result == 0
-
-example "the count line gives units and lines"
-  do count_line(3, lines: 2)
-  expect result == "3 units in 2 lines"
-
-example "the total is in cents"
-  do total_line(8480)
-  expect result == "Total paid: 8480 cents"
 ```
 
-### Cases the sample order does not reach
+[Chapter 14](/learn/testing/#s14-1) covers examples in full.
 
-Two of them check more than the sample shows. "a line of zero units costs nothing" covers a case the sample order never reaches. "an item line is indented and starts with the quantity" pins the two leading spaces, which are easy to lose in an edit and hard to see in the output. An example that states the whole expected text catches a change of one character.
+### The edges of a computation
+
+A computation can be right for the sample order and wrong elsewhere, so its examples try the edges too:
+
+- `boxes` has three: an odd number of units, 3, which needs the rounding up; an even number, 4, which must not get a box too many; and 0, no units and no box.
+- "a line of zero units costs nothing" covers a case the sample order never reaches.
+- "an item line is indented and starts with the quantity" pins the two leading spaces, which are easy to lose in an edit and hard to see in the output.
+
+An example that states the whole expected text catches a change of one character.
 
 ### Running the slip's examples
 
-`una test .` prints:
+In the `day-to-day` directory, `una test .` prints:
 
-```text include="day-to-day/expected/commands/test.txt#L2-L10"
+```text include="day-to-day/expected/commands/test.txt#L2-L14"
 example slip "the title names the order" ... ok
 example slip "the address line holds the customer number and the email" ... ok
 example slip "an item line is indented and starts with the quantity" ... ok
 example slip "a line costs its quantity times the unit price" ... ok
 example slip "a line of zero units costs nothing" ... ok
+example slip "an odd number of units needs one box more than half of them" ... ok
+example slip "an even number of units fills every box" ... ok
+example slip "no units need no box" ... ok
 example slip "the count line gives units and lines" ... ok
+example slip "the box line gives the number of boxes" ... ok
 example slip "the total is in cents" ... ok
 
-7 examples: 7 passed, 0 failed
+11 examples: 11 passed, 0 failed
 ```
 
-Each example takes one line of the report, so when one fails, the report names the line of the slip that changed. Tools read the same results as JSON, a text format that programs read, with `una --json test .`, one entry for each example with its outcome.
+Each example takes one line of the report, so when one fails, the report names the line of the slip that changed.
 
 ### What the examples leave out: `main`
 
-The examples do not test `main`, and they do not need to. `main` only names values and prints what the functions return, and the functions are what the examples cover. This is the shape most Una programs take: a thin `main` with the effects, and pure functions, with no `uses` line, that hold the logic and the tests. [Chapter 10, Testing](/learn/testing/), shows how to test functions that do have effects, with fakes that stand in for the console and other capabilities.
+The examples do not call `main`. It only names values and prints what the functions give back, and the functions are what the examples cover. Most Una programs take this shape: a short `main` that prints, and functions with no `uses` line that hold the computations and their examples.
 
 ## 2.6 Common mistakes
 
-Each mistake below is a small change to `day-to-day/src/slip.una`, followed by what `una check .` reports. Read each diagnostic as [section 18.2](/learn/tools/#s18-2) shows: the message, then the place, then the help.
+Each mistake is a small change to `day-to-day/src/slip.una`, followed by what `una check .` reports. Read each diagnostic as [chapter 1](/learn/hello/#if-una-check-finds-a-mistake) shows: the message, then the place, then the help.
 
 ### Printing a number (U2001)
 
@@ -957,8 +1155,8 @@ Print the total itself, instead of the line that holds it:
 ```diff include="day-to-day..mistakes/1:src/slip.una" context="1"
 --- a/src/slip.una
 +++ b/src/slip.una
-@@ -39,3 +39,3 @@
-   @console.print(count_line(lamps + rugs, lines: 2))
+@@ -49,3 +49,3 @@
+   @console.print(box_line(boxes(units)))
 -  @console.print(total_line(lamp_cents + rug_cents))
 +  @console.print(lamp_cents + rug_cents)
    @console.print(closing())
@@ -968,26 +1166,176 @@ Print the total itself, instead of the line that holds it:
 [U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
 ```
 
-*Why:* `print` takes a `Text`, and `lamp_cents + rug_cents` is an `Int`. Una converts no value to another type unless the code says so. The message names the parameter, `line`, the type it must have and the type it got.
+*Why:* `print` takes a `Text`, and `lamp_cents + rug_cents` is an `Int`. Una turns no value into another type unless the code says so. The message names the parameter, `line`, the type it must have and the type it got.
 
 *Fix:* put the number in a text, `"{lamp_cents + rug_cents}"`, or call `total_line`, which does. See [U2001](/docs/errors/U2001/).
 :::
 
+### A price with a decimal point (U0101)
+
+:::mistake
+Write the price of a lamp as it appears on a shelf tag:
+
+```diff include="day-to-day..mistakes/2:src/slip.una" context="1"
+--- a/src/slip.una
++++ b/src/slip.una
+@@ -41,3 +41,3 @@
+   let units = lamps + rugs
+-  let lamp_cents = line_cents(lamps, cents: 1990)
++  let lamp_cents = line_cents(lamps, cents: 19.90)
+   let rug_cents = line_cents(rugs, cents: 4500)
+```
+
+```text include="mistakes/2/expected/rendered.txt#L1"
+[U0101] Error: `19.90` is a fractional literal; Una's integer literals are decimal
+```
+
+*Why:* Una has no type for numbers with a fraction, so `19.90` is not a literal it reads. The marks point at `90`, the digits after the point, which no integer literal can have.
+
+*Fix:* write the price in cents, `1990`, as every amount of the slip is. See [U0101](/docs/errors/U0101/).
+:::
+
+### A number with a leading zero (U0007)
+
+:::mistake
+Write the order number as a form would, with a leading zero:
+
+```diff include="day-to-day..mistakes/3:src/slip.una" context="1"
+--- a/src/slip.una
++++ b/src/slip.una
+@@ -37,3 +37,3 @@
+ =
+-  let order: U32 = 1042
++  let order: U32 = 01042
+   let lamps = 2
+```
+
+```text include="mistakes/3/expected/rendered.txt#L1-L9"
+[U0007] Error: malformed integer literal `01042`
+    ╭─[ src/slip.una:38:20 ]
+    │
+ 38 │   let order: U32 = 01042
+    │                    ──┬──
+    │                      ╰──── malformed integer literal `01042`
+    │
+    │ Help: repair 1: write `1042`; edit src/slip.una:38:20..38:25 to "1042"
+    │
+```
+
+*Why:* an integer literal has no leading zero, except `0` itself, so `01042` is a **malformed** literal: it breaks the rules of how a literal is written. The `Help` line gives the literal it means, and the last line of the diagnostic says that `una fix .` can make that edit.
+
+*Fix:* write `1042`. A number whose zeros matter, such as a postal code, is a `Text`. See [U0007](/docs/errors/U0007/).
+:::
+
+### An `Int` where a `U32` is expected (U2001)
+
+:::mistake
+Leave out the type of `order`:
+
+```diff include="day-to-day..mistakes/4:src/slip.una" context="1"
+--- a/src/slip.una
++++ b/src/slip.una
+@@ -37,3 +37,3 @@
+ =
+-  let order: U32 = 1042
++  let order = 1042
+   let lamps = 2
+```
+
+```text include="mistakes/4/expected/rendered.txt#L1-L6"
+[U2001] Error: argument `order` of `title` must be `U32`, found `Int`
+    ╭─[ src/slip.una:44:24 ]
+    │
+ 44 │   @console.print(title(order))
+    │                        ──┬──
+    │                          ╰──── argument `order` of `title` must be `U32`, found `Int`
+```
+
+*Why:* without a type, `let order = 1042` makes `order` an `Int`, and `title` takes a `U32`. The two are different types, and Una converts neither into the other on its own. The marks point at the argument, not at the `let`: the name is fine until it reaches a place that wants a `U32`.
+
+*Fix:* write the type, `let order: U32 = 1042`, so that the literal is a `U32`. See [U2001](/docs/errors/U2001/).
+:::
+
+### A number too large for its type (U2022)
+
+:::mistake
+Give the order a number past the range of a `U32`:
+
+```diff include="day-to-day..mistakes/5:src/slip.una" context="1"
+--- a/src/slip.una
++++ b/src/slip.una
+@@ -37,3 +37,3 @@
+ =
+-  let order: U32 = 1042
++  let order: U32 = 5_000_000_000
+   let lamps = 2
+```
+
+```text include="mistakes/5/expected/rendered.txt#L1-L6"
+[U2022] Error: the literal `5000000000` does not fit `U32`, which holds `0` to `4294967295`
+    ╭─[ src/slip.una:38:20 ]
+    │
+ 38 │   let order: U32 = 5_000_000_000
+    │                    ──────┬──────
+    │                          ╰──────── the literal `5000000000` does not fit `U32`, which holds `0` to `4294967295`
+```
+
+*Why:* a `U32` holds 0 to 4294967295, and 5000000000 is larger. The check refuses the literal at once, before any proof. The message writes the literal without its `_` and gives the range of the type.
+
+*Fix:* use a number inside the range, or, when order numbers really grow past it, a wider type, `U64`, in `title` and in `main`. See [U2022](/docs/errors/U2022/).
+:::
+
+### One name made twice (U1002)
+
+:::mistake
+Copy the line of `lamps` for the rugs, and forget to change the name:
+
+```diff include="day-to-day..mistakes/6:src/slip.una" context="1"
+--- a/src/slip.una
++++ b/src/slip.una
+@@ -39,3 +39,3 @@
+   let lamps = 2
+-  let rugs = 1
++  let lamps = 1
+   let units = lamps + rugs
+```
+
+```text include="mistakes/6/expected/rendered.txt#L1-L13"
+[U1002] Error: `lamps` is already bound in this scope; a local cannot rebind another
+    ╭─[ src/slip.una:40:7 ]
+    │
+ 39 │   let lamps = 2
+    │       ──┬──
+    │         ╰──── first defined here
+ 40 │   let lamps = 1
+    │       ──┬──
+    │         ╰──── `lamps` is already bound in this scope; a local cannot rebind another
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯
+[U1001] Error: cannot find name `rugs` in this module, its imports or the prelude
+```
+
+*Why:* a body makes each name once, so the second `let lamps` is refused, with marks on both lines. Three more diagnostics follow, each U1001: the lines that use `rugs` cannot find it, since no `let` makes it now. One slip, four reports: fix the first, and the others go with it.
+
+*Fix:* write `let rugs = 1`. See [U1002](/docs/errors/U1002/).
+:::
+
 ## 2.7 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a **stub** of each function to write: the function's header with a body that only returns a **placeholder**, a value of the right type that is not the answer, such as the empty text `""` or `0`. `una test .` fails there until the exercise is done. Work in this order:
+The exercises come with the chapter's download, `02-numbers.tar.gz`. Each starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a **stub** of each function to write: its header, with a body that gives back a **placeholder**, a value of the right type that is not the answer, such as the empty text `""` or `0`. `una test .` fails there until the exercise is done. Work in this order:
 
-1. Read the examples: they say what the function must return.
+1. Read the examples: they say what each function must give back.
 2. Write the function's body, in place of the placeholder.
-3. Run `una fmt .`, then `una check .`, and fix what it reports. Canonical form, for example, puts a body of one line on the header line.
-4. Run `una test .` until every example passes.
+3. Run `una check .`, and fix what it reports.
+4. Run `una test .` until every example passes, then `una run .` to see the slip.
 
 ### Exercise 1: the weight of the parcel
 
 ::::exercise
 The warehouse wants the weight on the slip, in kilograms and grams. Write `weight_line(grams)`, which turns 2350 into `Parcel weight: 2 kg 350 g`. The start package ends with:
 
-```una include="exercises/1/start/src/slip.una#L71-L80" title="exercises/1/start/src/slip.una"
+```una include="exercises/1/start/src/slip.una#L97-L106" title="exercises/1/start/src/slip.una"
 --- The weight of a parcel, in kilograms and grams: 2350 is "Parcel weight: 2 kg 350 g".
 pub weight_line(grams: Int) -> Text = ""
 
@@ -1001,23 +1349,23 @@ example "a parcel under one kilogram shows 0 kg"
 ```
 
 :::hint
-*Hint:* a kilogram is 1000 grams. `/` divides two `Int` values and drops the remainder, and `mod` gives the remainder: `2350 / 1000` is 2, and `2350 mod 1000` is 350. Both can go inside the braces of a text, as in [section 2.1](#s2-1).
+*Hint:* a kilogram is 1000 grams. `/` divides two `Int` values and drops the remainder, and `mod` gives the remainder: `2350 / 1000` is 2, and `2350 mod 1000` is 350. Both can go inside the braces of a text, as in [Putting values into a text](#putting-values-into-a-text).
 :::
 
 Check your answer with `una test .`. On the start package it reports:
 
-```text include="exercises/1/start/expected/commands/test.txt#L9-L16"
+```text include="exercises/1/start/expected/commands/test.txt#L13-L20"
 example slip "a weight shows whole kilograms and the grams left over" ... FAILED
-  src/slip.una:76: expect result == "Parcel weight: 2 kg 350 g"
+  src/slip.una:102: expect result == "Parcel weight: 2 kg 350 g"
   it is false, with `result` = `""`
 example slip "a parcel under one kilogram shows 0 kg" ... FAILED
-  src/slip.una:80: expect result == "Parcel weight: 0 kg 800 g"
+  src/slip.una:106: expect result == "Parcel weight: 0 kg 800 g"
   it is false, with `result` = `""`
 
-9 examples: 7 passed, 2 failed
+13 examples: 11 passed, 2 failed
 ```
 
-The placeholder returns the empty text, `""`, which is what each report shows as `result`.
+The placeholder gives back the empty text, `""`, which is what each report shows as `result`.
 
 :::answer Answer (*check, run, test*; `exercises/1/answer`).
 Give `weight_line` its body:
@@ -1025,7 +1373,7 @@ Give `weight_line` its body:
 ```diff include="exercises/1/start..exercises/1/answer:src/slip.una" context="1" title="src/slip.una"
 --- a/src/slip.una
 +++ b/src/slip.una
-@@ -71,3 +71,3 @@
+@@ -97,3 +97,3 @@
  --- The weight of a parcel, in kilograms and grams: 2350 is "Parcel weight: 2 kg 350 g".
 -pub weight_line(grams: Int) -> Text = ""
 +pub weight_line(grams: Int) -> Text = "Parcel weight: {grams / 1000} kg {grams mod 1000} g"
@@ -1041,7 +1389,7 @@ Each brace holds one computation, and the text puts the results in their places.
 ::::exercise
 The slip should also show the shipping charge, 450 cents for this order, and what the customer pays in all. Write `to_pay(goods, shipping)` and `pay_line(cents)`, and print two new lines after the total: `Shipping: 450 cents` and `To pay: 8930 cents`. The start package ends with:
 
-```una include="exercises/2/start/src/slip.una#L71-L83" title="exercises/2/start/src/slip.una"
+```una include="exercises/2/start/src/slip.una#L97-L109" title="exercises/2/start/src/slip.una"
 --- What the customer pays: the goods and the shipping, in cents.
 pub to_pay(goods: Int, shipping: Int) -> Int = 0
 
@@ -1069,15 +1417,15 @@ Give both functions their bodies, and print the new lines in `main`:
 ```diff include="exercises/2/start..exercises/2/answer:src/slip.una" context="1" title="src/slip.una"
 --- a/src/slip.una
 +++ b/src/slip.una
-@@ -39,3 +39,6 @@
-   @console.print(count_line(lamps + rugs, lines: 2))
+@@ -49,3 +49,6 @@
+   @console.print(box_line(boxes(units)))
 -  @console.print(total_line(lamp_cents + rug_cents))
 +  let goods = lamp_cents + rug_cents
 +  @console.print(total_line(goods))
 +  @console.print("Shipping: 450 cents")
 +  @console.print(pay_line(to_pay(goods, shipping: 450)))
    @console.print(closing())
-@@ -71,6 +74,6 @@
+@@ -97,6 +100,6 @@
  --- What the customer pays: the goods and the shipping, in cents.
 -pub to_pay(goods: Int, shipping: Int) -> Int = 0
 +pub to_pay(goods: Int, shipping: Int) -> Int = goods + shipping
@@ -1097,7 +1445,7 @@ Give both functions their bodies, and print the new lines in `main`:
 ::::exercise
 Customers read `84.80` more easily than `8480 cents`. Write `amount(cents)`, which writes an amount of cents with two decimals, and use it in `total_line`, so that the slip says `Total paid: 84.80`. Watch the cents under ten: 1205 is `12.05`, not `12.5`. The start package ends with:
 
-```una include="exercises/3/start/src/slip.una#L71-L84" title="exercises/3/start/src/slip.una"
+```una include="exercises/3/start/src/slip.una#L97-L110" title="exercises/3/start/src/slip.una"
 --- An amount of cents with two decimals: 8480 is "84.80", and 1205 is "12.05".
 pub amount(cents: Int) -> Text = ""
 
@@ -1126,12 +1474,12 @@ Give `amount` its body, and use it in `total_line` and its example:
 ```diff include="exercises/3/start..exercises/3/answer:src/slip.una" context="1" title="src/slip.una"
 --- a/src/slip.una
 +++ b/src/slip.una
-@@ -21,3 +21,3 @@
+@@ -28,3 +28,3 @@
  --- What the customer paid for the goods, in cents.
 -pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
 +pub total_line(cents: Int) -> Text = "Total paid: {amount(cents)}"
  
-@@ -66,8 +66,8 @@
+@@ -92,8 +92,8 @@
  
 -example "the total is in cents"
 +example "the total is an amount"
@@ -1145,7 +1493,7 @@ Give `amount` its body, and use it in `total_line` and its example:
  
 ```
 
-`cents mod 100 / 10` is the tens of cents, and `cents mod 10` the cents left over, so each digit is printed on its own and a zero is never lost. This works for an amount that is not negative; [chapter 6](/learn/functions/) shows `if`, for the cases that need a choice.
+`cents mod 100 / 10` is the tens of cents, and `cents mod 10` the cents left over, so each digit is printed on its own and a zero is never lost. This works for an amount that is not negative; a refund would need the rule of [Euclidean division](#euclidean-division), and a choice that [section 3.4](/learn/text-and-conditions/#s3-4) teaches.
 :::
 ::::
 
@@ -1154,29 +1502,28 @@ Give `amount` its body, and use it in `total_line` and its example:
 ### For agents
 
 :::agents
-Every command takes `--json` before its name and then prints one JSON document on stdout. `una --json check .` gives each diagnostic with its `code`, `message`, `primary` span and `repairs`, and `una --json test .` gives each example with its outcome. U0003, U1008, U2004 and U7001 carry exact edits, which `una fix .` applies, as U1001 does when it can name the operation meant. U0001, U0101, U2001 and U3004 depend on intent, so their repairs, when they have one, are descriptions only. The compact rule: *a package is `una.toml`, `verification.lock` and `src/<module>.una` with a matching `module` line; a function that prints declares `uses @console: Console[print]`, and the run grants `console`, in `una.toml` or with `--grant`.*
+`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; `una --json test .` prints each example's outcome. U0007 carries an exact edit, the literal rewritten, which `una fix .` applies. U5001 gives a counterexample and repairs that are descriptions only (a guard, a wider type, a wrapping or saturating method). U0101, U1001, U1002, U2001 and U2022 depend on intent, so they carry no repair. The compact rule: *`Int` is unbounded and exact, with Euclidean `/` and `mod`; money is `Int` cents; every division by a value that is not a nonzero literal, and every operation or narrowing on `U8`…`U64`, `I8`…`I64`, is a proof obligation; types never convert implicitly.*
 :::
 
 ### Recap
 
 :::recap
-- A package is `una.toml`, `verification.lock` and modules under `src/`: `src/slip.una` holds the module `slip`.
-- `una check .` reports each problem with a code, a place and a message; `una run .` and `una test .` check first. Read the message, then the place, then the help.
-- A function that prints says so in its header, `uses @console: Console[print]`, and the run grants `console`. A public function without `uses` cannot print.
-- Every value has a type. `let` names a value, and braces put values into a text: `"{units} units"`.
-- Label every argument after the first: `line_cents(2, cents: 1990)`.
-- Comments start with `--`, and doc comments with `---`, which `una contract` prints.
-- Keep the logic in functions without `uses`, and test each one with an `example`: `do` a call, `expect` a fact about `result`.
+- Every value has a type. `print` takes a `Text`; put a number into one with braces: `"{units} units"`.
+- `let name = value` names a value; `let name: Type = value` also states its type. A body makes each name once.
+- `Int` is a whole number of any size, so a sum or a product is exact.
+- Keep money in `Int` cents, and divide last: `order * 15 / 100`.
+- `*`, `/` and `mod` come before `+` and `-`, left to right; parentheses change the order.
+- `/` and `mod` are Euclidean. A divisor that may be zero is refuted with a counterexample.
+- A fixed-width type, such as `U8`, is for a number of a set size. Every operation on it is proved to fit; wrapping and saturating are methods.
+- Integer types never mix: convert with `to_int()`, or narrow with `to_u8()` and its proof.
 :::
 
 ### Reference
 
 :::reference
-- Start: [install](/docs/install/), [getting started](/docs/getting-started/), [canonical form and `una fmt`](/docs/language/canonical-form/)
-- Construct pages: [source files, comments and literals](/docs/language/lexical-structure/), [functions](/docs/language/functions/), [`uses`](/docs/language/capabilities/uses/), [host capabilities and grants](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)
-- Configuration: [`[package] edition`](/docs/configure/package/edition/), [`[run] entry`](/docs/configure/run/entry/), [`[run] grants`](/docs/configure/run/grants/), [`verification.lock`](/docs/configure/verification-lock/)
-- Commands: [`una check`](/docs/cli/check/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/), [`una contract`](/docs/cli/contract/)
-- Standard library: [the host capabilities](/docs/std/) (`Console`, `print`)
-- Diagnostics: [U0001](/docs/errors/U0001/), [U0003](/docs/errors/U0003/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1008](/docs/errors/U1008/), [U2001](/docs/errors/U2001/), [U2004](/docs/errors/U2004/), [U3004](/docs/errors/U3004/), [U3012](/docs/errors/U3012/), [U7001](/docs/errors/U7001/), [U7002](/docs/errors/U7002/), [U7004](/docs/errors/U7004/)
-- Specification: [lexical structure](/docs/spec/01-lexical-structure/), [types](/docs/spec/03-types/), [functions and contracts](/docs/spec/04-functions-and-contracts/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [diagnostics and the command line](/docs/spec/13-diagnostics-and-abi/), [the standard library](/docs/spec/14-standard-library/), [canonical form](/docs/spec/15-canonical-form/)
+- Construct pages: [source files, comments and literals](/docs/language/lexical-structure/), [functions](/docs/language/functions/), [`example`](/docs/language/examples/example/)
+- Commands: [`una check`](/docs/cli/check/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/)
+- Standard library: [the prelude](/docs/std/) (`abs`, `min`, `max`)
+- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2022](/docs/errors/U2022/), [U5001](/docs/errors/U5001/)
+- Specification: [lexical structure](/docs/spec/01-lexical-structure/), [grammar](/docs/spec/02-grammar/), [types](/docs/spec/03-types/), [dynamic semantics](/docs/spec/11-dynamic-semantics/), [verification](/docs/spec/12-verification/), [the standard library](/docs/spec/14-standard-library/), [fixed-width integers](/docs/spec/18-fixed-width-integers/)
 :::

@@ -1,1 +1,1 @@
-error U2001 at src/slip.una:40:18: argument `line` of operation `Console.print` must be `Text`, found `Int`
+error U2001 at src/slip.una:50:18: argument `line` of operation `Console.print` must be `Text`, found `Int`

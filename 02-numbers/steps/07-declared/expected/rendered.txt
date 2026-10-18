@@ -1,0 +1,9 @@
+[U2001] Error: `lamp_cents` is declared as `Int`, found `Text`
+    ╭─[ src/values.una:10:25 ]
+    │
+ 10 │   let lamp_cents: Int = "1990"
+    │                         ───┬──
+    │                            ╰──── `lamp_cents` is declared as `Int`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

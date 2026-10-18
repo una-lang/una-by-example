@@ -1,0 +1,3 @@
+free to sell: 0
+one customer may buy: 10
+the count is off by 3

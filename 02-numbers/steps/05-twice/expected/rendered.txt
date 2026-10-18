@@ -1,0 +1,13 @@
+[U1002] Error: `lamps` is already bound in this scope; a local cannot rebind another
+    ╭─[ src/values.una:16:7 ]
+    │
+  9 │   let lamps = 2
+    │       ──┬──
+    │         ╰──── first defined here
+    │
+ 16 │   let lamps = lamps * lamp_cents
+    │       ──┬──
+    │         ╰──── `lamps` is already bound in this scope; a local cannot rebind another
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯

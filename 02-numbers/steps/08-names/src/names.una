@@ -1,0 +1,14 @@
+module names
+
+--- Prints the labels of a box of mugs.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let mugs = 6
+  let per_box = 4
+  let boxes = 2
+  let places = boxes * per_box
+  let spare = places - mugs
+  @console.print("{mugs} mugs in {boxes} boxes")
+  @console.print("{spare} empty places")
+  @console.print("{places - spare} of {places} places taken")
