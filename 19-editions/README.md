@@ -13,7 +13,7 @@ nav: ["An edition per package", "What edition 0.2 adds", "Edition 0.3, a preview
 # 19 Editions
 
 
-A language that grows has to add keywords and tighten rules, and a program written last year must still mean what it meant. Una does this with editions: each package names the edition of the language it is written in, and every release of `una` keeps each stable edition it serves, one whose rules are final, as it was. This chapter shows what an edition is, what editions `0.2` and `0.3` add, and how to move a package from one edition to the next, letting the checker and `una fix` find what has to change.
+A language that grows has to add keywords and tighten rules, and a program written last year must still mean what it meant. Una does this with editions: each package names the edition of the language it is written in, and every release of `una` keeps each stable edition, whose rules are final, exactly as it was. This chapter shows what an edition is, what editions `0.2` and `0.3` add, and how to move a package from one edition to the next, letting the checker and `una fix` find what has to change.
 
 ## What you'll build
 
@@ -45,13 +45,13 @@ Una separates the two things a release changes:
 :::steps
 1. **The compiler improves for every edition.** A new release fixes bugs, adds explanations and makes the tools better, for every package.
 2. **The language changes only in a new edition.** New keywords, new constructs and stricter rules come with an edition, and a package gets them only when its `una.toml` names that edition.
-3. **Editions are cumulative.** Edition `0.3` has every construct and rule of `0.2`, and `0.2` has every construct of `0.1`. Moving a package forward never removes a construct. It can reject code that a stricter rule no longer allows or a name that became a keyword, and a few prelude functions and reports change too ([section 19.2](#s19-2)).
+3. **Editions are cumulative.** Edition `0.3` has every construct and rule of `0.2`, and `0.2` has every construct of `0.1`. Moving a package forward never removes a construct. It can reject code that a stricter rule no longer allows or a name that became a keyword, and a few prelude functions and reports change too ([section 19.2](#s19-2)). Edition `0.3` also accepts some code that `0.2` rejects ([section 19.3](#s19-3)).
 :::
 
 So upgrading `una` never changes what a stable edition accepts or rejects, except to fix a soundness or security error: a bug that let the checker accept a program it should have rejected. Moving a package to a new edition is a separate step, a change to one line of `una.toml`, which you make when you are ready and review like any other change.
 
 > [!KEY]
-> A package's edition is a line of `una.toml`. Upgrading `una` keeps the meaning of every stable edition, and a later edition only adds constructs and tightens rules.
+> A package's edition is a line of `una.toml`. Upgrading `una` keeps the meaning of every stable edition, and a later edition adds constructs and, with few exceptions, tightens rules.
 
 ## 19.1 An edition is part of the package
 
@@ -261,7 +261,7 @@ A package on a stable edition can stay there for as long as it likes.
 
 #### Words reserved for later editions
 
-Some words were set aside before the editions that use them existed. In edition `0.1`, `edit`, `take` and `together` are **reserved**: not keywords yet, and not names either. Using one gives U0103, whose message names the edition that has it, written with a `v`, such as `` `edit` is reserved for v0.2 (memory model) ``. Reserving a word early keeps it free: no `0.1` package can use `edit` as a name, so no `0.1` package breaks when `0.2` makes it a keyword. `old` was not reserved in `0.1`, which is why the package of [Why a language needs editions](#why-a-language-needs-editions) could use it.
+Some words were set aside before the editions that use them existed. In edition `0.1`, `edit`, `take` and `together` are **reserved**: not keywords yet, and not names either. Using one gives U0103, whose message names the edition that has it, written with a `v`, such as `` `edit` is reserved for v0.2 (memory model) ``. Reserving a word early keeps it free: no `0.1` package can use `edit` as a name, so no `0.1` package breaks when `0.2` makes it a keyword. `old` was not reserved in `0.1`, which is why the package of [Why a language needs editions](#why-a-language-needs-editions) could use it. Nor was `weak`, a name in `0.1` that edition `0.2` reserves for a later edition ([The keywords `0.2` adds](#the-keywords-02-adds)).
 
 #### What an edition fixes, and what improves with every release
 
@@ -321,7 +321,7 @@ Here the rename is right, since `take` is meant as a name: `the_take` works, and
 Edition `0.2` changes four things, each of which this section shows. Every rule this section states for `0.2` holds in `0.3` too, since editions are cumulative:
 
 - **Constructs.** New ways to write code, such as `for` loops and `let edit`.
-- **Keywords.** Words that become part of the language: `edit`, `take`, `old` and `together`.
+- **Keywords.** Words that become part of the language, `edit`, `take`, `old` and `together`, and one word reserved for a later edition, `weak`.
 - **Rules.** A few rules that are stricter or different, such as the names a kind may take.
 - **The prelude.** The functions every module has without an import, some of which become generic.
 
@@ -383,12 +383,12 @@ Edition `0.2` adds, among others:
 
 | Construct | Where to read about it |
 | --- | --- |
-| `for` loops, `let edit`, `edit` and `take` parameters | [Repeating: `for`](/learn/loops/), [Memory](/learn/memory/#s16-2) |
+| `for` loops, `let edit`, `edit` and `take` parameters, and `if` without `else` as a statement | [Repeating: `for`](/learn/loops/), [`edit`](/learn/memory/#s16-2), [`take`](/learn/memory/#s16-3), [`if` without `else`](/learn/choices/#s8-1) |
 | `together` and `together for` | [Concurrency and parallelism](/learn/concurrency/) |
-| `Map`, the text functions and `ParseError`, `Json` | [Collections](/learn/collections/), [Results and failures](/learn/failure/) |
+| `Map`, the text functions and `ParseError`, `Json` | [Maps](/learn/collections/#s10-4), [the text functions](/learn/text-and-conditions/#s3-2), [`ParseError`](/learn/failure/#s7-4), [JSON](/learn/collections/#s10-5) |
 | Fixed-width integers such as `U8` and `I64`, with proven overflow | [Numbers](/learn/numbers/#s2-3) |
-| Constraints on generics such as `T: Ord`, and `sort` | [Kinds](/learn/kinds/#s4-4) |
-| `uses of p` and `fails of p`, header clauses for a function that takes another function as its parameter `p`: the function passed in may then use capabilities and fail, and the caller handles it | [`uses`](/docs/language/capabilities/uses/) |
+| Constraints on generics such as `T: Ord`, and `sort` | [Constraints](/learn/kinds/#s4-4), [`sort`](/learn/collections/#sorting-sort) |
+| `uses of p` and `fails of p`, header clauses for a function that takes another function as its parameter `p`: the function passed in may then use capabilities and fail, and the caller handles it | [`uses of`](/learn/capabilities/#authority-inside-a-function-argument-uses-of), [`fails of`](/learn/failure/#failing-as-the-function-you-are-given-fails-of), [`uses` in the docs](/docs/language/capabilities/uses/) |
 | The interpolation of any value that `==` compares, except a `Hashed`, a fingerprint of secret data that only a host capability computes and that a program cannot read | [Text and conditions](/learn/text-and-conditions/#s3-1) |
 | The `Http` capability | [HTTP in the standard library](/docs/std/http/) |
 
@@ -396,13 +396,39 @@ Edition `0.2` adds, among others:
 
 Edition `0.2` makes four words keywords: `edit`, `take`, `old` and `together`. Each one starts a construct, so in `0.2` none of them can name a binding, a parameter or a field. `edit`, `take` and `together` were reserved in `0.1` already, so no `0.1` package uses them as names. `old` was not, so a `0.1` package may use it, and must rename it to move, as [Why a language needs editions](#why-a-language-needs-editions) showed.
 
+Edition `0.2` also reserves a word for a later edition: `weak`. In `0.1` it is an ordinary name, so a `0.1` package may use it, and must rename it to move. This package names a parameter `weak`, for a week when sales are slow. It checks and runs in `0.1`; in `0.2`, each of its three uses is U0103, the first:
+
+```text include="steps/20-weak-0-2/expected/rendered.txt#L1-L10"
+[U0103] Error: `weak` is reserved for v0.3 (aliasing)
+   ╭─[ src/restock.una:4:26 ]
+   │
+ 4 │ weekly_order(units: Int, weak: Bool) -> Int = if weak then units / 2 else units
+   │                          ──┬─
+   │                            ╰─── `weak` is reserved for v0.3 (aliasing)
+   │
+   │ Help: repair 1: rename it to `the_weak`; edit src/restock.una:4:26..4:30 to "the_weak"
+   │
+   │ Note: run `una explain U0103` for an explanation
+```
+
+The message names the edition the word is kept for, `v0.3`. Here the word is meant as a name, so the rename is right, and `una fix --dry-run .` lists it at every use:
+
+```text include="steps/20-weak-0-2/expected/commands/fix.txt"
+$ una fix --dry-run .
+fixed src/restock.una:4:26 U0103 rename it to `the_weak`
+fixed src/restock.una:4:50 U0103 rename it to `the_weak`
+fixed src/restock.una:9:43 U0103 rename it to `the_weak`
+```
+
+`una fix .` applies the three renames, and the package checks in `0.2`. A better name, such as `slow_week`, works too.
+
 One word goes the other way. `with` is a keyword in every edition, for `with @catalog = …` ([chapter 12](/learn/capabilities/#s12-4)). From edition `0.2` on, `with` right after a `.` is a name, the method of a map that adds an entry: `prices.with(key: sku, value: 1990)`.
 
 ### The rules that changed
 
 A few rules of `0.2` differ from `0.1`:
 
-- **Built-in type names.** A kind, a variant or a capability cannot take the name of a built-in type such as `Text`, `List`, `Map` or `U8` (U1002). `0.1` has fewer built-in types, so some of those names were free there.
+- **Built-in type names.** A kind, a variant or a capability cannot take the name of a built-in type such as `Text`, `List`, `Map` or `U8` (U1002). In `0.1`, a kind with a built-in type's name, even `Text`, shadows that type in its module. In `0.2` this is U1002.
 - **Equality on type parameters.** A public generic function that compares two values of a type parameter `T` must write the constraint `[T: Eq]` (U2026, [chapter 4](/learn/kinds/#s4-4)); `0.1` inferred it.
 - **The prelude.** `min`, `max`, `sum` and `contains` become generic over constrained types, and `sort`, `set` and `empty_map` are new.
 - **Recursive kinds,** kinds with a field of their own kind ([chapter 8](/learn/choices/#s8-4)), no longer need that field inside a `List` or an `Option`, but must be able to end: some variant, such as a `Lit(value: Int)` in an expression kind, holds no value of the kind itself.
@@ -410,7 +436,7 @@ A few rules of `0.2` differ from `0.1`:
 
 ### What a move from `0.1` can need
 
-So moving a `0.1` package to `0.2` can still need changes, in four places: a name that became a keyword, such as a binding called `old`; a kind named like a built-in type, which is U1002 in `0.2`; a public generic function that compares values of a type parameter without `[T: Eq]`, which is U2026; and a call that relied on a prelude header of `0.1`. The checker reports each one at its place, with the code and a repair, so the move is a list of small, local changes rather than a search through the package.
+So moving a `0.1` package to `0.2` can still need changes, in five places: a name that became a keyword, such as a binding called `old`; a name that `0.2` reserves, such as `weak`, which is U0103; a kind named like a built-in type, which is U1002 in `0.2`; a public generic function that compares values of a type parameter without `[T: Eq]`, which is U2026; and a call that relied on a prelude header of `0.1`. The checker reports each one at its place, with the code and a repair, so the move is a list of small, local changes rather than a search through the package.
 
 ### Check yourself: a kind named `Map`
 
@@ -468,11 +494,11 @@ Some rules are worth having before all of their companions are ready. A dry run 
 
 ### What edition `0.3` adds
 
-Edition `0.3` adds constructs that narrow what a program may do, and rules that reject code that can never run:
+Edition `0.3` adds constructs that narrow what a program may do, rules that reject code that can never run, and one rule that accepts code that `0.2` rejects, refined type arguments:
 
 - **Conditions on operations.** `uses @printer: Printer[print_label where not dry_run]` lets the function print a label only where the condition holds, and the verifier proves it at every call of the operation ([chapter 13](/learn/authority/#s13-1)).
 - **Locked contracts.** `[contracts]` in `una.toml` locks the `uses` of a public function: its header may grant less, never more ([chapter 13](/learn/authority/#s13-3)).
-- **Boundaries.** `[boundaries]` in `una.toml` lists the most a module may ever be given: a call into it may grant only the operations its ceiling names ([chapter 13](/learn/authority/#s13-2)).
+- **Boundaries.** `[boundaries]` in `una.toml` lists the most a module may ever be given: a call into it may grant only the operations its ceiling names ([chapter 13](/learn/authority/#s13-2)). With it comes a narrowed rebinding: `with @x = @y[ops]` passes a binding narrowed to the operations in brackets ([chapter 13](/learn/authority/#granting-less-at-the-call-with-x-yops)).
 - **No dead failure handling.** An `if error` clause under a call that cannot fail is U3025, and `attempt` of a call that cannot fail is U3026.
 - **Units of measure.** `measure Gram` declares a unit, and `Int of Gram` is a number of grams, which cannot be mixed with a plain `Int` or with another unit except through an explicit conversion.
 - **Refined type arguments.** A refined kind may be the type of a list's elements, as in `List[Units]` with `Units = Int in 0..100`.
@@ -701,6 +727,7 @@ Each diagnostic names its repair. U3025's repair deletes the clause, an exact ed
 
 - **It only gets stricter.** For every program that edition `0.2` can express, a later `0.3.x` release keeps its result, or adds obligations or errors to it.
 - **New constructs only narrow.** A later `0.3.x` release may accept a construct that earlier releases reject as a syntax error, such as a condition on an operation. Each such construct only narrows what a program may do: erase it, and you get a program that edition `0.2` accepts.
+- **Some code `0.2` rejects becomes accepted.** A later `0.3.x` release may also accept code that `0.2` rejects, where a new proof shows it is safe: refined type arguments, which `0.2` rejects with U2002, are the first case.
 - **The stable editions do not move.** Whatever happens to `0.3`, a release keeps what `0.1` and `0.2` accept and reject, except to fix a soundness or security error.
 
 > [!IMPORTANT]
@@ -713,7 +740,7 @@ Each diagnostic names its repair. U3025's repair deletes the clause, an exact ed
 
 | Your package… | Edition |
 | --- | --- |
-| Needs a condition on an operation, a locked contract, a boundary or units | `0.3` |
+| Needs a condition on an operation, a locked contract, a boundary, a narrowed rebinding or units | `0.3` |
 | Should stay exactly as it is across upgrades | `0.2` |
 | Has failure handling you want the checker to keep honest | `0.3` |
 | Is maintained by a team that cannot react to a new error after an upgrade | `0.2` |
@@ -873,7 +900,7 @@ The package checks in `0.2`, and prints what it printed in `0.1`:
 ### How a move behaves
 
 - **One edition per package.** Every module moves at once. A program is one package, so it has one edition: in una 0.3.15 a package does not depend on other packages ([section 11.3](/learn/packages/#s11-3)).
-- **Moving back fails where the code uses the later edition.** A construct of a later edition is a syntax error or an unknown table in an earlier one: [Moving a package back](#moving-a-package-back-u0101-u7002) shows it.
+- **Moving back fails where the code uses the later edition.** A construct of a later edition is usually a syntax error (U0101), a reserved word (U0103) or an unknown table (U7002) in an earlier one: [Moving a package back](#moving-a-package-back-u0101-u7002) shows it. A prelude function or a type rule of a later edition gives a type error, such as U1001, U2001 or U2002.
 - **Read a rename before you apply it.** In edition `0.1`, a reserved word gets a rename repair, which is right for a name and wrong for a construct of a later edition: [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows the second case.
 - **The output is the test of a move.** A move changes the language, not the program's behavior: the examples pass, and `una run .` prints what it printed before.
 
@@ -887,8 +914,8 @@ The table sums up which edition a package's `una.toml` should name:
 | Your package… | Edition |
 | --- | --- |
 | Is stable code that you do not want to touch | Keep its edition: every release that lists it in `una --version` serves it |
-| Uses loops, maps, `together` or any construct of this tutorial's later chapters | `0.2` |
-| Needs a condition on an operation, a locked contract, a boundary or units | `0.3`, the preview |
+| Uses loops, maps, `together` or any construct of this book outside chapter 13 and section 19.3 | `0.2` |
+| Needs a condition on an operation, a locked contract, a boundary, a narrowed rebinding or units | `0.3`, the preview |
 | Is new, and should follow the stable rules | `0.2` |
 :::
 
@@ -947,7 +974,7 @@ From edition `0.2` on, `take` is a keyword that starts a parameter's mode, as in
 
 ### What the program must do
 
-Now the program from the start of the chapter. The store prints shelf labels from a stock export. A line that does not parse is left out, a line with no stock gets no label, and a dry run must count the labels without printing any, so that the night shift can check a run before it uses up the label stock. The package is on edition `0.3`, because the dry run's rule is one the checker can then enforce. The package is on edition `0.3`, and it uses constructs that each edition introduced; each part below says which.
+Now the program from the start of the chapter. The store prints shelf labels from a stock export. A line that does not parse is left out, a line with no stock gets no label, and a dry run must count the labels without printing any, so that the night shift can check a run before it uses up the label stock. The package is on edition `0.3`, because the dry run's rule is one the checker can then enforce.
 
 ### The manifest: the edition and the lock
 
@@ -973,7 +1000,7 @@ Why both a condition and a lock? The condition makes the verifier check the body
 
 ### The kinds, the printer and the parser
 
-These use edition `0.1` and `0.2` constructs only: a record, a sum kind for the failures, a capability, and a parser that fails with `LineError`. `text.split` and `to_int` are text functions of `0.2`.
+These use edition `0.1` and `0.2` constructs only: a record, a sum kind for the failures, a capability, and a parser that fails with `LineError`. `text.split` is a text function of `0.2`; `to_int` and `trim` exist in `0.1` too.
 
 ```una include="day-to-day/src/labels.una#L1-L27" title="day-to-day/src/labels.una"
 module labels
@@ -1040,7 +1067,7 @@ pub print_labels(lines: List[Line], dry_run: Bool) -> Int
   printed
 ```
 
-The function counts a label whether or not it prints it, so a dry run gives the number of labels a real run would print. The two nested `if` statements have no `else`: an `if` without `else` is a statement that does nothing when its condition is false, which edition `0.2` added along with the loop. The count is a `let edit` binding that the loop updates, as in [chapter 9](/learn/loops/#s9-2). The condition is part of the header, so `una contract labels.print_labels` shows it, and every caller sees that a dry run prints nothing without reading the body.
+The function counts a label whether or not it prints it, so a dry run gives the number of labels a real run would print. The two nested `if` statements have no `else`: an `if` without `else` is a statement that does nothing when its condition is false ([section 8.1](/learn/choices/#s8-1)), which edition `0.2` added along with the loop. The count is a `let edit` binding that the loop updates, as in [chapter 9](/learn/loops/#s9-2). The condition is part of the header, so `una contract labels.print_labels` shows it, and every caller sees that a dry run prints nothing without reading the body.
 
 ### Running it
 
@@ -1069,7 +1096,7 @@ pub main() -> Unit
   @console.print("printed {printed} labels")
 ```
 
-`una run .` prints the output shown in [What you'll build](#what-youll-build). The package is on edition `0.3`, and it uses constructs that each edition introduced: the kinds and the `when` of `0.1`, the loops, `let edit` and the text functions of `0.2`, and the condition and the lock of `0.3`. The dry run counts two labels and prints none. The real run prints the lamp and the shelf. The desk has no stock, and the chair's line, `CHAIR-09, two`, does not parse, so neither gets a label. `una report .` lists the printer handler under `handler authority`, with what it may do:
+`una run .` prints the output shown in [What you'll build](#what-youll-build). It uses the kinds and the `when` of `0.1`, the loops, `let edit` and the text functions of `0.2`, and the condition and the lock of `0.3`. The dry run counts two labels and prints none. The real run prints the lamp and the shelf. The desk has no stock, and the chair's line, `CHAIR-09, two`, does not parse, so neither gets a label. `una report .` lists the printer handler under `handler authority`, with what it may do:
 
 ```text include="day-to-day/expected/commands/report.txt#L9-L10"
 handler authority:
@@ -1404,7 +1431,14 @@ Each exercise starts from `exercises/N/start` and has an example that fails ther
 ### Exercise 1: move a package to `0.2`
 
 ::::exercise
-Someone added `low_stock` to the edition `0.1` stock list, with a loop, and an example for it. The package no longer checks. Make it check, and keep the code as it is. The start package's new function and example:
+The edition `0.1` stock list now also counts the units sold, with a function whose parameters are `old` and `new`:
+
+```una include="exercises/1/start/src/shelf.una#sold" title="exercises/1/start/src/shelf.una"
+--- The units sold since the last count: the count `old` from before, less the count `new` now.
+sold(old: Int, new: Int) -> Int = old - new
+```
+
+Someone then added `low_stock`, with a loop, and an example for it. The package no longer checks. Move it to the edition that the loop needs, and change only what the move requires. The start package's new function and example:
 
 ```una include="exercises/1/start/src/shelf.una#low_stock" title="exercises/1/start/src/shelf.una"
 --- The SKUs of the lines with fewer than `limit` units, in the order of the list.
@@ -1417,24 +1451,24 @@ low_stock(lines: List[Line], limit: Int) -> List[Text]
   found
 ```
 
-```una include="exercises/1/start/src/shelf.una#L26-L28" title="exercises/1/start/src/shelf.una"
+```una include="exercises/1/start/src/shelf.una#L30-L32" title="exercises/1/start/src/shelf.una"
 example "the lines below the limit are low on stock"
   do low_stock([Line(sku: "LAMP-01", units: 4), Line(sku: "DESK-02", units: 1)], limit: 2)
   expect result == ["DESK-02"]
 ```
 
 ```text include="exercises/1/start/expected/diagnostics.txt"
-error U0103 at src/shelf.una:14:7: `edit` is reserved for v0.2 (memory model)
+error U0103 at src/shelf.una:17:7: `edit` is reserved for v0.2 (memory model)
 ```
 
 :::hint
-*Hint:* the code is right; the message says which edition has `edit`. Read [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) before you run `una fix`, then follow [the steps of a move](#the-steps-of-a-move).
+*Hint:* the loop is right; the message says which edition has `edit`. Read [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) before you run `una fix`, then follow [the steps of a move](#the-steps-of-a-move): after the edition line, run `una check .` again, since the new edition reads some names differently.
 :::
 
 Check your answer with `una check .`, then `una test .`.
 
 :::answer Answer (*check, run, test*; `exercises/1/answer`).
-Change the edition, and nothing else:
+Change the edition:
 
 ```diff include="exercises/1/start..exercises/1/answer:una.toml" title="una.toml"
 --- a/una.toml
@@ -1448,6 +1482,20 @@ Change the edition, and nothing else:
  
  [run]
  entry = "shelf"
+```
+
+With the edition line alone, `una check .` reports U0101 at `old`: "`old` is a reserved keyword, so it cannot name a binding". `una fix` has no edit for it, since the new name is a choice, so rename it by hand:
+
+```diff include="exercises/1/start..exercises/1/answer:src/shelf.una" context="1" title="src/shelf.una"
+--- a/src/shelf.una
++++ b/src/shelf.una
+@@ -10,4 +10,4 @@
+ 
+---- The units sold since the last count: the count `old` from before, less the count `new` now.
+-sold(old: Int, new: Int) -> Int = old - new
++--- The units sold since the last count: the count `before`, less the count `new` now.
++sold(before: Int, new: Int) -> Int = before - new
+ 
 ```
 :::
 ::::
@@ -1603,7 +1651,7 @@ and the lock, which a reviewer sees:
 ### For agents
 
 :::agents
-An edition shows up in two places of the diagnostics: a construct of a later edition gives U0103 or U0101 at the construct, and a table of a later edition gives U7002 at `una.toml`. To move a package, change only `edition` in `una.toml`, run `una --json check .`, apply what `una fix .` applies, and repair the rest from each diagnostic's repairs. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and only tightens rules.*
+A construct of a later edition usually gives U0101 or U0103 at the construct, a table of a later edition U7002 at `una.toml`, and a later prelude function or type rule a type error, such as U1001, U2001 or U2002. To move a package, change only `edition`, run `una --json check .`, apply `una fix .`, and repair the rest by hand. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and, with few exceptions, tightens rules.*
 :::
 
 ### Recap
@@ -1612,8 +1660,8 @@ An edition shows up in two places of the diagnostics: a construct of a later edi
 - `[package] edition` names a package's edition, and is required. A single file has edition `0.1`.
 - Upgrading `una` keeps what each stable edition accepts and rejects, except to fix a soundness or security error.
 - Editions are cumulative: a later edition adds constructs, keywords and rules, and never removes a construct.
-- `0.2` adds loops, `let edit`, `edit` and `take`, `together`, maps, JSON and more, and makes `old` a keyword.
-- `0.3` is a preview: conditions on operations, locked contracts, boundaries, units, refined type arguments, and no dead failure handling. It may get stricter in a later `0.3.x`.
+- `0.2` adds loops, `let edit`, `edit` and `take`, `together`, maps, JSON and more, makes `old` a keyword, and reserves `weak`.
+- `0.3` is a preview: conditions on operations, locked contracts, boundaries, narrowed rebindings, units, refined type arguments, and no dead failure handling. It may get stricter in a later `0.3.x`.
 - To move a package: change the edition, `una check .`, `una fix .`, repair the rest, `una test .`, and compare the output.
 - Never let `una fix` rename a keyword of a later edition; change the edition instead.
 :::
