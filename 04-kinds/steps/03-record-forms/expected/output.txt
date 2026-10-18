@@ -1,5 +1,5 @@
 Box(sku: "LAMP-01", grams: 1200, note: Note("fragile"))
-Box(sku: "LAMP-01", grams: 1500, note: Note("this side up"))
+Box(sku: "LAMP-01", grams: 1500, note: Note("fragile"))
 same box: false
 7 characters in LAMP-01
-fragile, then heavy
+fragile, then this side up

@@ -1,0 +1,9 @@
+[U1001] Error: `Delivery` has no field `locker`, and no function `locker` in scope applies
+    ╭─[ src/pricing.una:57:51 ]
+    │
+ 57 │     is AtLocker -> Charge(item: "locker {delivery.locker}", cents: 0)
+    │                                                   ───┬──
+    │                                                      ╰──── `Delivery` has no field `locker`, and no function `locker` in scope applies
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯

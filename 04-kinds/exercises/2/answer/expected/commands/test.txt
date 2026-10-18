@@ -1,0 +1,19 @@
+$ una test .
+example pricing "each zone has its price" ... ok
+example pricing "the nearest zone is the cheapest" ... ok
+example pricing "abroad costs the most" ... ok
+example pricing "500 g is still the lightest band" ... ok
+example pricing "501 g is the next band" ... ok
+example pricing "2 kg is the last gram of the middle band" ... ok
+example pricing "over 2 kg pays the most" ... ok
+example pricing "standard speed is free" ... ok
+example pricing "express at home costs 500" ... ok
+example pricing "express abroad costs 900" ... ok
+example pricing "the door costs extra" ... ok
+example pricing "a locker is free, and named" ... ok
+example pricing "a store is free, and named" ... ok
+example pricing "the total adds the four charges" ... ok
+example pricing "express changes the speed and nothing else" ... ok
+example pricing "overnight costs 1500 in every zone" ... ok
+
+16 examples: 16 passed, 0 failed

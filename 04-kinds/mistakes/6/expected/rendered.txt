@@ -1,0 +1,12 @@
+[U2026] Error: interpolation on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
+    ╭─[ src/pricing.una:73:53 ]
+    │
+ 73 │ pub charge_line[T](charge: Charge[T]) -> Text = "  {charge.item}: {charge.cents} cents"
+    │                                                     ─────┬─────
+    │                                                          ╰─────── interpolation on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
+    │
+    │ Help: repair 1: constrain `T` by `Eq`; edit src/pricing.una:73:17..73:18 to "T: Eq"
+    │
+    │ Note: run `una explain U2026` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

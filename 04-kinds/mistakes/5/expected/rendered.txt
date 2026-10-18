@@ -1,0 +1,11 @@
+[U2007] Error: `when` does not match variant `Abroad` of `Zone`
+    ╭─[ src/pricing.una:30:3 ]
+    │
+ 30 │   when zone
+    │   ──┬─
+    │     ╰─── `when` does not match variant `Abroad` of `Zone`
+    │
+    │ Help: repair 1: add an arm for each missing variant, such as `is Abroad`, or an `else` arm
+    │
+    │ Note: run `una explain U2007` for an explanation
+────╯

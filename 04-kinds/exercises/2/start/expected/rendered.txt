@@ -1,0 +1,11 @@
+[U2007] Error: `when` does not match variant `Overnight` of `Speed`
+    ╭─[ src/pricing.una:48:3 ]
+    │
+ 48 │   when speed
+    │   ──┬─
+    │     ╰─── `when` does not match variant `Overnight` of `Speed`
+    │
+    │ Help: repair 1: add an arm for each missing variant, such as `is Overnight`, or an `else` arm
+    │
+    │ Note: run `una explain U2007` for an explanation
+────╯

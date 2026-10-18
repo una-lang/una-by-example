@@ -1,9 +1,6 @@
 collect at Harbour Road from 9:00
 Harbour Road; no store
 code for Station 14; no code
-rugs; aisle 7
-rugs
-small box; large box; pallet
 Harbour Road, 9:00 to 18:00
 collect soon: yes
-floor; middle shelf; floor
+sign at the door; code sent by text; ask at Harbour Road after 9:00

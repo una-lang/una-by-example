@@ -1,0 +1,1 @@
+error U2026 at src/pricing.una:73:53: interpolation on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
