@@ -1,0 +1,18 @@
+[U1001] Error: cannot find type `NoCarrier` in this module, its imports or the prelude
+    ╭─[ src/carriers.una:10:19 ]
+    │
+ 10 │ kind QuoteError = NoCarrier
+    │                   ────┬────
+    │                       ╰────── cannot find type `NoCarrier` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `NoCarrier` in this module, its imports or the prelude
+    ╭─[ src/carriers.una:23:20 ]
+    │
+ 23 │   @console.print("{NoCarrier}")
+    │                    ────┬────
+    │                        ╰────── cannot find name `NoCarrier` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯

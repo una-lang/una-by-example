@@ -1,0 +1,2 @@
+error U5001 at src/choices.una:33:67: division obligation `units != 0` is refuted
+  counterexample: units = 0

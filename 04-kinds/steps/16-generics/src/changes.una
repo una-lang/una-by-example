@@ -1,0 +1,29 @@
+module changes
+
+kind Zone = Local | National | Abroad
+
+--- A value before and after an edit to a catalog entry. `T` is any type.
+kind Change[T]
+  before: T
+  after: T
+
+--- The edit the other way round. It works for every `T`, since it only moves values.
+undo[T](change: Change[T]) -> Change[T] = Change(before: change.after, after: change.before)
+
+--- Whether the edit changed anything. `!=` needs values that can be compared: `Eq`.
+changed[T: Eq](change: Change[T]) -> Bool = change.before != change.after
+
+--- The larger of the two values. `>` needs values with an order: `Ord`.
+larger[T: Ord](change: Change[T]) -> T = if change.after > change.before then change.after else change.before
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let price = Change(before: 1990, after: 1790)
+  let name = Change(before: "Desk lamp", after: "Desk lamp")
+  let zone = Change(before: Local, after: Abroad)
+  @console.print("{undo(price)}")
+  @console.print("price changed: {changed(price)}, name changed: {changed(name)}")
+  @console.print("larger price {larger(price)}, farther zone {larger(zone)}")
+  let label = Change(before: "desk lamp", after: "Desk lamp")
+  @console.print("{changed(label)} {larger(label)}")

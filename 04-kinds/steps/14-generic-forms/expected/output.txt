@@ -1,0 +1,4 @@
+Change(before: 1990, after: 1790)
+Reading lamp, 3 of LAMP-01, shelf A-4
+price differs: true
+Some("LAMP-01") None

@@ -1,0 +1,10 @@
+module receipt
+
+--- Prints what three lines of an order cost, with 10 percent off each line.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = 1_990 * 2 * 90 / 100
+  let rugs = 4_500 * 3 * 90 / 100
+  let mugs = 1_250 * 4 * 90 / 100
+  @console.print("lamps {lamps}, rugs {rugs}, mugs {mugs}")

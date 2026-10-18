@@ -1,0 +1,2 @@
+A-1001: Corner Bakery, 12 Elm Road, Northfield, 1200 g
+A-1002: 12 Elm Road, Northfield, Corner Bakery, 300 g

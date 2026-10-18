@@ -1,0 +1,33 @@
+module forms
+
+--- A value before and after an edit. `T` is the type of both.
+kind Change[T]
+  before: T
+  after: T
+
+--- How many units of something: `T` is what is counted, and `units` is always an `Int`.
+kind Count[T]
+  item: T
+  units: Int
+
+--- Two values of two types, side by side.
+kind Pair[A, B]
+  first: A
+  second: B
+
+--- Whether two values differ. It is private and writes no constraint: the checker infers it.
+differs[T](a: T, b: T) -> Bool = a != b
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let price: Change[Int] = Change(before: 1990, after: 1790)
+  let name = Change(before: "Desk lamp", after: 1790)
+  let lamps = Count(item: "LAMP-01", units: 3)
+  let shelf = Pair(first: "A-4", second: 12)
+  @console.print("{price}")
+  @console.print("{name.after}, {lamps.units} of {lamps.item}, shelf {shelf.first}")
+  @console.print("price differs: {differs(price.before, b: price.after)}")
+  let found: Option[Text] = Some("LAMP-01")
+  let missing: Option[Text] = None
+  @console.print("{found} {missing}")

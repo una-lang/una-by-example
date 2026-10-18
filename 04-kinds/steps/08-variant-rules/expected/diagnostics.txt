@@ -1,0 +1,3 @@
+error U1002 at src/carriers.una:10:22: `AtDoor` is defined twice in this module, both times as a variant
+error U2009 at src/carriers.una:27:17: variant `AtLocker` needs its fields: `locker`
+error U2001 at src/carriers.una:28:15: `<` orders `Int`, `Text` and variants without fields, not `Delivery`

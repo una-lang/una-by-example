@@ -1,0 +1,9 @@
+[U2001] Error: field `after` of `Change` must be `Text`, found `Int`
+    ╭─[ src/forms.una:25:49 ]
+    │
+ 25 │   let name = Change(before: "Desk lamp", after: 1790)
+    │                                                 ──┬─
+    │                                                   ╰─── field `after` of `Change` must be `Text`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

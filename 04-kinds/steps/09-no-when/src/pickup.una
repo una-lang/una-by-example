@@ -1,0 +1,12 @@
+module pickup
+
+--- Where a customer collects a parcel.
+kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text, opens: Int)
+
+--- Where to collect the parcel, written with `if` and `is` alone.
+pickup_note(delivery: Delivery) -> Text = if delivery is AtLocker then "collect at locker {delivery.locker}" else "delivered to the door"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(pickup_note(AtLocker(locker: "Station 14")))

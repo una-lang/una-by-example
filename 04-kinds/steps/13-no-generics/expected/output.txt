@@ -1,0 +1,2 @@
+PriceChange(before: 1790, after: 1990)
+NameChange(before: "Reading lamp", after: "Desk lamp")

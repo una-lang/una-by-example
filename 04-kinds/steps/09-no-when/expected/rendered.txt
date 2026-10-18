@@ -1,0 +1,9 @@
+[U1001] Error: `Delivery` has no field `locker`, and no function `locker` in scope applies
+   ╭─[ src/pickup.una:7:101 ]
+   │
+ 7 │ pickup_note(delivery: Delivery) -> Text = if delivery is AtLocker then "collect at locker {delivery.locker}" else "delivered to the door"
+   │                                                                                                     ───┬──
+   │                                                                                                        ╰──── `Delivery` has no field `locker`, and no function `locker` in scope applies
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯

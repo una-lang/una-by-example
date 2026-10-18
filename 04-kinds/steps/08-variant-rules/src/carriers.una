@@ -1,0 +1,30 @@
+module carriers
+
+--- How far a parcel travels, nearest first.
+kind Zone = Local | National | Abroad
+
+--- Where a customer collects a parcel. Each variant carries what that place needs.
+kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text, opens: Int)
+
+--- How a parcel is packed. `AtDoor` is a variant of `Delivery` already.
+kind Packing = Box | AtDoor
+
+--- A sum with one variant starts with a bar.
+kind QuoteError = | NoCarrier
+
+--- Whether a customer needs a code to collect the parcel.
+needs_code(delivery: Delivery) -> Bool = delivery is AtLocker
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let locker = AtLocker(locker: "Station 14")
+  let store = AtStore(store: "Harbour Road", opens: 9)
+  @console.print("{locker} {store} {AtDoor}")
+  @console.print("code needed: {needs_code(locker)} {needs_code(AtDoor)}")
+  @console.print("Local before Abroad: {Local < Abroad}; same zone: {National == National}")
+  @console.print("{NoCarrier}")
+  let pending = AtLocker
+  let first = locker < store
+  let later = AtStore(store: "Harbour Road", opens: 10)
+  @console.print("{Abroad > National} {store == later} {needs_code(store)}")

@@ -1,0 +1,25 @@
+module edits
+
+--- A price before and after an edit.
+kind PriceChange
+  before: Int
+  after: Int
+
+--- A product name before and after an edit: the same shape, for a text.
+kind NameChange
+  before: Text
+  after: Text
+
+--- The price edit the other way round.
+undo_price(change: PriceChange) -> PriceChange = PriceChange(before: change.after, after: change.before)
+
+--- The name edit the other way round: the same body, written again.
+undo_name(change: NameChange) -> NameChange = NameChange(before: change.after, after: change.before)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let price = undo_price(PriceChange(before: 1990, after: 1790))
+  let name = undo_name(NameChange(before: "Desk lamp", after: "Reading lamp"))
+  @console.print("{price}")
+  @console.print("{name}")

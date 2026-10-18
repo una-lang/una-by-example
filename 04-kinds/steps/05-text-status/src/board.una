@@ -1,0 +1,11 @@
+module board
+
+--- What the store tells a customer about a shipment, from its status written as a text.
+customer_note(status: Text) -> Text = if status == "in_transit" then "on its way" else if status == "delivered" then "arrived" else "being packed"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(customer_note("in_transit"))
+  @console.print(customer_note("in_trnasit"))
+  @console.print(customer_note("returned"))

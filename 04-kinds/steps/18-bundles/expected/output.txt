@@ -1,0 +1,3 @@
+reading kit: 2690 cents
+Kit(first: Item(sku: "LAMP-01", cents: 1990), second: Kit(first: Item(sku: "BULB-02", cents: 350), second: Item(sku: "BULB-02", cents: 350)))
+office kit: 4 items

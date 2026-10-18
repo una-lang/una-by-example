@@ -1,0 +1,36 @@
+module labels
+
+--- Where a parcel goes.
+kind Address
+  name: Text
+  street: Text
+  city: Text
+
+--- A warehouse of the store. Its fields are those of an `Address`, but it is another kind.
+kind Warehouse
+  name: Text
+  street: Text
+  city: Text
+
+--- A parcel ready to ship.
+kind Parcel
+  order: Text
+  grams: Int
+  address: Address
+
+--- The line printed on a parcel's label.
+label(parcel: Parcel) -> Text = "{parcel.address.name}, {parcel.address.city}, {parcel.grams} g"
+
+--- The same parcel, sent to another address. A record never changes: this builds a new one.
+redirect(parcel: Parcel, address: Address) -> Parcel = Parcel(order: parcel.order, grams: parcel.grams, address: address)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let home = Address(name: "Corner Bakery", street: "12 Elm Road", city: "Northfield")
+  let office = Warehouse(name: "North Depot", street: "4 Quay Street", city: "Southport")
+  let parcel = Parcel(order: "A-1001", grams: 1200, address: home)
+  let moved = redirect(parcel, address: office)
+  @console.print(label(parcel))
+  @console.print(label(moved))
+  @console.print("{home}")
