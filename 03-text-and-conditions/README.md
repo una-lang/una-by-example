@@ -377,7 +377,7 @@ pub main() -> Unit
 
 1. **`cents >= 10_000 and domestic`.** Both parts must be `true`. `domestic` is already a `Bool`, so it needs no comparison: write `domestic`, not `domestic == true`.
 2. **`cents > 50_000 or (gift and cents > 20_000)`.** `and` binds tighter than `or`, but the parentheses make the rule readable at a glance.
-3. **`ships_free(12_000, domestic: false)`.** A call with two arguments names the second one, as in [chapter 1](/learn/hello/#several-parameters-and-labels-at-the-call).
+3. **`ships_free(12_000, domestic: false)`.** A call with two arguments names the second one, as in [chapter 1](/learn/hello/#parameters-and-labels-at-the-call).
 4. **`not ships_free(2_500, domestic: true)`.** `not` turns `true` into `false` and back.
 5. **`lamp == lamp` and `lamp != rug`.** Equality compares values, here two texts, character by character.
 :::

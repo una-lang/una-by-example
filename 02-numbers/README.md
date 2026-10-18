@@ -179,7 +179,7 @@ cd opening
 mkdir src
 ```
 
-Then write `una.toml` and `src/opening.una` with your editor, and make `verification.lock` as in [the first package](/learn/hello/#the-lock-file-verificationlock). This program prints the store's opening hours:
+Then write `una.toml` and `src/opening.una` with your editor, and make `verification.lock` as in [the first package](/learn/hello/#making-the-package). This program prints the store's opening hours:
 
 :::steps
 ```una include="steps/04-printing/src/opening.una" title="src/opening.una" verified="check, run"
