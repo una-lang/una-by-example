@@ -251,7 +251,7 @@ same box: false
 
 #### Every field, every time
 
-A value of a record has a value in every field. There are no default values and no empty fields. Build a `Parcel` without one of its fields, and the checker reports U2009, "`Parcel` is missing field `speed`", as [Leaving out a field](#leaving-out-a-field-u2009) shows. A field the kind does not declare is U2009 too: `Address(…, zip: "1234")` gives "`Address` has no field `zip`". Reading a field the kind does not have, as `home.street` on a kind without `street`, is U1001.
+A value of a record has a value in every field. There are no default values and no empty fields. Build a `Parcel` without one of its fields, and the checker reports U2009, "`Parcel` is missing field `speed`", as [Leaving out a field](#leaving-out-a-field-u2009) shows. A field the kind does not declare is U2009 too: `Address(…, zip: "1234")` gives "`Address` has no field `zip`". Reading a field the kind does not have, as `home.zip`, is U1001, "`Address` has no field `zip`, and no function `zip` in scope applies".
 
 #### A value never changes
 
@@ -1186,7 +1186,7 @@ Does `changed(label)` say `true` or `false`, and which name does `larger(label)`
 true desk lamp
 ```
 
-`"desk lamp"` and `"Desk lamp"` are different texts, since `==` compares them character by character, so the change counts. `Text` is ordered character by character too, by each character's number in Unicode, where every capital letter comes before every small one. `d` comes after `D`, so `"desk lamp"` is the larger.
+`"desk lamp"` and `"Desk lamp"` are different texts, since `==` compares them character by character, so the change counts. `Text` is ordered character by character too, by each character's number in Unicode, where the capital letters `A` to `Z` come before the small letters `a` to `z`. `d` comes after `D`, so `"desk lamp"` is the larger.
 :::
 
 ## 4.5 Day-to-day: parcel pricing
