@@ -1,7 +1,7 @@
 [U0102] Error: `if error` clause after `if none`; handling clauses go in the order if error, if none
-    ╭─[ src/orders.una:45:5 ]
+    ╭─[ src/orders.una:48:5 ]
     │
- 45 │     if error fail Unavailable
+ 48 │     if error fail Unavailable(sku: order.sku)
     │     ─┬
     │      ╰── `if error` clause after `if none`; handling clauses go in the order if error, if none
     │

@@ -5,5 +5,5 @@ true false
 true false
 7 0
 true true
-Some(4) Some(1) Some("L")
+Some(4) Some(1) None
 0 on the shelf / 0 / false

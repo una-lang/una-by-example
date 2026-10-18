@@ -1,11 +1,11 @@
 [U0101] Error: a handling clause goes on its own line, indented under the expression it handles
-    ╭─[ src/orders.una:56:33 ]
+    ╭─[ src/orders.una:58:33 ]
     │
- 56 │   let order = parse_order(line) if error pass
+ 58 │   let order = parse_order(line) if error pass
     │                                 ─┬
     │                                  ╰── a handling clause goes on its own line, indented under the expression it handles
     │
-    │ Help: repair 1: move the clause to its own line; edit src/orders.una:56:32..56:46 to "\n    if error pass"
+    │ Help: repair 1: move the clause to its own line; edit src/orders.una:58:32..58:46 to "\n    if error pass"
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯

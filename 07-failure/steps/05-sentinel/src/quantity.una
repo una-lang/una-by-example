@@ -1,0 +1,23 @@
+module quantity
+
+--- The quantity typed into an order form: a whole number from 1 to 99. Any other text gives
+--- 0, so the caller cannot tell a bad quantity from what went wrong with it.
+quantity_or_zero(raw: Text) -> Int
+=
+  let n = raw.trim.to_int().or_else(default: 0)
+  if n < 1 or n > 99 then 0 else n
+
+--- One line of an order form: the typed text, the units, and the price of that many lamps.
+priced(raw: Text) -> Text
+=
+  let units = quantity_or_zero(raw)
+  "'{raw}': {units} units, {units * 1990} cents"
+
+--- Prints four typed quantities, priced.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(priced("3"))
+  @console.print(priced("three"))
+  @console.print(priced("0"))
+  @console.print(priced("500"))

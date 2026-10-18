@@ -1,7 +1,7 @@
 [U3007] Error: `parse_order` can fail with `OrderError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
-    ╭─[ src/orders.una:56:15 ]
+    ╭─[ src/orders.una:58:15 ]
     │
- 56 │   let order = parse_order(line)
+ 58 │   let order = parse_order(line)
     │               ────────┬────────
     │                       ╰────────── `parse_order` can fail with `OrderError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
     │

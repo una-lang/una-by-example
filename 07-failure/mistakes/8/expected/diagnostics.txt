@@ -1,1 +1,1 @@
-error U0101 at src/orders.una:86:29: unexpected `failure`, expected a variant
+error U0101 at src/orders.una:79:29: unexpected `failure`, expected a variant

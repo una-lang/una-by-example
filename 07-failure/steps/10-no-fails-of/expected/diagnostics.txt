@@ -1,0 +1,2 @@
+error U3009 at src/pricing.una:34:65: this function can fail with `PriceError`, which the expected function type does not allow
+error U3009 at src/pricing.una:38:67: this function can fail with `PriceError`, which the expected function type does not allow

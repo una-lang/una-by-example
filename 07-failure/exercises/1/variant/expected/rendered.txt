@@ -1,7 +1,7 @@
 [U2007] Error: `when` does not match variant `TooMany` of `OrderError`
-    ╭─[ src/orders.una:74:3 ]
+    ╭─[ src/orders.una:66:3 ]
     │
- 74 │   when failure
+ 66 │   when failure
     │   ──┬─
     │     ╰─── `when` does not match variant `TooMany` of `OrderError`
     │
