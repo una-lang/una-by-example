@@ -8,10 +8,5 @@ pub kind Product
   name: Text
   cents: Cents
 
---- The catalog service: the product with a SKU, or `None` for a SKU it does not list.
-pub capability Catalog
-  op find(sku: Text) -> Option[Product]
-
---- A catalog held in memory, for runs and tests.
-pub handler listed(products: List[Product]) for Catalog
-  op find(sku) = products.first_where(keep: fn(product) -> product.sku == sku)
+--- The product with a SKU in a catalog, or `None` for a SKU the catalog does not list.
+pub find(catalog: List[Product], sku: Text) -> Option[Product] = catalog.first_where(keep: fn(product) -> product.sku == sku)
