@@ -57,35 +57,45 @@ The checks also give more than a yes or a no: the obligations, a function's full
 
 ### What a tool is
 
-Every chapter so far has used `una` the same way: you type a line such as `una check .` in a terminal, and una answers. A **terminal** is the window where you type commands to the computer and read what they print. A **command** is one such line: the name of a program, `una`, then words that tell it what to do. Those words are the command's **arguments**:
+Every chapter so far has used `una` the same way: you type a line such as `una check .` in a terminal, and una answers. A **command** is one such line, as [chapter 1](/learn/hello/#s1-1) showed: the name of a program, `una`, then words that tell it what to do. Those words are the command's **arguments**:
 
 - The first word after `una`, such as `check`, `run` or `test`, picks one of una's jobs. Each job is a **subcommand**; this chapter calls them commands too, as in "the command `una check`".
 - A word that starts with `--`, such as `--json` or `--dry-run`, is a **flag**: a switch that changes how the command works. Some flags take a value, as `--tier 0` does.
 - The last word, `.`, is the path of the package to work on. `.` means "the directory I am in". A few commands take a name instead of a path, such as `una explain U2004`, which takes a diagnostic's code.
 
-Together, the commands of `una` are its **tools**. Like the saw, the plane and the square on a carpenter's bench, each does one job around your code: checking it, laying it out, repairing it, explaining a problem, showing what was proven, reviewing what the package may do, running, testing and building it.
+Together, the commands of `una` are its **tools**. Like the saw, the plane and the square on a carpenter's bench, each does one job around your code.
 
 When a command finishes, it leaves two things besides the text you read:
 
 - **Two output streams.** A program prints to two places that the terminal shows together. **stdout**, the standard output, carries the result you asked for: what the program prints, a report, a listing. **stderr**, the standard error, carries messages about problems, such as diagnostics. A script can keep the two apart, and save the result to a file while the problems show on the screen.
-- **An exit code.** A number that the terminal does not print and that says how the command went: 0 when it succeeded, another number when it did not ([chapter 18](#s18-2) introduced it). Programs that run other programs, such as a script or an editor, read the exit code instead of the text.
+- **An exit code.** A number that the terminal does not print and that says how the command went: 0 when it succeeded, another number when it did not ([section 18.5](#s18-5) lists them).
 
-### Each step is a package
+### The commands of `una`
 
-Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1): `una.toml`, `verification.lock` (copy it from chapter 1, or take the step, whole, from the chapter's download, `13-tools.tar.gz`) and the module under `src/`. Run every command in the package's directory. The first step is a receipt line. Its `edition` line names the version of the Una language the package is written in; [chapter 19](/learn/editions/) explains editions:
+This chapter covers every command this book uses, in the order you use them:
 
-```toml include="steps/01-fix/una.toml" title="steps/01-fix/una.toml"
-[package]
-name = "receipt"
-version = "0.1.0"
-edition = "0.2"
+| Command | What it does | Section |
+| --- | --- | --- |
+| `una --version` | Prints the version, the editions and the Z3 version | [chapter 1](/learn/hello/#s1-1) |
+| `una check .` | Looks for mistakes, without running anything | [18.1](#s18-1) |
+| `una fmt .` | Rewrites the code in canonical form | [18.1](#s18-1) |
+| `una fix .` | Applies the exact repairs, then formats | [18.1](#s18-1) |
+| `una explain U1001` | Explains a diagnostic's code | [18.2](#s18-2) |
+| `una obligations .` | Lists every fact the verifier had to prove | [18.3](#s18-3) |
+| `una contract NAME` | Prints a function's full header | [18.3](#s18-3) |
+| `una trace NAME` | Follows a requirement to the code | [18.3](#s18-3) |
+| `una report .` | Prints the build report | [18.4](#s18-4) |
+| `una run .` | Checks, then runs `main` | [18.5](#s18-5) |
+| `una test .` | Checks, then runs every example | [18.5](#s18-5) |
+| `una build .` | Checks, then builds an executable | [18.5](#s18-5) |
+| `una lsp` | Serves an editor | [18.1](#s18-1) |
 
-[run]
-entry = "receipt"
-grants = ["console"]
-```
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `18-tools.tar.gz`, holds them all. Run every command in the package's directory.
 
 ### Why you check before you run
+
+A mistake in a program is normal: everyone makes them while writing code. What matters is when you find out.
+
 
 Here is a receipt line written by someone used to another language. It has two habits from there: an `=` at the end of the header, which is how some languages open a body, and a second argument without its label. An argument's label is the `name:` before it in a call ([chapter 6](/learn/functions/#s6-1)), not the security label of [chapter 17](/learn/information-flow/).
 
@@ -102,7 +112,7 @@ pub main() -> Unit
   @console.print(line_text(2, "LAMP-01", cents: 3980))
 ```
 
-In many languages you would learn about such mistakes when the program runs, perhaps on the day a customer's receipt prints wrong, and perhaps never, if no test happens to reach the line. una reads the whole package without running anything, and reports what is wrong first:
+In many languages you would learn about such mistakes only when the program runs, or never, if no test reaches the line. una reads the whole package without running anything, and reports what is wrong first:
 
 ```sh
 una check .
@@ -123,7 +133,7 @@ una check .
 1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
 ```
 
-The checker reports one problem, a **syntax error**: text that breaks the grammar of the language, the rules for how words and symbols may follow each other. Here it is U0101, a line that ends where an expression was expected. Before anything else, una **parses** each file: it works out which part of the text is a header, a body or a call. A file that does not parse cannot be checked further, so the missing label is not reported yet; it will be once the file parses. The `Help` line holds a repair with an exact edit, and the last line counts the diagnostics that `una fix` can repair for you. The rest of this section shows the three commands of this loop: `una check` finds the problems, `una fmt` lays the code out, and `una fix` applies the exact repairs.
+The checker reports one problem, a **syntax error**: text that breaks the grammar of the language, the rules for how words and symbols may follow each other. Here it is U0101, a line that ends where an expression was expected. Before anything else, una **parses** each file: it works out which part of the text is a header, a body or a call. A file that does not parse cannot be checked further, so the missing label is not reported yet. The `Help` line holds a repair with an exact edit, and the last line counts the diagnostics that `una fix` can repair for you. The rest of this section shows the three commands of this loop: `una check` finds the problems, `una fmt` lays the code out, and `una fix` applies the exact repairs.
 
 ### How to write the check loop
 
@@ -155,7 +165,7 @@ $ una --json check .
 
 #### `una fmt .` and `una fmt --check .`
 
-**Canonical form** is the one layout Una accepts for any code ([chapter 18](#s18-2)). `una fmt .` rewrites every file of the package into it. `una fmt --check .` writes nothing and reports each place that differs, as the diagnostic U7001. `una check .` reports U7001 too, so a file out of canonical form never passes the check.
+**Canonical form** is the one layout Una accepts for any code: indentation, spaces, line breaks and the order of a few parts. Since all Una code has one layout, no review ever argues about it. `una fmt .` rewrites every file of the package into it. `una fmt --check .` writes nothing and reports each place that differs, as the diagnostic U7001. `una check .` reports U7001 too, so a file out of canonical form never passes the check.
 
 This step has the right label, but the body of a one-line function sits on its own line. The change from the previous step is shown as a **diff**: a line that starts with `-` was removed, a line with `+` was added, and the rest is unchanged context:
 
@@ -192,7 +202,27 @@ This step has the right label, but the body of a one-line function sits on its o
 1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
 ```
 
-The arrows on the left mark lines 4 to 6, out of form. The `Help` line is the edit `una fmt .` makes: a function with no clauses (no `uses`, `requires`, `ensures` or `fails`) whose body is one plain line ends on the header line, after `=`. `main`, which has a `uses` clause, keeps the long form. The `┆` in the margin stands for a line the excerpt leaves out.
+The arrows on the left mark lines 4 to 6, out of form. The `Help` line is the edit `una fmt .` makes: a function with no clauses (no `uses`, `requires`, `ensures` or `fails`) whose body is one plain line (no `when`, no `if` with blocks, no `with` or handling clause) ends on the header line, after `=`. `main`, which has a `uses` clause, keeps the long form. The `┆` in the margin stands for a line the excerpt leaves out.
+
+Spaces matter too: spaces inside the parentheses of a call are out of canonical form:
+
+```diff include="steps/06-hello..steps/07-layout-2:src/hello.una" title="src/hello.una"
+--- a/src/hello.una
++++ b/src/hello.una
+@@ -4,4 +4,4 @@
+ pub main() -> Unit
+   uses @console: Console[print]
+ =
+-  @console.print("The store is open")
++  @console.print( "The store is open" )
+```
+
+```text include="steps/07-layout-2/expected/rendered.txt#L1,L8"
+[U7001] Error: line 7 is not in canonical form
+   │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/hello.una:7:1..8:1 to "  @console.print(\"The store is open\")\n"
+```
+
+The `Help` line holds the line as canonical form writes it, and `una fmt .` makes that edit.
 
 #### `una fix --dry-run .` and `una fix .`
 
@@ -316,28 +346,15 @@ fixed src/receipt.una:9:1 U0101 write the `if` with blocks: `if` and its conditi
 fixed src/receipt.una:15:7 U0001 rename `_total` to `total2` in its declaration: a name starts with a letter
 ```
 
-`total2` is correct, but not the name you would choose. `una fix` cannot know the meaning of a name, so after it renames, read the result, and rename again by hand when a better name exists.
+`total2` is correct, but not the name you would choose. `una fix` cannot know the meaning of a name, so read the result, and rename by hand when a better name exists.
 
 ### How the check loop behaves
 
 #### What one check reports
 
-- **Every problem in one pass.** `una check .` reports all the problems it finds, not only the first, so one run often shows several. The receipt of [Habits from other languages](#habits-from-other-languages) gave three at once.
+- **Every problem in one pass.** `una check .` reports all the problems it finds, not only the first: the receipt of [Habits from other languages](#habits-from-other-languages) gave three at once ([section 18.2](#s18-2) shows more).
 - **Except after a syntax error.** A file that does not parse is not checked for names, types or proofs, so its other problems appear once it parses, as the missing label of the first step did.
 - **In a fixed order.** Diagnostics are sorted by file, then position, then code. The same package gives the same output on every run and every machine.
-
-#### Exit codes
-
-Every command of `una` ends with one of four exit codes:
-
-| Code | Meaning |
-| --- | --- |
-| 0 | Success: no error, every obligation proven, every example passed |
-| 1 | The output holds at least one error with a code, an obligation that is not proven, or a failed example |
-| 2 | A usage error: the command line itself is wrong, such as an unknown flag or a path with no package; it is printed on stderr, without a code |
-| 3 | An internal error of una itself, U8001 |
-
-The exit code does not depend on `--json`: the document and the text say the same thing.
 
 #### How `una fix` works
 
@@ -354,13 +371,13 @@ What `una fix` applies is narrow on purpose:
 | Edits that keep what the code may do | An edit that adds a `uses`, makes a declaration `pub` or adds a grant |
 | Formatting of every file that parses | A repair marked as an escape, such as `checked`, which gives up a proof ([Repairs that cost a guarantee](#repairs-that-cost-a-guarantee)) |
 
-The right column holds every change that needs a decision: what a function is meant to compute, what the program may do, what it trusts. `una fix --dry-run .` names each repair it skips and why: [A capability that is not there](#a-capability-that-is-not-there-u3001), in Common mistakes, shows it for a repair that would widen what a function may do.
+The right column holds every change that needs a decision: what a function is meant to compute, what the program may do, what it trusts. `una fix --dry-run .` names each repair with an edit that it skips, and why: [A capability that is not there](#a-capability-that-is-not-there-u3001), in Common mistakes, shows it for a repair that would widen what a function may do.
 
 ### In an editor: `una lsp`
 
 An **editor** is the program where you write code. Many editors can show the problems of a file as you type, through a **language server**: a program that runs beside the editor and answers its questions about the code, in a standard form called the Language Server Protocol.
 
-`una lsp` is Una's language server. You do not run it yourself: you set your editor to start it, and the editor talks to it over stdout and **stdin**, the standard input, the stream a program reads from. As you type, it shows the tier 0 diagnostics of `una check`; when you open or save a file, it also runs the proofs. Above each function it shows how many of its obligations are proven (a **code lens**). It offers the repairs with exact edits as quick fixes, one click each, and formats a file. It also answers the editor's questions about the code: what a name is, when you hold the pointer over it (a **hover**); where a name is declared (**go to definition**); and the list of the file's declarations (the **outline**). It checks and proves, and it never runs a program.
+`una lsp` is Una's language server. You do not run it yourself: you set your editor to start it, and the editor talks to it over stdout and **stdin**, the standard input, the stream a program reads from. As you type, it shows the tier 0 diagnostics of `una check`; when you open or save a file, it also runs the proofs. Above each function it shows how many of its obligations are proven (a **code lens**). It offers the repairs with exact edits as quick fixes, one click each, and formats a file. It also shows what a name is when you hold the pointer over it, and where it is declared. It checks and proves, and it never runs a program.
 
 ### Check, format or fix
 
@@ -420,43 +437,6 @@ fixed src/receipt.una:11:31 U2004 label it `sku`
 The label is a repair, so it gets a `fixed` line. The layout is not a repair round's edit: `una fix` formats every file after its rounds, as `una fmt .` does, and that step has no line of its own. `una fix .` would still fix both.
 :::
 
-### Why Una checks before it runs
-
-A mistake in a program is normal: everyone makes them while writing code. What matters is when you find out. If a mistake surfaces only when its line runs, it may surface in front of a customer, months after the code was written. Una finds as many mistakes as it can before the program starts. `una check` reads the whole program and reports each mistake with the place it is at and what is wrong, and `una run` will not start a program with a mistake it can see. [Section 18.2](#s18-2) shows what such a report looks like.
-
-### Canonical form
-
-**Canonical form** is the one layout Una accepts for any code: indentation, spaces, line breaks and the order of a few parts. `una check .` reports code that differs from it, as here, with spaces inside the parentheses:
-
-```diff include="steps/06-hello..steps/07-layout-2:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -4,4 +4,4 @@
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.print( "The store is open" )
-```
-
-```text include="steps/07-layout-2/expected/rendered.txt#L1,L8"
-[U7001] Error: line 7 is not in canonical form
-   │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/hello.una:7:1..8:1 to "  @console.print(\"The store is open\")\n"
-```
-
-The `Help` line holds the line as canonical form writes it. You rarely fix layout by hand: `una fmt .` rewrites every file of the package in canonical form. Since all Una code has one layout, no review ever argues about it.
-
-### The commands so far
-
-You have met four commands. The others come when a section needs them: `una test` in [section 14.1](/learn/testing/#s14-1), and the rest in [chapter 13, Tools](/learn/tools/).
-
-| Command | What it does | Prints when all is well |
-| --- | --- | --- |
-| `una check .` | Looks for mistakes, without running anything | nothing |
-| `una run .` | Checks, then runs `main` | what the program prints |
-| `una explain U1001` | Explains a code | the explanation |
-| `una fmt .` | Rewrites the code in canonical form | nothing |
-
 ## 18.2 Reading a diagnostic
 
 
@@ -478,9 +458,43 @@ Suppose a checker printed only `error: sale_price may return a value below cost`
 
 So every part of a Una diagnostic is a separate field. The code tells a program what happened, and stays the same when the message improves. The places are numbers, not prose. The repairs are a list, and the exact ones carry their edit. The text for people and the JSON for programs are two renderings of one value, so both always say the same thing.
 
+### A typo the checker catches
+
+The simplest diagnostics come from a typo. [Chapter 1](/learn/hello/#if-una-check-finds-a-mistake) read one in three steps: what is wrong, where, and the repair. Here is another, in a program that prints one line, with `print` changed to `write`, which `Console` does not have:
+
+```diff include="steps/06-hello..steps/13-typo:src/hello.una" title="src/hello.una"
+--- a/src/hello.una
++++ b/src/hello.una
+@@ -4,4 +4,4 @@
+ pub main() -> Unit
+   uses @console: Console[print]
+ =
+-  @console.print("The store is open")
++  @console.write("The store is open")
+```
+
+`una check .` reports:
+
+```text include="steps/13-typo/expected/rendered.txt"
+[U1001] Error: capability `Console` has no operation `write`
+   ╭─[ src/hello.una:7:12 ]
+   │
+ 7 │   @console.write("The store is open")
+   │            ──┬──
+   │              ╰──── capability `Console` has no operation `write`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+```
+
+The first line gives the code, U1001, and the message: `Console` has no operation `write`. Under it, `src/hello.una:7:12` is the file, the line and the column, the 12th character of line 7; lines and columns count from 1. The excerpt shows line 7 with its number on the left. The marks under it, `──┬──`, underline the exact span, `write`, and the line from `╰──` repeats the message next to it. This time there is no `Help` line: `write` is close to no operation of `Console`, so the checker has no repair to offer. The `Note` names the command that explains the code, and with no exact edit, there is no last line about `una fix`.
+
+Read every diagnostic in that order: the message says what, the place says where, and the help, when there is one, says what to do. A diagnostic of the verifier has more parts, in the same order.
+
 ### A sale price with one wrong word
 
-A diagnostic that the verifier reports has the most parts. This step computes a sale price that must never fall below cost, from a price, a cost and a percent off. It has a requirement it is derived from ([chapter 14](/learn/testing/#s14-4)), and a private function that reads a typed percent. The body has one wrong word: on line 24, on the path where the discount goes below cost, it returns `price` instead of `cost`.
+
+A diagnostic that the verifier reports has the most parts. This step computes a sale price that must never fall below cost, from a price, a cost and a percent off. It has a requirement it is derived from ([chapter 5](/learn/contracts/#s5-5)), and a private function that reads a typed percent. The body has one wrong word: on line 24, on the path where the discount goes below cost, it returns `price` instead of `cost`.
 
 ```una include="steps/09-refuted/src/discount.una" title="steps/09-refuted/src/discount.una" caption="with one wrong word, on line 24"
 module discount
@@ -600,6 +614,29 @@ A diagnostic with an exact edit ends the output with a count, ``1 of 1 diagnosti
 6. **The note.** Where to read more.
 :::
 
+### Several problems in one check
+
+`una check .` reports every problem it finds in one pass, not only the first, as the receipt of [Habits from other languages](#habits-from-other-languages) showed. With two misspelt operations in the program of [A typo the checker catches](#a-typo-the-checker-catches), it reports two diagnostics:
+
+```diff include="steps/06-hello..steps/12-two-typos:src/hello.una" title="src/hello.una"
+--- a/src/hello.una
++++ b/src/hello.una
+@@ -4,4 +4,5 @@
+ pub main() -> Unit
+   uses @console: Console[print]
+ =
+-  @console.print("The store is open")
++  @console.write("The store is open")
++  @console.show("Orders placed before 18:00 ship today")
+```
+
+```text include="steps/12-two-typos/expected/diagnostics.txt"
+error U1001 at src/hello.una:7:12: capability `Console` has no operation `write`
+error U1001 at src/hello.una:8:12: capability `Console` has no operation `show`
+```
+
+This book lists them here in a short form, one line each: the code, the place and the message. In your terminal, `una check .` prints each one in full, as for `write`. Fix them in any order, and run `una check .` again until it prints nothing.
+
 ### Repairs that cost a guarantee
 
 Not every repair is equal. This step halves a price typed at the till, for a two-for-one offer, and promises a `Cents`, which is never negative:
@@ -652,7 +689,7 @@ Escapes always come after the repairs that keep the guarantee. A third kind of m
 
 ### An explanation for every code: `una explain`
 
-Every code has an explanation in the binary, which prints a paragraph, then a failing example and a fixed one. You need no network and no browser. The first lines of the one for the missing label of [section 18.1](#s18-1):
+Every code has an explanation in the binary: a paragraph, and for almost every code a failing example and a fixed one. You need no network and no browser. The first lines of the one for the missing label of [section 18.1](#s18-1):
 
 ```text include="steps/01-fix/expected/commands/explain.txt#L1-L4"
 $ una explain U2004
@@ -661,7 +698,7 @@ $ una explain U2004
 A call with two or more arguments may omit the label of its first argument only; every other argument names its parameter, as in `max(x, b: 10)`, or is a bare name equal to the parameter's name, which counts as labeled (`spec/04 §3`). A constructor with two or more fields labels every argument, the first included. The diagnostic carries an edit that labels the argument with the parameter at its position.
 ```
 
-The site has the same text on each code's page, such as [U2004](/docs/errors/U2004/).
+The paragraph is the full rule, and it may name terms and rules that this book does not cover; you do not need all of it to fix the problem. The failing example and the fixed one follow it. The site has the same text on each code's page, such as [U2004](/docs/errors/U2004/).
 
 ### The same diagnostic as JSON
 
@@ -695,7 +732,7 @@ The escape of the half price, in JSON, is a repair with `escape_cost` 1 and an `
 
 ### How diagnostics behave
 
-- **Places count from 1.** Lines and columns start at 1, and a column counts characters, not bytes. `end` is the first position after the span: the mark under `price` starts at column 29 and ends before column 34, five characters.
+- **Places count from 1.** Lines and columns start at 1, and a column counts characters: a character such as `é` counts as one column, even though a file stores it in more than one byte, a unit of storage. `end` is the first position after the span: the mark under `price` starts at column 29 and ends before column 34, five characters.
 - **Proof parts only for proofs.** `obligation` and `counterexample` appear only for the verifier's codes, U5001 and U5002, the second for a goal the solver could not decide.
 - **A counterexample is one case, not a run.** The solver picks values that break the goal, often the smallest ones. A record or a list it does not need in detail gets a placeholder name such as `Product#0` or `List#0`, and its fields that matter get their own lines, such as `product.cost = 1`.
 - **Repairs are ordered.** By escape cost first, then by rank: the repairs that keep every guarantee come first, then those that widen, then the escapes.
@@ -754,71 +791,7 @@ Any coupon worth more than the price, such as `off = 1` with `price = 0`:
 `result = -1` breaks `result >= 0`, the rule of `Cents`. `una fix .` changes nothing: neither repair has an edit, and the second is an escape. The fix is a decision, such as returning 0 when the coupon is worth more than the price, or a `requires off <= price` that every caller proves.
 :::
 
-
-### What a diagnostic is
-
-A **diagnostic** is a report that `una check` writes about one problem in your code. It is like the note a proofreader leaves in the margin: it points at the exact word, says what is wrong, and often suggests a correction. Each diagnostic has a **code**, such as `U1001`, that names the kind of problem.
-
-### Why a checker reports mistakes
-
-A computer does exactly what the code says, even when the code says something you did not mean. A misspelt name, a number where a text should be, a step that asks for something the program may not do: without a checker, each of these is found only when its line runs. `una check` finds them while you write, and says where they are.
-
-### The parts of a diagnostic
-
-Each diagnostic has the same parts, in the same order:
-
-:::steps
-1. **`[U1001] Error:`** The code, which names the kind of problem. Every code has a page on this site, such as [U1001](/docs/errors/U1001/), and `una explain U1001` prints the same text in your terminal.
-2. **The message.** One sentence that says what is wrong: here, that `Console` has no operation `write`.
-3. **`src/hello.una:7:12`.** The file, the line and the column: line 7, character 12. Lines and columns count from 1.
-4. **The excerpt.** Line 7 of the file, with its number on the left. The marks under it, `──┬──`, underline the exact span, here `write`, and the line from `╰──` repeats the message next to it.
-5. **`Help` and `Note` lines.** A `Help` line proposes a repair when there is one. Some repairs are exact edits, which `una fix .` applies for you. A `Note` adds what you need to understand the problem; the last one names `una explain`.
-:::
-
-Read a diagnostic in that order: the message first, then the place, then the help. The message says what, the place says where, and the help says what to do.
-
-### Several problems in one check
-
-`una check .` reports every problem it finds in one pass, not only the first. With two misspelt operations, it reports two diagnostics:
-
-```diff include="steps/06-hello..steps/12-two-typos:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -4,4 +4,5 @@
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.write("The store is open")
-+  @console.show("Orders placed before 18:00 ship today")
-```
-
-```text include="steps/12-two-typos/expected/diagnostics.txt"
-error U1001 at src/hello.una:7:12: capability `Console` has no operation `write`
-error U1001 at src/hello.una:8:12: capability `Console` has no operation `show`
-```
-
-This book lists them here in a short form, one line each: the code, the place and the message. In your terminal, `una check .` prints each one in full, as for `write`. Fix them in any order, and run `una check .` again until it prints nothing.
-
-### Asking `una explain`
-
-Each code has a longer explanation, with a failing example and a fixed one. `una explain` prints it:
-
-```sh
-una explain U1001
-```
-
-```text include="steps/13-typo/expected/commands/explain-u1001.txt#L2-L4"
-# U1001: Unresolved name
-
-Every name must refer to something visible where it is used: a local binding (a parameter, a `let`, a pattern binding or a lambda parameter), a declaration of the module, a name the module imports, or the prelude (ADR 0023). U1001 reports a name that none of these holds, whether it names a value, a type, a capability, a handler, a module or an imported declaration. An import names a module of the package or one of the two standard modules that can be imported: `std.host`, with the host capabilities and their failure kinds, and `std.testing`, with the helpers for examples. The prelude is always in scope and is not imported. A variant in a `when` pattern, an `is` test or after `fail` takes its kind from the context, and is checked against that kind instead. An operation that a capability does not declare is unresolved too, after `@x.` in a call and after `expect performed` or `expect not performed` in an example: the diagnostic offers the closest operation as an edit (ADR 0082).
-```
-
-The first line names the code and its meaning: U1001 is an unresolved name, a name that refers to nothing. The paragraph after it is the full rule, which names terms of later chapters and the numbered decision records behind it; a failing example and a fixed one follow it. You do not need all of it now. The site has the same text, on the page of each code, such as [U1001](/docs/errors/U1001/).
-
-### Check yourself: diagnostics
-
-This version of `hello` has one wrong letter order:
+Second, the program of [A typo the checker catches](#a-typo-the-checker-catches), with one wrong letter order this time:
 
 ```diff include="steps/06-hello..steps/14-misspelt:src/hello.una" title="src/hello.una"
 --- a/src/hello.una
@@ -831,49 +804,28 @@ This version of `hello` has one wrong letter order:
 +  @console.pirnt("The store is open")
 ```
 
-Which code does `una check .` report, at which line and column? Then compare its `Help` line with the diagnostic for `write`, which had none.
+The checker reports U1001 at line 7, column 12, where `pirnt` starts, and suggests `print` as an exact edit. Before you look: in `una --json check .`, what is `fixable`, and what are the `start` and `end` of the repair's `edit`?
 
 :::answer Show the answer
-```text include="steps/14-misspelt/expected/rendered.txt"
-[U1001] Error: capability `Console` has no operation `pirnt`
-   ╭─[ src/hello.una:7:12 ]
-   │
- 7 │   @console.pirnt("The store is open")
-   │            ──┬──
-   │              ╰──── capability `Console` has no operation `pirnt`
-   │
-   │ Help: repair 1: write `print`; edit src/hello.una:7:12..7:17 to "print"
-   │
-   │ Note: run `una explain U1001` for an explanation
-───╯
-1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
+```json include="steps/14-misspelt/expected/commands/json.txt#L2"
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1001","severity":"error","domain":"names","message":"capability `Console` has no operation `pirnt`","primary":{"file":"src/hello.una","start":{"line":7,"col":12},"end":{"line":7,"col":17}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `print`","edit":{"file":"src/hello.una","start":{"line":7,"col":12},"end":{"line":7,"col":17},"replacement":"print"}}],"explain":"una explain U1001"}],"fixable":1}
 ```
 
-The code is U1001, at line 7, column 12, where `pirnt` starts: the same kind of problem as `write`. This time there is a `Help` line: `pirnt` is close to `print`, so the checker names the operation you most likely meant, as an exact edit that `una fix .` can apply. `write` is close to no operation of `Console`, so it got none.
+`fixable` is 1: the one diagnostic has a repair with an edit. The edit starts at line 7, column 12, and ends at column 17, the first position after `pirnt`, so it covers the five characters of the word and replaces them with `"print"`. The `edit` has the same span as `primary`, since the repair rewrites exactly the marked word.
 :::
 
 ## 18.3 What was proven: obligations, contracts and traces
 
 
+[Section 5.4](/learn/contracts/#s5-4) listed the obligations of a package with `una obligations`, [section 5.5](/learn/contracts/#s5-5) followed a requirement to its proof with `una trace`, and [section 6.3](/learn/functions/#s6-3) read a whole header with `una contract`. This section uses the three together on one package, as a reviewer does, and adds what those sections left out: their JSON forms, what they print for a package that does not check, and how they behave in a script.
+
 ### What a proof obligation is
 
-A **proof obligation** is one fact that the verifier must prove before the package checks ([chapter 5](/learn/contracts/#what-the-verifier-is)). Every place where the program relies on a fact gives one, of a kind:
-
-| Kind | Where it comes from | What it must prove |
-| --- | --- | --- |
-| `refinement` | A value passed to, returned as, or stored in a refined kind | The kind's rule, such as `result >= 0` |
-| `precondition` | Each call of a function with `requires` | The callee's `requires`, with the arguments |
-| `postcondition` | Each `ensures` clause | The promise, on every path that returns |
-| `division` | Each division by a value that is not a literal | That the divisor is not 0 |
-| `exhaustive` | A `when` over ranges or literals without `else` | That an arm matches every value |
-| `overflow` | Arithmetic on a fixed-width integer such as `U8`, from edition `0.2` ([chapter 2](/learn/numbers/#s2-3)) | That the result fits |
-| `effect_condition`, `contract_lock` | Conditions on operations and their locks in `una.toml`, in edition `0.3` only ([chapter 13](/learn/authority/#s13-1), [chapter 13](/learn/authority/#s13-3)) | That the condition holds where the operation runs |
-
-The last two rows depend on the package's **edition**, the version of the Una language that its `una.toml` names ([chapter 19](/learn/editions/)); this chapter's packages are on edition `0.2`. Each obligation is **proven** when it holds for every input, **refuted** when the solver finds a counterexample, or **unknown** when the solver cannot decide.
+A **proof obligation** is one fact that the verifier must prove before the package checks, and its status is proven, refuted or unknown, as [section 5.4](/learn/contracts/#s5-4) explains with its kinds. [Section 8.2](/learn/choices/#s8-2) adds `exhaustive`, for a `when` over numbers without `else`. Two more kinds, `effect_condition` and `contract_lock`, exist only in edition `0.3`. The **edition** is the version of the Una language that a package's `una.toml` names ([chapter 19](/learn/editions/)), and this chapter's packages are on edition `0.2`.
 
 ### Why you list what was proven
 
-A package that checks clean prints nothing. That is the right answer for the loop of [section 18.1](#s18-1), and the wrong one for a reviewer, who asks other questions: which facts did the verifier prove, and where? What does this function promise, including what nobody wrote down? Which code carries the rule "a sale price is never below cost"? Three commands answer them, from the same proofs.
+A package that checks clean prints nothing, so a reviewer needs the list itself, as [section 5.4](/learn/contracts/#s5-4) showed. A review asks three questions of a package at once: which facts did the verifier prove, and where? What does each function promise, including what nobody wrote down? Which code carries the rule "a sale price is never below cost"? The three commands answer them, from the same proofs.
 
 ### From promises to obligations
 
@@ -969,6 +921,8 @@ proven   ob-effe966d12dd refinement    src/discount.una:46:40 30 in 0..90
 
 Each line has five columns: the status, the identifier, the kind, the place and the goal. Most lines are `refinement`: each literal passed as `Cents` must be at least 0, and each `off` passed as `Percent` must be in `0..90`. The line at `19:5` is the result of `sale_price`, which must be a `Cents`, and the line at `27:1` is the result of `parse_percent`, which must be a `Percent`. One `ensures` gives one `postcondition` line.
 
+This listing is a first run. Run it again, or after `una check .`, and each line ends with `(cached)`, and the report counts them under `cached`.
+
 #### A function's full header: `una contract <module.function>`
 
 `una contract` prints a function's full header, as a caller relies on it, with its doc comments. The function is named by its module and its name. For a private function it shows what the checker inferred:
@@ -980,7 +934,7 @@ parse_percent(raw: Text) -> Percent
   fails PercentError -- inferred
 ```
 
-`parse_percent` declares no `fails` clause, and the contract shows the one the checker inferred, marked `-- inferred` ([chapter 7](/learn/failure/) explains inference). For `sale_price`, the contract ends with the requirement it is derived from:
+`parse_percent` declares no `fails` clause, and the contract shows the one the checker inferred, marked `-- inferred`, as [section 6.3](/learn/functions/#s6-3) showed for `uses` and [section 7.2](/learn/failure/#s7-2) for `fails`. For `sale_price`, the contract ends with the requirement it is derived from:
 
 ```text include="steps/08-proven/expected/commands/contract-sale.txt"
 $ una contract discount.sale_price
@@ -1105,6 +1059,8 @@ The requirement is printed, and no function under it. A requirement that no func
 
 ### What a build report is
 
+Chapters 5, 6 and 17 each showed one part of the build report: its `requirements` ([section 5.5](/learn/contracts/#s5-5)), its `authority` ([section 6.3](/learn/functions/#s6-3)) and its `information` ([section 17.5](/learn/information-flow/#s17-5)). This section reads the whole report.
+
 A packaged food carries a label: what is inside, what was added, what it may contain. You read it without tasting the food. The **build report** is that label for a package. `una report .` checks the package and prints, on one page, what a reviewer needs to know about it: what was proven, what each function may do, what the proofs rely on, and what the guarantees do not cover.
 
 ### Why a report
@@ -1177,7 +1133,7 @@ The **trusted computing base** is everything the guarantees rest on without bein
 
 #### What the guarantees do not cover: `out of model`
 
-The proofs say nothing about these: how long a run takes, whether it ends, how much memory it uses, what systems outside the declared capabilities do, and the other entries of the line, such as the order in which **concurrent tasks**, parts of a program that run at the same time ([chapter 16](/learn/memory/)), perform their operations. They are listed so that nobody reads more into "proven" than it means.
+The proofs say nothing about these: how long a run takes, whether it ends, how much memory it uses, what systems outside the declared capabilities do, and the other entries of the line, such as the order in which **concurrent tasks**, parts of a program that run at the same time ([chapter 15](/learn/concurrency/)), perform their operations. They are listed so that nobody reads more into "proven" than it means.
 
 ### A report of a package that does not check
 
@@ -1330,9 +1286,21 @@ So a program that runs, or an executable that exists, is always one that checked
 ### How running, testing and building behave
 
 - **The status of a run.** `ok` for a run that returned, `failed` when `main` failed with its error kind, `aborted` when the run was stopped, by a limit ([chapter 16](/learn/memory/#s16-4) shows one) or another runtime error, and `rejected` when the checks failed and nothing ran.
-- **Exit codes.** `una run .` exits with code 1 when the run is not `ok`, or 3 for an internal error, and `una test .` with code 1 when an example fails.
 - **The examples run alone.** Each example gets only the handlers its `given` lines install, so an example never reaches the console or a real service by accident.
 - **The executable.** `una build .` writes it under the package, at `target/una/<name>`, with `<name>` from `[package] name`. It runs `main` with the grants of `una.toml` built in, takes further `--grant` flags, and prints what `una run .` prints. Building needs the system's **linker**, `cc`, on the path, the list of directories where the terminal looks for programs. **Linking** is the last step of a build: it joins the compiled code with the **runtime library**, the code that every Una executable shares. It builds for the machine it runs on.
+
+### Exit codes
+
+Every command of `una` ends with an **exit code**, the number the terminal receives when the command ends ([What a tool is](#what-a-tool-is)), and one of four:
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success: no error, every obligation proven, every example passed |
+| 1 | The output holds at least one error with a code, an obligation that is not proven, or a failed example |
+| 2 | A usage error: the command line itself is wrong, such as an unknown flag or a path with no package; it is printed on stderr, without a code |
+| 3 | An internal error of una itself, U8001 |
+
+So `una check .` exits with 0 when the package checks, and with 1 when it reports a problem. `una run .` exits with 1 when the run is not `ok`, and `una test .` with 1 when an example fails. Another program that runs una for you, such as a release script or a code editor, tells success from failure by this number, without reading the text. The exit code does not depend on `--json`: the document and the text say the same thing.
 
 ### Choosing a command
 
@@ -1383,12 +1351,6 @@ example discount "a typed percent above 90 is OutOfRange" ... ok
 
 The code computes 1393, which is right: 1990 - 1990 * 30 / 100 is 1990 - 597. The example was wrong, so the fix is in the example. A failed example says that the code and the person disagree; reading the value tells you which one is wrong.
 :::
-
-### Exit codes, and a run that refuses to start
-
-Every command ends with an **exit code**, a number the terminal receives when the command ends. `una check .` exits with 0 when the package checks, and with 1 when it reports a problem, so another program that runs `una check` for you, such as a code editor, can tell success from failure without reading the text.
-
-`una run .` never runs a package that does not check. It prints the same diagnostics and stops, so a program that runs is always a program that checked.
 
 ## 18.6 Day-to-day: price tags for a sale
 
@@ -1599,12 +1561,12 @@ Each command answers one question, and each would stop the release for its own r
 
 | Command | Section | It stops the release when… |
 | --- | --- | --- |
-| `una fmt --check .` | [13.1](#s18-1) | A file is not in canonical form (U7001) |
-| `una check .` | [13.1](#s18-1) | A name, a type, a capability, a security label or a proof is wrong |
-| `una test .` | [13.5](#s18-5) | An example fails: a number is not the one a person expects |
-| `una trace PRICING_1` | [13.3](#s18-3) | An obligation derived from the requirement is not proven |
-| `una report .` | [13.4](#s18-4) | An obligation is not proven; and a reviewer reads what changed |
-| `una build .` | [13.5](#s18-5) | The executable cannot be built, for example without `cc` |
+| `una fmt --check .` | [18.1](#s18-1) | A file is not in canonical form (U7001) |
+| `una check .` | [18.1](#s18-1) | A name, a type, a capability, a security label or a proof is wrong |
+| `una test .` | [18.5](#s18-5) | An example fails: a number is not the one a person expects |
+| `una trace PRICING_1` | [18.3](#s18-3) | An obligation derived from the requirement is not proven |
+| `una report .` | [18.4](#s18-4) | An obligation is not proven; and a reviewer reads what changed |
+| `una build .` | [18.5](#s18-5) | The executable cannot be built, for example without `cc` |
 
 `una fmt --check .` and `una check .` print nothing: the package is canonical and proven. `una trace PRICING_1` shows that the requirement reaches `sale_price` and that both of its obligations are proven:
 
@@ -1933,7 +1895,7 @@ example "a basket adds the sale prices of the products it lists"
 ```
 
 :::hint
-*Hint:* a `for` loop over the SKUs ([chapter 9](/learn/loops/#s9-1)), a `let edit total: Cents = 0`, and a `when` on what the catalog gives, with one arm for `Some(product)` and one for `None`. The verifier proves that the total stays a `Cents`, since each sale price is one. When you are done, `una contract pricetags.basket_total` should show the same `uses` as the stub: the loop adds no power.
+*Hint:* a `for` loop over the SKUs ([section 10.1](/learn/collections/#s10-1)), a `let edit total: Cents = 0` ([section 9.2](/learn/loops/#s9-2)), and a `when` on what the catalog gives, with one arm for `Some(product)` and one for `None`. The verifier proves that the total stays a `Cents`, since each sale price is one. When you are done, `una contract pricetags.basket_total` should show the same `uses` as the stub: the loop adds no power.
 :::
 
 Check your answer with `una test .`. On the start package it reports:
@@ -2094,6 +2056,6 @@ Each event names the handler instance that answered, such as `with:listed#1`, so
 - Command line: [all commands](/docs/cli/), [`una check`](/docs/cli/check/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/), [`una obligations`](/docs/cli/obligations/), [`una contract`](/docs/cli/contract/), [`una trace`](/docs/cli/trace/), [`una report`](/docs/cli/report/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una build`](/docs/cli/build/), [`una lsp`](/docs/cli/lsp/)
 - For agents: [Una for agents](/docs/agents/), [JSON output and diagnostics](/docs/agents/json/), [repairs](/docs/agents/repairs/), [the build report](/docs/agents/build-report/)
 - Construct pages: [`ensures`](/docs/language/functions/ensures/), [`requires`](/docs/language/functions/requires/), [`requirement` and `derived from`](/docs/language/requirements/requirement/), [`where` and refinements](/docs/language/types/where/), [`example`](/docs/language/examples/example/)
-- Diagnostics: [U0001](/docs/errors/U0001/), [U0101](/docs/errors/U0101/), [U1006](/docs/errors/U1006/), [U2004](/docs/errors/U2004/), [U3001](/docs/errors/U3001/), [U5001](/docs/errors/U5001/), [U7001](/docs/errors/U7001/), and [all codes](/docs/errors/)
+- Diagnostics: [U0001](/docs/errors/U0001/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1006](/docs/errors/U1006/), [U2004](/docs/errors/U2004/), [U3001](/docs/errors/U3001/), [U5001](/docs/errors/U5001/), [U7001](/docs/errors/U7001/), and [all codes](/docs/errors/)
 - Specification: [diagnostics, agent ABI and project files](/docs/spec/13-diagnostics-and-abi/), [verification](/docs/spec/12-verification/), [canonical form](/docs/spec/15-canonical-form/), [native backend](/docs/spec/16-native-backend/)
 :::

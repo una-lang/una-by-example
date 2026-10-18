@@ -1,0 +1,2 @@
+$ una --json check .
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1001","severity":"error","domain":"names","message":"capability `Console` has no operation `pirnt`","primary":{"file":"src/hello.una","start":{"line":7,"col":12},"end":{"line":7,"col":17}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `print`","edit":{"file":"src/hello.una","start":{"line":7,"col":12},"end":{"line":7,"col":17},"replacement":"print"}}],"explain":"una explain U1001"}],"fixable":1}
