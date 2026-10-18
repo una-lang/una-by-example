@@ -1,9 +1,14 @@
-[U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
-    ╭─[ src/slip.una:40:18 ]
+[U0003] Error: inconsistent indentation of 4 spaces; expected 0 or 2
+    ╭─[ src/slip.una:31:1 ]
     │
- 40 │   @console.print(lamp_cents + rug_cents)
-    │                  ───────────┬──────────
-    │                             ╰──────────── argument `line` of operation `Console.print` must be `Text`, found `Int`
+ 31 │     let lamps = 2
+    │ ──┬─
+    │   ╰─── inconsistent indentation of 4 spaces; expected 0 or 2
     │
-    │ Note: run `una explain U2001` for an explanation
+    │ Help 1: repair 1: indent with 2 spaces; edit src/slip.una:31:1..31:5 to "  "
+    │
+    │ Help 2: repair 2: remove the indentation; edit src/slip.una:31:1..31:5 to ""
+    │
+    │ Note: run `una explain U0003` for an explanation
 ────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

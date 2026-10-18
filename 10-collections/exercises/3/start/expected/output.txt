@@ -1,0 +1,7 @@
+8 lines, 1 skipped
+furniture: 2 units, 318.00
+lighting: 8 units, 144.40
+other: 2 units, 48.00
+textiles: 4 units, 180.00
+best seller: LAMP-01, 6 units
+{"categories":4,"cents":69040,"skipped":1,"units":16}

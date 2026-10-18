@@ -1,0 +1,1 @@
+error U1001 at src/hello.una:7:12: capability `Console` has no operation `write`

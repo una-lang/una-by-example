@@ -28,7 +28,7 @@ pub closing() -> Text = "Questions? Write to orders@example.invalid and quote th
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let lamps = 2
+    let lamps = 2
   let rugs = 1
   let lamp_cents = line_cents(lamps, cents: 1990)
   let rug_cents = line_cents(rugs, cents: 4500)
@@ -37,7 +37,7 @@ pub main() -> Unit
   @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
   @console.print(count_line(lamps + rugs, lines: 2))
-  @console.print(lamp_cents + rug_cents)
+  @console.print(total_line(lamp_cents + rug_cents))
   @console.print(closing())
 
 example "the title names the order"

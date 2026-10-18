@@ -1,0 +1,7 @@
+$ una obligations .
+proven   ob-00d161d86eb3 postcondition src/invoice.una:14:11 result >= 0
+proven   ob-a14e2a20a58d postcondition src/invoice.una:15:11 result * 100 <= total
+proven   ob-d6433d56c573 refinement    src/invoice.una:21:1 result >= 0
+proven   ob-200f35c3fccb refinement    src/invoice.una:29:47 14900 >= 0
+proven   ob-b453dd62cb76 refinement    src/invoice.una:29:64 2 in 1..99
+proven   ob-f82fc95c6633 refinement    src/invoice.una:31:42 total >= 0

@@ -1,0 +1,3 @@
+$ una contract notice.cutoff_line
+--- The line that tells customers until when an order ships the same day.
+pub cutoff_line(hour: Int) -> Text

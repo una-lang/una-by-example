@@ -2,15 +2,16 @@
 learn: "11"
 title: Packages and modules
 editions: ["0.2", "0.3"]
-codes: [U1001, U1002, U1003, U1004, U1008, U1009, U3020, U3021, U3023, U5001, U7001, U7002]
-time: 55
+codes: [U1001, U1002, U1003, U1004, U1008, U1009, U7001, U7002]
+time: 35
 builds: A store's invoice, split into modules for money, the catalog, prices and the invoice itself
-prerequisites: ["6", "7", "8", "10"]
+prerequisites: ["1", "6", "7"]
 template: 2
-nav: ["Packages and modules", "pub and import", "The manifest and the lock", "Locking a contract", "A ceiling for a module", "Day-to-day: the store's invoice", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
+nav: ["Packages and modules", "pub and import", "The manifest and the lock", "Day-to-day: the store's invoice", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 11 Packages and modules
+
 
 A program of one file is easy to read until it grows. Then the price rules, the catalog and the invoice text sit side by side, any function can call any other, and a reviewer cannot tell which functions other parts of the program are meant to use. In Una a package is split into modules, one file each. A module shares only what it marks `pub`, and every other module names what it takes with `import`. This chapter splits a store's invoice into modules, walks through `una.toml`, and, in edition `0.3`, locks what public functions may do and limits what code from a supplier may receive.
 
@@ -51,6 +52,7 @@ Una keeps the structure small and visible:
 > A module's `pub` declarations are its interface, and its imports say exactly what it uses of other modules. Both are in the source, where a reviewer reads them.
 
 ## 11.1 Packages and modules
+
 
 ### What a package and a module are
 
@@ -157,7 +159,7 @@ A module file has three parts, always in this order:
 3. **The declarations.** The functions, kinds and other declarations of the module, in any order, separated by blank lines. All of them see each other: a function can call one declared further down.
 :::
 
-Two smaller things in this step. `pub` before `format` makes it usable by other modules, and [section 11.2](#s11-2) explains it. `cents mod 100` is the remainder of dividing `cents` by 100, as `/` is the quotient: 1990 divided by 100 is 19, remainder 90 ([chapter 2, Values](/learn/values/#s2-1), covers both).
+Two smaller things in this step. `pub` before `format` makes it usable by other modules, and [section 11.2](#s11-2) explains it. `cents mod 100` is the remainder of dividing `cents` by 100, as `/` is the quotient: 1990 divided by 100 is 19, remainder 90 ([chapter 2, Values](/learn/numbers/#s2-2), covers both).
 
 #### The entry module in `una.toml`
 
@@ -320,6 +322,7 @@ The file still sits at `src/store/tax/rates.una`, so its module must be `store.t
 
 ## 11.2 `pub` and `import`
 
+
 ### What `pub` and `import` do
 
 A store has a counter and a stockroom. Customers deal with what is on the counter; the stockroom is where the staff keep what they need to serve them. A module works the same way. The declarations it marks `pub` are its counter: other modules may use them. Everything else is its stockroom: it stays inside the module.
@@ -361,7 +364,7 @@ a refund of 150 cents, by format: -1.50
 the same refund, by digits: -2.50
 ```
 
-The second line is wrong: a refund of 150 cents is 1.50, not 2.50. `digits` divides with Una's division, which rounds down, toward the smaller number: −150 / 100 is −2, and the remainder is 50 ([chapter 2, Values](/learn/values/#s2-1), shows why). That is right for the job `digits` was written for, and wrong for any other. The checker cannot know which job a function was meant for.
+The second line is wrong: a refund of 150 cents is 1.50, not 2.50. `digits` divides with Una's division, which rounds down, toward the smaller number: −150 / 100 is −2, and the remainder is 50 ([chapter 2, Values](/learn/numbers/#s2-2), shows why). That is right for the job `digits` was written for, and wrong for any other. The checker cannot know which job a function was meant for.
 
 When `digits` is private to `store.money`, no other module can call it, so it can only be reached through `format`, which keeps its assumption. The module can also change `digits`, rename it or delete it, and no code outside it breaks. [Private stays private](#private-stays-private) shows what happens when another module tries.
 
@@ -374,9 +377,9 @@ Write `pub` at the very start of the declaration, before its name:
 pub format(cents: Int) -> Text = if cents < 0 then "-{digits(0 - cents)}" else digits(cents)
 ```
 
-`pub` goes on a function, a kind, a capability, a handler, a predicate or a policy. An `example` or a `requirement` is never `pub`: an example belongs to its module ([section 11.7](#s11-7)).
+`pub` goes on a function, a kind, a capability, a handler, a predicate or a policy. An `example` or a `requirement` is never `pub`: an example belongs to its module ([section 11.5](#s11-5)).
 
-A `pub` function promises its callers a header they can rely on, so it writes every clause: its `uses` and its `fails` ([chapter 3, Functions](/learn/functions/#s3-4), showed that a private function may leave them to inference). Give every `pub` declaration a doc comment (`---`), since other modules read it to learn what the declaration does.
+A `pub` function promises its callers a header they can rely on, so it writes every clause: its `uses` and its `fails` ([chapter 3, Functions](/learn/functions/#s6-3), showed that a private function may leave them to inference). Give every `pub` declaration a doc comment (`---`), since other modules read it to learn what the declaration does.
 
 ### How to write an import
 
@@ -425,10 +428,10 @@ pub handler listed(products: List[Product]) for Catalog
   op find(sku) = products.first_where(keep: fn(product) -> product.sku == sku)
 ```
 
-1. **`import store.money (Cents)`.** A module imports what it uses, even another module's kinds. `Cents`, an `Int` that is never below zero, is a refined kind of [chapter 7, Contracts and the verifier](/learn/contracts/#s7-3). `Product.cents` is a `Cents`, so a negative price cannot be built anywhere in the package.
+1. **`import store.money (Cents)`.** A module imports what it uses, even another module's kinds. `Cents`, an `Int` that is never below zero, is a refined kind of [chapter 7, Contracts and the verifier](/learn/contracts/#s5-3). `Product.cents` is a `Cents`, so a negative price cannot be built anywhere in the package.
 2. **`pub kind Product`.** The record, its constructor and its fields are part of the interface. A module that imports `Product` can write `Product(sku: …, name: …, cents: …)` and read `product.name`.
 3. **`pub capability Catalog`.** Code in other modules can now declare `uses @catalog: Catalog[find]`, and call the operation `find`.
-4. **`pub handler listed(...)`.** A handler is shared like a function, so every module and every example can run against the same in-memory catalog ([chapter 8, Capabilities](/learn/capabilities/#s8-3), covers handlers).
+4. **`pub handler listed(...)`.** A handler is shared like a function, so every module and every example can run against the same in-memory catalog ([chapter 8, Capabilities](/learn/capabilities/#s12-3), covers handlers).
 :::
 
 #### Sum kinds, with their variants
@@ -486,7 +489,7 @@ CHAIR-09: sold out
 
 #### The host's capabilities: `std.host`
 
-The same step also writes `import std.host (Console)`. `std.host` is one of the two standard modules a package can import. It holds the host's capabilities, such as `Console` and `Clock` ([chapter 8](/learn/capabilities/#s8-2)), which the prelude already puts in every module. So the import changes nothing but makes the source explicit, and you may leave it out. The other standard module, `std.testing`, holds helpers for examples.
+The same step also writes `import std.host (Console)`. `std.host` is one of the two standard modules a package can import. It holds the host's capabilities, such as `Console` and `Clock` ([chapter 12](/learn/capabilities/#s12-2)), which the prelude already puts in every module. So the import changes nothing but makes the source explicit, and you may leave it out. The other standard module, `std.testing`, holds helpers for examples.
 
 ### A private helper next to a public function
 
@@ -543,7 +546,7 @@ Ok("Desk lamp: 19.90")
 Err(NotListed("CHAIR-09"))
 ```
 
-`PriceError` and `price_tag` have no `pub`, so they belong to `store.app` alone. A private function may leave its `uses` and `fails` to inference, but `price_tag` writes them, so its header can be read without its body. `attempt` keeps each lookup's outcome as a `Result` ([chapter 6, Failure](/learn/failure/#s6-3)), and the two lines print them: the lamp's text, and the failure for a SKU the catalog does not list.
+`PriceError` and `price_tag` have no `pub`, so they belong to `store.app` alone. A private function may leave its `uses` and `fails` to inference, but `price_tag` writes them, so its header can be read without its body. `attempt` keeps each lookup's outcome as a `Result` ([chapter 6, Failure](/learn/failure/#s7-4)), and the two lines print them: the lamp's text, and the failure for a SKU the catalog does not list.
 
 ### How names are found
 
@@ -644,6 +647,7 @@ The app never imported `digits`, so the name is in none of its three sources: it
 
 ## 11.3 The manifest and the lock
 
+
 ### What a manifest is
 
 A **manifest** is a file that describes a package to the tools: its name, its version, which edition of the language it is written in, and how to run it. In Una it is `una.toml`, at the root of the package. Every command reads it before it reads any module.
@@ -657,7 +661,7 @@ A **manifest** is a file that describes a package to the tools: its name, its ve
 
 ### Why the manifest is checked
 
-A settings file that accepts anything turns a typing mistake into a setting that silently does nothing. Here a manifest means to allow each module one use of `checked` ([chapter 6](/learn/failure/#s6-4)), and misspells the key:
+A settings file that accepts anything turns a typing mistake into a setting that silently does nothing. Here a manifest means to allow each module one use of `checked` ([chapter 7](/learn/failure/#s7-5)), and misspells the key:
 
 ```diff include="steps/11-manifest..steps/12-misspelt:una.toml" context="0" title="una.toml"
 --- a/una.toml
@@ -685,7 +689,7 @@ U7002 is the code of a manifest una cannot accept, and it points at the line and
 
 ### How to write `una.toml`
 
-`una.toml` holds up to five tables in edition `0.2`, and two more in edition `0.3` ([section 11.4](#s11-4) and [section 11.5](#s11-5)). No other table or key is allowed.
+`una.toml` holds up to five tables in edition `0.2`, and two more in edition `0.3` ([section 13.3](/learn/authority/#s13-3) and [section 13.2](/learn/authority/#s13-2)). No other table or key is allowed.
 
 #### `[package]`: what the package is
 
@@ -702,15 +706,15 @@ U7002 is the code of a manifest una cannot accept, and it points at the line and
 | Key | Value |
 | --- | --- |
 | `entry` | The module path of the module whose `pub main` `una run` starts. |
-| `grants` | An array of the host capabilities the run is given, such as `["console"]`, besides those of a `--grant` flag ([chapter 8, Capabilities](/learn/capabilities/#s8-2)). |
+| `grants` | An array of the host capabilities the run is given, such as `["console"]`, besides those of a `--grant` flag ([chapter 8, Capabilities](/learn/capabilities/#s12-2)). |
 
 #### `[labels]`, `[trusted]` and `[escape_budget]`
 
 | Table and key | Value |
 | --- | --- |
 | `[labels]` `categories` | The categories that labels may name, such as `["PII"]` ([chapter 9, Information flow](/learn/information-flow/)). |
-| `[trusted]` `modules` | The modules that may declare policies, each also marked `trusted module` in its header ([chapter 9](/learn/information-flow/)). |
-| `[escape_budget]` `checked_per_module` | How many uses of `checked` each module may have, 0 by default ([chapter 6, Failure](/learn/failure/#s6-4)). |
+| `[trusted]` `modules` | The modules that may declare policies, each also marked `trusted module` in its header ([chapter 17](/learn/information-flow/)). |
+| `[escape_budget]` `checked_per_module` | How many uses of `checked` each module may have, 0 by default ([chapter 6, Failure](/learn/failure/#s7-5)). |
 
 These three are optional. Without them, a package has no label categories, no trusted modules and a budget of 0.
 
@@ -749,11 +753,11 @@ una 0.3.15 has no way to depend on another package: `una.toml` has no dependency
 [U1001] Error: module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
 ```
 
-So everything a package runs is in its own `src/`, the prelude, or the host capabilities that `una run` grants, in `[run] grants` or by a `--grant` flag. Until a release adds dependencies, code from elsewhere, such as a supplier's library, is copied into `src/` as modules of the package, where the checker sees all of it. Code copied in this way is called **vendored** code. Edition `0.3` can then give such a module a ceiling, as [section 11.5](#s11-5) shows.
+So everything a package runs is in its own `src/`, the prelude, or the host capabilities that `una run` grants, in `[run] grants` or by a `--grant` flag. Until a release adds dependencies, code from elsewhere, such as a supplier's library, is copied into `src/` as modules of the package, where the checker sees all of it. Code copied in this way is called **vendored** code. Edition `0.3` can then give such a module a ceiling, as [section 13.2](/learn/authority/#s13-2) shows.
 
 ### `verification.lock`
 
-`verification.lock` is the other file at the root of every package. It pins the verifier, the part of una that proves contracts ([chapter 7](/learn/contracts/#s7-1)), so that every machine gets the same answers. It is a TOML file with six keys, and no others:
+`verification.lock` is the other file at the root of every package. It pins the verifier, the part of una that proves contracts ([chapter 5](/learn/contracts/#s5-1)), so that every machine gets the same answers. It is a TOML file with six keys, and no others:
 
 | Key | What it fixes |
 | --- | --- |
@@ -770,7 +774,7 @@ With the same sources, `una.toml` and lock, `una check` gives the same diagnosti
 - A table or a key that is not in the lists of this section is U7002, at its line.
 - A value of the wrong type, such as a number where a text goes, a missing required key, and a file that is not valid TOML are U7002 too.
 - A manifest error does not stop the check. The tables and keys una could read still apply, and only the wrong ones are reported. When the file is not valid TOML at all, the modules are checked with the default settings instead: no grants, no label categories, a budget of 0, and edition `0.1`. So a manifest that cannot be read can bring other diagnostics with it, which go away once it is fixed.
-- `una run .` also checks that `main`'s `uses` are granted: a capability that `main` uses but neither `[run] grants` nor a `--grant` flag grants stops the run before it starts (U3012, [chapter 8](/learn/capabilities/#s8-2)).
+- `una run .` also checks that `main`'s `uses` are granted: a capability that `main` uses but neither `[run] grants` nor a `--grant` flag grants stops the run before it starts (U3012, [chapter 12](/learn/capabilities/#s12-2)).
 
 :::decide
 **Which to use:**
@@ -780,7 +784,7 @@ With the same sources, `una.toml` and lock, `una check` gives the same diagnosti
 | Is about the whole package: its name, edition, entry or grants | `una.toml` |
 | Is about how the verifier answers | `verification.lock`, copied, not edited |
 | Is about one function: what it may do or how it fails | The function's header, in the module |
-| Must be reviewed apart from the code, in edition `0.3` | `[contracts]` or `[boundaries]` ([section 11.4](#s11-4), [section 11.5](#s11-5)) |
+| Must be reviewed apart from the code, in edition `0.3` | `[contracts]` or `[boundaries]` ([section 13.3](/learn/authority/#s13-3), [section 13.2](/learn/authority/#s13-2)) |
 :::
 
 ### Check yourself: a manifest
@@ -815,582 +819,7 @@ It does not check:
 In TOML, a value without quotes is a number, and `version` must be a text: the mark points at the value. Write it in quotes, `version = "2.0.0"`. The file is valid TOML, but not a valid manifest: una checks the type of each value too, not only the names of the keys.
 :::
 
-## 11.4 Locking a contract: `[contracts]`
-
-### What a locked contract is
-
-When a store signs an agreement with a courier, each side keeps a copy. If someone later edits the agreement on one side, the copies disagree, and the change is noticed. A **locked contract** is such a copy for one function. The function's header says what it may do; `una.toml` keeps a copy of that, under `[contracts]`; and the checker fails when the header allows more than the copy.
-
-> [!WARNING]
-> `[contracts]` and `[boundaries]` ([section 11.5](#s11-5)) exist only in edition `0.3`, a preview ([chapter 14, Editions](/learn/editions/#s14-3)). In a package of edition `0.2`, each is an unknown table, U7002. Since `0.3` is a preview, a later release may add obligations or errors to an edition `0.3` package.
-
-A function's header can say not only which operations it may perform, but when. `uses @prices: PriceList[set_price where not dry_run]` says that `set_price` runs only when `dry_run` is false ([chapter 8, Capabilities](/learn/capabilities/#s8-5), shows these conditions). The verifier proves that the body keeps that promise.
-
-### Why lock a header
-
-A header is code, and an edit to the code can change it. Here is a sale function whose header and body both lost their condition in the same edit: the header no longer says "never on a dry run", and the body no longer checks `dry_run`.
-
-```diff include="steps/15-locked..steps/16-unlocked:src/store/sale.una" context="1" title="src/store/sale.una"
---- a/src/store/sale.una
-+++ b/src/store/sale.una
-@@ -8,7 +8,6 @@
- pub apply_sale(sku: Text, cents: Int, percent: Int, dry_run: Bool) -> Int
--  uses @prices: PriceList[set_price where not dry_run]
-+  uses @prices: PriceList[set_price]
- =
-   let sale = cents - cents * percent / 100
--  if not dry_run
--    @prices.set_price(sku, cents: sale)
-+  @prices.set_price(sku, cents: sale)
-   sale
-```
-
-This package has no `[contracts]` table yet: it is the situation a lock prevents. The body keeps its header, so the package checks clean. `una run .` prints:
-
-```text include="steps/16-unlocked/expected/output.txt"
-set DESK-02 to 19920
-a dry run plans 19920
-set LAMP-01 to 1791
-the sale applied 1791
-```
-
-The first line is a price change during a dry run, which the doc comment still says cannot happen. The verifier proved that the body keeps its header, but the header itself changed, and no rule said it should not. A reviewer must notice that a line of the header disappeared, in a change that may touch many files.
-
-Locking moves the decision out of the code. With the condition copied into `una.toml`, the header can lose it only if the manifest changes too, and a change to `una.toml` is easy to see and to require a review for.
-
-### How to write `[contracts]`
-
-A lock is one line under `[contracts]`:
-
-:::steps
-```toml include="steps/15-locked/una.toml" title="steps/15-locked/una.toml"
-[package]
-name = "store"
-version = "0.1.0"
-edition = "0.3"
-
-[run]
-entry = "store.app"
-grants = ["console"]
-
-# What `store.sale.apply_sale` may do with the price list, and when.
-[contracts]
-"store.sale.apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
-```
-
-1. **`[contracts]`.** The table of locks. A package of edition `0.3` may have one.
-2. **`"store.sale.apply_sale"`.** The key: the **qualified name** of a public function of the package, its module path, a dot, and its name. It is in quotes, since it holds dots.
-3. **`["…"]`.** The value: an array of `uses` clauses, each a text written as the header writes it, without the word `uses`.
-4. **`@prices: PriceList[set_price where not dry_run]`.** One clause: the binding, its capability, and in brackets the operations the function may perform, each with its condition when it has one.
-:::
-
-#### Several bindings, and operations without a condition
-
-A lock lists every binding the header has, and an operation may be listed with or without a condition. This step locks two functions:
-
-```toml include="steps/17-lock-forms/una.toml" title="steps/17-lock-forms/una.toml"
-[package]
-name = "store"
-version = "0.1.0"
-edition = "0.3"
-
-[run]
-entry = "store.app"
-grants = ["console"]
-
-# Reading a price may only read the price list.
-# A sale may read prices, set them only outside a dry run, and record to the audit log.
-[contracts]
-"store.sale.apply_sale" = ["@prices: PriceList[price, set_price where not dry_run]", "@audit: Audit[record]"]
-"store.sale.show_price" = ["@prices: PriceList[price]"]
-```
-
-- `show_price` may only read prices: its lock lists `price` with no condition.
-- `apply_sale` has two bindings, so its lock has two texts. `price` has no condition, and `set_price` has one.
-
-The module writes the same clauses in the headers:
-
-```una include="steps/17-lock-forms/src/store/sale.una" title="steps/17-lock-forms/src/store/sale.una" verified="check"
-module store.sale
-
---- The price list of the shop.
-pub capability PriceList
-  op price(sku: Text) -> Int
-  op set_price(sku: Text, cents: Int) -> Unit
-
---- The log where every price change is recorded.
-pub capability Audit
-  op record(line: Text) -> Unit
-
---- The price of a SKU, in cents.
-pub show_price(sku: Text) -> Int
-  uses @prices: PriceList[price]
-=
-  @prices.price(sku)
-
---- Takes `percent` off the price of a SKU, and records it. A dry run changes no price.
-pub apply_sale(sku: Text, percent: Int, dry_run: Bool) -> Int
-  uses @prices: PriceList[price, set_price where not dry_run]
-  uses @audit: Audit[record]
-=
-  let cents = @prices.price(sku)
-  let sale = cents - cents * percent / 100
-  if not dry_run
-    @prices.set_price(sku, cents: sale)
-  @audit.record("{sku}: {cents} to {sale}")
-  sale
-```
-
-```una include="steps/17-lock-forms/src/store/app.una" title="steps/17-lock-forms/src/store/app.una" verified="check, run"
-module store.app
-
-import store.sale (Audit, PriceList, apply_sale, show_price)
-
---- A price list where every SKU costs `each` cents, and that prints each change instead of storing it.
-handler flat(each: Int) for PriceList
-  uses @console: Console[print]
-  op price(sku) = each
-  op set_price(sku, cents) = @console.print("set {sku} to {cents}")
-
---- An audit log that prints each line.
-handler printed() for Audit
-  uses @console: Console[print]
-  op record(line) = @console.print("audit: {line}")
-
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  let shown = show_price("LAMP-01") with @prices = flat(1990)
-  @console.print("LAMP-01 costs {shown}")
-  let planned = apply_sale("LAMP-01", percent: 10, dry_run: true) with @prices = flat(1990), @audit = printed()
-  @console.print("a dry run plans {planned}")
-```
-
-```text include="steps/17-lock-forms/expected/output.txt"
-LAMP-01 costs 1990
-audit: LAMP-01: 1990 to 1791
-a dry run plans 1791
-```
-
-The dry run reads the price and writes the audit line, and sets no price.
-
-### A sale that cannot lose its dry run
-
-Back to the sale of [Why lock a header](#why-lock-a-header), with its condition, its guard, and the lock of [How to write `[contracts]`](#how-to-write-contracts):
-
-```una include="steps/15-locked/src/store/sale.una" title="steps/15-locked/src/store/sale.una" verified="check"
-module store.sale
-
---- The price list of the shop.
-pub capability PriceList
-  op set_price(sku: Text, cents: Int) -> Unit
-
---- Takes `percent` off the price of a product. A dry run changes nothing, and says what it would do.
-pub apply_sale(sku: Text, cents: Int, percent: Int, dry_run: Bool) -> Int
-  uses @prices: PriceList[set_price where not dry_run]
-=
-  let sale = cents - cents * percent / 100
-  if not dry_run
-    @prices.set_price(sku, cents: sale)
-  sale
-```
-
-```una include="steps/15-locked/src/store/app.una" title="steps/15-locked/src/store/app.una" verified="check, run"
-module store.app
-
-import store.sale (PriceList, apply_sale)
-
---- A price list that prints each change instead of storing it.
-handler printed() for PriceList
-  uses @console: Console[print]
-  op set_price(sku, cents) = @console.print("set {sku} to {cents}")
-
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  let planned = apply_sale("DESK-02", cents: 24900, percent: 20, dry_run: true) with @prices = printed()
-  @console.print("a dry run plans {planned}")
-  let applied = apply_sale("LAMP-01", cents: 1990, percent: 10, dry_run: false) with @prices = printed()
-  @console.print("the sale applied {applied}")
-```
-
-```text include="steps/15-locked/expected/output.txt"
-a dry run plans 19920
-set LAMP-01 to 1791
-the sale applied 1791
-```
-
-The dry run of the desk plans its sale price and sets nothing. The real sale of the lamp sets its price. The handler `printed` prints each change instead of storing it, so you see when `set_price` runs.
-
-### How a lock is checked
-
-The body and the lock are checked separately. The verifier proves that the body keeps its header, as [chapter 8](/learn/capabilities/#s8-5) showed. The lock adds one more check: that the header keeps the lock. The header must grant no more than its lock.
-
-#### A header may grant less
-
-A header may grant less than its lock, since that only narrows what the function may do: fewer operations, a stronger condition, or no binding of a capability that the lock names. A binding that the lock does not name at all, or an operation that it does not list, is U3023.
-
-#### An operation the lock does not list
-
-Give `show_price` the right to set prices too:
-
-```diff include="steps/17-lock-forms..steps/18-extra-op:src/store/sale.una" context="0" title="src/store/sale.una"
---- a/src/store/sale.una
-+++ b/src/store/sale.una
-@@ -14 +14 @@
--  uses @prices: PriceList[price]
-+  uses @prices: PriceList[price, set_price]
-```
-
-```text include="steps/18-extra-op/expected/rendered.txt"
-[U3023] Error: the header of `show_price` lets `@prices.set_price` run, which its lock in `una.toml` does not list
-    ╭─[ src/store/sale.una:14:34 ]
-    │
- 14 │   uses @prices: PriceList[price, set_price]
-    │                                  ────┬────
-    │                                      ╰────── the header of `show_price` lets `@prices.set_price` run, which its lock in `una.toml` does not list
-    │
-    ├─[ una.toml:14:28 ]
-    │
- 14 │ "store.sale.show_price" = ["@prices: PriceList[price]"]
-    │                            ─────────────┬─────────────
-    │                                         ╰─────────────── the lock
-    │
-    │ Help: repair 1: list only the operations of the lock in the header's `@prices`
-    │
-    │ Note: run `una explain U3023` for an explanation
-────╯
-```
-
-The first mark points at the operation in the header, and the second at the lock it breaks. The repair lists only the operations of the lock.
-
-#### Weakening a locked header (U3023)
-
-Now delete the condition from the header of `apply_sale`, and keep the guard:
-
-```diff include="steps/15-locked..steps/19-weakened:src/store/sale.una" context="0" title="src/store/sale.una"
---- a/src/store/sale.una
-+++ b/src/store/sale.una
-@@ -9 +9 @@
--  uses @prices: PriceList[set_price where not dry_run]
-+  uses @prices: PriceList[set_price]
-```
-
-```text include="steps/19-weakened/expected/rendered.txt#L1-L12,L14,L18"
-[U3023] Error: the header of `apply_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
-    ╭─[ src/store/sale.una:9:27 ]
-    │
-  9 │   uses @prices: PriceList[set_price]
-    │                           ────┬────
-    │                               ╰────── the header of `apply_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
-    │
-    ├─[ una.toml:12:28 ]
-    │
- 12 │ "store.sale.apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
-    │                            ────────────────────────┬────────────────────────
-    │                                                    ╰────────────────────────── lock
-    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `apply_sale`, or a condition that implies it; edit src/store/sale.una:9:36..9:36 to " where not dry_run"
-    │ Note 2: counterexample: dry_run = true
-```
-
-The header now allows what the lock forbids, and the counterexample says when: `dry_run = true`. The body would still behave, since its guard is still there, but the promise the header makes is weaker than the lock, and that is what U3023 reports. The repair writes the condition back, and `una fix .` applies it: it changes the module, never `una.toml`. To weaken the contract, someone must change `una.toml`, and that change is what a reviewer sees.
-
-#### What a lock may say
-
-Each of these is U7002, at the lock's line: a key that names no public function of the package; a text that does not parse, or lists no operation; one binding locked twice; a capability that the function's module does not see; an operation that the capability does not declare; and a condition that is not a `Bool` over the function's parameters.
-
-### When to lock a contract
-
-:::decide
-**Which to use:**
-
-| You want… | Use |
-| --- | --- |
-| A function to keep what its body does, as its header says | Nothing more: the verifier already proves it |
-| A header that cannot widen in a code change alone | A lock in `[contracts]` |
-| To keep a supplier's module within what you grant it | A ceiling in `[boundaries]` ([section 11.5](#s11-5)) |
-| The same rule on every call of a function | Its header; a lock only guards the header |
-:::
-
-Lock the functions whose authority matters to the business: the ones that change prices, send money or delete records.
-
-### Check yourself: a narrower header
-
-The header of `apply_sale` now asks for a stronger condition than its lock, and the guard matches it. The app adds a sale of 0 percent:
-
-```diff include="steps/15-locked..steps/20-narrower:src/store/sale.una" context="0" title="src/store/sale.una"
---- a/src/store/sale.una
-+++ b/src/store/sale.una
-@@ -9 +9 @@
--  uses @prices: PriceList[set_price where not dry_run]
-+  uses @prices: PriceList[set_price where not dry_run and percent > 0]
-@@ -12 +12 @@
--  if not dry_run
-+  if not dry_run and percent > 0
-```
-
-```una include="steps/20-narrower/src/store/app.una#main" title="steps/20-narrower/src/store/app.una"
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  let planned = apply_sale("DESK-02", cents: 24900, percent: 20, dry_run: true) with @prices = printed()
-  @console.print("a dry run plans {planned}")
-  let applied = apply_sale("LAMP-01", cents: 1990, percent: 10, dry_run: false) with @prices = printed()
-  @console.print("the sale applied {applied}")
-  let kept = apply_sale("RUG-07", cents: 4500, percent: 0, dry_run: false) with @prices = printed()
-  @console.print("a sale of 0 percent keeps {kept}")
-```
-
-Does the package check against the same lock? If it does, what does `una run .` print?
-
-:::answer Show the answer
-It checks: the header's condition, `not dry_run and percent > 0`, implies the lock's, `not dry_run`, so the header grants less than the lock allows. `una run .` prints:
-
-```text include="steps/20-narrower/expected/output.txt"
-a dry run plans 19920
-set LAMP-01 to 1791
-the sale applied 1791
-a sale of 0 percent keeps 4500
-```
-
-A sale of 0 percent changes nothing, so the guard skips `set_price`, and no `set` line is printed for the rug.
-:::
-
-## 11.5 A ceiling for a module: `[boundaries]`
-
-### What a boundary is
-
-When a store lets a contractor in to service the label printer, it gives them a badge that opens the stockroom and nothing else. Whatever the contractor brings, the badge decides which doors open.
-
-A **boundary** is such a badge for a module, written in `una.toml`. It marks a module, usually vendored code from a supplier, and gives it a **ceiling**: the most the rest of the package may ever grant it. A call into the module that would grant more fails the check.
-
-### Why give a module a ceiling
-
-The store copied a label printer's module into `src/vendor/labels.una`. A new version of it arrives, and besides printing, it now reads the clock. Its header says so, but the output does not change:
-
-```diff include="steps/21-boundary..steps/22-unbounded:src/vendor/labels.una" context="0" title="src/vendor/labels.una"
---- a/src/vendor/labels.una
-+++ b/src/vendor/labels.una
-@@ -3 +3 @@
----- Prints a shelf label for a product.
-+--- Prints a shelf label for a product. This version also reads the clock.
-@@ -5,0 +6 @@
-+  uses @clock: Clock[now]
-@@ -6,0 +8 @@
-+  let printed_at = @clock.now()
-```
-
-This package has no boundary yet. The store accepts the new version with two small edits of its own: `main` declares that it holds the clock, and `una.toml` grants it. Without the first, `una check` reports U3001 at the call; without the second, `una run` stops with U3012 ([chapter 8](/learn/capabilities/#s8-2)).
-
-```diff include="steps/21-boundary..steps/22-unbounded:una.toml" context="0" title="una.toml"
---- a/una.toml
-+++ b/una.toml
-@@ -8,5 +8 @@
--grants = ["console"]
--
--# Code from the label printer's supplier: the most the store may ever grant it.
--[boundaries]
--"vendor.labels" = ["Console[print]"]
-+grants = ["console", "clock"]
-```
-
-```una include="steps/22-unbounded/src/store/app.una" title="steps/22-unbounded/src/store/app.una" verified="check, run"
-module store.app
-
-import vendor.labels (print_label)
-
-pub main() -> Unit
-  uses @console: Console[print]
-  uses @clock: Clock[now]
-=
-  print_label("LAMP-01", price: "19.90")
-```
-
-```text include="steps/22-unbounded/expected/output.txt"
-[LAMP-01 | 19.90]
-```
-
-The package checks and runs, and the label looks as before. The call itself did not change: `print_label` takes the clock by name, as any call passes the capabilities its callee needs ([chapter 8](/learn/capabilities/#s8-1)). Nothing at the call says where the clock goes, and once the store's code holds a capability for a job of its own, a later version of the supplier's module can start using it with no change at all in the store's code. With network or file access, the same change could send data away. A boundary makes every such grant visible at the call, and turns one beyond the ceiling into an error.
-
-### How to write `[boundaries]`
-
-:::steps
-```toml include="steps/21-boundary/una.toml" title="steps/21-boundary/una.toml"
-[package]
-name = "store"
-version = "0.1.0"
-edition = "0.3"
-
-[run]
-entry = "store.app"
-grants = ["console"]
-
-# Code from the label printer's supplier: the most the store may ever grant it.
-[boundaries]
-"vendor.labels" = ["Console[print]"]
-```
-
-1. **`[boundaries]`.** The table of boundaries, in edition `0.3`.
-2. **`"vendor.labels"`.** The key: the module path of a module of the package. It also covers every module below it, by whole segments: `vendor.labels` covers `vendor.labels.fonts`, but not `vendor.labelsmith`.
-3. **`["Console[print]"]`.** The ceiling: an array of texts, each a capability with the operations it may receive, `Capability[operation, …]`. No binding name and no condition: a ceiling names capabilities and operations only.
-:::
-
-### Printing labels through a boundary
-
-The module itself is ordinary Una. It declares what it uses, as any public function does:
-
-```una include="steps/21-boundary/src/vendor/labels.una" title="steps/21-boundary/src/vendor/labels.una" verified="check"
-module vendor.labels
-
---- Prints a shelf label for a product.
-pub print_label(sku: Text, price: Text) -> Unit
-  uses @console: Console[print]
-=
-  @console.print("[{sku} | {price}]")
-```
-
-The store's code calls it:
-
-```una include="steps/21-boundary/src/store/app.una" title="steps/21-boundary/src/store/app.una" verified="check, run"
-module store.app
-
-import vendor.labels (print_label)
-
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  print_label("LAMP-01", price: "19.90") with @console = @console
-```
-
-```text include="steps/21-boundary/expected/output.txt"
-[LAMP-01 | 19.90]
-```
-
-A call into the boundary takes nothing by name. The caller grants each capability with `with`, here `with @console = @console`: the label module's `@console` is the app's own `@console`. So every call into the module shows exactly what it receives.
-
-### How calls into a boundary are checked
-
-A **call into a boundary** is a call from code outside the boundary to a function, handler or policy inside it. Two rules apply to it here ([chapter 8](/learn/capabilities/#s8-5) shows the others), and code inside the boundary calls itself as usual.
-
-#### Everything is granted with `with` (U3020)
-
-Call the label module the usual way, without `with`:
-
-```diff include="steps/21-boundary..steps/23-by-name:src/store/app.una" context="0" title="src/store/app.una"
---- a/src/store/app.una
-+++ b/src/store/app.una
-@@ -8 +8 @@
--  print_label("LAMP-01", price: "19.90") with @console = @console
-+  print_label("LAMP-01", price: "19.90")
-```
-
-```text include="steps/23-by-name/expected/rendered.txt"
-[U3020] Error: `print_label` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
-   ╭─[ src/store/app.una:8:3 ]
-   │
- 8 │   print_label("LAMP-01", price: "19.90")
-   │   ───────────────────┬──────────────────
-   │                      ╰──────────────────── `print_label` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
-   │
-   ├─[ src/vendor/labels.una:5:3 ]
-   │
- 5 │   uses @console: Console[print]
-   │   ──────────────┬──────────────
-   │                 ╰──────────────── the boundary's requirement
-   │
-   │ Note: run `una explain U3020` for an explanation
-───╯
-```
-
-The first mark is the call, and the second is the requirement inside the boundary that the call left to be met by name. The fix is the `with` of [Printing labels through a boundary](#printing-labels-through-a-boundary).
-
-#### What a call grants stays within the ceiling (U3021)
-
-Now add the boundary to the package of [Why give a module a ceiling](#why-give-a-module-a-ceiling), with the new version of the module, and grant it the clock with `with`:
-
-```una include="steps/24-over-ceiling/src/store/app.una" title="steps/24-over-ceiling/src/store/app.una"
-module store.app
-
-import vendor.labels (print_label)
-
-pub main() -> Unit
-  uses @console: Console[print]
-  uses @clock: Clock[now]
-=
-  print_label("LAMP-01", price: "19.90") with @console = @console, @clock = @clock
-```
-
-```text include="steps/24-over-ceiling/expected/rendered.txt"
-[U3021] Error: the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
-   ╭─[ src/store/app.una:9:3 ]
-   │
- 9 │   print_label("LAMP-01", price: "19.90") with @console = @console, @clock = @clock
-   │   ───────────────────┬──────────────────
-   │                      ╰──────────────────── the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
-   │
-   │ Note: run `una explain U3021` for an explanation
-───╯
-```
-
-The call grants `Clock[now]`, and the ceiling allows no operation of `Clock`. To accept the new version, someone must widen the ceiling in `una.toml`, which a reviewer sees, or keep the old version.
-
-#### What a boundary key may say
-
-Each of these is U7002: a key that is not a module of the package, a key inside another key's extent, a malformed ceiling, a capability named twice in one ceiling, an unknown capability or operation, a trusted module inside a boundary, and the `[run] entry` inside a boundary. [Chapter 8](/learn/capabilities/#s8-5) shows more of the rules on calls into a boundary.
-
-### A boundary, a lock or neither
-
-:::decide
-**Which to use:**
-
-| The code… | Use |
-| --- | --- |
-| Is yours, and its header is reviewed with it | Nothing: the header and the verifier suffice |
-| Is yours, and a header must not widen without a review of `una.toml` | `[contracts]` |
-| Comes from a supplier, copied into `src/` | `[boundaries]`, with the least ceiling it needs |
-| Comes from a supplier, and you also want its public functions' headers fixed | Both: a boundary for the module, and locks for the functions |
-:::
-
-### Check yourself: a module below the boundary
-
-The supplier adds a second module, `src/vendor/labels/fonts.una`, and the app calls it as it would call any module, by name:
-
-```una include="steps/25-fonts/src/vendor/labels/fonts.una" title="steps/25-fonts/src/vendor/labels/fonts.una"
-module vendor.labels.fonts
-
---- Prints a shelf label in large letters.
-pub print_large(sku: Text) -> Unit
-  uses @console: Console[print]
-=
-  @console.print("** {sku} **")
-```
-
-```una include="steps/25-fonts/src/store/app.una" title="steps/25-fonts/src/store/app.una"
-module store.app
-
-import vendor.labels (print_label)
-import vendor.labels.fonts (print_large)
-
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  print_label("LAMP-01", price: "19.90") with @console = @console
-  print_large("LAMP-01")
-```
-
-`una.toml` is the one of [How to write `[boundaries]`](#how-to-write-boundaries), with the key `vendor.labels` only. Does the package check?
-
-:::answer Show the answer
-It does not:
-
-```text include="steps/25-fonts/expected/rendered.txt#L1"
-[U3020] Error: `print_large` is in the boundary `vendor.labels` and needs `@console: Console[print]`, which a call into it grants only with `with`
-```
-
-The key `vendor.labels` covers every module below it, so `vendor.labels.fonts` is in the boundary too, and a call into it grants its capabilities only with `with`. Write `print_large("LAMP-01") with @console = @console`.
-:::
-
-## 11.6 Day-to-day: the store's invoice
+## 11.4 Day-to-day: the store's invoice
 
 ### Five modules, one job each
 
@@ -1446,7 +875,7 @@ example "a refund keeps its sign"
   expect result == "-1.50"
 ```
 
-The examples sit in the module, next to the function they test ([section 11.7](#s11-7)).
+The examples sit in the module, next to the function they test ([section 11.5](#s11-5)).
 
 ### The catalog
 
@@ -1576,7 +1005,7 @@ pub main() -> Unit
 
 The whole package checks, runs and passes its tests. `una run .` prints the invoice shown in [What you'll build](#what-youll-build): two lines for the products the catalog lists, with their members' prices, and one for the chair it does not.
 
-## 11.7 Testing it
+## 11.5 Testing it
 
 ### One command for every module
 
@@ -1622,13 +1051,13 @@ example "an unknown SKU is UnknownSku"
   expect fails UnknownSku
 ```
 
-The invoice's examples use the catalog's public handler, `listed`, imported like any other declaration. A fake shared this way stays the same for every module that tests against it ([chapter 10, Testing](/learn/testing/#s10-3), covers fakes).
+The invoice's examples use the catalog's public handler, `listed`, imported like any other declaration. A fake shared this way stays the same for every module that tests against it ([chapter 10, Testing](/learn/testing/#s14-3), covers fakes).
 
 ### An entry module with no examples
 
 `store.app` has no examples of its own. Everything it does is a call to a function that another module tests. An example could still run `main` with a fake console (`given @console = …`, [Testing `main`](/learn/testing/#testing-main-u3014) in chapter 10), but it would only show that something was printed. Keep an entry module this thin: wiring services to functions, and printing what they return. The less it decides, the less goes untested.
 
-## 11.8 Common mistakes
+## 11.6 Common mistakes
 
 Each mistake below is a small change to the day-to-day package, followed by what `una check .` reports.
 
@@ -1818,39 +1247,7 @@ Put `store.money` before `store.catalog`:
 *Fix:* `una fmt .` sorts them, and so does `una fix .`. See [U7001](/docs/errors/U7001/).
 :::
 
-### A `0.3` table in an edition `0.2` package (U7002)
-
-:::mistake
-Lock the catalog lookup in the day-to-day manifest:
-
-```diff include="day-to-day..mistakes/6:una.toml" context="1" title="una.toml"
---- a/una.toml
-+++ b/una.toml
-@@ -8 +8,4 @@
- grants = ["console"]
-+
-+[contracts]
-+"store.invoice.product_of" = ["@catalog: Catalog[find]"]
-```
-
-```text include="mistakes/6/expected/rendered.txt"
-[U7002] Error: unknown table [contracts] in una.toml
-    ╭─[ una.toml:10:2 ]
-    │
- 10 │ [contracts]
-    │  ────┬────
-    │      ╰────── unknown table [contracts] in una.toml
-    │
-    │ Note: run `una explain U7002` for an explanation
-────╯
-```
-
-*Why:* `[contracts]` exists only in edition `0.3`. In edition `0.2`, it is a table una does not know, and the mark points at its line in `una.toml`.
-
-*Fix:* set `edition = "0.3"` if you want the preview's rules, or remove the table. See [U7002](/docs/errors/U7002/).
-:::
-
-## 11.9 Exercises
+## 11.7 Exercises
 
 Each exercise starts from `exercises/N/start`: a package of this chapter with the exercise's examples added, and a stub of what to write when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`, so the layout is canonical.
 
@@ -1964,94 +1361,7 @@ Then import it in the invoice, and use it:
 :::
 ::::
 
-### Exercise 3: honor a lock
-
-::::exercise
-This exercise starts from the sale package of [section 11.4](#s11-4), in edition `0.3`. It adds `end_sale`, which puts a product's old price back, and a lock for it in `una.toml`:
-
-```toml include="exercises/3/start/una.toml" title="exercises/3/start/una.toml"
-[package]
-name = "store"
-version = "0.1.0"
-edition = "0.3"
-
-[run]
-entry = "store.app"
-grants = ["console"]
-
-# What the sale functions may do with the price list, and when.
-[contracts]
-"store.sale.apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
-"store.sale.end_sale" = ["@prices: PriceList[set_price where not dry_run]"]
-```
-
-```una include="exercises/3/start/src/store/sale.una#L16-L34" title="exercises/3/start/src/store/sale.una"
---- Puts back the price a product had before its sale. Exercise 3: honor the lock in `una.toml`.
-pub end_sale(sku: Text, cents: Int, dry_run: Bool) -> Unit
-  uses @prices: PriceList[set_price]
-=
-  @prices.set_price(sku, cents: cents)
-
---- A price list that keeps nothing, for examples.
-handler ignored() for PriceList
-  op set_price(sku, cents) = unit
-
-example "a dry run of the end of a sale changes no price"
-  given @prices = ignored()
-  do end_sale("DESK-02", cents: 24900, dry_run: true)
-  expect not performed @prices.set_price
-
-example "the end of a sale sets the old price back"
-  given @prices = ignored()
-  do end_sale("DESK-02", cents: 24900, dry_run: false)
-  expect performed @prices.set_price
-```
-
-`una check .` reports that the header lets `set_price` run when `dry_run` is true:
-
-```text include="exercises/3/start/expected/diagnostics.txt"
-error U3023 at src/store/sale.una:18:27: the header of `end_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
-  counterexample: dry_run = true
-```
-
-Change `end_sale` so that a dry run sets no price, and its header keeps the lock. Do not change `una.toml`.
-
-:::hint
-*Hint:* copy the condition from the lock into the header. The verifier then asks for the guard that makes the header true:
-
-```text include="exercises/3/header-only/expected/rendered.txt#L1,L12"
-[U5001] Error: `@prices.set_price` may run where `not dry_run` is not proven
-    │ Help 1: repair 1: guard the operation with `if not dry_run`
-```
-:::
-
-Check your answer with `una test .`. Both examples must pass: a dry run sets no price, and a real one does.
-
-:::answer Answer (*check, run, test*; `exercises/3/answer`).
-Write the locked condition in the header, and guard the operation to match it:
-
-```diff include="exercises/3/start..exercises/3/answer:src/store/sale.una" context="1" title="src/store/sale.una"
---- a/src/store/sale.una
-+++ b/src/store/sale.una
-@@ -15,7 +15,8 @@
- 
----- Puts back the price a product had before its sale. Exercise 3: honor the lock in `una.toml`.
-+--- Puts back the price a product had before its sale. A dry run changes nothing.
- pub end_sale(sku: Text, cents: Int, dry_run: Bool) -> Unit
--  uses @prices: PriceList[set_price]
-+  uses @prices: PriceList[set_price where not dry_run]
- =
--  @prices.set_price(sku, cents: cents)
-+  if not dry_run
-+    @prices.set_price(sku, cents: cents)
- 
-```
-
-The header now keeps the lock, and the body keeps the header: two separate proofs, as in [How a lock is checked](#how-a-lock-is-checked).
-:::
-::::
-
-## 11.10 Recap and reference
+## 11.8 Recap and reference
 
 ### For agents
 

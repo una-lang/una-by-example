@@ -1,0 +1,48 @@
+module refunds
+
+requirement REFUND_1
+  text "A refund never pays back more than the customer paid"
+  source policy "Store billing rules"
+  owner billing
+  status active
+
+requirement REFUND_2
+  text "A refund above 500.00 needs a second look"
+  source human
+  owner support
+  status active
+
+requirement TAX_1
+  text "A refund returns the tax that was charged with it"
+  source regulation "Consumer tax code, part 4"
+  owner finance
+  status active
+
+requirement REFUND_3
+  text "A refund is never negative"
+  source generated "billing review"
+  owner billing
+  status proposed
+
+--- An amount of money in cents. It is never negative.
+kind Cents = Int where it >= 0
+
+--- What a refund pays back: what was asked, which is never more than what was paid.
+refund(paid: Cents, asked: Cents) -> Cents
+  requires asked <= paid
+  ensures result <= paid
+  derived from REFUND_1, REFUND_3
+=
+  asked
+
+--- Whether a refund needs a second look by a person.
+needs_review(asked: Cents) -> Bool
+  ensures result == (asked > 50000)
+  derived from REFUND_2
+=
+  asked > 50000
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("refund {refund(16992, asked: 3980)}, needs review: {needs_review(60000)}")

@@ -1,0 +1,85 @@
+module desk
+
+--- Where a customer collects a parcel.
+kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text, opens: Int)
+
+--- Binding fields by name. An arm binds only the fields it uses.
+pickup_note(delivery: Delivery) -> Text
+=
+  when delivery
+    is AtDoor -> "delivered to the door"
+    is AtLocker(locker) -> "collect at locker {locker}"
+    is AtStore(store, opens) -> "collect at {store} from {opens}:00"
+
+--- A field bound under another name, `store: place`, and a field left out.
+store_name(delivery: Delivery) -> Text
+=
+  when delivery
+    is AtStore(store: place) -> place
+    else -> "no store"
+
+--- A variant of one field binds it under any name.
+locker_code(delivery: Delivery) -> Text
+=
+  when delivery
+    is AtLocker(spot) -> "code for {spot}"
+    else -> "no code"
+
+--- Literal arms: whole numbers, then `else` for every other value.
+aisle_name(aisle: Int) -> Text
+=
+  when aisle
+    is 1 -> "lighting"
+    is 2 -> "rugs"
+    else -> "aisle {aisle}"
+
+--- Literal arms over a text.
+family(sku: Text) -> Text
+=
+  when sku
+    is "LAMP-01" -> "lamps"
+    is "RUG-07" -> "rugs"
+    else -> "other"
+
+--- Range arms: `..` includes its end, `..<` leaves it out.
+box_size(units: Int) -> Text
+=
+  when units
+    in 1..<10 -> "small box"
+    in 10..49 -> "large box"
+    else -> "pallet"
+
+--- An arm of several lines: a block, whose value is its last line.
+opening(delivery: Delivery) -> Text
+=
+  when delivery
+    is AtStore(store, opens) ->
+      let closes = opens + 9
+      "{store}, {opens}:00 to {closes}:00"
+    else -> "any time"
+
+--- The shelf for a number of units. Check yourself: what does `main` print for 0, 5 and 12?
+shelf(units: Int) -> Text
+=
+  when units
+    in 1..4 -> "low shelf"
+    in 5..10 -> "middle shelf"
+    else -> "floor"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let store = AtStore(store: "Harbour Road", opens: 9)
+  let locker = AtLocker(locker: "Station 14")
+  @console.print(pickup_note(store))
+  @console.print("{store_name(store)}; {store_name(AtDoor)}")
+  @console.print("{locker_code(locker)}; {locker_code(store)}")
+  @console.print("{aisle_name(2)}; {aisle_name(7)}")
+  @console.print(family("RUG-07"))
+  @console.print("{box_size(9)}; {box_size(10)}; {box_size(50)}")
+  @console.print(opening(store))
+  let urgent = when locker
+    is AtDoor -> "no"
+    else -> "yes"
+  @console.print("collect soon: {urgent}")
+  @console.print("{shelf(0)}; {shelf(5)}; {shelf(12)}")

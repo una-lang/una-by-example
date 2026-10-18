@@ -1,0 +1,9 @@
+north: 2 applied, 1 rejected
+  LAMP-01 4 -> 3
+  rejected: 2 of DESK-02 sold, 1 counted
+  LAMP-01 3 -> 9
+  closing {"DESK-02": 1, "LAMP-01": 9}
+south: 1 applied, 1 rejected
+  rejected: no product has the SKU CHAIR-09
+  LAMP-01 2 -> 0
+  closing {"LAMP-01": 0}

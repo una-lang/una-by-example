@@ -1,0 +1,42 @@
+module prices
+
+kind StoreError = | Timeout
+
+--- The catalog service: a price in cents, or `None` for a SKU it does not sell.
+capability Catalog
+  op cents(sku: Text) -> Option[Int]
+    fails StoreError
+
+--- The price a product page shows. A page must render even when the catalog is down,
+--- so every failure becomes 0, which the page shows as "ask for a price".
+shown_price(sku: Text) -> Int
+  uses @catalog: Catalog[cents]
+=
+  let found = @catalog.cents(sku)
+    if error use None
+    if none use 0
+  found
+
+handler fixed(sku: Text, price: Int) for Catalog
+  op cents(asked) = if asked == sku then Some(price) else None
+
+handler down() for Catalog
+  op cents(asked) = fail Timeout
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = shown_price("LAMP-01") with @catalog = fixed("LAMP-01", price: 1990)
+  let desk = shown_price("DESK-02") with @catalog = fixed("LAMP-01", price: 1990)
+  let later = shown_price("LAMP-01") with @catalog = down()
+  @console.print("{lamp} {desk} {later}")
+
+example "an unknown SKU shows 0"
+  given @catalog = fixed("LAMP-01", price: 1990)
+  do shown_price("DESK-02")
+  expect result == 0
+
+example "a catalog that is down shows 0, and does not fail"
+  given @catalog = down()
+  do shown_price("LAMP-01")
+  expect result == 0
