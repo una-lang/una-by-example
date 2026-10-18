@@ -1,0 +1,28 @@
+module store.app
+
+import store.sale (Item, PriceList, run_sale)
+
+--- A price list that prints each change instead of storing it.
+handler printed() for PriceList
+  uses @console: Console[print]
+  op set_price(sku, cents) = @console.print("  set {sku} to {cents}")
+
+--- The products of the spring sale.
+spring_items() -> List[Item]
+=
+  let lamp = Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990)
+  let desk = Item(sku: "DESK-02", name: "Oak desk", cents: 24900)
+  let rug = Item(sku: "RUG-07", name: "Wool rug", cents: 4500)
+  [lamp, desk, rug]
+
+--- Rehearses the spring sale, then runs it.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let items = spring_items()
+  @console.print("Dry run: 20 percent off")
+  let planned = run_sale(items, percent: 20, dry_run: true) with @prices = printed()
+  @console.print("The dry run plans {planned} cents off")
+  @console.print("Sale: 20 percent off")
+  let saved = run_sale(items, percent: 20, dry_run: false) with @prices = printed()
+  @console.print("The sale took {saved} cents off")

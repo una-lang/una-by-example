@@ -1,9 +1,9 @@
-[U7002] Error: unknown table [contracts] in una.toml
-    ╭─[ una.toml:10:2 ]
-    │
- 10 │ [contracts]
-    │  ────┬────
-    │      ╰────── unknown table [contracts] in una.toml
-    │
-    │ Note: run `una explain U7002` for an explanation
-────╯
+[U0101] Error: unexpected keyword `where`, expected `,` or `]`
+   ╭─[ src/restock.una:9:34 ]
+   │
+ 9 │   uses @supplier: Supplier[order where not dry_run]
+   │                                  ──┬──
+   │                                    ╰──── unexpected keyword `where`, expected `,` or `]`
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯

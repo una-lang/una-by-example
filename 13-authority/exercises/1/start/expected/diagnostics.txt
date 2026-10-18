@@ -1,2 +1,2 @@
-error U5001 at src/notices.una:84:3: `@mailer.send` may run where `not dry_run` is not proven
-  counterexample: dry_run = true
+error U5001 at src/store/sale.una:92:3: `@prices.set_price` may run where `not dry_run` is not proven
+  counterexample: dry_run = true, half = 0, item = "Item#0", item.cents = 0, item.sku = "Text#0"

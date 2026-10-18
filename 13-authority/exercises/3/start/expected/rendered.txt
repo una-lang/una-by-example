@@ -1,0 +1,21 @@
+[U5001] Error: `@prices.set_price` may run where `not dry_run` is not proven
+    ╭─[ src/store/sale.una:99:5 ]
+    │
+ 95 │   uses @prices: PriceList[set_price where not dry_run]
+    │                                           ─────┬─────
+    │                                                ╰─────── condition
+    │
+ 99 │     put_back(item)
+    │     ───────┬──────
+    │            ╰──────── `@prices.set_price` may run where `not dry_run` is not proven
+    │
+    │ Help 1: repair 1: write the condition in the `uses` of `put_back`, as `set_price where ...`: `not dry_run` with each parameter of this function replaced by the parameter of `put_back` it is passed as; `put_back` then proves it where it runs `set_price`
+    │
+    │ Help 2: repair 2: guard the call with `if not dry_run`
+    │
+    │ Note 1: obligation ob-acb90f7bd7b0 (effect_condition) is refuted: not dry_run
+    │
+    │ Note 2: counterexample: count = 0, dry_run = true, items = List#0, items.len = 1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

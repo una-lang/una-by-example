@@ -1,0 +1,9 @@
+[U7002] Error: [contracts] locks `apply_sale`, which is not a public function of this package
+    ╭─[ una.toml:12:1 ]
+    │
+ 12 │ "apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
+    │ ──────┬─────
+    │       ╰─────── [contracts] locks `apply_sale`, which is not a public function of this package
+    │
+    │ Note: run `una explain U7002` for an explanation
+────╯

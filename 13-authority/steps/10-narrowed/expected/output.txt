@@ -1,0 +1,2 @@
+set LAMP-01 to 1592
+[LAMP-01 | 1592 cents]

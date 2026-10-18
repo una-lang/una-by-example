@@ -1,1 +1,1 @@
-steps/15-stores-invoice
+steps/01-conditions

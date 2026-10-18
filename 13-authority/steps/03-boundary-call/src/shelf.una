@@ -1,9 +1,0 @@
-module shelf
-
-import barcode (print_label)
-
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  print_label("lamp-01") with @console = @console
-  print_label("desk-02")

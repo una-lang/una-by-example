@@ -1,0 +1,9 @@
+[U7002] Error: unknown table [boundaries] in una.toml
+    ╭─[ una.toml:11:2 ]
+    │
+ 11 │ [boundaries]
+    │  ─────┬────
+    │       ╰────── unknown table [boundaries] in una.toml
+    │
+    │ Note: run `una explain U7002` for an explanation
+────╯

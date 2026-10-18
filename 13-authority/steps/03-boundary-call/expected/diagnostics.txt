@@ -1,1 +1,0 @@
-error U3020 at src/shelf.una:9:3: `print_label` is in the boundary `barcode` and needs `@console: Console[print]`, which a call into it grants only with `with`

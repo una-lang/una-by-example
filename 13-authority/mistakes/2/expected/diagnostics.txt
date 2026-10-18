@@ -1,1 +1,1 @@
-error U7002 at una.toml:10:2: unknown table [contracts] in una.toml
+error U0101 at src/restock.una:9:34: unexpected keyword `where`, expected `,` or `]`

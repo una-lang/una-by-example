@@ -1,11 +1,8 @@
 [package]
-name = "store"
+name = "restock"
 version = "0.1.0"
 edition = "0.2"
 
 [run]
-entry = "store.app"
+entry = "restock"
 grants = ["console"]
-
-[contracts]
-"store.invoice.product_of" = ["@catalog: Catalog[find]"]

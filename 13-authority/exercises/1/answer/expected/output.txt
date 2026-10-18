@@ -1,5 +1,13 @@
-sent     A-1001 to rosa@example.invalid
-sent     A-1002 to tomas@example.invalid
-skipped  A-1003: no customer has the id C-99
-skipped  A-1004: customer C-21 asked for no notices
-skipped  A-1005: the mail service did not answer; retry later
+Dry run: 20 percent off
+  LAMP-01 would go from 1990 to 1592
+  DESK-02 would go from 24900 to 19920
+  RUG-07 would go from 4500 to 3600
+The dry run plans 6278 cents off
+Sale: 20 percent off
+  set LAMP-01 to 1592
+  tag: [Desk lamp | 1592 cents]
+  set DESK-02 to 19920
+  tag: [Oak desk | 19920 cents]
+  set RUG-07 to 3600
+  tag: [Wool rug | 3600 cents]
+The sale took 6278 cents off

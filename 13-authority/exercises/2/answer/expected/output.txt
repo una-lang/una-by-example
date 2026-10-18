@@ -1,3 +1,13 @@
-a dry run plans 19920
-set LAMP-01 to 1791
-the sale applied 1791
+Dry run: 20 percent off
+  LAMP-01 would go from 1990 to 1592
+  DESK-02 would go from 24900 to 19920
+  RUG-07 would go from 4500 to 3600
+The dry run plans 6278 cents off
+Sale: 20 percent off
+  set LAMP-01 to 1592
+  tag: [Desk lamp | 1592 cents]
+  set DESK-02 to 19920
+  tag: [Oak desk | 19920 cents]
+  set RUG-07 to 3600
+  tag: [Wool rug | 3600 cents]
+The sale took 6278 cents off

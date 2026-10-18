@@ -1,0 +1,6 @@
+ordered 20 x LAMP-01
+ordered 5 x DESK-02
+5 desks cost 1250
+80 rugs would cost 20000, too many to order at once
+ordered 10 x CHAIR-09
+ordered 10 x SHELF-04

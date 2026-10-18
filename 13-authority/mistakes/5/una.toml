@@ -1,0 +1,17 @@
+[package]
+name = "store"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "store.app"
+grants = ["console"]
+
+# What the sale may do with the price list, and when.
+[contracts]
+"apply_sale" = ["@prices: PriceList[set_price where not dry_run]"]
+"store.sale.run_sale" = ["@prices: PriceList[set_price where not dry_run]", "@console: Console[print]"]
+
+# Code from the maker of the tag printer: the most the store may ever grant it.
+[boundaries]
+"vendor.tags" = ["Console[print]"]

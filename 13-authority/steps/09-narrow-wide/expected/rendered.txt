@@ -1,0 +1,9 @@
+[U3021] Error: the call of `print_price_tag` grants `PriceList[price, set_price]` to `vendor.labels`, whose ceiling in `una.toml` allows `PriceList[price]`
+    ╭─[ src/store/app.una:18:3 ]
+    │
+ 18 │   print_price_tag(sku) with @console = @console, @prices = @prices
+    │   ──────────┬─────────
+    │             ╰─────────── the call of `print_price_tag` grants `PriceList[price, set_price]` to `vendor.labels`, whose ceiling in `una.toml` allows `PriceList[price]`
+    │
+    │ Note: run `una explain U3021` for an explanation
+────╯

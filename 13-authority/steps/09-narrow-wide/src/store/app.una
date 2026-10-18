@@ -1,0 +1,23 @@
+module store.app
+
+import store.prices (PriceList)
+import vendor.labels (print_price_tag)
+
+--- A price list where every product costs `each` cents, and that prints each change.
+handler flat(each: Int) for PriceList
+  uses @console: Console[print]
+  op price(sku) = each
+  op set_price(sku, cents) = @console.print("set {sku} to {cents}")
+
+--- Sets a new price, then prints the shelf label with it.
+reprice(sku: Text, cents: Int) -> Unit
+  uses @prices: PriceList[price, set_price]
+  uses @console: Console[print]
+=
+  @prices.set_price(sku, cents)
+  print_price_tag(sku) with @console = @console, @prices = @prices
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  reprice("LAMP-01", cents: 1592) with @prices = flat(1592)

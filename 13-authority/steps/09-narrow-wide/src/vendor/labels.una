@@ -1,0 +1,11 @@
+module vendor.labels
+
+import store.prices (PriceList)
+
+--- Prints a shelf label with the current price of a product, read from the price list.
+pub print_price_tag(sku: Text) -> Unit
+  uses @prices: PriceList[price]
+  uses @console: Console[print]
+=
+  let cents = @prices.price(sku)
+  @console.print("[{sku} | {cents} cents]")
