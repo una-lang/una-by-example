@@ -726,7 +726,18 @@ example "an address that is not on the list is not found"
 - **`fake_keys`** is a handler of `Keys` ([chapter 8](/learn/capabilities/#s8-3)). It makes hashes with `fake_hash(seed)`, from the standard module `std.testing`, which the file imports with `import std.testing (fake_hash)`. The **seed** is a number that picks which fake hash you get: the same seed always gives the same hash, so `fake_hash(1)` stands for the hash of the listed address.
 - **`given @keys = fake_keys()`** installs the handler for one example only. [Section 10.3](/learn/testing/#s10-3) teaches `given` and fakes in full.
 
-**Only in examples.** A function of `std.testing` may be called only in example lines and in handlers that only `given` installs, so fake hashes never reach a real run. Install `fake_keys` in `main`, with `opted_out("rita@example.invalid", list: []) with @keys = fake_keys()`:
+**Only in examples.** A function of `std.testing` may be called only in example lines and in handlers that only `given` installs, so fake hashes never reach a real run. Install `fake_keys` in `main`, with `with` and the clause that handles a `KeyError`:
+
+```una include="steps/14-hash-fake-in-main/src/optout.una#main" title="steps/14-hash-fake-in-main/src/optout.una"
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let found = opted_out("rita@example.invalid", list: []) with @keys = fake_keys()
+    if error use false
+  @console.print("checked")
+```
+
+`una check .` refuses the binding:
 
 ```text include="steps/14-hash-fake-in-main/expected/rendered.txt#L1"
 [U3015] Error: this `with` binding installs a handler that uses `std.testing`, which only `given` lines of examples may install
