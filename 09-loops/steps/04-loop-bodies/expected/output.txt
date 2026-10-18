@@ -1,7 +1,0 @@
-lighting 5, other 1
-stock at closing: 8
-units in two orders: 6
-["TEE-RED-S", "TEE-RED-M", "TEE-BLUE-S", "TEE-BLUE-M"]
-10 units at 3 a week last 3 weeks
-low shelves: 2
-running totals: [2, 3, 6]

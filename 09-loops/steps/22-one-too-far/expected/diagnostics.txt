@@ -1,0 +1,2 @@
+error U5001 at src/signs.una:9:20: precondition `0 <= position and position <= (position + 1) and (position + 1) <= sku.len` of this call is refuted
+  counterexample: position = 0, sign = "\"\"", sku = "Text#1", sku.len = 0

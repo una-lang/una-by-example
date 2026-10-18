@@ -1,0 +1,19 @@
+[U5002] Error: refinement `(count + 1) in 0..7` could not be proven (the loop forgets every fact about `count` but the refinements of its type, so the counterexample sets `count` freely; guard the use with an `if`, or move the update into a helper with an `edit` parameter whose `ensures` states what the use needs)
+    ╭─[ src/hours.una:10:15 ]
+    │
+  7 │   let edit count: Int in 0..7 = 0
+    │                          ──┬─
+    │                            ╰─── range
+    │
+ 10 │       count = count + 1
+    │               ────┬────
+    │                   ╰────── refinement `(count + 1) in 0..7` could not be proven (the loop forgets every fact about `count` but the refinements of its type, so the counterexample sets `count` freely; guard the use with an `if`, or move the update into a helper with an `edit` parameter whose `ensures` states what the use needs)
+    │
+    │ Help 1: repair 1: add a guard (`if` or a `when` arm) that handles the values where `(count + 1) in 0..7` does not hold
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, (count + 1) in 0..7) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-6081fbd61d80 (refinement) is unknown: (count + 1) in 0..7
+    │
+    │ Note 2: run `una explain U5002` for an explanation
+────╯

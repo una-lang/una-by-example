@@ -1,0 +1,18 @@
+day 1: 9:00 to 18:00
+day 2: 9:00 to 18:00
+day 3: 9:00 to 18:00
+day 4: 9:00 to 18:00
+day 5: 9:00 to 18:00
+day 6: 10:00 to 16:00
+day 7: closed
+day 2: delivery
+day 4: delivery
+week 1: 10% off, 1800 cents
+week 2: 20% off, 1600 cents
+week 3: 30% off, 1400 cents
+A1-S1
+A1-S2
+A1-S3
+A2-S1
+A2-S2
+A2-S3

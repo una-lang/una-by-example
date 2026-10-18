@@ -1,0 +1,10 @@
+module plan
+
+--- Prints a restock plan of four weeks, one line for each week, written out by hand.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("week 1: count the lamp shelf")
+  @console.print("week 2: count the lamp shelf")
+  @console.print("week 3: count the lamp shelf")
+  @console.print("week 4: count the lamp shelf")

@@ -1,0 +1,76 @@
+module counts
+
+--- One shelf of the store: its aisle and how many units it holds.
+kind Shelf
+  aisle: Int
+  units: Int
+
+--- The units customers ask for over `weeks` weeks, at `per_week` units a week: a sum.
+pub demand(weeks: Int, per_week: Int) -> Int
+=
+  let edit total = 0
+  for week in 1..weeks
+    total = total + per_week
+  total
+
+--- How many dashes a SKU holds: a count.
+pub dashes_in(sku: Text) -> Int
+=
+  let edit count = 0
+  for character in sku.chars()
+    if character == "-"
+      count = count + 1
+  count
+
+--- A SKU with a space after each character, for a sign that is read from afar: a text that
+--- grows.
+pub spaced(sku: Text) -> Text
+=
+  let edit sign = ""
+  for character in sku.chars()
+    sign = "{sign}{character} "
+  sign.trim
+
+--- Whether a SKU holds a digit: a flag that a turn may set.
+pub has_digit(sku: Text) -> Bool
+=
+  let edit found = false
+  for character in sku.chars()
+    if character.is_digits()
+      found = true
+  found
+
+--- A shelf after `weeks` deliveries of `per_delivery` units: one field of a record changes.
+pub after_deliveries(shelf: Shelf, weeks: Int, per_delivery: Int) -> Shelf
+=
+  let edit restocked = shelf
+  for week in 1..weeks
+    restocked.units = restocked.units + per_delivery
+  restocked
+
+--- How many turns a loop takes when its body moves the end of its own range: the range
+--- was computed before the first turn, so the change does not add a turn.
+pub turns_taken(last: Int) -> Int
+=
+  let edit end = last
+  let edit turns = 0
+  for aisle in 1..end
+    end = end + 1
+    turns = turns + 1
+  turns
+
+--- Prints one line for each accumulator.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = "LAMP-01-BR"
+  let rug = "RUG-07"
+  let card = "GIFTCARD"
+  @console.print("demand over 4 weeks: {demand(4, per_week: 5)}")
+  @console.print("demand over 0 weeks: {demand(0, per_week: 5)}")
+  @console.print("dashes in {lamp}: {dashes_in(lamp)}")
+  @console.print("sign: [{spaced(rug)}]")
+  @console.print("a digit in {rug}: {has_digit(rug)}, in {card}: {has_digit(card)}")
+  let shelf = after_deliveries(Shelf(aisle: 3, units: 4), weeks: 2, per_delivery: 6)
+  @console.print("aisle {shelf.aisle}: {shelf.units} units")
+  @console.print("turns of 1..3: {turns_taken(3)}")

@@ -1,0 +1,29 @@
+module signs
+
+--- A SKU with a space after each character, for a sign that is read from afar. Each turn
+--- cuts one character out of the SKU, at a position the range keeps inside it.
+pub spaced(sku: Text) -> Text
+=
+  let edit sign = ""
+  for position in 0..<sku.len
+    sign = "{sign}{sku.slice(start: position, end: position + 1)} "
+  sign.trim
+
+--- The boxes needed over `weeks` weeks, when each week `units` units arrive in boxes of
+--- `per_box`. The division is proved in every turn by the `requires`, a fact from before the
+--- loop.
+pub boxes(weeks: Int, units: Int, per_box: Int) -> Int
+  requires per_box >= 1
+=
+  let edit count = 0
+  for week in 1..weeks
+    count = count + (units + per_box - 1) / per_box
+  count
+
+--- Prints a sign and a count of boxes.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let rug = "RUG-07"
+  @console.print("[{spaced(rug)}]")
+  @console.print("{boxes(3, units: 25, per_box: 12)} boxes")

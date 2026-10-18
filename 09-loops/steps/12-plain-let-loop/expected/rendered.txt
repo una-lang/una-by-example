@@ -1,0 +1,9 @@
+[U2019] Error: `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+   ╭─[ src/demand.una:8:5 ]
+   │
+ 8 │     total = total + per_week
+   │     ──┬──
+   │       ╰──── `total` is not editable; declare it `let edit total`, or the parameter `edit total`
+   │
+   │ Note: run `una explain U2019` for an explanation
+───╯

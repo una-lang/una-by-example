@@ -1,0 +1,2 @@
+error U5001 at src/restock.una:57:13: refinement `(stock - product.weekly_sales) >= 0` is refuted
+  counterexample: product = "Product#0", product.on_hand = 0, product.weekly_sales = 1, stock = 0, stock (assigned) = -1, week = 1, weeks = 1

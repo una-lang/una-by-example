@@ -1,0 +1,14 @@
+module till
+
+--- Prints the total of a till after each of three scans, with a new name for each total.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = 1_990
+  let rug = 4_500
+  let after_one = lamp
+  let after_two = after_one + lamp
+  let after_three = after_two + rug
+  @console.print("after one item: {after_one} cents")
+  @console.print("after two items: {after_two} cents")
+  @console.print("after three items: {after_three} cents")

@@ -1,0 +1,9 @@
+[U2019] Error: `week` is not editable; declare it `let edit week`, or the parameter `edit week`
+    ╭─[ src/counts.una:14:5 ]
+    │
+ 14 │     week = week + 1
+    │     ──┬─
+    │       ╰─── `week` is not editable; declare it `let edit week`, or the parameter `edit week`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯

@@ -1,0 +1,15 @@
+module stock
+
+--- How many whole weeks `stock` units last when `per_week` units sell each week: a
+--- function that calls itself, with less stock each time.
+pub weeks_of_stock(stock: Int, per_week: Int) -> Int
+  requires per_week >= 1
+=
+  if stock < per_week then 0 else 1 + weeks_of_stock(stock - per_week, per_week: per_week)
+
+--- Prints how long two shelves last.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("10 units at 3 a week last {weeks_of_stock(10, per_week: 3)} weeks")
+  @console.print("2 units at 3 a week last {weeks_of_stock(2, per_week: 3)} weeks")
