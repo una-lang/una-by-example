@@ -1096,7 +1096,7 @@ The form has four rules:
 small box; medium box for 4 kg; large box
 ```
 
-3200 grams is above 1000 and not above 5000, so the middle branch runs: it rounds the weight up to 4 started kilograms. Use this form when a branch needs a `let` or would make one line hard to read; the one-line form is the canonical one for an `if` whose branches are single values.
+3200 grams is above 1000 and not above 5000, so the middle branch runs: it rounds the weight up to 4 started kilograms. Use this form when a branch needs a `let` or would make one line hard to read. Both forms are canonical: `una fmt .` keeps whichever one you wrote.
 
 Una has one more form of `if`, over several lines and with no `else`, which runs its lines only when the condition holds, and `when`, which chooses by the shape of a value. [Chapter 8](/learn/choices/#s8-1) covers every form of `if`, and [section 4.3](/learn/kinds/#s4-3) introduces `when`.
 
