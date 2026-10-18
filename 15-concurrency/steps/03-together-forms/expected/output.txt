@@ -1,0 +1,4 @@
+two branches: 6
+three branches: 4 + 2 + 0 = 6
+a handler per branch: 6
+a clause per branch: 6

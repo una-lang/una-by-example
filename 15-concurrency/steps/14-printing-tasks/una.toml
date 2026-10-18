@@ -1,0 +1,8 @@
+[package]
+name = "announce"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "announce"
+grants = ["console"]

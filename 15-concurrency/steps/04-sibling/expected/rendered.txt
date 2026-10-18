@@ -1,0 +1,18 @@
+[U1001] Error: cannot find name `in_north` in this module, its imports or the prelude
+    ╭─[ src/forms.una:30:16 ]
+    │
+ 30 │     let both = in_north + in_south
+    │                ────┬───
+    │                    ╰───── cannot find name `in_north` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `in_south` in this module, its imports or the prelude
+    ╭─[ src/forms.una:30:27 ]
+    │
+ 30 │     let both = in_north + in_south
+    │                           ────┬───
+    │                               ╰───── cannot find name `in_south` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯

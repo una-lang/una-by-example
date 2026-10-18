@@ -1,4 +1,0 @@
-$ una test .
-example stock "a warehouse that does not answer fails the whole count" ... ok
-
-1 example: 1 passed, 0 failed

@@ -1,0 +1,1 @@
+error U3007 at src/availability.una:46:16: `@east.on_hand` can fail with `StockError`; handle the failure with an `if error` clause, or wrap the call in `attempt`

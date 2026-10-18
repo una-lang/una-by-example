@@ -1,0 +1,15 @@
+module announce
+
+--- Prints a line for each SKU from its own task, and gives back the length of each SKU.
+announce(skus: List[Text]) -> List[Int]
+  uses @console: Console[print]
+=
+  together for sku in skus
+    @console.print("checking {sku}")
+    sku.len
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lengths = announce(["LAMP-01", "RUG-07", "DESK-02"])
+  @console.print("lengths: {lengths}")

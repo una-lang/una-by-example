@@ -1,0 +1,15 @@
+module restock
+
+--- What to do about each SKU: order more when fewer than 3 units are left.
+plan(skus: List[Text], stock: Map[Text, Int]) -> List[Text]
+=
+  together for sku in skus
+    let units = stock.get(key: sku).or_else(default: 0)
+    if units < 3 then "order {sku}" else "{sku} ok"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let stock = empty_map().with(key: "DESK-02", value: 1).with(key: "LAMP-01", value: 8)
+  let skus = ["RUG-07", "LAMP-01", "DESK-02"]
+  @console.print("{plan(skus, stock: stock)}")

@@ -1,0 +1,1 @@
+error U2024 at src/forms.una:25:3: `together` needs at least two `let` branches; with one, write a plain `let`

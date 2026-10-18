@@ -1,0 +1,14 @@
+$ una test .
+example availability "each warehouse's count goes into its own field" ... ok
+example availability "the lines come back in the order of the order" ... ok
+example availability "an empty order asks no warehouse" ... ok
+example availability "a warehouse that does not answer fails the line" ... ok
+example availability "the warehouses before the one that fails are still asked" ... ok
+example availability "one line that cannot be checked fails the whole order" ... ok
+example availability "a line short of stock says by how much" ... ok
+example availability "an order ships whole only when every line can ship" ... ok
+example availability "an empty order ships whole" ... ok
+example availability "the reason names the warehouse" ... ok
+example availability "the SKUs come in the order of the lines" ... ok
+
+11 examples: 11 passed, 0 failed

@@ -1,0 +1,10 @@
+Order 1042
+  LAMP-01: 5 wanted, 4 + 2 + 0 = 6 on hand, ships
+  DESK-02: 2 wanted, 1 + 0 + 1 = 2 on hand, ships
+  the whole order ships
+Order 1043
+  RUG-07: 6 wanted, 0 + 3 + 5 = 8 on hand, ships
+  LAMP-01: 9 wanted, 4 + 2 + 0 = 6 on hand, short by 3
+  the order waits for stock
+Order 1042, again
+  the east warehouse did not answer; check again later

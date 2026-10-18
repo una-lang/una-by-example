@@ -1,0 +1,4 @@
+$ una test .
+example failures "the north warehouse is asked even though the south one fails" ... ok
+
+1 example: 1 passed, 0 failed

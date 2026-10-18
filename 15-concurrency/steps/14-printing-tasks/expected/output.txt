@@ -1,0 +1,4 @@
+checking LAMP-01
+checking RUG-07
+checking DESK-02
+lengths: [7, 6, 7]
