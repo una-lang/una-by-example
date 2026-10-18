@@ -1,0 +1,19 @@
+Parcel A-1001, 1200 g
+  National: 450 cents
+  up to 2 kg: 150 cents
+  Standard: 0 cents
+  locker Station 14: 0 cents
+  total: 600 cents
+Parcel A-1002, 3500 g
+  Local: 300 cents
+  over 2 kg: 400 cents
+  Express: 500 cents
+  to the door: 250 cents
+  total: 1450 cents
+Parcel A-1003, 400 g
+  Abroad: 1200 cents
+  up to 500 g: 0 cents
+  Express: 900 cents
+  store Harbour Road: 0 cents
+  total: 2100 cents
+Express for A-1001: 600 cents now, 1100 cents express

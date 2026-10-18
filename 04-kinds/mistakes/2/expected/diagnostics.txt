@@ -1,0 +1,1 @@
+error U2004 at src/pricing.una:31:24: `Charge` has 2 fields, so every argument needs its field's label

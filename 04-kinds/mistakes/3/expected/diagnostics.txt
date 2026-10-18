@@ -1,0 +1,1 @@
+error U2001 at src/pricing.una:90:57: field `zone` of `Parcel` must be `Zone`, found `Text`

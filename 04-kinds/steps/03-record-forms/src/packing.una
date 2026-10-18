@@ -13,25 +13,19 @@ kind Box
   grams: Int
   note: Note
 
---- The same box with another note. The parameter is not changed: the copy is.
-relabel(box: Box, text: Text) -> Box
-=
-  let edit copy = box
-  copy.note.text = text
-  copy
+--- The same box with another note. The box passed in does not change: a new one is built.
+relabel(box: Box, text: Text) -> Box = Box(sku: box.sku, grams: box.grams, note: Note(text))
 
 pub main() -> Unit
   uses @console: Console[print]
 =
   let fragile = Note("fragile")
   let lamp: Sku = "LAMP-01"
-  let edit box = Box(sku: lamp, grams: 1200, note: fragile)
-  let packed = box
-  box.grams = 1500
-  box.note.text = "this side up"
-  @console.print("{packed}")
+  let box = Box(sku: lamp, grams: 1200, note: fragile)
+  let heavier = Box(sku: box.sku, grams: 1500, note: box.note)
   @console.print("{box}")
-  @console.print("same box: {packed == box}")
+  @console.print("{heavier}")
+  @console.print("same box: {box == heavier}")
   @console.print("{lamp.len} characters in {lamp}")
-  let heavy = relabel(packed, text: "heavy")
-  @console.print("{packed.note.text}, then {heavy.note.text}")
+  let marked = relabel(box, text: "this side up")
+  @console.print("{box.note.text}, then {marked.note.text}")

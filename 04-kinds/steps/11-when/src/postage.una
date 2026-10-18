@@ -1,7 +1,9 @@
 module postage
 
+--- How far a parcel travels, nearest first.
 kind Zone = Local | National | Abroad
 
+--- Where a customer collects a parcel.
 kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text, opens: Int)
 
 --- The price of a zone, in cents. One arm for each variant, and no `else`.
@@ -12,13 +14,12 @@ zone_cents(zone: Zone) -> Int
     is National -> 450
     is Abroad -> 1200
 
---- The supplement for a weight, by bands. Ranges need an `else` for the values they leave out.
-weight_cents(grams: Int) -> Int
+--- The fee for bringing the parcel to the door. Every other place is free: `else`.
+delivery_cents(delivery: Delivery) -> Int
 =
-  when grams
-    in 0..500 -> 0
-    in 501..2000 -> 150
-    else -> 400
+  when delivery
+    is AtDoor -> 250
+    else -> 0
 
 --- Where to collect the parcel. Each arm binds the fields it uses, by name.
 pickup_note(delivery: Delivery) -> Text
@@ -31,6 +32,8 @@ pickup_note(delivery: Delivery) -> Text
 pub main() -> Unit
   uses @console: Console[print]
 =
-  @console.print("{zone_cents(National) + weight_cents(1200)} cents")
-  @console.print(pickup_note(AtStore(store: "Harbour Road", opens: 9)))
+  let store = AtStore(store: "Harbour Road", opens: 9)
+  @console.print("{zone_cents(National) + delivery_cents(AtDoor)} cents")
+  @console.print("{zone_cents(Abroad) + delivery_cents(store)} cents")
+  @console.print(pickup_note(store))
   @console.print(pickup_note(AtLocker(locker: "Station 14")))

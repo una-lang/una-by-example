@@ -1,0 +1,9 @@
+[U2001] Error: field `zone` of `Parcel` must be `Zone`, found `Text`
+    ╭─[ src/pricing.una:90:57 ]
+    │
+ 90 │   let lamp = Parcel(order: "A-1001", grams: 1200, zone: "National", speed: Standard, delivery: AtLocker("Station 14"))
+    │                                                         ─────┬────
+    │                                                              ╰────── field `zone` of `Parcel` must be `Zone`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

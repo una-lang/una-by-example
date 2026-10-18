@@ -1,0 +1,12 @@
+[U2004] Error: `Charge` has 2 fields, so every argument needs its field's label
+    ╭─[ src/pricing.una:31:24 ]
+    │
+ 31 │     is Local -> Charge(zone, cents: 300)
+    │                        ──┬─
+    │                          ╰─── `Charge` has 2 fields, so every argument needs its field's label
+    │
+    │ Help: repair 1: label it `item`; edit src/pricing.una:31:24..31:28 to "item: zone"
+    │
+    │ Note: run `una explain U2004` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
