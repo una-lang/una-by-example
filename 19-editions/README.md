@@ -69,14 +69,7 @@ A **keyword** is a word the language keeps for itself, such as `if`, `for` or `u
 
 Each package names its edition in `una.toml`, and a release checks each package by the rules of the edition it names. One release serves several editions at once, so installing a newer release does not change the language your packages are written in. Only you change that, by editing one line.
 
-### Each step is a package
-
-Each step of this chapter is a package, as in [chapter 1](/learn/hello/#s1-1), with the `verification.lock` of chapter 1, or whole from the chapter's download, `14-editions.tar.gz`. In the package's directory:
-
-```sh
-una check .
-una run .
-```
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `19-editions.tar.gz`, holds them all.
 
 ### Why a language needs editions
 
@@ -152,7 +145,7 @@ With editions, nothing happens to it. The package says `edition = "0.1"`, and ev
 Each of the three editions is written the same way:
 
 - `edition = "0.1"` is the first edition. It has kinds, functions, lists, contracts, capabilities and labels.
-- `edition = "0.2"` is the edition of most of this tutorial. It adds loops, the `edit` and `take` parameter modes ([chapter 16](/learn/memory/#s16-2) teaches `edit`, and [section 16.3](/learn/memory/#s16-3) `take`), `together`, maps and more ([section 19.2](#s19-2)).
+- `edition = "0.2"` is the edition of most of this tutorial. It adds loops ([chapter 9](/learn/loops/)), the `edit` and `take` parameter modes ([chapter 16](/learn/memory/#s16-2) teaches `edit`, and [section 16.3](/learn/memory/#s16-3) `take`), `together` ([chapter 15](/learn/concurrency/#s15-1)), maps and more ([section 19.2](#s19-2)).
 - `edition = "0.3"` is a preview, with stricter rules and a few constructs that narrow what a program may do ([section 19.3](#s19-3)).
 
 #### An edition una does not know
@@ -272,7 +265,7 @@ Some words were set aside before the editions that use them existed. In edition 
 
 #### What an edition fixes, and what improves with every release
 
-What an edition fixes is the language a package is written in: its keywords, its constructs, its rules and the headers of the prelude, the functions every module has without an import ([chapter 2](/learn/numbers/)). For example, `min`, `max` and `sum` work on `Int` in edition `0.1`, and a later release keeps those headers for it, while edition `0.2` makes them generic: they work on any type with the right constraint, such as `Ord` for `min` ([chapter 4](/learn/kinds/#s4-4)). What improves with every release, for every edition, is everything around the language: the wording of messages, the explanations of `una explain`, the repairs, the speed of the checks and the tools of [chapter 18](/learn/tools/).
+What an edition fixes is the language a package is written in: its keywords, its constructs, its rules and the headers of the prelude, the functions every module has without an import ([chapter 3](/learn/text-and-conditions/#s3-2)). For example, `min`, `max` and `sum` work on `Int` in edition `0.1`, and a later release keeps those headers for it, while edition `0.2` makes them generic: they work on any type with the right constraint, such as `Ord` for `min` ([chapter 4](/learn/kinds/#s4-4)). What improves with every release, for every edition, is everything around the language: the wording of messages, the explanations of `una explain`, the repairs, the speed of the checks and the tools of [chapter 18](/learn/tools/).
 
 ### Check yourself: a word reserved for later
 
@@ -390,13 +383,13 @@ Edition `0.2` adds, among others:
 
 | Construct | Where to read about it |
 | --- | --- |
-| `for` loops, `let edit`, `edit` and `take` parameters | [Memory and concurrency](/learn/memory/), [Collections](/learn/collections/) |
-| `together` and `together for` | [Memory and concurrency](/learn/memory/) |
-| `Map`, the text functions and `ParseError`, `Json` | [Collections](/learn/collections/), [Failure](/learn/failure/) |
-| Fixed-width integers such as `U8` and `I64`, with proven overflow | [Values](/learn/numbers/#s2-3) |
+| `for` loops, `let edit`, `edit` and `take` parameters | [Repeating: `for`](/learn/loops/), [Memory](/learn/memory/#s16-2) |
+| `together` and `together for` | [Concurrency and parallelism](/learn/concurrency/) |
+| `Map`, the text functions and `ParseError`, `Json` | [Collections](/learn/collections/), [Results and failures](/learn/failure/) |
+| Fixed-width integers such as `U8` and `I64`, with proven overflow | [Numbers](/learn/numbers/#s2-3) |
 | Constraints on generics such as `T: Ord`, and `sort` | [Kinds](/learn/kinds/#s4-4) |
 | `uses of p` and `fails of p`, header clauses for a function that takes another function as its parameter `p`: the function passed in may then use capabilities and fail, and the caller handles it | [`uses`](/docs/language/capabilities/uses/) |
-| The interpolation of any value that `==` compares, except a `Hashed`, a fingerprint of secret data that only a host capability computes and that a program cannot read | [Values](/learn/numbers/) |
+| The interpolation of any value that `==` compares, except a `Hashed`, a fingerprint of secret data that only a host capability computes and that a program cannot read | [Text and conditions](/learn/text-and-conditions/#s3-1) |
 | The `Http` capability | [HTTP in the standard library](/docs/std/http/) |
 
 ### The keywords `0.2` adds
@@ -412,7 +405,7 @@ A few rules of `0.2` differ from `0.1`:
 - **Built-in type names.** A kind, a variant or a capability cannot take the name of a built-in type such as `Text`, `List`, `Map` or `U8` (U1002). `0.1` has fewer built-in types, so some of those names were free there.
 - **Equality on type parameters.** A public generic function that compares two values of a type parameter `T` must write the constraint `[T: Eq]` (U2026, [chapter 4](/learn/kinds/#s4-4)); `0.1` inferred it.
 - **The prelude.** `min`, `max`, `sum` and `contains` become generic over constrained types, and `sort`, `set` and `empty_map` are new.
-- **Recursive kinds,** kinds with a field of their own kind ([chapter 4](/learn/kinds/)), no longer need that field inside a `List` or an `Option`, but must be able to end: some variant, such as a `Lit(value: Int)` in an expression kind, holds no value of the kind itself.
+- **Recursive kinds,** kinds with a field of their own kind ([chapter 8](/learn/choices/#s8-4)), no longer need that field inside a `List` or an `Option`, but must be able to end: some variant, such as a `Lit(value: Int)` in an expression kind, holds no value of the kind itself.
 - **Test reports.** In `0.2`, a failed example's report shows labeled values, data marked secret or internal ([chapter 17](/learn/information-flow/)), in full, where `0.1` hides them.
 
 ### What a move from `0.1` can need
@@ -1047,7 +1040,7 @@ pub print_labels(lines: List[Line], dry_run: Bool) -> Int
   printed
 ```
 
-The function counts a label whether or not it prints it, so a dry run gives the number of labels a real run would print. The two nested `if` statements have no `else`: an `if` without `else` is a statement that does nothing when its condition is false, which edition `0.2` added along with the loop. The count is a `let edit` binding that the loop updates, as in [chapter 16](/learn/memory/). The condition is part of the header, so `una contract labels.print_labels` shows it, and every caller sees that a dry run prints nothing without reading the body.
+The function counts a label whether or not it prints it, so a dry run gives the number of labels a real run would print. The two nested `if` statements have no `else`: an `if` without `else` is a statement that does nothing when its condition is false, which edition `0.2` added along with the loop. The count is a `let edit` binding that the loop updates, as in [chapter 9](/learn/loops/#s9-2). The condition is part of the header, so `una contract labels.print_labels` shows it, and every caller sees that a dry run prints nothing without reading the body.
 
 ### Running it
 
