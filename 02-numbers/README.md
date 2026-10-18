@@ -47,7 +47,7 @@ Una makes each of these a rule that `una check` enforces before the program runs
 
 :::steps
 1. **`Int` has no largest value.** A sum or a product of whole numbers is always exact, however large it grows.
-2. **Money is whole cents.** An amount such as 19.90 is the `Int` 1990, so nothing rounds unless the code says how.
+2. **There are no inexact numbers.** Una has no type for fractions yet, so an amount such as 19.90 is counted in whole cents, the `Int` 1990, and nothing rounds unless the code says how.
 3. **A division must be safe.** A division by a value that may be zero does not pass the check, and the check says which value breaks it.
 4. **A fixed size is proved.** Where you choose a type with a set size, every operation on it must be proved to stay inside that size.
 5. **No value changes its type on its own.** A number becomes a text only where the code puts it into one.
@@ -128,9 +128,9 @@ That is how a program prints a number: it puts the number into a text, and print
 
 ### Each step is a package
 
-Each example of this chapter, and of every chapter after it, is a package of its own, made as in [chapter 1, Making the package](/learn/hello/#making-the-package): a directory with `una.toml`, `verification.lock` and the module under `src/`. The book calls these packages the chapter's **steps**. Each one has a name such as `steps/03-values`: the number gives its place in the chapter.
+Each example of this chapter, and of every chapter after it, is a package of its own, made as in [chapter 1, Making the package](/learn/hello/#making-the-package): a directory with `una.toml`, `verification.lock` and the module under `src/`. The book calls these packages the chapter's **steps**. Each one has a name such as `steps/03-values`: the number orders the steps in the download.
 
-You can type each step, or take it whole from the chapter's download, `02-numbers.tar.gz`, which holds every package of this chapter. To make a step by hand next to the package of chapter 1, go up from that package's directory to your home directory with `cd ..` (`..` is the path of the directory above), then make the new directory as before:
+You can type each step, or take it whole from the chapter's download, `02-numbers.tar.gz`, which holds every package of this chapter. To make a step by hand next to the package of chapter 1, start in your home directory. A new terminal starts there already; if your terminal is still in `hello`, go up to your home directory with `cd ..` (`..` is the path of the directory above). Then make the new directory as before:
 
 ```sh
 cd ..
@@ -289,7 +289,7 @@ A body makes each name once. Reuse a name for a new value, as `let lamps = lamps
 ────╯
 ```
 
-If one name could hold two values, a reader would have to know which line they stand on to know what it means. Give the new value a name of its own, such as `total`.
+In the message, a **scope** is the part of the code where a name exists, here the body of the function, and a **local** is a name made inside it with `let`. If one name could hold two values, a reader would have to know which line they stand on to know what it means. Give the new value a name of its own, such as `total`.
 
 #### A name keeps its value
 
@@ -388,7 +388,7 @@ pub main() -> Unit
 
 The message says that `19.90` is a **fractional literal**, a number with a fraction, and that Una's integer literals are written in decimal digits only. Una has no type for numbers with a fraction today.
 
-For money, that is no loss. Many languages store a fraction such as 0.10 as a binary approximation, so that adding prices gives totals such as 0.30000000000000004, and every program rounds them in its own way, often without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
+For money, whole cents work well. Many languages store a fraction such as 0.10 as a binary approximation, so that adding prices gives totals such as 0.30000000000000004, and every program rounds them in its own way, often without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
 
 ### Numbers with a fraction: still to come
 
@@ -581,7 +581,15 @@ A divisor written as a literal other than zero, such as `100`, needs no proof. F
 
 #### Dividing by the literal 0
 
-A division by the literal `0` can never be safe. Replace `1990 * 3 / 100` in `arithmetic` with `units / 0`:
+A division by the literal `0` can never be safe. Change one line of `arithmetic`, so that it divides by `0`:
+
+```diff include="steps/10-operators..steps/14-zero:src/arithmetic.una" title="src/arithmetic.una" context="0"
+--- a/src/arithmetic.una
++++ b/src/arithmetic.una
+@@ -15 +15 @@
+-  @console.print("{1990 * 3 / 100}")
++  @console.print("{units / 0}")
+```
 
 ```text include="steps/14-zero/expected/rendered.txt#L1-L6"
 [U5001] Error: division obligation `0 != 0` is refuted
@@ -690,7 +698,7 @@ The operations of this section are **methods**: functions written after a value,
 #### Converting between integer types
 
 - `x.to_int()` turns any fixed-width value into an `Int`. Every value fits, so it never fails.
-- `x.to_u8()`, `x.to_u16()`, `x.to_i32()` and the others turn a value into another integer type. Where every value fits, such as from `U8` to `U16`, the conversion is called **widening**, and it needs no proof. Every other conversion, from `Int` or to a smaller range, is **narrowing**, and the verifier must prove that the value fits.
+- `x.to_u8()`, `x.to_u16()`, `x.to_i32()` and the others turn a value into another integer type. Where every value fits, such as from `U8` to `U16`, the conversion is called **widening**, and it needs no proof. Every other conversion, to a type that cannot hold every value of the source, such as from `Int`, or from `I8` to `U16`, is **narrowing**, and the verifier must prove that the value fits.
 - A `U8` and an `Int`, or a `U8` and a `U16`, do not mix in one operation: convert one of them first.
 
 #### Wrapping and saturating, by name
@@ -809,7 +817,7 @@ The `U8` came first, so the message asks the other operand to be a `U8` too. Con
 
 #### A narrowing must be proved
 
-A conversion to a smaller range is proved like an operation. A function that narrows any `Int` to a `U8` does not check:
+A conversion that may not fit is proved like an operation. A function that narrows any `Int` to a `U8` does not check:
 
 ```una include="steps/20-narrowing/src/tags.una#copies_byte" title="steps/20-narrowing/src/tags.una"
 --- The number of copies, as the label printer reads it: one byte.
@@ -826,7 +834,7 @@ The counterexample, `copies = -1`, is an `Int` that no `U8` can hold. A precondi
 
 #### More rules
 
-- **Every operation, even with literals.** `200 + 100` where a `U8` is expected is not one literal: it gets an overflow obligation, which is refuted.
+- **Every operation, even with literals.** `250 + 6` where a `U8` is expected is not one literal: it gets an overflow obligation, which is refuted.
 - **Division too.** `/` and `mod` on fixed-width values are Euclidean, as on `Int`, and a divisor that may be zero is a division obligation, as in [section 2.2](#division-by-zero-a-proof-obligation).
 - **Interpolation shows the number.** A fixed-width value in braces goes into the text as its decimal digits, as an `Int` does.
 - **Lengths stay `Int`.** The length of a text, which [chapter 3](/learn/text-and-conditions/#s3-2) shows, is always an `Int`.
@@ -847,7 +855,7 @@ The counterexample, `copies = -1`, is an `Int` that no `U8` can hold. A precondi
 
 ### Check yourself: fixed-width integers
 
-Change the first line of `widths` so that the `U8` is computed:
+Change the first `let` of `widths` so that the `U8` is computed:
 
 ```diff include="steps/17-widths..steps/21-constant-overflow:src/widths.una" title="src/widths.una" context="0"
 --- a/src/widths.una
@@ -1093,7 +1101,7 @@ example "the total is in cents"
 
 ### One example per function
 
-Every function of the slip gives back a value, so every one gets an example, in the form chapter 1 showed: `do` a call, then `expect result ==` the exact value. An example may expect a number as well as a text:
+Every function of the slip gives back a value, so each can have an example. Eight of the nine have one, in the form chapter 1 showed; `closing` always gives back the same text, which the run shows. The form is `do` a call, then `expect result ==` the exact value. An example may expect a number as well as a text:
 
 ```una include="day-to-day/src/slip.una#L65-L71" title="day-to-day/src/slip.una" caption="two examples of line_cents"
 example "a line costs its quantity times the unit price"
@@ -1210,7 +1218,7 @@ Write the order number as a form would, with a leading zero:
    let lamps = 2
 ```
 
-```text include="mistakes/3/expected/rendered.txt#L1-L9"
+```text include="mistakes/3/expected/rendered.txt#L1-L12"
 [U0007] Error: malformed integer literal `01042`
     ╭─[ src/slip.una:38:20 ]
     │
@@ -1220,9 +1228,12 @@ Write the order number as a form would, with a leading zero:
     │
     │ Help: repair 1: write `1042`; edit src/slip.una:38:20..38:25 to "1042"
     │
+    │ Note: run `una explain U0007` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
 ```
 
-*Why:* an integer literal has no leading zero, except `0` itself, so `01042` is a **malformed** literal: it breaks the rules of how a literal is written. The `Help` line gives the literal it means, and the last line of the diagnostic says that `una fix .` can make that edit.
+*Why:* an integer literal has no leading zero, except `0` itself, so `01042` is a **malformed** literal: it breaks the rules of how a literal is written. The `Help` line gives the literal it means, and the last line of the output says that `una fix .` can make that edit.
 
 *Fix:* write `1042`. A number whose zeros matter, such as a postal code, is a `Text`. See [U0007](/docs/errors/U0007/).
 :::
