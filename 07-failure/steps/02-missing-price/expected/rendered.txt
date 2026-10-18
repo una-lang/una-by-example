@@ -1,7 +1,7 @@
 [U1001] Error: `Option[Product]` has no field `cents`, and no function `cents` in scope applies
-    ╭─[ src/lookup.una:12:14 ]
+    ╭─[ src/lookup.una:22:14 ]
     │
- 12 │   Some(found.cents)
+ 22 │   Some(found.cents)
     │              ──┬──
     │                ╰──── `Option[Product]` has no field `cents`, and no function `cents` in scope applies
     │

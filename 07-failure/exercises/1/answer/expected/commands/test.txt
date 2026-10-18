@@ -1,10 +1,13 @@
 $ una test .
 example orders "a line in stock is accepted" ... ok
+example orders "the spaces around the SKU and the quantity do not matter" ... ok
+example orders "a line without a comma is Malformed" ... ok
+example orders "a quantity that is not a number is BadQuantity" ... ok
+example orders "a quantity of 0 is BadQuantity" ... ok
+example orders "a SKU the stock list does not know is UnknownSku" ... ok
+example orders "a shelf being counted is Unavailable" ... ok
 example orders "too many units are out of stock" ... ok
-example orders "a malformed line never reaches the inventory" ... ok
-example orders "an inventory that does not answer is Unavailable" ... ok
-example orders "a SKU the inventory does not know is UnknownSku" ... ok
-example orders "a quantity that is not a number is BadQuantity, before the inventory is asked" ... ok
+example orders "the report says how many units are left" ... ok
 example orders "more than ten units on one line is TooMany" ... ok
 
-7 examples: 7 passed, 0 failed
+10 examples: 10 passed, 0 failed

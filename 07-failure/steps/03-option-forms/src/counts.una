@@ -44,5 +44,6 @@ pub main() -> Unit
   let sku = "LAMP-01"
   let dash = sku.find(text: "-")
   let number = sku.slice(start: 5, end: 7).to_int()
-  @console.print("{dash} {number} {sku.chars().first()}")
+  let slash = sku.find(text: "/")
+  @console.print("{dash} {number} {slash}")
   @console.print("{shown(Some(0))} / {to_order(Some(12))} / {well_stocked(Some(10))}")

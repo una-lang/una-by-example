@@ -1,3 +1,0 @@
-error U2001 at src/batch.una:27:27: argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
-error U3013 at src/batch.una:27:27: `parse_int` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
-error U2001 at src/batch.una:28:43: argument `outcome` of `describe` must be `Result[Int, ParseError]`, found `Result[Bool, ?]`

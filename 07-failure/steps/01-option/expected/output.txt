@@ -1,4 +1,4 @@
 DESK-02: 15900 cents
 CHAIR-09: not sold here
 None or 0
-Some(3) and None
+Some(3) and Some(4)

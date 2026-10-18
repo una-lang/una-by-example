@@ -1,0 +1,2 @@
+error U5001 at src/rates.una:36:11: refinement `n in 0..100` is refuted
+  counterexample: n = 101, raw = "Text#1", raw.len = 0

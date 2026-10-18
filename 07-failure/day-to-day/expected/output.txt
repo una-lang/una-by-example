@@ -1,5 +1,6 @@
 ok      2 x LAMP-01
 reject  3 of DESK-02 wanted, 1 left
 reject  no product has the SKU CHAIR-09
+reject  the shelf of RUG-07 is being counted; retry later
 reject  the quantity in 'LAMP-01, two' is not a whole number above 0
 reject  cannot read the line 'LAMP-01'

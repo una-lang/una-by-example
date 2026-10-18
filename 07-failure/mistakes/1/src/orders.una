@@ -6,42 +6,45 @@ pub kind Order
   quantity: Int
 
 --- Why an order line was rejected. Each variant carries what a person needs to act on it.
-pub kind OrderError = Malformed(line: Text) | BadQuantity(line: Text) | UnknownSku(sku: Text) | OutOfStock(sku: Text, wanted: Int, left: Int) | Unavailable
+pub kind OrderError = Malformed(line: Text) | BadQuantity(line: Text) | UnknownSku(sku: Text) | OutOfStock(sku: Text, wanted: Int, left: Int) | Unavailable(sku: Text)
 
---- How the inventory service can fail.
-pub kind StoreError = | Timeout
+--- Why the stock list cannot give a count.
+pub kind StockError = | BeingCounted(sku: Text)
 
---- The inventory service: how many units of a SKU are on hand, or `None` for an unknown SKU.
-pub capability Inventory
-  op on_hand(sku: Text) -> Option[Int]
-    fails StoreError
+--- The units on hand of a SKU, `None` for a SKU the store does not sell. It fails while the
+--- SKU's shelf is being counted.
+pub on_hand(sku: Text) -> Option[Int]
+  fails StockError
+=
+  if sku == "LAMP-01"
+    Some(4)
+  else if sku == "DESK-02"
+    Some(1)
+  else if sku == "RUG-07"
+    fail BeingCounted(sku)
+  else
+    None
 
---- Reads `"SKU, quantity"`. Pure: it only looks at the text.
+--- Reads `"SKU, quantity"`. It only looks at the text.
 pub parse_order(line: Text) -> Order
   fails OrderError
 =
-  let parts = line.split(on: ",")
-  if parts.len != 2
-    fail Malformed(line)
+  let comma = line.find(text: ",")
+    if none fail Malformed(line)
+  let sku = line.slice(start: 0, end: comma).trim
+  let quantity = line.slice(start: comma + 1, end: line.len).trim.to_int()
+    if none fail BadQuantity(line)
+  if quantity < 1
+    fail BadQuantity(line)
   else
-    let sku = parts.at(index: 0)
-      if none fail Malformed(line)
-    let raw = parts.at(index: 1)
-      if none fail Malformed(line)
-    let quantity = raw.trim.to_int()
-      if none fail BadQuantity(line)
-    if quantity < 1
-      fail BadQuantity(line)
-    else
-      Order(sku: sku.trim, quantity: quantity)
+    Order(sku: sku, quantity: quantity)
 
---- Confirms that the inventory holds enough units of the order's SKU.
+--- Confirms that the stock list holds enough units of the order's SKU.
 pub check_stock(order: Order) -> Order
-  uses @inventory: Inventory[on_hand]
   fails OrderError
 =
-  let left = @inventory.on_hand(order.sku)
-    if error fail Unavailable
+  let left = on_hand(order.sku)
+    if error fail Unavailable(sku: order.sku)
     if none fail UnknownSku(sku: order.sku)
   if order.quantity > left
     fail OutOfStock(sku: order.sku, wanted: order.quantity, left: left)
@@ -50,24 +53,13 @@ pub check_stock(order: Order) -> Order
 
 --- One line, from text to an order that can be shipped.
 pub accept(line: Text) -> Order
-  uses @inventory: Inventory[on_hand]
   fails OrderError
 =
   let order = parse_order(line)
   check_stock(order)
     if error pass
 
---- Every line, accepted or rejected: one bad line does not stop the batch.
-pub process(lines: List[Text]) -> List[Result[Order, OrderError]]
-  uses @inventory: Inventory[on_hand]
-=
-  let edit results: List[Result[Order, OrderError]] = []
-  for line in lines
-    let outcome = attempt accept(line)
-    results = results.append(item: outcome)
-  results
-
---- What a person reads in the batch report.
+--- What a person reads in the report.
 pub reason(failure: OrderError) -> Text
 =
   when failure
@@ -75,60 +67,59 @@ pub reason(failure: OrderError) -> Text
     is BadQuantity(line) -> "the quantity in '{line}' is not a whole number above 0"
     is UnknownSku(sku) -> "no product has the SKU {sku}"
     is OutOfStock(sku, wanted, left) -> "{wanted} of {sku} wanted, {left} left"
-    is Unavailable -> "the inventory did not answer; retry later"
+    is Unavailable(sku) -> "the shelf of {sku} is being counted; retry later"
 
---- One line of the batch report.
-pub describe(outcome: Result[Order, OrderError]) -> Text
+--- One line of the report: the order line accepted, or the reason it was not.
+pub report(line: Text) -> Text
 =
+  let outcome = attempt accept(line)
   when outcome
-    is Ok(value) -> "ok      {value.quantity} x {value.sku}"
+    is Ok(order) -> "ok      {order.quantity} x {order.sku}"
     is Err(failure) -> "reject  {reason(failure)}"
 
---- An inventory held in memory, for this example run and for tests.
-handler warehouse(stock: Map[Text, Int]) for Inventory
-  op on_hand(sku) = stock.get(key: sku)
-
---- An inventory that never answers.
-handler offline() for Inventory
-  op on_hand(sku) = fail Timeout
-
+--- Prints the report of the day's order lines.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let stock = empty_map().with(key: "LAMP-01", value: 4).with(key: "DESK-02", value: 1)
-  let lines = ["LAMP-01, 2", "DESK-02, 3", "CHAIR-09, 1", "LAMP-01, two", "LAMP-01"]
-  let results = process(lines) with @inventory = warehouse(stock)
-  for outcome in results
-    @console.print(describe(outcome))
+  @console.print(report("LAMP-01, 2"))
+  @console.print(report("DESK-02, 3"))
+  @console.print(report("CHAIR-09, 1"))
+  @console.print(report("RUG-07, 1"))
+  @console.print(report("LAMP-01, two"))
+  @console.print(report("LAMP-01"))
 
 example "a line in stock is accepted"
-  given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
   do accept("LAMP-01, 2")
-  expect result.quantity == 2
+  expect result == Order(sku: "LAMP-01", quantity: 2)
 
-example "too many units are out of stock"
-  given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
-  do accept("LAMP-01, 9")
-  expect fails OutOfStock
+example "the spaces around the SKU and the quantity do not matter"
+  do parse_order(" DESK-02 , 1 ")
+  expect result == Order(sku: "DESK-02", quantity: 1)
 
-example "a malformed line never reaches the inventory"
-  given @inventory = offline()
+example "a line without a comma is Malformed"
   do accept("LAMP-01")
   expect fails Malformed
-  expect not performed @inventory.on_hand
 
-example "an inventory that does not answer is Unavailable"
-  given @inventory = offline()
-  do accept("LAMP-01, 1")
-  expect fails Unavailable
+example "a quantity that is not a number is BadQuantity"
+  do accept("LAMP-01, two")
+  expect fails BadQuantity
 
-example "a SKU the inventory does not know is UnknownSku"
-  given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
+example "a quantity of 0 is BadQuantity"
+  do accept("LAMP-01, 0")
+  expect fails BadQuantity
+
+example "a SKU the stock list does not know is UnknownSku"
   do accept("CHAIR-09, 1")
   expect fails UnknownSku
 
-example "a quantity that is not a number is BadQuantity, before the inventory is asked"
-  given @inventory = offline()
-  do accept("LAMP-01, two")
-  expect fails BadQuantity
-  expect not performed @inventory.on_hand
+example "a shelf being counted is Unavailable"
+  do accept("RUG-07, 1")
+  expect fails Unavailable
+
+example "too many units are out of stock"
+  do accept("LAMP-01, 9")
+  expect fails OutOfStock
+
+example "the report says how many units are left"
+  do report("DESK-02, 3")
+  expect result == "reject  3 of DESK-02 wanted, 1 left"

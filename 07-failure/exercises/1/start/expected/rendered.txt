@@ -1,7 +1,7 @@
 [U1001] Error: cannot find variant `TooMany` in `OrderError`
-     ╭─[ src/orders.una:140:16 ]
+     ╭─[ src/orders.una:130:16 ]
      │
- 140 │   expect fails TooMany
+ 130 │   expect fails TooMany
      │                ───┬───
      │                   ╰───── cannot find variant `TooMany` in `OrderError`
      │
