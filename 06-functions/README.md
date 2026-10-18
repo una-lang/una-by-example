@@ -513,7 +513,7 @@ A header may have **clauses**: lines under its first line that say more about th
 
 #### A result of a kind of your own
 
-`quote` gives back a `Quote`, a record kind of the module. Its last line builds the record, `Quote(cents, free)`, with both fields punned: the names `cents` and `free` match the fields. Any type can be a result, a kind of yours included, and a caller reads its fields: `quote.cents`.
+`quote` gives back a `Quote`, a record kind of the module. Its last line builds the record, `Quote(cents, free)`, with both fields punned: the names `cents` and `free` match the fields. Punning works on a record's first field too, unlike on a function's first parameter: in a record, every field is matched by its name, and a name equal to a field fills that field. Any type can be a result, a kind of yours included, and a caller reads its fields: `quote.cents`.
 
 #### A result of `Unit`
 
