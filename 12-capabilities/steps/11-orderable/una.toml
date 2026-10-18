@@ -1,8 +1,8 @@
 [package]
-name = "prices"
+name = "orderable"
 version = "0.1.0"
 edition = "0.2"
 
 [run]
-entry = "prices"
+entry = "orderable"
 grants = ["console"]

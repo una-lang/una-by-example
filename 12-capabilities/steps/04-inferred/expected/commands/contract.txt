@@ -1,4 +1,0 @@
-$ una contract slips.print_line
---- Prints one line of a packing slip. It may print, and nothing else.
-print_line(sku: Text, quantity: Int) -> Unit
-  uses @console: Console[print] -- inferred

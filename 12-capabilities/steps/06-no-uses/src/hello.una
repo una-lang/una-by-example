@@ -1,4 +1,0 @@
-module hello
-
---- Says that the store is open.
-pub main() -> Unit = @console.print("The store is open")
