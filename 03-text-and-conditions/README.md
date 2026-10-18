@@ -1016,6 +1016,17 @@ zone_name(zone: Int) -> Text = if zone == 1 then "home" else if zone == 2 then "
 --- The handling fee of an order: an `if` in parentheses, as one part of a sum.
 handling(goods: Int) -> Int = 190 + (if goods >= 10_000 then 0 else 300)
 
+--- The box a parcel needs: an `if` over several lines, with a block in each branch.
+box_for(grams: Int) -> Text
+=
+  if grams <= 1_000
+    "small box"
+  else if grams <= 5_000
+    let kilos = (grams + 999) / 1_000
+    "medium box for {kilos} kg"
+  else
+    "large box"
+
 --- Prints one line for each place an `if` can stand.
 pub main() -> Unit
   uses @console: Console[print]
@@ -1023,6 +1034,7 @@ pub main() -> Unit
   @console.print("{weight_class(2_300)}, {weight_class(800)}")
   @console.print("{zone_name(1)}, {zone_name(2)}, {zone_name(7)}")
   @console.print("{handling(4_500)}, {handling(12_000)}")
+  @console.print("{box_for(800)}; {box_for(3_200)}; {box_for(9_000)}")
   let units = 1
   let word = if units == 1 then "unit" else "units"
   @console.print("{units} {word}")
@@ -1033,6 +1045,7 @@ pub main() -> Unit
 heavy, light
 home, neighbors, world
 490, 190
+small box; medium box for 4 kg; large box
 1 unit
 a regular order
 ```
@@ -1053,7 +1066,39 @@ The value after `else` may be another `if`. `if zone == 1 then "home" else if zo
 
 `let word = if units == 1 then "unit" else "units"` names the value an `if` gives. `@console.print(if units > 10 then "a bulk order" else "a regular order")` passes it to a call. In both places the `if` is the whole value, so it needs no parentheses.
 
-Una has other forms of `if`, written over several lines with a block of steps in each branch, and `when`, which chooses by the shape of a value. [Chapter 8](/learn/choices/#s8-1) covers every form of `if`, and [section 4.3](/learn/kinds/#s4-3) introduces `when`.
+#### Over several lines: a block in each branch
+
+When a branch needs a step of its own before its value, write the `if` over several lines. `box_for` chooses a box by weight:
+
+```una include="steps/27-if-forms/src/choices.una#box_for" title="src/choices.una"
+--- The box a parcel needs: an `if` over several lines, with a block in each branch.
+box_for(grams: Int) -> Text
+=
+  if grams <= 1_000
+    "small box"
+  else if grams <= 5_000
+    let kilos = (grams + 999) / 1_000
+    "medium box for {kilos} kg"
+  else
+    "large box"
+```
+
+The form has four rules:
+
+1. **The condition goes on the `if` line, with no `then`.** `if grams <= 1_000` ends the line.
+2. **Each branch is indented two spaces** under its `if`, `else if` or `else`, which each stand on a line of their own.
+3. **A branch may hold several lines, a block.** Its lines run in order, from the top, and its value is its last line: the lines before it are steps, such as a `let`. The middle branch names `kilos` with `let`, then gives the text. A function's body of several lines works the same way, as [section 6.2](/learn/functions/#s6-2) shows in full.
+4. **The whole `if` still gives one value**, so it still has its `else`, and every branch gives the same type.
+
+`main` prints the box for 800, 3200 and 9000 grams:
+
+```text include="steps/27-if-forms/expected/output.txt#L4"
+small box; medium box for 4 kg; large box
+```
+
+3200 grams is above 1000 and not above 5000, so the middle branch runs: it rounds the weight up to 4 started kilograms. Use this form when a branch needs a `let` or would make one line hard to read; the one-line form is the canonical one for an `if` whose branches are single values.
+
+Una has one more form of `if`, over several lines and with no `else`, which runs its lines only when the condition holds, and `when`, which chooses by the shape of a value. [Chapter 8](/learn/choices/#s8-1) covers every form of `if`, and [section 4.3](/learn/kinds/#s4-3) introduces `when`.
 
 ### How `if` behaves
 
@@ -1072,7 +1117,7 @@ An `if` gives a value, so it needs one for each answer of its condition. Leave o
    │ Help: repair 1: an `if` with `then` needs `else`; to fail early, make the rest of the body its `else` branch, as in `if x < 0 then fail Broke else x`, or use the block form, whose `else` block holds the rest
 ```
 
-The marks point at the end of the line, where `una check` expected `else`. Without it, `weight_class(800)` would have no text to give back. The `Help` line also mentions `fail` and a block form, which come in later chapters; for an `if` of this section, the repair is the missing `else` and its value.
+The marks point at the end of the line, where `una check` expected `else`. Without it, `weight_class(800)` would have no text to give back. The `Help` line also mentions `fail`, which comes in [chapter 7](/learn/failure/#s7-2), and the block form of [Over several lines](#over-several-lines-a-block-in-each-branch); for an `if` on one line, the repair is the missing `else` and its value.
 
 #### Parentheses around an `if` inside a larger expression
 
