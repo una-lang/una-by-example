@@ -43,17 +43,17 @@ You will learn to:
 
 ## Why it works this way
 
-Most languages let two parts of a program hold the same object. A function that receives a list can change it under its caller, and a cache can change a record that a report is still reading. Reading a function then means asking who else holds what it holds, and a change made in one place can show up in another, far from the line that made it. Some languages add rules of lifetimes and borrows to keep this in check.
+Most languages let two parts of a program hold the same object. A function that receives a list can change it under its caller, and a cache can change a record that a report is still reading. Reading a function then means asking who else holds what it holds, and a change made in one place can show up in another, far from the line that made it. Some languages add rules to keep this in check.
 
 Una takes another route. Three rules do it:
 
 :::steps
-1. **Values are values.** There are no references and no lifetimes. A `let` binding is a value, and copying it into another binding gives that binding its own value.
+1. **Values are values.** There are no references. A `let` binding is a value, and copying it into another binding gives that binding its own value.
 2. **Change is local and visible.** A binding declared `let edit` can be rebound, and a parameter declared `edit` passes a value in and out. The call says `edit` too, so a reader sees at the call which bindings it may change. A call that fails changes none of them.
 3. **A value given up stays given up.** A parameter declared `take` uses its argument up, and the checker refuses every later use of the caller's binding.
 :::
 
-The price is that two parts of a program never share a changing value: one of them returns a new value, or takes it with `edit`. In return, a value cannot change behind your back, which is also why the tasks of [chapter 15](/learn/concurrency/) share nothing that changes. These rules fix what a program computes; how its memory is used is left to una, and nothing the program can observe depends on it.
+The price is that two parts of a program never share a changing value: one of them returns a new value, or takes it with `edit`. In return, a value cannot change behind your back, which is also why the tasks of [chapter 15](/learn/concurrency/) share nothing that changes. These rules fix what a program computes. How una lays out memory is its own choice and never changes the result; only how much memory a run may use is limited ([section 16.4](#s16-4)).
 
 > [!KEY]
 > In Una, the only bindings a call can change are the ones it names with `edit`, and only if the call returns. A failed call leaves them as they were.
@@ -116,7 +116,7 @@ counts [4, 12, 7]
 Shelf(sku: "LAMP-01", units: 7)
 ```
 
-Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were references to one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation writes out a whole record, list or map, a record with the names and values of its fields.
+Three numbers, three values: the opening count, 4; the snapshot, 10; and the shelf now, 7. In a language where `current`, `opening` and `snapshot` were references to one shelf, all three would print 7. The last line prints the whole record: in edition `0.2`, interpolation writes out a whole record, list or map, a record of several fields as its name and the names and values of its fields, as here.
 
 ### How to change a binding
 
@@ -345,7 +345,7 @@ An `ensures` clause ([section 5.2](/learn/contracts/#s5-2)) states what is true 
 - `old(shelf).units` is the units the caller passed in;
 - so `shelf.units == old(shelf).units + units` promises the caller exactly `units` more, and the verifier proves it from the body, as it proves every `ensures`.
 
-`old` has three rules. It is allowed only in an `ensures` clause; in the body, the parameter is simply its current value, and a binding made at the start, such as `let before = shelf.units`, keeps the entry value. It applies only to an `edit` parameter, since a plain parameter has one value. And a `requires` clause reads the values on entry already, so `old` is not allowed there. Anywhere else, `old(…)` is U2012, which [`old` outside `ensures`](#old-outside-ensures-u2012) shows.
+`old` has three rules. It is allowed only in an `ensures` clause; in the body, the parameter is simply its current value, and a binding made at the start, such as `let before = shelf.units`, keeps the entry value. It applies only to an `edit` parameter, since a plain parameter has one value (on a plain parameter, U2012 says "`old` applies only to an `edit` parameter, as in `old(xs)`"). And a `requires` clause reads the values on entry already, so `old` is not allowed there. Anywhere else, `old(…)` is U2012, which [`old` outside `ensures`](#old-outside-ensures-u2012) shows.
 
 #### The method form
 
@@ -752,7 +752,7 @@ A binding taken in a loop body is taken in every turn after the first. So a bind
 
 #### What `take` means at run time
 
-`take` also tells the backend that the value is not needed after the call, so it can reuse the value's memory instead of keeping a copy. The program behaves the same either way: `take` is checked before the program runs, and leaves no trace in what it computes.
+`take` also tells the backend, the part of una that runs the program, the interpreter or an executable ([section 15.3](/learn/concurrency/#s15-3)), that the value is not needed after the call, so it can reuse the value's memory. The program behaves the same either way: `take` is checked before the program runs, and leaves no trace in what it computes. A plain argument that nothing reads after the call can be given up the same way, so choose `take` for the rule it enforces, not for speed.
 
 ### Choosing between a plain parameter, `edit` and `take`
 
@@ -843,7 +843,7 @@ $ una --json run .
 {"schema":"una.run/1","tier":1,"status":"aborted","output":["12 units at 3 a week: 4 weeks"],"failure":null,"diagnostics":[{"schema":"una.diagnostic/1","code":"U6003","severity":"error","domain":"runtime","message":"this call exceeds the maximum call depth of 10000","primary":{"file":"src/restock.una","start":{"line":5,"col":78},"end":{"line":5,"col":116}},"related":[],"repairs":[],"explain":"una explain U6003"}],"trace":[{"seq":1,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"12 units at 3 a week: 4 weeks\""},"outcome":{"kind":"ok","value":"unit"}}]}
 ```
 
-The first line was printed, and then `status` is `aborted`, with U6003 at the call that went one level too deep. Without the limit, the program would use memory until the machine ran out. The limit turns that into a clear stop, at the line that caused it. The fix is the base case of [chapter 9](/learn/loops/#una-has-no-while): `if stock < per_week then 0`.
+The first line was printed, and then `status` is `aborted`, with U6003 at the call that went one level too deep. Without the limit, the program would use memory until the machine ran out. The limit turns that into a clear stop, at the line that caused it. The fix is the base case of [chapter 9](/learn/loops/#una-has-no-while): `if stock < per_week then 0`, with the `requires per_week >= 1` that keeps every call moving toward it.
 
 ### How the limits are set
 
@@ -854,7 +854,7 @@ Every run has both limits, and crossing either stops it with U6003:
 | Call depth | 10,000 calls in progress | `--max-depth <n>` |
 | Memory budget | 4096 MiB | `--max-memory <MiB>`, at least 1 |
 
-The flags work on `una run`, `una test` and a built executable, for one run. `--max-depth` can go up to what a stack of 1 GiB holds.
+The flags work on `una run`, `una test` and a built executable, for one run. `--max-depth` can go up to what a stack of 1 GiB (1,024 MiB) holds.
 
 ### A loop is not a call
 
@@ -919,7 +919,7 @@ $ una --json run .
 {"schema":"una.run/1","tier":1,"status":"aborted","output":[],"failure":null,"diagnostics":[{"schema":"una.diagnostic/1","code":"U6003","severity":"error","domain":"runtime","message":"this call exceeds the maximum call depth of 10000","primary":{"file":"src/labels.una","start":{"line":4,"col":63},"end":{"line":4,"col":80}},"related":[],"repairs":[],"explain":"una explain U6003"}],"trace":[]}
 ```
 
-`status` is `aborted`, `diagnostics` holds U6003 at the call that went one level too deep, and nothing was printed. In a terminal, `una run .` shows the same diagnostic on stderr and exits with code 1. For more, run:
+`status` is `aborted`, `diagnostics` holds U6003 at the call that went one level too deep, and nothing was printed. In a terminal, `una run .` shows the same diagnostic on the terminal's error output (stderr) and exits with code 1. For more, run:
 
 ```sh
 una explain U6003
