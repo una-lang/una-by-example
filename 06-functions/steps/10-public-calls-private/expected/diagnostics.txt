@@ -1,1 +1,0 @@
-error U3001 at src/restock.una:8:39: no caller of `show` binds `@console`, so its capability cannot be inferred

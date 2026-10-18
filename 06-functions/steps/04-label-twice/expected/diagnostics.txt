@@ -1,0 +1,1 @@
+error U2006 at src/lines.una:17:50: parameter `cents` of `reduced` is given twice

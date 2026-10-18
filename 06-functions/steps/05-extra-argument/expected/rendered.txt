@@ -1,0 +1,9 @@
+[U2001] Error: `half` takes 1 argument, but 2 are given
+    ╭─[ src/lines.una:16:34 ]
+    │
+ 16 │   @console.print("one argument: {half(1_990, units: 2)} and {half(cents: 1_990)}")
+    │                                  ──────────┬──────────
+    │                                            ╰──────────── `half` takes 1 argument, but 2 are given
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

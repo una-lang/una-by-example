@@ -1,0 +1,6 @@
+half of 1990: 995
+500 g: 450, 2300 g: 950
+charge: 950 cents
+ships free: false
+charge: 0 cents
+ships free: true

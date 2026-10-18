@@ -1,11 +1,11 @@
-[U2004] Error: argument 2 of `quote` needs a label; only the first argument may go without one
-    ╭─[ src/shipping.una:67:28 ]
+[U2004] Error: argument 2 of `show` needs a label; only the first argument may go without one
+    ╭─[ src/shipping.una:78:14 ]
     │
- 67 │   let lamps = quote(3_980, 1_200, zone: 1)
-    │                            ──┬──
-    │                              ╰──── argument 2 of `quote` needs a label; only the first argument may go without one
+ 78 │   show(lamp, lamp.quote)
+    │              ─────┬────
+    │                   ╰────── argument 2 of `show` needs a label; only the first argument may go without one
     │
-    │ Help: repair 1: label it `grams`; edit src/shipping.una:67:28..67:33 to "grams: 1_200"
+    │ Help: repair 1: label it `charge`; edit src/shipping.una:78:14..78:24 to "charge: lamp.quote"
     │
     │ Note: run `una explain U2004` for an explanation
 ────╯

@@ -1,21 +1,9 @@
-[U5001] Error: postcondition of `quote` is refuted
-    ╭─[ src/shipping.una:40:42 ]
+[U2011] Error: this statement has type `Int`, and only `Unit` values can be discarded; bind the value with `let`
+    ╭─[ src/shipping.una:78:3 ]
     │
- 38 │   ensures result >= 0
-    │           ─────┬─────
-    │                ╰─────── ensures clause
+ 78 │   lamp.quote
+    │   ─────┬────
+    │        ╰────── this statement has type `Int`, and only `Unit` values can be discarded; bind the value with `let`
     │
- 40 │   if ships_free(goods, zone) then 0 else base_rate(grams) + zone_surcharge(zone)
-    │                                          ───────────────────┬───────────────────
-    │                                                             ╰───────────────────── postcondition of `quote` is refuted
-    │
-    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `result >= 0` holds
-    │
-    │ Help 2: repair 2: adjust the `ensures` clause
-    │
-    │ Note 1: obligation ob-acc72898c959 (postcondition) is refuted: result >= 0
-    │
-    │ Note 2: counterexample: grams = 1, result = -1, zone = 1
-    │
-    │ Note 3: run `una explain U5001` for an explanation
+    │ Note: run `una explain U2011` for an explanation
 ────╯

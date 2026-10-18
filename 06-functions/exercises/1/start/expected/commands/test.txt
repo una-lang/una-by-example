@@ -1,18 +1,18 @@
 $ una test .
-example shipping "a parcel up to 500 g ships at the lowest rate" ... ok
+example shipping "a parcel up to 2 kg ships at the lowest rate" ... ok
 example shipping "each started kilogram above 2 kg adds 250 cents" ... ok
 example shipping "the rest of the world adds 1800 cents" ... ok
 example shipping "a large order within the country ships free" ... ok
 example shipping "a large order abroad pays shipping" ... ok
-example shipping "half off rounds up to a whole cent" ... ok
-example shipping "a promotion never raises the charge" ... ok
-example shipping "a promotion never makes the charge negative" ... ok
+example shipping "the weekend offer rounds up to a whole cent" ... ok
+example shipping "the weekend offer of nothing is nothing" ... ok
+example shipping "an amount keeps its zero cents" ... ok
 example shipping "a free order says so" ... ok
 example shipping "an order within the country arrives in two days" ... FAILED
-  src/shipping.una:120: expect result == 2
+  src/shipping.una:130: expect result == 2
   it is false, with `result` = `0`
 example shipping "an order to the rest of the world takes nine days" ... FAILED
-  src/shipping.una:124: expect result == 9
+  src/shipping.una:134: expect result == 9
   it is false, with `result` = `0`
 
 11 examples: 9 passed, 2 failed

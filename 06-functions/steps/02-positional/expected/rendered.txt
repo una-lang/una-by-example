@@ -1,0 +1,12 @@
+[U2004] Error: argument 2 of `reduced` needs a label; only the first argument may go without one
+    ╭─[ src/lines.una:17:50 ]
+    │
+ 17 │   @console.print("two arguments: {reduced(1_990, 200)}")
+    │                                                  ─┬─
+    │                                                   ╰─── argument 2 of `reduced` needs a label; only the first argument may go without one
+    │
+    │ Help: repair 1: label it `off_cents`; edit src/lines.una:17:50..17:53 to "off_cents: 200"
+    │
+    │ Note: run `una explain U2004` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

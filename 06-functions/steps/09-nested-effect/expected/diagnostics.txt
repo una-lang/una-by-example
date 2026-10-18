@@ -1,0 +1,1 @@
+error U3013 at src/packing.una:15:18: `pack` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first

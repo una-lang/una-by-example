@@ -1,0 +1,1 @@
+error U0101 at src/restock.una:5:41: unexpected `=`, expected `->` and the result type

@@ -1,0 +1,44 @@
+module fees
+
+--- What a quote says: the charge in cents, and whether the order ships free.
+kind Quote
+  cents: Int
+  free: Bool
+
+--- Half of an amount, rounded down. A body of one line, in the short form.
+pub half(cents: Int) -> Int = cents / 2
+
+--- Whether an order of `goods` cents ships free. The result is a `Bool`.
+pub ships_free(goods: Int) -> Bool = goods >= 10_000
+
+--- The rate of a parcel of `grams` grams: 450 cents for the first kilogram, and 250 more for
+--- each kilogram or part of one after it. A body of several lines, in the long form.
+pub parcel_rate(grams: Int) -> Int
+=
+  let kilos = (grams + 999) / 1_000
+  let extra = kilos - 1
+  450 + extra * 250
+
+--- The quote for an order. The result is a value of a kind of this module.
+pub quote(goods: Int, grams: Int) -> Quote
+=
+  let free = ships_free(goods)
+  let cents = if free then 0 else parcel_rate(grams)
+  Quote(cents, free)
+
+--- Prints a quote. It is called for what it prints, so its result is `Unit`.
+pub print_quote(quote: Quote) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("charge: {quote.cents} cents")
+  @console.print("ships free: {quote.free}")
+  quote.cents
+
+--- Prints a few results.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("half of 1990: {half(1_990)}")
+  @console.print("500 g: {parcel_rate(500)}, 2300 g: {parcel_rate(2_300)}")
+  print_quote(quote(4_500, grams: 2_300))
+  print_quote(quote(12_000, grams: 2_300))

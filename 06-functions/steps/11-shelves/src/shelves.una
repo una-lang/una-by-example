@@ -1,0 +1,19 @@
+module shelves
+
+--- A shelf of the store: the SKU it holds, and how many units are on it.
+kind Shelf
+  sku: Text
+  on_hand: Int
+
+--- How many units to order so that the shelf holds `target` units again.
+pub to_order(shelf: Shelf, target: Int) -> Int = if shelf.on_hand >= target then 0 else target - shelf.on_hand
+
+--- Prints what to order for one shelf, for three targets.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = Shelf(sku: "LAMP-01", on_hand: 6)
+  let target = 10
+  @console.print("{lamps.to_order(target: 4)}")
+  @console.print("{to_order(lamps, target)}")
+  @console.print("{lamps.to_order(target: target + 5)}")

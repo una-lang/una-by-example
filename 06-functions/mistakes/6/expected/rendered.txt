@@ -1,13 +1,13 @@
-[U7001] Error: lines 33 to 35 are not in canonical form
-    ╭─[ src/shipping.una:33:1 ]
+[U7001] Error: lines 45 to 47 are not in canonical form
+    ╭─[ src/shipping.una:45:1 ]
     │
- 33 │ ╭─▶ pub ships_free(goods: Int, zone: Int) -> Bool
+ 45 │ ╭─▶ pub ships_free(order: Order) -> Bool
     ┆ ┆
- 35 │ ├─▶   zone == 1 and goods >= 10_000
+ 47 │ ├─▶   order.goods >= 10_000 and order.parcel.zone is Home
     │ │
-    │ ╰───────────────────────────────────── lines 33 to 35 are not in canonical form
+    │ ╰─────────────────────────────────────────────────────────── lines 45 to 47 are not in canonical form
     │
-    │     Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/shipping.una:33:1..36:1 to "pub ships_free(goods: Int, zone: Int) -> Bool = zone == 1 and goods >= 10_000\n"
+    │     Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/shipping.una:45:1..48:1 to "pub ships_free(order: Order) -> Bool = order.goods >= 10_000 and order.parcel.zone is Home\n"
     │
     │     Note: run `una explain U7001` for an explanation
 ────╯
