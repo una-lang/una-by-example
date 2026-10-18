@@ -1,0 +1,15 @@
+$ una test .
+example restock "a department is the part of the SKU before its dash" ... ok
+example restock "a SKU without a dash is its own department" ... ok
+example restock "a week sells its sales from the stock" ... ok
+example restock "a shelf cannot sell more than it holds" ... ok
+example restock "a stock below the reorder point orders a batch" ... ok
+example restock "a stock at the reorder point orders nothing" ... ok
+example restock "a plan of no weeks leaves the stock as it is" ... ok
+example restock "the lamp ends four weeks with 14 units" ... ok
+example restock "the lamp orders two batches in four weeks" ... ok
+example restock "the lamp is never short" ... ok
+example restock "the desk is short every week" ... ok
+example restock "a week with an order says how many units" ... ok
+
+12 examples: 12 passed, 0 failed

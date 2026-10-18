@@ -1,0 +1,15 @@
+module demand
+
+--- The units customers ask for over `weeks` weeks, at `per_week` units a week.
+pub demand(weeks: Int, per_week: Int) -> Int
+=
+  let total = 0
+  for week in 1..weeks
+    total = total + per_week
+  total
+
+--- Prints the demand of four weeks.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{demand(4, per_week: 5)} units")

@@ -1,0 +1,12 @@
+[C]
+[a]
+[f]
+[é]
+[-]
+[2]
+part: LAMP
+part: 01
+part: BR
+position 0 of 3
+position 1 of 3
+position 2 of 3

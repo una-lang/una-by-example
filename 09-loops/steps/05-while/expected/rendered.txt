@@ -1,9 +1,0 @@
-[U0103] Error: `while` is not a keyword in Una; use `for` or recursion
-    ╭─[ src/orders.una:67:3 ]
-    │
- 67 │   while left >= per_week
-    │   ──┬──
-    │     ╰──── `while` is not a keyword in Una; use `for` or recursion
-    │
-    │ Note: run `una explain U0103` for an explanation
-────╯

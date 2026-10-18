@@ -1,0 +1,9 @@
+[U0101] Error: unexpected `@console`, expected an indented block
+   ╭─[ src/plan.una:8:3 ]
+   │
+ 8 │   @console.print("week {week}: count the lamp shelf")
+   │   ────┬───
+   │       ╰───── unexpected `@console`, expected an indented block
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯

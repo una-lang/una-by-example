@@ -1,0 +1,19 @@
+module shelf
+
+--- A number of units. It is never negative.
+kind Units = Int where it >= 0
+
+--- The units left on a shelf after `weeks` weeks of sales, at `per_week` units a week.
+pub left_after(start: Units, weeks: Int, per_week: Units) -> Units
+=
+  let edit stock: Units = start
+  for week in 1..weeks
+    stock = if stock >= per_week then stock - per_week else 0
+  stock
+
+--- Prints what is left of two shelves after three weeks.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{left_after(20, weeks: 3, per_week: 4)} units left")
+  @console.print("{left_after(5, weeks: 3, per_week: 4)} units left")

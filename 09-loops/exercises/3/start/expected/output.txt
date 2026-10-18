@@ -1,0 +1,19 @@
+Restock plan, 4 weeks
+LAMP-01, LAMP
+  week 1: 9 left
+  week 2: 4 left, order 10
+  week 3: 9 left
+  week 4: 4 left, order 10
+  20 units ordered, 0 weeks short
+RUG-07, RUG
+  week 1: 1 left, order 4
+  week 2: 3 left
+  week 3: 1 left, order 4
+  week 4: 3 left
+  8 units ordered, 0 weeks short
+DESK-02, DESK
+  week 1: 0 left, order 2
+  week 2: 0 left, order 2
+  week 3: 0 left, order 2
+  week 4: 0 left, order 2
+  8 units ordered, 4 weeks short

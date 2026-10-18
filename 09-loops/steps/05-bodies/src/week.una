@@ -1,0 +1,51 @@
+module week
+
+--- The kind of a day of the week, for the store's hours.
+kind Day = Weekday | Saturday | Sunday
+
+--- The kind of day `day` is, counting Monday as day 1.
+pub day_kind(day: Int) -> Day = if day == 6 then Saturday else if day == 7 then Sunday else Weekday
+
+--- Prints the hours of each day: a `when` inside a loop.
+pub print_hours() -> Unit
+  uses @console: Console[print]
+=
+  for day in 1..7
+    when day_kind(day)
+      is Weekday -> @console.print("day {day}: 9:00 to 18:00")
+      is Saturday -> @console.print("day {day}: 10:00 to 16:00")
+      is Sunday -> @console.print("day {day}: closed")
+
+--- Prints the days a delivery comes, Tuesday and Thursday: an `if` inside a loop.
+pub print_deliveries() -> Unit
+  uses @console: Console[print]
+=
+  for day in 1..7
+    if day == 2 or day == 4
+      @console.print("day {day}: delivery")
+
+--- Prints the price of a lamp in each of three weeks of a sale: a `let` inside a loop.
+pub print_sale(cents: Int) -> Unit
+  uses @console: Console[print]
+=
+  for week in 1..3
+    let off = week * 10
+    let price = cents - cents * off / 100
+    @console.print("week {week}: {off}% off, {price} cents")
+
+--- Prints the code of every shelf of the first aisles: a loop inside a loop.
+pub print_shelf_codes(aisles: Int, shelves: Int) -> Unit
+  uses @console: Console[print]
+=
+  for aisle in 1..aisles
+    for shelf in 1..shelves
+      @console.print("A{aisle}-S{shelf}")
+
+--- Prints each part of the week's plan.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  print_hours()
+  print_deliveries()
+  print_sale(2_000)
+  print_shelf_codes(2, shelves: 3)

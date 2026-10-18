@@ -1,0 +1,1 @@
+error U5002 at src/restock.una:62:5: refinement `result >= 0` could not be proven (the loop forgets every fact about `ordered` but the refinements of its type, so the counterexample sets `ordered` freely; guard the use with an `if`, or move the update into a helper with an `edit` parameter whose `ensures` states what the use needs)
