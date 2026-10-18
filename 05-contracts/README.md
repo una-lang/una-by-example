@@ -737,7 +737,7 @@ A body can return in several places: each branch of an `if`, each arm of a `when
 
 After a call, the caller may assume every `ensures` clause of the callee, with its own arguments in place of the parameters. After `let due = after_coupon(price, off: card)`, `left_on_card` knows `due >= 0`, `due <= price`, and `card <= price implies due == price - card`. Promises add up: each function's `ensures` is a fact for the next one, and in [the day-to-day program](#s5-6) a chain of them proves that no total is negative.
 
-The standard library has contracts too, and the verifier trusts them without reading their bodies. `min`, which gives back the smaller of two whole numbers, as in `min(total / 100, b: 100)`, promises a result no larger than either argument, and equal to one of them.
+The standard library has contracts too, and the verifier trusts them without reading their bodies. `min`, the smaller of two whole numbers ([section 2.2](/learn/numbers/#s2-2)), as in `min(total / 100, b: 100)`, promises a result no larger than either argument, and equal to one of them.
 
 #### A promise the body does not keep
 
@@ -1271,11 +1271,10 @@ proven   ob-b852e63daefa division      src/stockroom.una:11:3 units != 0
 proven   ob-2a3920108dd8 postcondition src/stockroom.una:15:11 result <= 99
 proven   ob-0d6cd810c278 refinement    src/stockroom.una:20:1 result >= 0
 proven   ob-011bffbfed9b division      src/stockroom.una:23:72 people != 0
-proven   ob-17951dbe35f9 exhaustive    src/stockroom.una:28:3 units == 0 or units in 1..9 or units in 10..999
-proven   ob-7ed451ea7768 overflow      src/stockroom.una:34:51 shelf + 1 in 0..255
-proven   ob-20fdd4197f66 precondition  src/stockroom.una:39:31 4 >= 1
-proven   ob-82707e2c71ad refinement    src/stockroom.una:39:101 1000 >= 0
-proven   ob-8ef0d001a88c refinement    src/stockroom.una:40:61 12 in 0..999
+proven   ob-7ed451ea7768 overflow      src/stockroom.una:29:51 shelf + 1 in 0..255
+proven   ob-20fdd4197f66 precondition  src/stockroom.una:34:31 4 >= 1
+proven   ob-82707e2c71ad refinement    src/stockroom.una:34:101 1000 >= 0
+proven   ob-8ef0d001a88c refinement    src/stockroom.una:35:61 12 in 0..999
 ```
 
 1. **`proven`.** The status. A list with only `proven` lines is a package that checks.
@@ -1289,7 +1288,7 @@ Each line is one question, answered on its own. `una --json obligations .` print
 
 ### The kinds of obligations
 
-Edition `0.2` has six kinds, and each comes from one construct. The step's functions, one per kind:
+Edition `0.2` has six kinds, and each comes from one construct. This section shows five, with one function of the step for each. The sixth, `exhaustive`, comes from a `when` that chooses by a number, which [section 8.2](/learn/choices/#s8-2) teaches with its obligation.
 
 #### `precondition`: at every call of a function with `requires`
 
@@ -1302,8 +1301,8 @@ unit_price(pack_cents: Int, units: Int) -> Int
   pack_cents / units
 ```
 
-```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L8"
-proven   ob-20fdd4197f66 precondition  src/stockroom.una:39:31 4 >= 1
+```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L7"
+proven   ob-20fdd4197f66 precondition  src/stockroom.una:34:31 4 >= 1
 ```
 
 The goal is the callee's clause, `units >= 1`, with the caller's argument in place of the parameter. `main` calls `unit_price(1990, units: 4)`, so the goal is `4 >= 1`. The line points at the call, in `main`, not at the clause.
@@ -1352,31 +1351,13 @@ One obligation covers every path that returns: both branches of the `if`. The li
 with_fee(price: Cents) -> Cents = price + 495
 ```
 
-```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L4,L9-L10"
+```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L4,L8-L9"
 proven   ob-0d6cd810c278 refinement    src/stockroom.una:20:1 result >= 0
-proven   ob-82707e2c71ad refinement    src/stockroom.una:39:101 1000 >= 0
-proven   ob-8ef0d001a88c refinement    src/stockroom.una:40:61 12 in 0..999
+proven   ob-82707e2c71ad refinement    src/stockroom.una:34:101 1000 >= 0
+proven   ob-8ef0d001a88c refinement    src/stockroom.una:35:61 12 in 0..999
 ```
 
-The first line is the result entering `Cents`: `result >= 0`. The other two are arguments entering the refined parameters of their functions in `main`: 1000 entering `Cents`, and 12 entering `Int in 0..999`, the parameter of `fill`. The goal is the kind's condition with the value in place of `it`.
-
-#### `exhaustive`: at a `when` on numbers with no `else`
-
-```una include="steps/18-obligation-kinds/src/stockroom.una#fill" title="steps/18-obligation-kinds/src/stockroom.una"
---- How full a bin is. A `when` on ranges with no `else` gives an exhaustive obligation.
-fill(units: Int in 0..999) -> Text
-=
-  when units
-    is 0 -> "empty"
-    in 1..9 -> "low"
-    in 10..999 -> "stocked"
-```
-
-```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L6"
-proven   ob-17951dbe35f9 exhaustive    src/stockroom.una:28:3 units == 0 or units in 1..9 or units in 10..999
-```
-
-A `when` on numbers, with literal and range arms as in [section 4.3](/learn/kinds/#s4-3), must have an arm for every value, or an `else`. The goal joins the arms with `or`: every `units` the parameter's kind allows matches one of them. `units` is `Int in 0..999`, so the three arms cover it, and no `else` is needed.
+The first line is the result entering `Cents`: `result >= 0`. The other two are arguments entering the refined parameters of their functions in `main`: 1000 entering `Cents`, and 12 entering `Int in 0..999`, the type of the parameter of `fill(units: Int in 0..999)`, the step's function that says how full a bin is. The goal is the kind's condition with the value in place of `it`.
 
 #### `overflow`: at arithmetic on a fixed-width integer, and at a conversion to a narrower one
 
@@ -1385,8 +1366,8 @@ A `when` on numbers, with literal and range arms as in [section 4.3](/learn/kind
 next_shelf(shelf: U8) -> U8 = if shelf < 200 then shelf + 1 else 0
 ```
 
-```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L7"
-proven   ob-7ed451ea7768 overflow      src/stockroom.una:34:51 shelf + 1 in 0..255
+```text include="steps/18-obligation-kinds/expected/commands/obligations.txt#L6"
+proven   ob-7ed451ea7768 overflow      src/stockroom.una:29:51 shelf + 1 in 0..255
 ```
 
 A `U8` holds the whole numbers 0 to 255 ([section 2.3](/learn/numbers/#s2-3)). `shelf + 1` must stay in that range, and the guard `shelf < 200` proves it does. A conversion of a value to a narrower fixed-width type raises the same kind of obligation: the value must fit.
