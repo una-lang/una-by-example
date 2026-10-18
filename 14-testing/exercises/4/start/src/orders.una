@@ -134,32 +134,10 @@ example "a quantity that is not a number is BadQuantity, before the inventory is
   expect fails BadQuantity
   expect not performed @inventory.on_hand
 
---- The units of `sku` on hand: asks the inventory, and asks the backup copy once when the
---- inventory does not answer.
-pub on_hand_or_backup(sku: Text) -> Option[Int]
-  uses @inventory: Inventory[on_hand]
-  uses @backup: Inventory[on_hand]
-  fails StoreError
-=
-  -- Exercise 3: ask @backup when this call fails.
-  @inventory.on_hand(sku)
-    if error pass
+--- How many units a batch ships in all. Exercise 4: replace the 0.
+pub shipped(results: List[Result[Order, OrderError]]) -> Int = 0
 
-example "when the inventory does not answer, the backup does"
-  given @inventory = offline()
-  given @backup = warehouse(empty_map().with(key: "LAMP-01", value: 4))
-  do on_hand_or_backup("LAMP-01")
-  expect result == Some(4)
-
-example "the backup is not asked when the inventory answers"
+example "a batch ships only its accepted units"
   given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
-  given @backup = offline()
-  do on_hand_or_backup("LAMP-01")
-  expect result == Some(4)
-  expect not performed @backup.on_hand
-
-example "when neither answers, the failure is Timeout"
-  given @inventory = offline()
-  given @backup = offline()
-  do on_hand_or_backup("LAMP-01")
-  expect fails Timeout
+  do shipped(process(["LAMP-01, 2", "LAMP-01, 9", "LAMP-01, 1"]))
+  expect result == 3

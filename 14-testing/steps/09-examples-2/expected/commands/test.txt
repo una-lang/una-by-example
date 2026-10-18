@@ -1,5 +1,0 @@
-$ una test .
-example notice "the store closes at six in the evening" ... ok
-example notice "the cutoff line names the hour" ... ok
-
-2 examples: 2 passed, 0 failed

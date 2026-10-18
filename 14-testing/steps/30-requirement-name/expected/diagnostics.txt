@@ -1,1 +1,0 @@
-error U1005 at src/shipping.una:3:13: requirement identifier `SHIPPING_FREE` must be upper snake case ending with `_` and a number, as in `SHIPPING_FREE_1`

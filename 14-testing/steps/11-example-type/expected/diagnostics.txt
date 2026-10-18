@@ -1,1 +1,0 @@
-error U2001 at src/notice.una:21:10: `==` needs operands of one type, and these are `Int` and `Text`
