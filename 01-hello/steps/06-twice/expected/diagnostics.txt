@@ -1,0 +1,1 @@
+error U1002 at src/opening.una:13:5: `main` is defined twice in this module, both times as a function

@@ -1,0 +1,10 @@
+$ una test .
+example morning "the notices start with the store's name" ... ok
+example morning "the greeting is for the morning" ... ok
+example morning "the hours give the opening and the closing time" ... ok
+example morning "the cutoff names the hour" ... ok
+example morning "the offer names what is on sale" ... ok
+example morning "the café keeps its own hours" ... ok
+example morning "the help desk says where to go" ... ok
+
+7 examples: 7 passed, 0 failed

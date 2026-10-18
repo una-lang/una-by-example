@@ -1,20 +1,20 @@
-[U1008] Error: module `packing` is in `src/slip.una`, which must hold module `slip`
-   ╭─[ src/slip.una:1:8 ]
+[U1008] Error: module `notices` is in `src/morning.una`, which must hold module `morning`
+   ╭─[ src/morning.una:1:8 ]
    │
- 1 │ module packing
+ 1 │ module notices
    │        ───┬───
-   │           ╰───── module `packing` is in `src/slip.una`, which must hold module `slip`
+   │           ╰───── module `notices` is in `src/morning.una`, which must hold module `morning`
    │
-   │ Help: repair 1: declare `module slip`, or move the file to match `packing`; edit src/slip.una:1:8..1:15 to "slip"
+   │ Help: repair 1: declare `module morning`, or move the file to match `notices`; edit src/morning.una:1:8..1:15 to "morning"
    │
    │ Note: run `una explain U1008` for an explanation
 ───╯
-[U7002] Error: [run] entry `slip` is not a module of this package
+[U7002] Error: [run] entry `morning` is not a module of this package
    ╭─[ una.toml:7:9 ]
    │
- 7 │ entry = "slip"
-   │         ───┬──
-   │            ╰──── [run] entry `slip` is not a module of this package
+ 7 │ entry = "morning"
+   │         ────┬────
+   │             ╰────── [run] entry `morning` is not a module of this package
    │
    │ Note: run `una explain U7002` for an explanation
 ───╯

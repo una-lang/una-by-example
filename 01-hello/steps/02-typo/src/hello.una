@@ -1,0 +1,7 @@
+module hello
+
+--- Greets the world.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.prnt("Hello, world")

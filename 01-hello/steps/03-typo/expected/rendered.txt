@@ -1,9 +1,0 @@
-[U1001] Error: capability `Console` has no operation `write`
-   ╭─[ src/hello.una:7:12 ]
-   │
- 7 │   @console.write("The store is open")
-   │            ──┬──
-   │              ╰──── capability `Console` has no operation `write`
-   │
-   │ Note: run `una explain U1001` for an explanation
-───╯

@@ -1,0 +1,10 @@
+module sign
+
+--- Prints the sign for the front door, with an empty line between its two parts.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Welcome")
+  @console.print("")
+  @console.print("Open from 9:00 to 18:00")
+  @console.print("Closed on public holidays")

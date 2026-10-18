@@ -1,0 +1,12 @@
+[U2004] Error: argument 2 of `section` needs a label; only the first argument may go without one
+    ╭─[ src/notices.una:25:20 ]
+    │
+ 25 │   section("Hours", opening_hours())
+    │                    ───────┬───────
+    │                           ╰───────── argument 2 of `section` needs a label; only the first argument may go without one
+    │
+    │ Help: repair 1: label it `notice`; edit src/notices.una:25:20..25:35 to "notice: opening_hours()"
+    │
+    │ Note: run `una explain U2004` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

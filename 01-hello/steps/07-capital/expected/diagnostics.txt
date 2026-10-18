@@ -1,0 +1,1 @@
+error U0101 at src/opening.una:1:8: unexpected `Opening`, expected a module path

@@ -1,0 +1,13 @@
+[U1002] Error: `main` is defined twice in this module, both times as a function
+    ╭─[ src/opening.una:13:5 ]
+    │
+  6 │ pub main() -> Unit
+    │     ──┬─
+    │       ╰─── first defined here
+    │
+ 13 │ pub main() -> Unit
+    │     ──┬─
+    │       ╰─── `main` is defined twice in this module, both times as a function
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯

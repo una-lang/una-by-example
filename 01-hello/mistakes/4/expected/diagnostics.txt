@@ -1,2 +1,2 @@
-error U1008 at src/slip.una:1:8: module `packing` is in `src/slip.una`, which must hold module `slip`
-error U7002 at una.toml:7:9: [run] entry `slip` is not a module of this package
+error U1008 at src/morning.una:1:8: module `notices` is in `src/morning.una`, which must hold module `morning`
+error U7002 at una.toml:7:9: [run] entry `morning` is not a module of this package

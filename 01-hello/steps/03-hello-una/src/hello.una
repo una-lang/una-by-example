@@ -1,0 +1,7 @@
+module hello
+
+--- Greets the language you are learning.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Hello, Una")

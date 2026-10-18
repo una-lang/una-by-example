@@ -1,0 +1,79 @@
+module notices
+
+-- The notices that the console of the store prints each morning, when the store opens.
+
+--- The name of the store, the first line of the notices.
+pub store_name() -> Text = "Harbor Street store"
+
+--- The greeting under the name.
+pub greeting() -> Text = "Good morning"
+
+--- When the store is open today.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
+
+--- Until when an order placed today ships today.
+pub shipping_cutoff() -> Text = "Orders placed before 17:00 ship today"
+
+--- Today's offer.
+pub special() -> Text = "Today's special: desk lamps"
+
+--- When the café inside the store opens.
+pub cafe_hours() -> Text = "The café opens at 10:00"
+
+--- Where customers can ask a question.
+pub help_desk() -> Text = "Questions? Ask at the help desk by the main door"
+
+--- Prints a line of dashes, which separates the parts of the notices.
+rule() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("------------------------------")
+
+--- Prints a heading and the notice under it, then a rule.
+section(heading: Text, notice: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(heading)
+  @console.print(notice)
+  rule()
+
+--- Prints the morning notices.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(store_name())
+  @console.print(greeting())
+  rule()
+  section("Hours", notice: opening_hours())
+  section("Shipping", notice: shipping_cutoff())
+  section("Offer", notice: special())
+  section("Café", notice: cafe_hours())
+  @console.print(help_desk())
+
+example "the notices start with the store's name"
+  do store_name()
+  expect result == "Harbor Street store"
+
+example "the greeting is for the morning"
+  do greeting()
+  expect result == "Good morning"
+
+example "the hours give the opening and the closing time"
+  do opening_hours()
+  expect result == "Open today from 9:00 to 18:00"
+
+example "the cutoff names the hour"
+  do shipping_cutoff()
+  expect result == "Orders placed before 17:00 ship today"
+
+example "the offer names what is on sale"
+  do special()
+  expect result == "Today's special: desk lamps"
+
+example "the café keeps its own hours"
+  do cafe_hours()
+  expect result == "The café opens at 10:00"
+
+example "the help desk says where to go"
+  do help_desk()
+  expect result == "Questions? Ask at the help desk by the main door"

@@ -1,75 +1,9 @@
 [U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:34:3 ]
+    ╭─[ src/morning.una:27:22 ]
     │
- 34 │   @console.print(title(1042))
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
-    │
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
-    │
-    │ Note: run `una explain U3004` for an explanation
-────╯
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:35:3 ]
-    │
- 35 │   @console.print(ship_to(318, email: "customer318@example.invalid"))
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
-    │
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
-    │
-    │ Note: run `una explain U3004` for an explanation
-────╯
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:36:3 ]
-    │
- 36 │   @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
-    │
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
-    │
-    │ Note: run `una explain U3004` for an explanation
-────╯
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:37:3 ]
-    │
- 37 │   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
-    │
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
-    │
-    │ Note: run `una explain U3004` for an explanation
-────╯
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:38:3 ]
-    │
- 38 │   @console.print(count_line(lamps + rugs, lines: 2))
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
-    │
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
-    │
-    │ Note: run `una explain U3004` for an explanation
-────╯
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:39:3 ]
-    │
- 39 │   @console.print(total_line(lamp_cents + rug_cents))
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
-    │
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
-    │
-    │ Note: run `una explain U3004` for an explanation
-────╯
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/slip.una:40:3 ]
-    │
- 40 │   @console.print(closing())
-    │   ────┬───
-    │       ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
+ 27 │ pub rule() -> Unit = @console.print("------------------------------")
+    │                      ────┬───
+    │                          ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
     │
     │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
     │

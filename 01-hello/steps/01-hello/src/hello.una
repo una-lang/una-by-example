@@ -1,7 +1,7 @@
 module hello
 
---- Says that the store is open.
+--- Greets the world.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  @console.print("The store is open")
+  @console.print("Hello, world")

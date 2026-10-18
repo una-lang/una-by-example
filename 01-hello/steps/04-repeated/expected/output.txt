@@ -1,3 +1,0 @@
-Downtown: orders placed before 18:00 ship today
-Harbor: orders placed before 17:00 ship today
-Airport: orders placed before 20:00 ship today

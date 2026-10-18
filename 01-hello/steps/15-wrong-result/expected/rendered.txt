@@ -1,0 +1,9 @@
+[U2001] Error: `cafe_hours` returns `Text`, found `Int`
+    ╭─[ src/notices.una:11:24 ]
+    │
+ 11 │ cafe_hours() -> Text = 10
+    │                        ─┬
+    │                         ╰── `cafe_hours` returns `Text`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

@@ -1,0 +1,10 @@
+module board
+
+--- Prints the board by the entrance: the hours at the top and again at the bottom.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Open today from 9:00 to 18:00")
+  @console.print("Fresh stock: desk lamps and wool rugs")
+  @console.print("The café opens at 10:00")
+  @console.print("Open today from 9:00 to 18:00")
