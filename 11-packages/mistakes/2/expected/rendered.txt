@@ -1,7 +1,7 @@
 [U1001] Error: cannot find name `member_price` in this module, its imports or the prelude
-    ╭─[ src/store/invoice.una:27:16 ]
+    ╭─[ src/store/invoice.una:26:16 ]
     │
- 27 │   let member = member_price(product.cents)
+ 26 │   let member = member_price(product.cents)
     │                ──────┬─────
     │                      ╰─────── cannot find name `member_price` in this module, its imports or the prelude
     │

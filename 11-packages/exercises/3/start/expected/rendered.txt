@@ -1,0 +1,9 @@
+[U1003] Error: import cycle between modules `store.money` and `store.pricing`
+   ╭─[ src/store/money.una:3:8 ]
+   │
+ 3 │ import store.pricing (member_price)
+   │        ──────┬──────
+   │              ╰──────── import cycle between modules `store.money` and `store.pricing`
+   │
+   │ Note: run `una explain U1003` for an explanation
+───╯

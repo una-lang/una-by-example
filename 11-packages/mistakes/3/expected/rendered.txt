@@ -5,7 +5,7 @@
     │                     ───┬──
     │                        ╰──── `format` is already defined in this module
     │
- 24 │ format(quantity: Int) -> Text = "{quantity} x"
+ 23 │ format(quantity: Int) -> Text = "{quantity} x"
     │ ───┬──
     │    ╰──── first defined here
     │

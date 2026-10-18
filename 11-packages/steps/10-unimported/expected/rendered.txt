@@ -1,7 +1,7 @@
 [U1001] Error: cannot find name `digits` in this module, its imports or the prelude
-    ╭─[ src/store/app.una:16:21 ]
+    ╭─[ src/store/app.una:15:21 ]
     │
- 16 │   "{product.name}: {digits(product.cents)}"
+ 15 │   "{product.name}: {digits(product.cents)}"
     │                     ───┬──
     │                        ╰──── cannot find name `digits` in this module, its imports or the prelude
     │
