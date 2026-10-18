@@ -1,7 +1,7 @@
 [U3010] Error: this handler implements `Customers`, and `dispatch` needs `@mailer` to be `Mailer`
-     ╭─[ src/notices.una:112:68 ]
+     ╭─[ src/notices.una:108:68 ]
      │
- 112 │   dispatch(late) with @customers = directory(customers), @mailer = directory_down(), @log = @console
+ 108 │   dispatch(late) with @customers = directory(customers), @mailer = directory_down(), @log = @console
      │                                                                    ───────┬──────
      │                                                                           ╰──────── this handler implements `Customers`, and `dispatch` needs `@mailer` to be `Mailer`
      │

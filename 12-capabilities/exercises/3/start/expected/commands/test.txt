@@ -1,0 +1,19 @@
+$ una test .
+example notices "a customer who wants notices gets one" ... ok
+example notices "an unknown customer is rejected before any mail is sent" ... ok
+example notices "a customer who asked for no notices is rejected before any mail is sent" ... ok
+example notices "a directory that does not answer is DirectoryDown, before any mail is sent" ... ok
+example notices "a mail service that does not answer is MailDown" ... ok
+example notices "the notice names the customer, the order and the carrier" ... ok
+example notices "a skipped shipment says why in the log" ... ok
+example notices "a known customer gives a name and an address" ... FAILED
+  src/notices.una:158: expect result == "Rosa <rosa@example.invalid>"
+  it is false, with `result` = `""`
+example notices "an unknown customer gives a note" ... FAILED
+  src/notices.una:163: expect result == "C-99: no address on file"
+  it is false, with `result` = `""`
+example notices "a directory that does not answer gives a note, and no failure" ... FAILED
+  src/notices.una:168: expect result == "C-17: no address on file"
+  it is false, with `result` = `""`
+
+10 examples: 7 passed, 3 failed
