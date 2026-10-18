@@ -39,7 +39,7 @@ You will learn to:
 
 ## Why it works this way
 
-Many programs describe a shipment with one object and a string: `status = "in_transit"`, with a `tracking` field that is null unless the status says otherwise, and a `delivered_on` field that is null in three states out of four. Nothing stops a value that is "delivered" with no date, or "packed" with a tracking number. A typo in `"in_trnasit"` is a new status. When a new status is added, every `switch` with a `default` branch keeps compiling, and quietly does the wrong thing.
+Many programs describe a shipment with one object and a string: `status = "in_transit"`, with a `tracking` field that is null, an empty value that means "nothing here", unless the status says otherwise, and a `delivered_on` field that is null in three states out of four. Nothing stops a value that is "delivered" with no date, or "packed" with a tracking number. A typo in `"in_trnasit"` is a new status. When a new status is added, every `switch`, a choice among the statuses with a `default` branch for the ones it does not name, is still accepted by the tools, and quietly does the wrong thing.
 
 Una gives the shape a type:
 
@@ -58,7 +58,7 @@ The price is a few more declarations at the top of a module. In return, a value 
 
 ### What a type and a kind are
 
-A **type** is a set of values, together with what you may do with them. You met the built-in ones in [chapter 2](/learn/values/): `Int` is the set of whole numbers, and you may add them; `Text` is the set of texts, and you may cut them; `Bool` is the set of two values, `true` and `false`. Every value in Una has exactly one type, and the checker uses the types to refuse a program that, say, adds a text to a number.
+A **type** is a set of values, together with what you may do with them. You met the built-in ones in [chapter 2](/learn/values/): `Int` is the set of whole numbers, and you may add them; `Text` is the set of texts, and you may cut them; `Bool` is the set of two values, `true` and `false`. Every value in Una has a type, and the checker uses the types to refuse a program that, say, adds a text to a number.
 
 The built-in types describe single values. A store's data is made of several values that belong together: a parcel has an order number, a weight and an address, and an address has a name, a street and a city. A **kind** is a type that you declare yourself, with the keyword `kind`, to describe such data. Una has four forms of kind, and this chapter teaches three of them:
 
@@ -201,7 +201,7 @@ pub main() -> Unit
 2. **`Address(name: "Corner Bakery", street: …, city: …)`.** Building a value. Every field is given, each with its label. The parser takes them in any order, but `una check .` reports another order than the declared one as not canonical (U7001) until `una fmt .` puts them in that order. There are no default values: a field left out is an error.
 3. **`parcel.address.city`.** Reading a field, and a field of a field.
 4. **`redirect`.** A record never changes after it is built. To "change" a field, you build a new record from the old one, with the new value in that field. `parcel` itself is still sent home, as the first line of the output shows.
-5. **`"{home}"`.** Interpolation writes a record in the form you would type in Una, with its kind's name and every field.
+5. **`"{home}"`.** Interpolation writes a record in the form you would type in Una, with its kind's name and every field. This works from edition 0.2 on: in edition 0.1, interpolation takes only numbers, `Bool` and `Text`, and a record there is U2001.
 :::
 
 `una run .` prints:
@@ -275,7 +275,7 @@ A record value, once built, never changes. `redirect` shows the way to get a dif
 
 #### Equality, and how a record prints
 
-`==` compares two records field by field: two records are equal when every field is equal. `packed == box` is `false`, since their weights and notes differ. Interpolation writes a record as you would build it, with its kind's name and every field labeled, and a record of one field without its label, as `Note("fragile")` shows.
+`==` compares two records field by field: two records are equal when every field is equal. `packed == box` is `false`, since their weights and notes differ. Interpolation writes a record as you would build it, with its kind's name and every field labeled, and a record of one field without its label, as `Note("fragile")` shows. Interpolating a record, a variant or an `Option` needs edition 0.2 or later; in edition 0.1 it is U2001, "interpolation converts `Int`, `Bool` and `Text` to text".
 
 #### Records are nominal
 
@@ -474,7 +474,7 @@ Local before Abroad: true; same zone: true
 NoCarrier
 ```
 
-A variant with fields prints as you would build it: one field without its label, as `AtLocker("Station 14")`, and two or more with their labels.
+A variant with fields prints as you would build it: one field without its label, as `AtLocker("Station 14")`, and two or more with their labels. As for records, interpolating a variant needs edition 0.2 or later.
 
 ### How a sum behaves
 
@@ -868,7 +868,7 @@ collect at locker Station 14
 
 #### The arms are tried in order
 
-When the program runs, the arms are tried from the first to the last, and the first that matches gives the value. Over variants, at most one arm can match each value. Over ranges and literals, write arms that do not overlap, so their order does not change the answer.
+When the program runs, the arms are tried from the first to the last, and the first that matches gives the value. Over variants, at most one arm can match each value. Over literals, the same: a literal repeated in a later arm is U2008, "this literal is already matched by an earlier arm". Ranges may overlap, and then the first arm that matches wins: with `in 1..5` and then `in 3..8`, the value 4 takes the first arm. Write ranges that do not overlap, so that their order does not change the answer.
 
 #### Every variant has an arm
 
@@ -910,7 +910,7 @@ An arm that no value can reach is an error, U2008. Move the `else` of `aisle_nam
 ────╯
 ```
 
-The first mark shows the `else`, and the second an arm after it: `else` already matched every value, so `is 1` can never run. The checker reports each arm after the `else`, here two. The same code reports an arm for a variant that an earlier arm already matched, "variant `Local` is already matched by an earlier arm", and an `else` after arms for every variant, "no value reaches this `else`".
+The first mark shows the `else`, and the second an arm after it: `else` already matched every value, so `is 1` can never run. The checker reports each arm after the `else`, here two. The same code reports an arm for a variant that an earlier arm already matched, "variant `Local` is already matched by an earlier arm", an `else` after arms for every variant, "no value reaches this `else`", and a literal that an earlier arm already matched, "this literal is already matched by an earlier arm".
 
 #### Ranges must cover every value
 
@@ -960,7 +960,7 @@ shelf(units: Int) -> Text
 floor; middle shelf; floor
 ```
 
-5 is in `1..4`? No: 4 is that range's end. It is in `5..10`, so it goes on the middle shelf. 12 is above 10, so it falls to `else`. 0 is in neither range either, so it falls to `else` too: an `else` catches values below the ranges as well as above them. Without it, the verifier would report 0 as a counterexample.
+5 is in `1..4`? No: 4 is that range's end. It is in `5..10`, so it goes on the middle shelf. 12 is above 10, so it falls to `else`. 0 is in neither range either, so it falls to `else` too: an `else` catches values below the ranges as well as above them. Without it, the verifier would report U5001 with a value that no arm matches as its counterexample, such as 11.
 :::
 
 ## 4.4 Generic kinds and constraints
@@ -1038,13 +1038,13 @@ kind Count[T]
   item: T
   units: Int
 
---- Two values of two types, side by side.
-kind Pair[A, B]
-  first: A
-  second: B
+--- A place in the warehouse and an amount kept there, each of a type of its own.
+kind Slot[Place, Amount]
+  place: Place
+  amount: Amount
 
 --- Whether two values differ. It is private and writes no constraint: the checker infers it.
-differs[T](a: T, b: T) -> Bool = a != b
+differs[T](before: T, after: T) -> Bool = before != after
 
 pub main() -> Unit
   uses @console: Console[print]
@@ -1052,10 +1052,10 @@ pub main() -> Unit
   let price: Change[Int] = Change(before: 1990, after: 1790)
   let name = Change(before: "Desk lamp", after: "Reading lamp")
   let lamps = Count(item: "LAMP-01", units: 3)
-  let shelf = Pair(first: "A-4", second: 12)
+  let shelf = Slot(place: "A-4", amount: 12)
   @console.print("{price}")
-  @console.print("{name.after}, {lamps.units} of {lamps.item}, shelf {shelf.first}")
-  @console.print("price differs: {differs(price.before, b: price.after)}")
+  @console.print("{name.after}, {lamps.units} of {lamps.item}, shelf {shelf.place}")
+  @console.print("price differs: {differs(price.before, after: price.after)}")
   let found: Option[Text] = Some("LAMP-01")
   let missing: Option[Text] = None
   @console.print("{found} {missing}")
@@ -1074,7 +1074,7 @@ Some("LAMP-01") None
 
 #### Several type parameters
 
-`Pair[A, B]` takes two, separated by a comma, and its fields may have different types: `Pair(first: "A-4", second: 12)` is a `Pair[Text, Int]`.
+`Slot[Place, Amount]` takes two, separated by a comma, and its fields may have different types: `Slot(place: "A-4", amount: 12)` is a `Slot[Text, Int]`. A type parameter is often one capital letter, such as `T`, but a name that says what it stands for, such as `Place`, reads better when there are several.
 
 #### The type argument, inferred or written
 
@@ -1227,7 +1227,7 @@ una contract forms.differs
 ```
 
 ```text include="steps/14-generic-forms/expected/commands/contract.txt#L3"
-differs[T: Eq](a: T, b: T) -> Bool -- inferred
+differs[T: Eq](before: T, after: T) -> Bool -- inferred
 ```
 
 A `pub` function writes its constraints: its callers in other modules rely on its header.
@@ -1284,7 +1284,51 @@ With records of fixed fields, every level of nesting needs a kind of its own: a 
 kind Bundle = Item(sku: Text, cents: Int) | Kit(first: Bundle, second: Bundle)
 ```
 
-The variant `Kit` has two fields of kind `Bundle`, the kind being declared. The variant `Item` has none, and that matters: it is where a bundle stops. Every value of `Bundle` is built from items at the bottom, with kits above them.
+A kind can contain itself in two ways.
+
+#### A variant that holds its own kind
+
+`Bundle` is a sum whose variant `Kit` has two fields of kind `Bundle`, the kind being declared. The variant `Item` has none, and that matters: it is where a bundle stops. Every value of `Bundle` is built from items at the bottom, with kits above them.
+
+> [!NOTE]
+> A kind that holds itself directly in a field, as `Kit` does, needs edition 0.2 or later, the edition of every package in this book. In edition 0.1, a kind may contain itself only through a `List` or an `Option` field, the form that follows; `Bundle` there is U2002, "kind `Bundle` contains itself through field `first`; a kind may contain itself only through `List` or `Option`".
+
+#### Through a list or an option
+
+A field may hold a list of values of the kind being declared, `List[GiftSet]`, or a value that may be missing, `Option[Category]`. A **list** is a sequence of values of one type, written in brackets, such as `[bulb, bulb]` ([chapter 5](/learn/collections/#s5-1) teaches lists). An **`Option`** holds either `Some(value)` or `None`, nothing ([section 4.4](#generic-sums) introduces it). This form works in every edition, and it needs no variant that ends: the empty list `[]` and `None` are where the value stops.
+
+```una include="steps/19-gift-sets/src/kits.una" title="steps/19-gift-sets/src/kits.una" verified="check, run"
+module kits
+
+--- A gift set of any number of products, each of which may be a set. The kind contains itself
+--- through a list, and the empty list is where a set stops.
+kind GiftSet
+  sku: Text
+  parts: List[GiftSet]
+
+--- A product category, inside a larger one or at the top. The kind contains itself through
+--- an `Option`, and `None` is where the chain stops.
+kind Category
+  name: Text
+  parent: Option[Category]
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let bulb = GiftSet(sku: "BULB-02", parts: [])
+  let lamp = GiftSet(sku: "LAMP-01", parts: [bulb, bulb])
+  @console.print("{lamp.sku} holds {lamp.parts.len} parts")
+  let lighting = Category(name: "Lighting", parent: None)
+  let lamps = Category(name: "Lamps", parent: Some(lighting))
+  @console.print("{lamps}")
+```
+
+```text include="steps/19-gift-sets/expected/output.txt"
+LAMP-01 holds 2 parts
+Category(name: "Lamps", parent: Some(Category(name: "Lighting", parent: None)))
+```
+
+A gift set holds any number of parts, each a gift set, and a set with no parts, `parts: []`, is a single product. A category may sit inside a larger one, and `parent: None` marks the top. `lamp.parts.len` is the number of elements of the list: 2. Use a list when a value holds any number of parts, and an `Option` when it holds at most one, as a category has at most one parent.
 
 ### A reading kit, priced
 
@@ -1344,7 +1388,7 @@ The lamp costs 1990 and each bulb 350: 1990 + 350 + 350 = 2690. The second line 
 
 Every value of a kind is finite: it must be possible to build one without going on forever. A kind whose every variant needs another value of the same kind has no such value. Declare one:
 
-```diff include="steps/18-bundles..steps/19-endless:src/bundles.una" title="src/bundles.una" context="0"
+```diff include="steps/18-bundles..steps/20-endless:src/bundles.una" title="src/bundles.una" context="0"
 --- a/src/bundles.una
 +++ b/src/bundles.una
 @@ -4,0 +5,3 @@
@@ -1353,7 +1397,7 @@ Every value of a kind is finite: it must be possible to build one without going 
 +kind Crate = | Holds(inner: Crate)
 ```
 
-```text include="steps/19-endless/expected/rendered.txt"
+```text include="steps/20-endless/expected/rendered.txt"
 [U2002] Error: kind `Crate` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
    ╭─[ src/bundles.una:7:6 ]
    │
@@ -1365,7 +1409,7 @@ Every value of a kind is finite: it must be possible to build one without going 
 ───╯
 ```
 
-A `Crate` would hold a crate, which would hold a crate, without end, so no `Crate` can ever be built. U2002 says so, and its message gives the repair: a variant that does not contain the kind, such as `End`. In `Bundle`, `Item` is that variant.
+A `Crate` would hold a crate, which would hold a crate, without end, so no `Crate` can ever be built. U2002 says so, and its message gives the repair: a variant that does not contain the kind, such as `End`. In `Bundle`, `Item` is that variant. In edition 0.1, the same declaration is U2002 for another reason: `Crate` contains itself directly, which that edition allows only through a `List` or an `Option`.
 
 #### A recursive call has a limit
 
@@ -1403,7 +1447,7 @@ items(bundle: Bundle) -> Int
 office kit: 4 items
 ```
 
-`items(office)` is `items(desk) + items(reading)`. The desk is an item, 1. The reading kit is `items(lamp) + items(Kit(bulb, bulb))`, 1 + 2 = 3. In all, 1 + 3 = 4. The bulb is counted twice, since the kit holds two of it.
+`items(office)` is `items(desk) + items(reading)`. The desk is an item, 1. The reading kit is `items(lamp)` plus the items of its inner kit of two bulbs, 1 + 2 = 3. In all, 1 + 3 = 4. The bulb is counted twice, since the kit holds two of it.
 :::
 
 ## 4.6 Day-to-day: shipment tracking
@@ -2170,6 +2214,6 @@ U2007 carries no `edit`, since only the author knows what a new arm should do. U
 - Construct pages: [`kind`](/docs/language/types/kind/), [`when`](/docs/language/control-flow/when/), [constraints on generics](/docs/language/types/constraints/), [`example`](/docs/language/examples/example/)
 - Prelude: [`Option`](/docs/std/)
 - Commands: [`una contract`](/docs/cli/contract/), [`una fix`](/docs/cli/fix/)
-- Diagnostics: [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2002](/docs/errors/U2002/), [U2004](/docs/errors/U2004/), [U2007](/docs/errors/U2007/), [U2008](/docs/errors/U2008/), [U2009](/docs/errors/U2009/), [U2019](/docs/errors/U2019/), [U2025](/docs/errors/U2025/), [U2026](/docs/errors/U2026/), [U2027](/docs/errors/U2027/), [U5001](/docs/errors/U5001/), [U6003](/docs/errors/U6003/)
+- Diagnostics: [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2002](/docs/errors/U2002/), [U2004](/docs/errors/U2004/), [U2007](/docs/errors/U2007/), [U2008](/docs/errors/U2008/), [U2009](/docs/errors/U2009/), [U2019](/docs/errors/U2019/), [U2025](/docs/errors/U2025/), [U2026](/docs/errors/U2026/), [U2027](/docs/errors/U2027/), [U5001](/docs/errors/U5001/), [U6003](/docs/errors/U6003/), [U7001](/docs/errors/U7001/)
 - Specification: [types](/docs/spec/03-types/), [grammar](/docs/spec/02-grammar/), [functions and contracts](/docs/spec/04-functions-and-contracts/), [static semantics](/docs/spec/10-static-semantics/), [constraints on generics](/docs/spec/20-constraints-on-generics/), [canonical form](/docs/spec/15-canonical-form/), [verification](/docs/spec/12-verification/)
 :::

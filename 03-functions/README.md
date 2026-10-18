@@ -38,7 +38,7 @@ You will learn to:
 
 ## Why it works this way
 
-In many languages a function's signature tells only part of the story. Arguments are matched by position, so `quote(3980, 1200, 1)` compiles whatever order the parameters have, and a swap of two numbers is a bug no tool sees. Whether the function writes to a log or a database is visible only in its body. Its promises, such as "never negative", live in a comment that no tool checks.
+In many languages a function's signature tells only part of the story. Arguments are matched by position, so `quote(3980, 1200, 1)` is accepted by the tool that turns the program into one the computer runs, whatever order the parameters have, and a swap of two numbers is a bug no tool sees. Whether the function writes to a log or a database is visible only in its body. Its promises, such as "never negative", live in a comment that no tool checks.
 
 Una puts the whole story in the header, and checks it:
 
@@ -204,7 +204,7 @@ When the value you pass is a name equal to the parameter's name, the name is its
 
 #### A call inside a call
 
-An argument can be any expression, including another call. The inner call runs first, and its result becomes the argument:
+An argument can be any expression that only computes, including another call. The inner call runs first, and its result becomes the argument. A call that prints or can fail is not an argument: it goes on a line of its own, or after `let`, and the checker reports U3013 otherwise ([chapter 6](/learn/failure/) shows it):
 
 ```una include="steps/03-calls/src/calls.una#half" title="steps/03-calls/src/calls.una"
 --- Half of an amount, rounded down. A function with one parameter.
@@ -282,7 +282,7 @@ Read the diagnostic from the top. The first line gives the code, U2005, and name
 
 #### A parameter is a name for a value
 
-Inside the body, a parameter is a plain name, like one bound with `let` ([chapter 2](/learn/values/#s2-4)): it holds the argument for the whole call, and the body cannot assign it a new value. The caller's value is never changed by the call. A function gives back what it computes as its result, and that is all a plain call can change.
+Inside the body, a parameter is a plain name, like one bound with `let` ([chapter 2](/learn/values/#s2-4)): it holds the argument for the whole call, and the body cannot assign it a new value. The caller's value is not changed by the call. A function gives back what it computes as its result, and that is all a plain call can change. From edition 0.2, a parameter may also be declared `edit`, as in `bump(edit cents: Int)`: such a parameter is passed in and out, and the caller's binding receives the value the body leaves in it. [Section 12.2](/learn/memory-and-concurrency/#s12-2) teaches it; every parameter in this chapter is a plain one.
 
 #### A function may call itself
 
@@ -407,7 +407,7 @@ The body first names `kilos`, the number of started kilograms: adding 999 grams 
 
 #### Clauses between the header and `=`
 
-Clauses sit between the header line and `=`, in a fixed order: every `requires`, then every `ensures`, then every `uses`, then `fails`, the clause of [chapter 6](/learn/failure/) that names how a function can fail. A header with its clauses in another order does not check (U0102). A function with any clause takes the long form, even when its body is one line, as `with_card_fee` does in the next example.
+Clauses sit between the header line and `=`, in a fixed order: every `requires`, then every `ensures`, then every `uses`, then `fails`, the clause of [chapter 6](/learn/failure/) that names how a function can fail, then `derived from`, the clause of [section 7.5](/learn/contracts/#s7-5) that names the rule a function implements. A header with its clauses in another order does not check (U0102). A function with any clause takes the long form, even when its body is one line, as `with_card_fee` does in the next example.
 
 ### Clauses: `requires` and `ensures`
 
@@ -713,7 +713,7 @@ The second branch names `liters` before its last line. A name bound inside a bra
 
 #### Inside a larger expression
 
-An `if` can be one part of a larger expression. Put it in parentheses, so that a reader and the parser both see where it ends:
+An `if` can be one part of a larger expression. It then goes in parentheses, which are required: without them the line does not parse (U0101), since the parser must see where the `if` ends:
 
 ```una include="steps/11-if-forms/src/choices.una#handling" title="steps/11-if-forms/src/choices.una"
 --- The handling fee of an order: an `if` in parentheses, as one part of a sum.
@@ -882,7 +882,7 @@ The counterexample, `units = 0`, is a value that passes the new condition and st
 | Name values on the way to a branch's answer | `if` over several lines, with a block in each branch |
 | Use a choice as one part of a larger expression | `(if c then a else b)`, in parentheses |
 | Change an editable binding only when a condition holds | `if` without `else`, as a statement |
-| Choose by the variant of a value, such as `Some` or `None` | `when`, in [chapter 4](/learn/kinds/#s4-3) |
+| Choose by the kind of value you hold, such as the zone a parcel ships to | `when`, in [chapter 4](/learn/kinds/#s4-3) |
 :::
 
 Choose the one-line form while both branches are short, and switch to several lines when a branch needs a name or the line stops reading at a glance. `una fmt .` keeps whichever form you wrote: both are canonical.
@@ -933,7 +933,7 @@ A private function is different. Every one of its callers is in the same file, i
 
 `pub` goes first, before the function's name: `pub to_order(on_hand: Int, target: Int) -> Int`. Everything else in the header is written as for any function. A private function simply leaves `pub` out: `show(sku: Text, units: Int) -> Unit`.
 
-`pub` applies to other declarations too, with the same meaning, such as the **kinds** of [chapter 4](/learn/kinds/), the data types you declare yourself. `main` is always public: `una run` calls it from outside the module.
+`pub` applies to other declarations too, with the same meaning, such as the **kinds** of [chapter 4](/learn/kinds/), the data types you declare yourself. `main` must be public: `una run` calls it from outside the module, and refuses a module without `pub main() -> Unit`.
 
 ### A private function's inferred `uses`
 
@@ -1044,7 +1044,7 @@ The inference covers `uses`, and the `fails` of a private function ([chapter 6](
 | The function… | Make it |
 | --- | --- |
 | Is part of what the module offers other modules | `pub`, with a doc comment and its full header |
-| Is called from `una run` | `pub`: `main` is always public |
+| Is called from `una run` | `pub`: `main` must be public |
 | Is a helper used only inside its module | Private, and let its `uses` be inferred |
 | Is private, but its effects deserve to be read in the source | Private, with its `uses` written: writing them is always allowed |
 :::
@@ -1282,7 +1282,7 @@ A lambda may use names from around it, such as `markup` or `percent`. It **captu
     │                                           ╰──── this function uses `@console: ?[print]`, which the expected function type does not allow
 ```
 
-The mark points at `logged`, where it is passed: it uses `@console`, which `fn(Int) -> Int` does not allow. (The checker also reports, at `logged`'s body, that no caller gives it the console, since it is only passed, never called from `main`.) So a promotion passed to `priced` is a pure function, whoever wrote it: its type guarantees it. When a function should accept a parameter that may print or fail, its header says so with `uses of` or `fails of` and the parameter's name: [section 6.1](/learn/failure/#s6-1) teaches `fails of`, and [section 8.4](/learn/capabilities/#s8-4) teaches `uses of`.
+The mark points at `logged`, where it is passed: it uses `@console`, which `fn(Int) -> Int` does not allow. In `@console: ?[print]`, the `?` stands for the capability's type, `Console`, which the checker does not name in this message. (The checker also reports, at `logged`'s body, that no caller gives it the console, since it is only passed, never called from `main`.) So a promotion passed to `priced` is a pure function, whoever wrote it: its type guarantees it. When a function should accept a parameter that may print or fail, its header says so with `uses of` or `fails of` and the parameter's name: [section 6.1](/learn/failure/#s6-1) teaches `fails of`, and [section 8.4](/learn/capabilities/#s8-4) teaches `uses of`.
 
 #### A lambda's body is one expression
 
@@ -2051,6 +2051,6 @@ Return a lambda that applies both:
 - Guides: [write a contract and read a counterexample](/docs/guides/contracts-and-proofs/)
 - Commands: [`una contract`](/docs/cli/contract/), [`una report`](/docs/cli/report/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/)
 - Standard library: [the prelude](/docs/std/) (`min`, `max`)
-- Diagnostics: [U0101](/docs/errors/U0101/), [U2001](/docs/errors/U2001/), [U2004](/docs/errors/U2004/), [U2005](/docs/errors/U2005/), [U2010](/docs/errors/U2010/), [U2011](/docs/errors/U2011/), [U3001](/docs/errors/U3001/), [U3003](/docs/errors/U3003/), [U3004](/docs/errors/U3004/), [U5001](/docs/errors/U5001/), [U6003](/docs/errors/U6003/), [U7001](/docs/errors/U7001/)
+- Diagnostics: [U0101](/docs/errors/U0101/), [U0102](/docs/errors/U0102/), [U2001](/docs/errors/U2001/), [U2004](/docs/errors/U2004/), [U2005](/docs/errors/U2005/), [U2010](/docs/errors/U2010/), [U2011](/docs/errors/U2011/), [U3001](/docs/errors/U3001/), [U3003](/docs/errors/U3003/), [U3004](/docs/errors/U3004/), [U3013](/docs/errors/U3013/), [U5001](/docs/errors/U5001/), [U6003](/docs/errors/U6003/), [U7001](/docs/errors/U7001/)
 - Specification: [functions and contracts](/docs/spec/04-functions-and-contracts/), [grammar](/docs/spec/02-grammar/), [types](/docs/spec/03-types/), [verification](/docs/spec/12-verification/), [canonical form](/docs/spec/15-canonical-form/), [the standard library](/docs/spec/14-standard-library/)
 :::
