@@ -1,9 +1,0 @@
-[U0101] Error: comparisons cannot be chained; join them with `and`, as in `a < b and b < c`
-    ╭─[ src/rules.una:10:56 ]
-    │
- 10 │ pub fair_discount(percent: Int) -> Bool = 1 <= percent <= 90
-    │                                                        ─┬
-    │                                                         ╰── comparisons cannot be chained; join them with `and`, as in `a < b and b < c`
-    │
-    │ Note: run `una explain U0101` for an explanation
-────╯

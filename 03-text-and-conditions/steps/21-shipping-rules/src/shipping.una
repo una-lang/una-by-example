@@ -1,0 +1,26 @@
+module shipping
+
+--- Whether an order ships for free: 10000 cents of goods or more, to a domestic address.
+pub ships_free(cents: Int, domestic: Bool) -> Bool = cents >= 10_000 and domestic
+
+--- Whether the carrier must get a signature: an order over 50000 cents, or a gift over 20000.
+pub needs_signature(cents: Int, gift: Bool) -> Bool = cents > 50_000 or (gift and cents > 20_000)
+
+--- Whether a typed SKU looks like one of the store's: a dash, and four characters at least.
+pub looks_like_sku(typed: Text) -> Bool = typed.trim.len >= 4 and typed.contains_text(part: "-")
+
+--- Prints the shipping rules for a few orders, and checks two typed SKUs.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let home = ships_free(12_000, domestic: true)
+  let abroad = ships_free(12_000, domestic: false)
+  @console.print("12000 cents: free at home {home}, free abroad {abroad}")
+  let gift = needs_signature(30_000, gift: true)
+  let plain = needs_signature(30_000, gift: false)
+  @console.print("30000 cents: a signature as a gift {gift}, otherwise {plain}")
+  let pays = not ships_free(2_500, domestic: true)
+  @console.print("2500 cents pays for shipping: {pays}")
+  let typed = " lamp-01"
+  let word = "lamp"
+  @console.print("{looks_like_sku(typed)} {looks_like_sku(word)}")

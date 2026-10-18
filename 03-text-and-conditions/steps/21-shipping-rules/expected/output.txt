@@ -1,0 +1,4 @@
+12000 cents: free at home true, free abroad false
+30000 cents: a signature as a gift true, otherwise false
+2500 cents pays for shipping: true
+true false

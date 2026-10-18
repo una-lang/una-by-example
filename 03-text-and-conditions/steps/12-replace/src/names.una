@@ -1,0 +1,14 @@
+module names
+
+--- Prints a product name and a SKU with parts replaced.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let name = "Oak desk, oak legs"
+  @console.print(name.replace(pattern: "oak", by: "walnut"))
+  @console.print(name.replace(pattern: "Oak", by: "Walnut"))
+  @console.print(name.replace(pattern: "pine", by: "walnut"))
+  let typed = "lamp 01"
+  @console.print(typed.replace(pattern: " ", by: "-"))
+  let draft = "RUG-07 (draft)"
+  @console.print(draft.replace(pattern: " (draft)", by: ""))

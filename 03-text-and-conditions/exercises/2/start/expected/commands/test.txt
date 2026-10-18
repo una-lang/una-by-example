@@ -1,15 +1,19 @@
 $ una test .
 example labels "a SKU loses its spaces and is written in capitals" ... ok
+example labels "a SKU with a dash inside it looks right" ... ok
+example labels "a SKU without a dash does not" ... ok
+example labels "a SKU that ends with its dash does not either" ... ok
 example labels "a long name is cut to 24 characters" ... ok
 example labels "a short name is kept as it is" ... ok
 example labels "an amount keeps the zero of its cents" ... ok
-example labels "a discount rounds down to a whole cent" ... ok
 example labels "a discount over 90 percent is not a sale" ... ok
-example labels "the price of a kilogram of a 500 g pack is twice the price" ... ok
-example labels "a sale label shows the old and the new price" ... ok
-example labels "a shelf with four facings gets five labels" ... ok
-example labels "a pack label shows the price of one unit" ... FAILED
-  src/labels.una:108: expect result == "SOAP-12 | Olive soap, 6 bars | 9.00 (1.50 each)"
-  it is false, with `result` = `""`
+example labels "a discount rounds down to a whole cent" ... ok
+example labels "a product not sold by weight has no price per kilogram" ... ok
+example labels "a sale shows the old and the new price" ... ok
+example labels "an empty shelf is sold out" ... ok
+example labels "a shelf with one unit left says so" ... FAILED
+  src/labels.una:113: expect result == "last one"
+  it is false, with `result` = `"only 1 left"`
+example labels "a SKU that does not look right asks for a check" ... ok
 
-10 examples: 9 passed, 1 failed
+14 examples: 13 passed, 1 failed

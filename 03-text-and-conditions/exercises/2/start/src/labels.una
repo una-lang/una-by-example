@@ -1,10 +1,17 @@
 module labels
 
--- Shelf labels: one line for each product, as the label printer prints it, and how many
--- copies of the labels to print.
+-- Shelf labels: one line for each product, as the label printer prints it.
 
 --- The SKU as labels print it: without the white space around it, in capital letters.
 pub clean_sku(raw: Text) -> Text = raw.trim.to_upper
+
+--- Whether a cleaned SKU looks like one of the store's: at least four characters, with a dash
+--- that is neither the first character nor the last, as in "LAMP-01".
+pub valid_sku(sku: Text) -> Bool
+=
+  let dash = "-"
+  let inside = not sku.starts_with(prefix: dash) and not sku.ends_with(suffix: dash)
+  sku.len >= 4 and sku.contains_text(part: dash) and inside
 
 --- A product name cut to the 24 characters a label has room for.
 pub fit_name(name: Text) -> Text = if name.len > 24 then name.slice(start: 0, end: 24) else name
@@ -18,55 +25,56 @@ pub on_sale(percent: Int) -> Bool = percent >= 1 and percent <= 90
 --- The price after `percent` off, rounded down to a whole cent.
 pub sale_cents(cents: Int, percent: Int) -> Int = cents * (100 - percent) / 100
 
---- The price of one kilogram, in cents, for a pack of `grams` grams, rounded down.
-pub per_kilo(cents: Int, grams: Int) -> Int
-  requires grams > 0
+--- The price of one kilogram, in cents, rounded down, for a pack of `grams` grams. A product
+--- that is not sold by weight has 0 grams, and the result is then 0.
+pub per_kilo(cents: Int, grams: Int) -> Int = if grams > 0 then cents * 1000 / grams else 0
+
+--- The price part of a label: the old and the new price during a sale, the price and the price
+--- of a kilogram for a product sold by weight, or else the price alone.
+pub price_text(cents: Int, percent: Int, grams: Int) -> Text
 =
-  cents * 1000 / grams
+  let regular = money(cents)
+  let sale = "{regular}, now {money(sale_cents(cents, percent: percent))} ({percent}% off)"
+  let weighed = "{regular} ({money(per_kilo(cents, grams: grams))} per kg)"
+  if on_sale(percent) then sale else if grams > 0 then weighed else regular
 
---- The label of a product at its regular price.
-pub regular_label(sku: Text, name: Text, cents: Int) -> Text = "{clean_sku(sku)} | {fit_name(name)} | {money(cents)}"
+--- A note on the stock left, for a shelf with fewer than five units.
+pub stock_note(units: Int) -> Text = if units <= 0 then "sold out" else "only {units} left"
 
---- The label of a product on sale, with the old price and the new one. A discount the
---- store does not run gives the regular label.
-pub sale_label(sku: Text, name: Text, cents: Int, percent: Int) -> Text
+--- The label of one product. A SKU that does not look right gives a line that asks for a check,
+--- and a shelf with fewer than five units gets a note on its stock.
+pub shelf_label(raw: Text, name: Text, cents: Int, percent: Int, grams: Int, units: Int) -> Text
 =
-  let now = sale_cents(cents, percent: percent)
-  let regular = regular_label(sku, name: name, cents: cents)
-  if on_sale(percent) then "{regular}, now {money(now)} ({percent}% off)" else regular
+  let sku = clean_sku(raw)
+  let line = "{sku} | {fit_name(name)} | {price_text(cents, percent: percent, grams: grams)}"
+  let noted = if units < 5 then "{line} | {stock_note(units)}" else line
+  if valid_sku(sku) then noted else "{name}: check the SKU \"{raw}\""
 
---- The label of a product sold by weight, with the price of one kilogram.
-pub weight_label(sku: Text, name: Text, cents: Int, grams: Int) -> Text
-  requires grams > 0
-=
-  let kilo = per_kilo(cents, grams: grams)
-  "{regular_label(sku, name: name, cents: cents)} ({money(kilo)} per kg)"
-
---- How many copies of a label to print: one for each facing on the shelf, and one spare.
---- The label printer reads the count as one byte, so it is a `U8`.
-pub copies(facings: U8) -> U8
-  requires facings < 255
-=
-  facings + 1
-
---- Prints the labels of four products, and how many copies to print in all.
+--- Prints the labels of five products.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let edit printed = 0
-  @console.print(regular_label(" lamp-01", name: "Desk lamp, brass", cents: 1990))
-  printed = printed + copies(4).to_int()
-  @console.print(sale_label("rug-07 ", name: "Wool rug, 120 by 180 cm, natural", cents: 4500, percent: 15))
-  printed = printed + copies(2).to_int()
-  @console.print(weight_label("coffee-05", name: "Coffee beans, dark roast", cents: 1250, grams: 500))
-  printed = printed + copies(12).to_int()
-  @console.print(regular_label("DESK-02", name: "Oak writing desk", cents: 15900))
-  printed = printed + copies(1).to_int()
-  @console.print("{printed} labels to print")
+  @console.print(shelf_label(" lamp-01", name: "Desk lamp, brass", cents: 1990, percent: 0, grams: 0, units: 12))
+  @console.print(shelf_label("rug-07 ", name: "Wool rug, 120 by 180 cm, natural", cents: 4500, percent: 15, grams: 0, units: 2))
+  @console.print(shelf_label("coffee-05", name: "Coffee beans, dark roast", cents: 1250, percent: 0, grams: 500, units: 30))
+  @console.print(shelf_label("DESK-02", name: "Oak writing desk", cents: 15900, percent: 0, grams: 0, units: 0))
+  @console.print(shelf_label("mug 4", name: "Tea mug, blue", cents: 650, percent: 0, grams: 0, units: 8))
 
 example "a SKU loses its spaces and is written in capitals"
   do clean_sku("  lamp-01 ")
   expect result == "LAMP-01"
+
+example "a SKU with a dash inside it looks right"
+  do valid_sku("RUG-07")
+  expect result
+
+example "a SKU without a dash does not"
+  do valid_sku("MUG 4")
+  expect not result
+
+example "a SKU that ends with its dash does not either"
+  do valid_sku("LAMP-")
+  expect not result
 
 example "a long name is cut to 24 characters"
   do fit_name("Wool rug, 120 by 180 cm, natural")
@@ -80,29 +88,30 @@ example "an amount keeps the zero of its cents"
   do money(1205)
   expect result == "12.05"
 
+example "a discount over 90 percent is not a sale"
+  do on_sale(95)
+  expect not result
+
 example "a discount rounds down to a whole cent"
   do sale_cents(1999, percent: 15)
   expect result == 1699
 
-example "a discount over 90 percent is not a sale"
-  do on_sale(95)
-  expect result == false
+example "a product not sold by weight has no price per kilogram"
+  do per_kilo(1990, grams: 0)
+  expect result == 0
 
-example "the price of a kilogram of a 500 g pack is twice the price"
-  do per_kilo(1250, grams: 500)
-  expect result == 2500
+example "a sale shows the old and the new price"
+  do price_text(4500, percent: 15, grams: 0)
+  expect result == "45.00, now 38.25 (15% off)"
 
-example "a sale label shows the old and the new price"
-  do sale_label("rug-07", name: "Wool rug", cents: 4500, percent: 15)
-  expect result == "RUG-07 | Wool rug | 45.00, now 38.25 (15% off)"
+example "an empty shelf is sold out"
+  do stock_note(0)
+  expect result == "sold out"
 
-example "a shelf with four facings gets five labels"
-  do copies(4)
-  expect result == 5
+example "a shelf with one unit left says so"
+  do stock_note(1)
+  expect result == "last one"
 
---- The label of a pack of several units, with the price of one unit.
-pub pack_label(sku: Text, name: Text, cents: Int, units: Int) -> Text = ""
-
-example "a pack label shows the price of one unit"
-  do pack_label("soap-12", name: "Olive soap, 6 bars", cents: 900, units: 6)
-  expect result == "SOAP-12 | Olive soap, 6 bars | 9.00 (1.50 each)"
+example "a SKU that does not look right asks for a check"
+  do shelf_label("mug 4", name: "Tea mug", cents: 650, percent: 0, grams: 0, units: 8)
+  expect result == "Tea mug: check the SKU \"mug 4\""

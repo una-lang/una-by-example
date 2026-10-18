@@ -1,5 +1,0 @@
-[  lamp-01 ] becomes [LAMP-01], 7 characters
-a lamp: true
-15 characters, oak: true
-Café table, walnut
-a quote " and a brace { in a text

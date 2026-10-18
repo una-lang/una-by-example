@@ -1,0 +1,6 @@
+heavy, light
+home, neighbors, world
+490, 190
+small box; medium box for 4 kg; large box
+1 unit
+a regular order

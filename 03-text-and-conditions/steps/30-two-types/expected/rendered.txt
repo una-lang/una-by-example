@@ -1,0 +1,9 @@
+[U2001] Error: expected `Text`, found `Int`
+    ╭─[ src/choices.una:20:45 ]
+    │
+ 20 │   let word = if units == 1 then "unit" else 2
+    │                                             ┬
+    │                                             ╰── expected `Text`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

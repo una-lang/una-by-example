@@ -1,0 +1,17 @@
+module order
+
+--- Prints how texts compare and order.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = "LAMP-01"
+  let rug = "RUG-07"
+  @console.print("{lamp < rug} {rug < lamp}")
+  let small = "lamp-01"
+  @console.print("{lamp == small} {lamp < small}")
+  let ten = "10"
+  let nine = "9"
+  @console.print("{ten < nine} {10 < 9}")
+  let short = "LAMP"
+  let empty = ""
+  @console.print("{short < lamp} {empty < short}")

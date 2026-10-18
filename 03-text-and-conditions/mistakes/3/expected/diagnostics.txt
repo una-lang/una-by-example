@@ -1,2 +1,1 @@
-error U0006 at src/labels.una:63:34: text literal inside interpolation; bind it with `let` and interpolate the name
-error U0006 at src/labels.una:63:51: text literal inside interpolation; bind it with `let` and interpolate the name
+error U2001 at src/labels.una:39:6: the condition of `if` must be `Bool`, found `Int`

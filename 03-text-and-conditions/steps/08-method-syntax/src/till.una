@@ -1,0 +1,18 @@
+module till
+
+--- The SKU as labels print it: without the white space around it, in capital letters.
+clean_sku(raw: Text) -> Text = raw.trim.to_upper
+
+--- Calls the same functions in each form a call can take.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let typed = " lamp-01"
+  @console.print("[{trim(typed)}]")
+  @console.print("[{typed.trim()}]")
+  @console.print("[{typed.trim}]")
+  @console.print("[{to_upper(trim(typed))}]")
+  @console.print("[{typed.trim.to_upper}]")
+  @console.print("[{clean_sku(typed)}] [{typed.clean_sku}]")
+  let catalog = "LAMP-01"
+  @console.print("the same SKU: {typed.clean_sku == catalog}")

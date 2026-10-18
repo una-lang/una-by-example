@@ -1,0 +1,9 @@
+[U2001] Error: an operand of `and` must be `Bool`, found `Int`
+   ╭─[ src/shipping.una:4:54 ]
+   │
+ 4 │ pub ships_free(cents: Int, domestic: Bool) -> Bool = cents and domestic
+   │                                                      ──┬──
+   │                                                        ╰──── an operand of `and` must be `Bool`, found `Int`
+   │
+   │ Note: run `una explain U2001` for an explanation
+───╯

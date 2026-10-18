@@ -1,0 +1,20 @@
+module receipt
+
+--- The SKU of the desk lamp.
+lamp_sku() -> Text = "LAMP-01"
+
+--- Prints the lines of a receipt, each built with interpolation.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let units = 3
+  let unit_cents = 1_990
+  let sku = lamp_sku()
+  let gift = true
+  let copies: U8 = 2
+  @console.print("{units} x {sku}")
+  @console.print("{units} x {unit_cents} cents = {units * unit_cents} cents")
+  @console.print("SKU: {lamp_sku()}")
+  @console.print("Gift wrap: {gift}")
+  @console.print("Receipts to print: {copies}")
+  @console.print("{sku}{sku}")

@@ -1,0 +1,12 @@
+module case
+
+--- Prints texts written in capital and in small letters.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let typed = "lamp-01"
+  @console.print(typed.to_upper)
+  let shouted = "WOOL RUG, Natural"
+  @console.print(shouted.to_lower)
+  let cafe = "Café crème"
+  @console.print("{cafe.to_upper}: {cafe.len} characters, then {cafe.to_upper.len}")
