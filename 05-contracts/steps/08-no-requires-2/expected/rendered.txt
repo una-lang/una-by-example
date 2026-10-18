@@ -1,11 +1,11 @@
 [U5001] Error: postcondition of `parcel_rate` is refuted
-    ╭─[ src/fees.una:18:3 ]
+    ╭─[ src/fees.una:15:3 ]
     │
- 15 │   ensures result >= 450
+ 12 │   ensures result >= 450
     │           ──────┬──────
     │                 ╰──────── ensures clause
     │
- 18 │   450 + (kilos - 1) * 250
+ 15 │   450 + (kilos - 1) * 250
     │   ───────────┬───────────
     │              ╰───────────── postcondition of `parcel_rate` is refuted
     │

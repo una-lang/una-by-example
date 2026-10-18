@@ -1,11 +1,11 @@
 [U5001] Error: refinement `result >= 0` is refuted
-    ╭─[ src/billing.una:69:29 ]
+    ╭─[ src/billing.una:65:29 ]
     │
- 16 │ pub kind Cents = Int where it >= 0
+ 19 │ pub kind Cents = Int where it >= 0
     │                            ───┬───
     │                               ╰───── where clause
     │
- 69 │     is FixedPrice(cents) -> amount - cents
+ 65 │     is FixedPrice(cents) -> amount - cents
     │                             ───────┬──────
     │                                    ╰──────── refinement `result >= 0` is refuted
     │

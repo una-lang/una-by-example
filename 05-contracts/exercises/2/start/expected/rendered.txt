@@ -1,16 +1,16 @@
 [U1001] Error: cannot find name `FixedPrice` in this module, its imports or the prelude
-     ╭─[ src/billing.una:146:30 ]
+     ╭─[ src/billing.una:151:30 ]
      │
- 146 │   do discount(18880, coupon: FixedPrice(cents: 15000))
+ 151 │   do discount(18880, coupon: FixedPrice(cents: 15000))
      │                              ─────┬────
      │                                   ╰────── cannot find name `FixedPrice` in this module, its imports or the prelude
      │
      │ Note: run `una explain U1001` for an explanation
 ─────╯
 [U1001] Error: cannot find name `FixedPrice` in this module, its imports or the prelude
-     ╭─[ src/billing.una:150:29 ]
+     ╭─[ src/billing.una:155:29 ]
      │
- 150 │   do discount(1000, coupon: FixedPrice(cents: 1500))
+ 155 │   do discount(1000, coupon: FixedPrice(cents: 1500))
      │                             ─────┬────
      │                                  ╰────── cannot find name `FixedPrice` in this module, its imports or the prelude
      │

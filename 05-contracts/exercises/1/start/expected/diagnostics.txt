@@ -1,2 +1,2 @@
-error U5001 at src/billing.una:92:3: postcondition of `shipping` is refuted
+error U5001 at src/billing.una:88:3: postcondition of `shipping` is refuted
   counterexample: result = 495, total = 5000

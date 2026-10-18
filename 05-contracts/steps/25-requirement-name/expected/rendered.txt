@@ -1,0 +1,11 @@
+[U1005] Error: requirement identifier `REFUND_REVIEW` must be upper snake case ending with `_` and a number, as in `REFUND_REVIEW_1`
+   ╭─[ src/refunds.una:9:13 ]
+   │
+ 9 │ requirement REFUND_REVIEW
+   │             ──────┬──────
+   │                   ╰──────── requirement identifier `REFUND_REVIEW` must be upper snake case ending with `_` and a number, as in `REFUND_REVIEW_1`
+   │
+   │ Help: repair 1: rename `REFUND_REVIEW` to `REFUND_REVIEW_1` here and in the `derived from` clauses that name it, at src/refunds.una:41
+   │
+   │ Note: run `una explain U1005` for an explanation
+───╯

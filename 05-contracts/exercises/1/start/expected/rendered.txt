@@ -1,11 +1,11 @@
 [U5001] Error: postcondition of `shipping` is refuted
-    ╭─[ src/billing.una:92:3 ]
+    ╭─[ src/billing.una:88:3 ]
     │
- 90 │   ensures total >= 5000 implies result == 0
+ 86 │   ensures total >= 5000 implies result == 0
     │           ────────────────┬────────────────
     │                           ╰────────────────── ensures clause
     │
- 92 │   495
+ 88 │   495
     │   ─┬─
     │    ╰─── postcondition of `shipping` is refuted
     │

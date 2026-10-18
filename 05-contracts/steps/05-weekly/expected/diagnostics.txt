@@ -1,2 +1,2 @@
-error U5001 at src/checkout.una:59:3: precondition `500 <= price` of this call is refuted
+error U5001 at src/checkout.una:53:3: precondition `500 <= price` of this call is refuted
   counterexample: price = 0
