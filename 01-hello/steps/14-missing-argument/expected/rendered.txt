@@ -1,7 +1,7 @@
 [U2001] Error: `section` is missing argument `notice`
-    ╭─[ src/notices.una:25:3 ]
+    ╭─[ src/notices.una:21:3 ]
     │
- 25 │   section(opening_hours())
+ 21 │   section(opening_hours())
     │   ────────────┬───────────
     │               ╰───────────── `section` is missing argument `notice`
     │

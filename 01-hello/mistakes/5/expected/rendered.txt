@@ -1,13 +1,13 @@
 [U0003] Error: inconsistent indentation of 4 spaces; expected 0 or 2
-    ╭─[ src/morning.una:36:1 ]
+    ╭─[ src/morning.una:39:1 ]
     │
- 36 │     @console.print(heading)
+ 39 │     @console.print(heading)
     │ ──┬─
     │   ╰─── inconsistent indentation of 4 spaces; expected 0 or 2
     │
-    │ Help 1: repair 1: indent with 2 spaces; edit src/morning.una:36:1..36:5 to "  "
+    │ Help 1: repair 1: indent with 2 spaces; edit src/morning.una:39:1..39:5 to "  "
     │
-    │ Help 2: repair 2: remove the indentation; edit src/morning.una:36:1..36:5 to ""
+    │ Help 2: repair 2: remove the indentation; edit src/morning.una:39:1..39:5 to ""
     │
     │ Note: run `una explain U0003` for an explanation
 ────╯

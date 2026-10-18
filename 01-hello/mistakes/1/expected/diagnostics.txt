@@ -1,2 +1,2 @@
-error U0001 at src/morning.una:47:11: invalid character `'`; text literals use double quotes
-error U0001 at src/morning.una:47:17: invalid character `'`; text literals use double quotes
+error U0001 at src/morning.una:51:11: invalid character `'`; text literals use double quotes
+error U0001 at src/morning.una:51:17: invalid character `'`; text literals use double quotes

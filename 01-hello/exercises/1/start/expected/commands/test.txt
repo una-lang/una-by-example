@@ -1,12 +1,13 @@
 $ una test .
 example morning "the notices start with the store's name" ... ok
+example morning "the address gives the street" ... ok
 example morning "the greeting is for the morning" ... ok
 example morning "the hours give the opening and the closing time" ... ok
 example morning "the cutoff names the hour" ... ok
 example morning "the offer names what is on sale" ... ok
 example morning "the café keeps its own hours" ... ok
 example morning "the help desk says where to go" ... FAILED
-  src/morning.una:79: expect result == "Questions? Ask at the help desk by the café"
+  src/morning.una:87: expect result == "Questions? Ask at the help desk by the café"
   it is false, with `result` = `"Questions? Ask at the help desk by the main door"`
 
-7 examples: 6 passed, 1 failed
+8 examples: 7 passed, 1 failed

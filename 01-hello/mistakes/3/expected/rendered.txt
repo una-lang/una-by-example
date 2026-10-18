@@ -1,7 +1,7 @@
 [U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    ╭─[ src/morning.una:27:22 ]
+    ╭─[ src/morning.una:30:22 ]
     │
- 27 │ pub rule() -> Unit = @console.print("------------------------------")
+ 30 │ pub rule() -> Unit = @console.print("------------------------------")
     │                      ────┬───
     │                          ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
     │

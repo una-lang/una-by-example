@@ -1,1 +1,1 @@
-error U2004 at src/notices.una:25:20: argument 2 of `section` needs a label; only the first argument may go without one
+error U2004 at src/notices.una:21:20: argument 2 of `section` needs a label; only the first argument may go without one

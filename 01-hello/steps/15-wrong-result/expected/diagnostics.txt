@@ -1,1 +1,1 @@
-error U2001 at src/notices.una:11:24: `cafe_hours` returns `Text`, found `Int`
+error U2001 at src/notices.una:7:24: `cafe_hours` returns `Text`, found `Int`

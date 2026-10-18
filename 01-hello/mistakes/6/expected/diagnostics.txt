@@ -1,1 +1,1 @@
-error U2004 at src/morning.una:47:20: argument 2 of `section` needs a label; only the first argument may go without one
+error U2004 at src/morning.una:51:20: argument 2 of `section` needs a label; only the first argument may go without one

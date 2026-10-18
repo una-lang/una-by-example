@@ -1,5 +1,6 @@
 $ una test .
 example morning "the notices start with the store's name" ... ok
+example morning "the address gives the street" ... ok
 example morning "the greeting is for the morning" ... ok
 example morning "the hours give the opening and the closing time" ... ok
 example morning "the cutoff names the hour" ... ok
@@ -8,4 +9,4 @@ example morning "the café keeps its own hours" ... ok
 example morning "the help desk says where to go" ... ok
 example morning "Sundays keep the hours of every other day" ... ok
 
-8 examples: 8 passed, 0 failed
+9 examples: 9 passed, 0 failed

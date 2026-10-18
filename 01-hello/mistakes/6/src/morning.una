@@ -5,6 +5,9 @@ module morning
 --- The name of the store, the first line of the notices.
 pub store_name() -> Text = "Harbor Street store"
 
+--- Where the store is, under its name.
+pub store_address() -> Text = "12 Harbor Street, by the ferry"
+
 --- The greeting under the name.
 pub greeting() -> Text = "Good morning"
 
@@ -42,6 +45,7 @@ pub main() -> Unit
   uses @console: Console[print]
 =
   @console.print(store_name())
+  @console.print(store_address())
   @console.print(greeting())
   rule()
   section("Hours", opening_hours())
@@ -53,6 +57,10 @@ pub main() -> Unit
 example "the notices start with the store's name"
   do store_name()
   expect result == "Harbor Street store"
+
+example "the address gives the street"
+  do store_address()
+  expect result == "12 Harbor Street, by the ferry"
 
 example "the greeting is for the morning"
   do greeting()
