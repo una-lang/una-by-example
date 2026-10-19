@@ -1889,7 +1889,7 @@ The first 21 characters of the rug's name end with a space, `Wool rug, 120 by 18
 ### For agents
 
 :::agents
-`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; a refuted obligation, U5001, also carries its `obligation` and a `counterexample`, and its repairs, from a guard to a `requires`, are descriptions only. U0007 carries an exact edit, which `una fix .` applies; U0101, U0006 and U2001 carry no edit, since the right form is the author's choice. The compact rule: *join texts with interpolation, never `+`; name a text literal before it goes in braces; a condition is a `Bool`, and comparisons do not chain; a one-line `if` has `else` and branches of one type; guard a `slice` or a division with `if` or `and`.*
+`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; a refuted obligation, U5001, also carries its `obligation` and a `counterexample`, and its repairs, from a guard to a `requires`, are descriptions only. U0007 and the U0101 of a `then` ending an `if` line carry exact edits, which `una fix .` applies; other U0101s, U0006 and U2001 carry none, since the right form is the author's choice. The compact rule: *join texts with interpolation, never `+`; name a text literal before it goes in braces; a condition is a `Bool`, and comparisons do not chain; a one-line `if` has `else` and branches of one type; guard a `slice` or a division with `if` or `and`.*
 :::
 
 ### Recap

@@ -1282,7 +1282,7 @@ saved: Ok(unit)
 
 Name bindings after what they are for, as `@audit` and `@log` are. A rebinding at the call then reads as a decision: "the audit trail is the console, here".
 
-Edition `0.3` adds limits on top of these rules: a condition on an operation, such as "never in a dry run", a narrower rebinding at the call, and a ceiling on what a module may receive. [Chapter 13](/learn/authority/) teaches them.
+Edition `0.3` adds limits on top of these rules: a condition on an operation, such as "never in a dry run" ([section 13.1](/learn/authority/#s13-1)); a ceiling on what a module may receive ([section 13.2](/learn/authority/#s13-2)); a narrower rebinding at the call, `with @x = @y[ops]` ([Granting less at the call](/learn/authority/#granting-less-at-the-call-with-x-yops)); and a lock in `una.toml` on the `uses` of a public function, so that its header may never grant more ([section 13.3](/learn/authority/#s13-3)). [Chapter 13](/learn/authority/) teaches them.
 
 ### Check yourself: `with`
 
@@ -2082,7 +2082,7 @@ The compact rule: *every effect is `@binding.op(...)` on a binding of the header
 - Declare each outside service as a `capability`, with a handler for each way to provide it; every handler implements every operation.
 - A clause such as `if error use` on an operation's call keeps a function working when a service fails.
 - A function argument with effects needs `uses of` and `fails of` (edition `0.2`).
-- Edition `0.3` adds conditions on operations and ceilings for modules ([chapter 13](/learn/authority/)).
+- Edition `0.3` adds conditions on operations ([section 13.1](/learn/authority/#s13-1)), ceilings for modules ([section 13.2](/learn/authority/#s13-2)), narrowed rebindings `with @x = @y[ops]` ([Granting less at the call](/learn/authority/#granting-less-at-the-call-with-x-yops)) and locked contracts ([section 13.3](/learn/authority/#s13-3)).
 :::
 
 ### Reference

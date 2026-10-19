@@ -432,7 +432,7 @@ A few rules of `0.2` differ from `0.1`:
 - **Equality on type parameters.** A public generic function that compares two values of a type parameter `T` must write the constraint `[T: Eq]` (U2026, [chapter 4](/learn/kinds/#s4-4)); `0.1` inferred it.
 - **The prelude.** `min`, `max`, `sum` and `contains` become generic over constrained types, and `sort`, `set` and `empty_map` are new.
 - **Recursive kinds,** kinds with a field of their own kind ([chapter 8](/learn/choices/#s8-4)), no longer need that field inside a `List` or an `Option`, but must be able to end: some variant, such as a `Lit(value: Int)` in an expression kind, holds no value of the kind itself.
-- **Test reports.** In `0.2`, a failed example's report shows labeled values, data marked secret or internal ([chapter 17](/learn/information-flow/)), in full, where `0.1` hides them.
+- **Test reports.** In `0.2`, a failed example's report shows labeled values, data marked secret or internal ([chapter 17](/learn/information-flow/)), in full. `0.1` hides only the labeled fields of a record, writing a level such as `<redacted:confidential>` in their place; a labeled value that is not a field, such as a `confidential Int` result, is shown in full there too.
 
 ### What a move from `0.1` can need
 

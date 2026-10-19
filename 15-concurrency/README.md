@@ -824,7 +824,7 @@ CHAIR-09: 0 units
 3 SKUs asked
 ```
 
-Passing an outer name to a function that changes it in place (`edit`, [section 16.2](/learn/memory/#s16-2)) or takes it over (`take`, [section 16.3](/learn/memory/#s16-3)) is U2023 too. A task's own names, made in its body, are its own: it may declare them `let edit` and change them, as any block may.
+Passing an outer name to a function that changes it for its caller (`edit`, [section 16.2](/learn/memory/#s16-2)) or takes it over (`take`, [section 16.3](/learn/memory/#s16-3)) is U2023 too. A task's own names, made in its body, are its own: it may declare them `let edit` and change them, as any block may.
 
 ### Rule 2: the first failure in order wins
 

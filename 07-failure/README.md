@@ -1457,7 +1457,7 @@ not a sku: lamp 1
 
 ### How a value gets an opaque fact
 
-The verifier can never prove an opaque predicate, since it cannot read the body. So in code, a value gets its fact from `checked`, at run time. (The operations of a capability, a service outside the program, can promise one too; [chapter 12](/learn/capabilities/) shows them.) Here is a second rule of this kind, a barcode scanned at the till:
+The verifier can never prove an opaque predicate, since it cannot read the body. So in code, a value gets its fact from `checked`, at run time. Here is a second rule of this kind, a barcode scanned at the till:
 
 ```una include="steps/20-opaque/src/barcodes.una" title="steps/20-opaque/src/barcodes.una" verified="check, run"
 module barcodes
