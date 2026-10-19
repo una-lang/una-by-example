@@ -38,7 +38,7 @@ You will learn to:
 
 ## Why it works this way
 
-In a language with ambient authority, any line of any library can reach the network, the file system or the clock. That is convenient until you review a change: a new dependency, or a helper three calls deep, can start sending data somewhere, and nothing in the signatures shows it. Tests have the same problem. A function that reaches for a global client is hard to run against a stand-in.
+In a language with **ambient authority**, where code may act outside the program without being handed the right, any line of any library can reach the network, the file system or the clock. That is convenient until you review a change. A new dependency, or a helper three calls deep, can start sending data somewhere, and nothing in the signatures shows it. Tests have the same problem. A function that reaches for a global client is hard to run against a stand-in.
 
 Una has no ambient authority. Three rules replace it:
 
