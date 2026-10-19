@@ -1,0 +1,4 @@
+Ok({"LAMP-01": 1})
+Err(NotEnough("LAMP-01"))
+Err(NotEnough("RUG-07"))
+{"LAMP-01": 4}

@@ -385,7 +385,7 @@ Edition `0.2` adds, among others:
 | --- | --- |
 | `for` loops, `let edit`, `edit` and `take` parameters, and `if` without `else` as a statement | [Repeating: `for`](/learn/loops/), [`edit`](/learn/memory/#s16-2), [`take`](/learn/memory/#s16-3), [`if` without `else`](/learn/choices/#s8-1) |
 | `together` and `together for` | [Concurrency and parallelism](/learn/concurrency/) |
-| `Map`, the text functions and `ParseError`, `Json` | [Maps](/learn/collections/#s10-4), [the text functions](/learn/text-and-conditions/#s3-2), [`ParseError`](/learn/failure/#s7-4), [JSON](/learn/collections/#s10-5) |
+| `Map`, the text functions and `ParseError`, `Json` | [Maps](/learn/collections/#s10-4), [the text functions](/learn/text-and-conditions/#s3-2), [`ParseError`](/learn/failure/#s7-4), [JSON](/learn/collections/#s10-6) |
 | Fixed-width integers such as `U8` and `I64`, with proven overflow | [Numbers](/learn/numbers/#s2-3) |
 | Constraints on generics such as `T: Ord`, and `sort` | [Constraints](/learn/kinds/#s4-4), [`sort`](/learn/collections/#sorting-sort) |
 | `uses of p` and `fails of p`, header clauses for a function that takes another function as its parameter `p`: the function passed in may then use capabilities and fail, and the caller handles it | [`uses of`](/learn/capabilities/#authority-inside-a-function-argument-uses-of), [`fails of`](/learn/failure/#failing-as-the-function-you-are-given-fails-of), [`uses` in the docs](/docs/language/capabilities/uses/) |

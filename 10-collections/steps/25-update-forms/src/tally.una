@@ -1,0 +1,22 @@
+module tally
+
+--- One unit more: a change that `update` can take by its name.
+add_one(units: Int) -> Int = units + 1
+
+--- Prints a stock ledger after each form of `update`.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit stock: Map[Text, Int] = empty_map()
+  edit stock.set(key: "LAMP-01", value: 4)
+  edit stock.update(key: "LAMP-01", initial: 0, change: fn(units) -> units + 6)
+  edit stock.update(key: "RUG-07", initial: 0, change: fn(units) -> units + 2)
+  @console.print("{stock}")
+  edit stock.update(key: "LAMP-01", initial: 0, change: add_one)
+  edit stock.update(key: "VASE-03", initial: 10, change: add_one)
+  @console.print("{stock}")
+  let delivered = 12
+  edit stock.update(key: "RUG-07", initial: 0, change: fn(units: Int) -> units + delivered)
+  @console.print("{stock}")
+  edit stock.update(key: "DESK-02", initial: 5, change: fn(units) -> units - 5)
+  @console.print("{stock} {stock.len}")

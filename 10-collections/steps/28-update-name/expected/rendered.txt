@@ -1,0 +1,9 @@
+[U1002] Error: `update` is a built-in method of `Map`; rename this function
+   ╭─[ src/tally.una:7:1 ]
+   │
+ 7 │ update(stock: Map[Text, Int], sku: Text, units: Int) -> Map[Text, Int] = stock.with(key: sku, value: units)
+   │ ───┬──
+   │    ╰──── `update` is a built-in method of `Map`; rename this function
+   │
+   │ Note: run `una explain U1002` for an explanation
+───╯

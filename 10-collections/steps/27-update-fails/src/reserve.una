@@ -1,0 +1,26 @@
+module reserve
+
+--- Why units could not be reserved.
+kind ReserveError = | NotEnough(sku: Text)
+
+--- The stock after reserving some units of a SKU; fails when fewer are on hand.
+reserve(stock: Map[Text, Int], sku: Text, units: Int) -> Map[Text, Int]
+  fails ReserveError
+=
+  let edit after = stock
+  edit after.update(key: sku, initial: 0, change: fn(on_hand) -> if on_hand < units then fail NotEnough(sku) else on_hand - units)
+    if error pass
+  after
+
+--- Prints three reservations from one stock, and the stock after them.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let stock = empty_map().with(key: "LAMP-01", value: 4)
+  let three = attempt reserve(stock, sku: "LAMP-01", units: 3)
+  let five = attempt reserve(stock, sku: "LAMP-01", units: 5)
+  let rug = attempt reserve(stock, sku: "RUG-07", units: 1)
+  @console.print("{three}")
+  @console.print("{five}")
+  @console.print("{rug}")
+  @console.print("{stock}")

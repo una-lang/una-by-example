@@ -1,0 +1,45 @@
+module report
+
+--- A sale of some units of one SKU, in a category, at a price in cents for each unit.
+kind Sale
+  sku: Text
+  category: Text
+  quantity: Int
+  unit_cents: Int
+
+--- How many units each category sold.
+units_by_category(sales: List[Sale]) -> Map[Text, Int]
+=
+  let edit totals: Map[Text, Int] = empty_map()
+  for sale in sales
+    edit totals.update(key: sale.category, initial: 0, change: fn(units) -> units + sale.quantity)
+  totals
+
+--- The revenue of each category, in cents.
+revenue_by_category(sales: List[Sale]) -> Map[Text, Int]
+=
+  let edit revenue: Map[Text, Int] = empty_map()
+  for sale in sales
+    edit revenue.update(key: sale.category, initial: 0, change: fn(cents) -> cents + sale.quantity * sale.unit_cents)
+  revenue
+
+--- The SKUs sold in each category, in the order of the sales.
+skus_by_category(sales: List[Sale]) -> Map[Text, List[Text]]
+=
+  let edit skus: Map[Text, List[Text]] = empty_map()
+  for sale in sales
+    edit skus.update(key: sale.category, initial: [], change: fn(listed) -> listed.append(item: sale.sku))
+  skus
+
+--- Prints the units, the revenue and the SKUs of each category, for one day of sales.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Sale(sku: "LAMP-01", category: "lighting", quantity: 2, unit_cents: 1990)
+  let rug = Sale(sku: "RUG-07", category: "textiles", quantity: 1, unit_cents: 8900)
+  let shade = Sale(sku: "SHADE-05", category: "lighting", quantity: 3, unit_cents: 1250)
+  let spade = Sale(sku: "SPADE-02", category: "garden", quantity: 4, unit_cents: 1500)
+  let sales = [lamp, rug, shade, spade]
+  @console.print("{units_by_category(sales)}")
+  @console.print("{revenue_by_category(sales)}")
+  @console.print("{skus_by_category(sales)}")

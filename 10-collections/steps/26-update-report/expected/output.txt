@@ -1,0 +1,3 @@
+{"garden": 4, "lighting": 5, "textiles": 1}
+{"garden": 6000, "lighting": 7730, "textiles": 8900}
+{"garden": ["SPADE-02"], "lighting": ["LAMP-01", "SHADE-05"], "textiles": ["RUG-07"]}

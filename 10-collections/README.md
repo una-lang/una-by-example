@@ -1,13 +1,13 @@
 ---
 learn: "10"
 title: Collections
-editions: ["0.2"]
-codes: [U0007, U0101, U2001, U2007, U2010, U2020, U2025, U3001, U3003, U3007, U3009]
-time: 70
+editions: ["0.2", "0.4"]
+codes: [U0007, U0101, U1002, U2001, U2007, U2010, U2020, U2025, U3001, U3003, U3007, U3009]
+time: 85
 builds: A daily sales report that reads order lines from JSON, groups them by category and sums them up
 prerequisites: ["4", "5", "6", "7", "8", "9"]
 template: 2
-nav: ["Lists", "Functions as values", "map, filter and fold", "Maps", "JSON", "Day-to-day: a daily sales report", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
+nav: ["Lists", "Functions as values", "map, filter and fold", "Maps", "Changing a value: update", "JSON", "Day-to-day: a daily sales report", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 10 Collections
@@ -1422,7 +1422,7 @@ Each lookup, insertion and removal takes time in proportion to the logarithm of 
 | --- | --- |
 | Values in the order they arrived, repeats allowed | a list |
 | One value per key, found by its key | a map |
-| Totals or groups by a key you meet as you go | a map, with `get`, `or_else` and `set` |
+| Totals or groups by a key you meet as you go | a map, with `get`, `or_else` and `set`, or with `update` in edition `0.4` ([section 10.5](#s10-5)) |
 | Output sorted by a key, every time | a map keyed by it |
 | Values sorted by something a record holds | a map keyed by that field, then `values()` |
 :::
@@ -1446,7 +1446,292 @@ Predict what these two lines print:
 The second `with` on `RUG-07` replaces its value, so the map has two entries, not three, and `RUG-07` holds 5. The keys print in order, `LAMP-01` first, whatever order they were added in.
 :::
 
-## 10.5 JSON
+## 10.5 Changing one value of a map: `update`
+
+### What `update` is
+
+Think again of the stock ledger. When a delivery of 6 desk lamps arrives, the clerk goes to the line of `LAMP-01`, reads 4, writes 10 over it, and moves on: one visit to the line, one change. If the ledger has no line for the SKU yet, the clerk starts one from 0.
+
+`update` is that visit, for a map. It names one key, and a **change**: a function that takes the value under the key and gives the new value. `update` reads the value, calls the change once, and stores what it gives back, all in one step. When the map does not hold the key, the change starts from a value you give, the **initial** value, and the key is added.
+
+### Why one call instead of `get` and `set`
+
+[Section 10.4](#s10-4) grouped sales by category with two calls: `get` to read the total so far, with `or_else(default: 0)` for a new category, and `set` to write the new total. That pattern names the key twice, and nothing makes the two names the same. Here the `set` names the sale's SKU by mistake, and the program still checks and runs:
+
+```diff include="steps/19-maps..steps/24-wrong-key:src/stock.una" title="src/stock.una" context="1"
+--- a/src/stock.una
++++ b/src/stock.una
+@@ -14,3 +14,3 @@
+     let before = totals.get(key: sale.category).or_else(default: 0)
+-    edit totals.set(key: sale.category, value: before + sale.quantity)
++    edit totals.set(key: sale.sku, value: before + sale.quantity)
+   totals
+```
+
+```text include="steps/24-wrong-key/expected/output.txt#L4-L6"
+LAMP-01: 2
+RUG-07: 1
+SHADE-05: 3
+```
+
+The report should say `lighting: 5` and `textiles: 1`. Instead it lists SKUs: `get` looks up a category, finds nothing every time, starts from 0, and `set` files the result under the SKU. No check can catch it, since both lines are correct on their own.
+
+Two lines also leave room for a **stale read**: a value read into a name, which something else changes before the name is written back. Any line between the `get` and the `set` that changes the same entry is silently undone by the `set`. And each line looks the key up again, so the map is searched twice for one change.
+
+`update` writes the key once, and the read and the write are one step, so the change always receives the value that is in the map at that moment, and nothing can come between them.
+
+### How to write `update`
+
+#### The edition: `0.4`
+
+`update` belongs to edition `0.4`, a preview. A package of edition `0.4` describes itself in `ita.una`, which takes the place of `una.toml` ([section 11.4](/learn/packages/#s11-4) shows it in full), and is pinned by `ita.lock`, which una writes:
+
+```una include="steps/25-update-forms/ita.una" title="steps/25-update-forms/ita.una"
+ita tally
+  version 0.1.0
+  edition 0.4
+
+run
+  entry tally
+  grants
+    console
+```
+
+The lines mean what the tables of `una.toml` mean: the package's name, its version and its edition, then what `una run` starts and the capabilities it grants.
+
+#### The parts of the call
+
+```una include="steps/25-update-forms/src/tally.una#L12" title="steps/25-update-forms/src/tally.una"
+  edit stock.update(key: "LAMP-01", initial: 0, change: fn(units) -> units + 6)
+```
+
+- **`edit`** comes first, since the call changes the map, as for `set` in [section 10.4](#changing-a-map-in-place-edit-mset-and-edit-mremove). The name must be declared `let edit`, and the call stands alone on its line.
+- **`key:`** is the key whose value changes.
+- **`initial:`** is the value the change starts from when the map does not hold the key. It has the map's value type.
+- **`change:`** is a function from the value type to the value type, `fn(Int) -> Int` for a `Map[Text, Int]`. It is called exactly once.
+
+#### `change` as a lambda
+
+The usual form is a lambda ([section 10.2](#s10-2)): `fn(units) -> units + 6` adds 6 to whatever is there. Its parameter type comes from the map, so you need not write it.
+
+#### `change` as a named function
+
+A function that takes and gives the value type can be passed by its name: `change: add_one`, with `add_one(units: Int) -> Int` declared in the module.
+
+#### A `change` that captures a value
+
+A lambda may use a name of the code around it: `fn(units: Int) -> units + delivered` adds the value of `delivered`. In a loop, `fn(units) -> units + sale.quantity` uses the current sale.
+
+#### A `change` that fails
+
+A lambda may `fail`. The call of `update` then fails with it, so it takes a clause on the next line, as any call that can fail does ([section 7.3](/learn/failure/#s7-3)). `update` declares that it fails exactly when its change fails, as the functions over lists do with `fails of` ([section 10.2](#s10-2)).
+
+### Each form of `update` at work
+
+```una include="steps/25-update-forms/src/tally.una#L1-L20" title="steps/25-update-forms/src/tally.una"
+module tally
+
+--- One unit more: a change that `update` can take by its name.
+add_one(units: Int) -> Int = units + 1
+
+--- Prints a stock ledger after each form of `update`.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let edit stock: Map[Text, Int] = empty_map()
+  edit stock.set(key: "LAMP-01", value: 4)
+  edit stock.update(key: "LAMP-01", initial: 0, change: fn(units) -> units + 6)
+  edit stock.update(key: "RUG-07", initial: 0, change: fn(units) -> units + 2)
+  @console.print("{stock}")
+  edit stock.update(key: "LAMP-01", initial: 0, change: add_one)
+  edit stock.update(key: "VASE-03", initial: 10, change: add_one)
+  @console.print("{stock}")
+  let delivered = 12
+  edit stock.update(key: "RUG-07", initial: 0, change: fn(units: Int) -> units + delivered)
+  @console.print("{stock}")
+```
+
+```text include="steps/25-update-forms/expected/output.txt#L1-L3"
+{"LAMP-01": 10, "RUG-07": 2}
+{"LAMP-01": 11, "RUG-07": 2, "VASE-03": 11}
+{"LAMP-01": 11, "RUG-07": 14, "VASE-03": 11}
+```
+
+- `LAMP-01` held 4, so `fn(units) -> units + 6` receives 4 and stores 10.
+- `RUG-07` was not in the map, so the lambda receives the initial value 0, and stores 2. The key is added.
+- `add_one` adds 1 to `LAMP-01`, which becomes 11. `VASE-03` is new, so `add_one` receives the initial value 10, and 11 is stored, not 10.
+- The last lambda captures `delivered`, and adds 12 to the 2 rugs.
+
+### A day's sales by category
+
+The step totals one day of sales by category three ways, each with one `update` per sale:
+
+:::steps
+```una include="steps/26-update-report/src/report.una" title="steps/26-update-report/src/report.una" verified="check, run"
+module report
+
+--- A sale of some units of one SKU, in a category, at a price in cents for each unit.
+kind Sale
+  sku: Text
+  category: Text
+  quantity: Int
+  unit_cents: Int
+
+--- How many units each category sold.
+units_by_category(sales: List[Sale]) -> Map[Text, Int]
+=
+  let edit totals: Map[Text, Int] = empty_map()
+  for sale in sales
+    edit totals.update(key: sale.category, initial: 0, change: fn(units) -> units + sale.quantity)
+  totals
+
+--- The revenue of each category, in cents.
+revenue_by_category(sales: List[Sale]) -> Map[Text, Int]
+=
+  let edit revenue: Map[Text, Int] = empty_map()
+  for sale in sales
+    edit revenue.update(key: sale.category, initial: 0, change: fn(cents) -> cents + sale.quantity * sale.unit_cents)
+  revenue
+
+--- The SKUs sold in each category, in the order of the sales.
+skus_by_category(sales: List[Sale]) -> Map[Text, List[Text]]
+=
+  let edit skus: Map[Text, List[Text]] = empty_map()
+  for sale in sales
+    edit skus.update(key: sale.category, initial: [], change: fn(listed) -> listed.append(item: sale.sku))
+  skus
+
+--- Prints the units, the revenue and the SKUs of each category, for one day of sales.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Sale(sku: "LAMP-01", category: "lighting", quantity: 2, unit_cents: 1990)
+  let rug = Sale(sku: "RUG-07", category: "textiles", quantity: 1, unit_cents: 8900)
+  let shade = Sale(sku: "SHADE-05", category: "lighting", quantity: 3, unit_cents: 1250)
+  let spade = Sale(sku: "SPADE-02", category: "garden", quantity: 4, unit_cents: 1500)
+  let sales = [lamp, rug, shade, spade]
+  @console.print("{units_by_category(sales)}")
+  @console.print("{revenue_by_category(sales)}")
+  @console.print("{skus_by_category(sales)}")
+```
+
+1. **`edit totals.update(key: sale.category, initial: 0, change: fn(units) -> units + sale.quantity)`.** The units of each category. The key is written once, so it cannot drift to another field, as it did in [Why one call instead of `get` and `set`](#why-one-call-instead-of-get-and-set).
+2. **`fn(cents) -> cents + sale.quantity * sale.unit_cents`.** The revenue: the change adds the line's amount, in cents.
+3. **`initial: []` and `listed.append(item: sale.sku)`.** The value can be any type, here a list of SKUs. A new category starts from the empty list, and each sale appends its SKU.
+:::
+
+`una run .` prints:
+
+```text include="steps/26-update-report/expected/output.txt"
+{"garden": 4, "lighting": 5, "textiles": 1}
+{"garden": 6000, "lighting": 7730, "textiles": 8900}
+{"garden": ["SPADE-02"], "lighting": ["LAMP-01", "SHADE-05"], "textiles": ["RUG-07"]}
+```
+
+The categories come out in key order, as for every map, and `garden` is there without a list of categories written in advance.
+
+### How `update` behaves
+
+#### `change` runs once, on the value or on `initial`
+
+`update` calls `change` exactly once. With the key in the map, it receives the stored value; without it, it receives `initial`, and its result is stored under the key. So `initial` is the value before the change, never the value stored: with `initial: 10` and `add_one`, a new key holds 11.
+
+#### A failing `change` leaves the map as it was
+
+The step reserves units of a SKU from a stock, and refuses a reservation larger than the units on hand:
+
+```una include="steps/27-update-fails/src/reserve.una#ReserveError..reserve" title="steps/27-update-fails/src/reserve.una"
+--- Why units could not be reserved.
+kind ReserveError = | NotEnough(sku: Text)
+
+--- The stock after reserving some units of a SKU; fails when fewer are on hand.
+reserve(stock: Map[Text, Int], sku: Text, units: Int) -> Map[Text, Int]
+  fails ReserveError
+=
+  let edit after = stock
+  edit after.update(key: sku, initial: 0, change: fn(on_hand) -> if on_hand < units then fail NotEnough(sku) else on_hand - units)
+    if error pass
+  after
+```
+
+`if error pass` hands the failure on to the caller of `reserve`, whose header declares it. `main` keeps each outcome with `attempt` ([section 7.4](/learn/failure/#s7-4)):
+
+```text include="steps/27-update-fails/expected/output.txt"
+Ok({"LAMP-01": 1})
+Err(NotEnough("LAMP-01"))
+Err(NotEnough("RUG-07"))
+{"LAMP-01": 4}
+```
+
+Three units of the four are reserved, and one is left. Five are refused. `RUG-07` is not in the map, so the change receives the initial 0, fails, and nothing is added. When the change fails, the map keeps the value it had before the call. And `stock` itself, on the last line, never changed: `reserve` changed its own copy, `after`.
+
+#### One lookup
+
+An `update` finds the key once, and stores the new value where it found it. Its cost is O(log n), as one `get` or one `set` ([Cost](#cost)), where `get` and then `set` search the map twice.
+
+#### A function named `update` (U1002)
+
+`update` is a method of every map, so in edition `0.4` a function of your own named `update`, whose first parameter is a map, could never be called with a dot: `stock.update(...)` would always call the map's method. The checker refuses it at its name:
+
+```diff include="steps/25-update-forms..steps/28-update-name:src/tally.una" title="src/tally.una" context="1"
+--- a/src/tally.una
++++ b/src/tally.una
+@@ -4,2 +4,5 @@
+ add_one(units: Int) -> Int = units + 1
++
++--- The stock with a new count for one SKU.
++update(stock: Map[Text, Int], sku: Text, units: Int) -> Map[Text, Int] = stock.with(key: sku, value: units)
+ 
+```
+
+```text include="steps/28-update-name/expected/rendered.txt"
+[U1002] Error: `update` is a built-in method of `Map`; rename this function
+   ╭─[ src/tally.una:7:1 ]
+   │
+ 7 │ update(stock: Map[Text, Int], sku: Text, units: Int) -> Map[Text, Int] = stock.with(key: sku, value: units)
+   │ ───┬──
+   │    ╰──── `update` is a built-in method of `Map`; rename this function
+   │
+   │ Note: run `una explain U1002` for an explanation
+───╯
+```
+
+Rename the function, for example `with_count`. A function named `update` whose first parameter is not a map, such as a record, is fine.
+
+### `set`, `with` or `update`
+
+:::decide
+**Which to use:**
+
+| You want to… | Use |
+| --- | --- |
+| Store a value that does not depend on the old one | `edit m.set(key:, value:)` |
+| Get a new map, and keep the old one | `m.with(key:, value:)` |
+| Change a value from the one that is there, or start one | `edit m.update(key:, initial:, change:)`, in edition `0.4` |
+| Count, total or group by a key you meet as you go | `update`, with `initial` the empty total |
+| Refuse a change, and keep the map as it was | `update` with a `change` that fails |
+:::
+
+### Check yourself: update
+
+The last lines of `tally` update a key the map does not hold, with an initial value and a change that subtracts it:
+
+```una include="steps/25-update-forms/src/tally.una#L21-L22" title="steps/25-update-forms/src/tally.una"
+  edit stock.update(key: "DESK-02", initial: 5, change: fn(units) -> units - 5)
+  @console.print("{stock} {stock.len}")
+```
+
+What does the line print?
+
+:::answer Show the answer
+```text include="steps/25-update-forms/expected/output.txt#L4"
+{"DESK-02": 0, "LAMP-01": 11, "RUG-07": 14, "VASE-03": 11} 4
+```
+
+`DESK-02` was not in the map, so the change receives the initial 5, and 5 - 5, which is 0, is stored: the key is added, and the map now has four entries. `initial` is where the change starts, not what is stored.
+:::
+
+## 10.6 JSON
 
 ### What JSON is
 
@@ -1744,7 +2029,7 @@ These lines read a record and write it back. Predict the line they print:
 The record parses as an `Object`, whose fields form a map, so `to_json` writes them in key order, `active`, `cents`, `sku`, and with no spaces. The order of the input is not kept.
 :::
 
-## 10.6 Day-to-day: a daily sales report
+## 10.7 Day-to-day: a daily sales report
 
 ### What the report must do
 
@@ -1752,7 +2037,7 @@ At the end of each day the shop exports its order lines, one JSON object per lin
 
 The design follows from the data. The export is text, so each line is parsed on its own, and a bad line becomes `None` instead of stopping the report. The fields have types, so a `Line` record holds them once they are read, and nothing after `read_line` deals with JSON. The totals are per category and per SKU, so two maps hold them, and their key order gives the report its order.
 
-The program is one module, and each part uses one idea of this chapter: records hold the fields, JSON and `Option` read them ([section 10.5](#s10-5)), a loop over a list keeps the good lines ([section 10.1](#s10-1)), maps group them ([section 10.4](#s10-4)), and `fold` and `first_where` find the best seller ([section 10.3](#s10-3)). Here it is in parts.
+The program is one module, and each part uses one idea of this chapter: records hold the fields, JSON and `Option` read them ([section 10.5](#s10-6)), a loop over a list keeps the good lines ([section 10.1](#s10-1)), maps group them ([section 10.4](#s10-4)), and `fold` and `first_where` find the best seller ([section 10.3](#s10-3)). Here it is in parts.
 
 ### The records
 
@@ -2133,7 +2418,7 @@ example "amounts keep two digits of cents"
   expect result == "12.05"
 ```
 
-## 10.7 Testing it
+## 10.8 Testing it
 
 ### One example per path
 
@@ -2198,7 +2483,7 @@ example report "amounts keep two digits of cents" ... ok
 8 examples: 8 passed, 0 failed
 ```
 
-## 10.8 Common mistakes
+## 10.9 Common mistakes
 
 Each mistake is a small change to `day-to-day/src/report.una`, except the last, which changes the shipping report of [A promotion that cannot overcharge](#a-promotion-that-cannot-overcharge). Each is followed by what `una check .` reports.
 
@@ -2392,7 +2677,7 @@ Name the members' rule of the shipping report before passing it:
 *Fix:* `fn(cents: Int) -> cents * 80 / 100`, or pass the lambda straight to `promoted`. See [U2010](/docs/errors/U2010/).
 :::
 
-## 10.9 Exercises
+## 10.10 Exercises
 
 The exercises come with the chapter's download, `10-collections.tar.gz`. Each starts from `exercises/N/start`: a program of this chapter with the exercise's example added, and a **stub** of the function to write, a header with a placeholder body. The first three start from the day-to-day program, and the last two from the shipping report of [A promotion that cannot overcharge](#a-promotion-that-cannot-overcharge). `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`: canonical form, for example, puts a body of one expression on the header line.
 
@@ -2641,12 +2926,12 @@ Give back a lambda that applies both:
 :::
 ::::
 
-## 10.10 Recap and reference
+## 10.11 Recap and reference
 
 ### For agents
 
 :::agents
-Every diagnostic of [Common mistakes](#s10-8) is available as JSON with `una --json check .`. For [a `when` that forgets `None`](#a-when-that-forgets-none-u2007):
+Every diagnostic of [Common mistakes](#s10-9) is available as JSON with `una --json check .`. For [a `when` that forgets `None`](#a-when-that-forgets-none-u2007):
 
 ```json include="mistakes/3/expected/commands/json.txt#L2"
 {"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U2007","severity":"error","domain":"types","message":"`when` does not match variant `None` of `Option`","primary":{"file":"src/report.una","start":{"line":97,"col":3},"end":{"line":97,"col":7}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"add an arm for each missing variant, such as `is None`, or an `else` arm","edit":null}],"explain":"una explain U2007"}],"fixable":0}
@@ -2663,7 +2948,7 @@ The repair of U2007 has a description and no `edit`, because the right arm depen
 - A function type, `fn(Int) -> Int`, lets you pass a function by its name or as a lambda, `fn(x) -> …`, whose types come from where it is passed.
 - A function type without `uses` or `fails` is pure; a lambda may fail only for a parameter whose function declares `fails of` it.
 - Use `map`, `filter`, `fold` and `first_where` for one-expression steps, and `for` for longer ones.
-- Group with a map: `get` and `or_else`, then `edit m.set(...)`. A map lists its keys in order, and its keys need an order.
+- Group with a map: `get` and `or_else`, then `edit m.set(...)`, or in edition `0.4` one `edit m.update(key:, initial:, change:)`. A map lists its keys in order.
 - Parse JSON with a clause or `attempt`, read it with `when` and `get`, and write it with `to_json`.
 :::
 
@@ -2672,6 +2957,6 @@ The repair of U2007 has a description and no `edit`, because the right arm depen
 :::reference
 - Construct pages: [functions and lambdas](/docs/language/functions/), [`for`](/docs/language/control-flow/for/), [`let edit` and `edit` parameters](/docs/language/control-flow/let-edit/), [`when`](/docs/language/control-flow/when/), [`if error` and `if none`](/docs/language/errors/if-error/), [`example`](/docs/language/examples/example/)
 - Standard library: [the prelude](/docs/std/) (`List`, `Option`, `append`, `set`, `at`, `first`, `is_empty`, `first_where`, `contains`, `sum`, `sort`, `map`, `filter`, `fold`, `or_else`, `min`, `max`), [maps](/docs/std/maps/) (`Map`, `Entry`, `empty_map`), [text](/docs/std/text/) (`join`), [JSON](/docs/std/json/) (`Json`, `JsonError`, `parse_json`, `to_json`, `quote_json`)
-- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U2001](/docs/errors/U2001/), [U2007](/docs/errors/U2007/), [U2010](/docs/errors/U2010/), [U2020](/docs/errors/U2020/), [U2025](/docs/errors/U2025/), [U3001](/docs/errors/U3001/), [U3003](/docs/errors/U3003/), [U3007](/docs/errors/U3007/), [U3009](/docs/errors/U3009/)
+- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2007](/docs/errors/U2007/), [U2010](/docs/errors/U2010/), [U2020](/docs/errors/U2020/), [U2025](/docs/errors/U2025/), [U3001](/docs/errors/U3001/), [U3003](/docs/errors/U3003/), [U3007](/docs/errors/U3007/), [U3009](/docs/errors/U3009/)
 - Specification: [functions and contracts](/docs/spec/04-functions-and-contracts/) (lambdas), [the standard library](/docs/spec/14-standard-library/), [the memory model](/docs/spec/17-memory-model/) (`for`, `let edit`, `set`), [constraints on generics](/docs/spec/20-constraints-on-generics/), [maps](/docs/spec/21-maps/), [JSON](/docs/spec/23-json/)
 :::

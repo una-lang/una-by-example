@@ -26,3 +26,20 @@ Diagnostics (`expected/diagnostics.txt` and `expected/rendered.txt`). The messag
 - `02-numbers/steps/32-zero-compare/expected/diagnostics.txt`, `rendered.txt` (U2033)
 
 Also to confirm with the built `una`: that every new step is in canonical form (`una fmt --check`), in particular `(-7.5).abs()`, `(-0.0).to_int_exact()` and the long header of `volumetric_kg`.
+
+## `Map.update` (edition 0.4): `10-collections`, section 10.5
+
+New section 10.5 "Changing one value of a map: `update`", after the maps; the sections after it are renumbered (10.5 to 10.10 became 10.6 to 10.11), and the one link from another chapter to the old 10.5 (`19-editions`) follows. The front matter gains edition `0.4`, the code U1002 and a `nav` label.
+
+`scripts/check.py` does not accept these packages yet: it requires `una.toml` and `verification.lock`, refuses `ita.una` and `ita.lock` in a package, and refuses a block that shows `ita.una`. Edition `0.4` has no `una.toml` (`spec/30 §8` rule 1), so the script needs to learn the edition `0.4` layout before these steps can be checked; until then, `--fill` skips the block of `steps/25-update-forms/ita.una`, whose body was written by hand. Each `ita.lock` is the text `una ita lock` writes for a package with no dependency (`write_lock` in `crates/una-project/src/ita.rs`).
+
+Outputs, derived from `spec/21 §2` rule 5 and the conformance case `runtime/map_update_run` (whose map rendering and `Err` rendering they follow):
+
+- `10-collections/steps/24-wrong-key/expected/output.txt` (edition `0.2`; this one una 0.3.16 can already check)
+- `10-collections/steps/25-update-forms/expected/output.txt`
+- `10-collections/steps/26-update-report/expected/output.txt` (also confirm that `initial: []` takes its type from the map)
+- `10-collections/steps/27-update-fails/expected/output.txt`
+
+Diagnostics, with the message of `crates/una-check/src/types/collections.rs`:
+
+- `10-collections/steps/28-update-name/expected/diagnostics.txt`, `rendered.txt` (U1002)
