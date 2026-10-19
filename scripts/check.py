@@ -15,7 +15,8 @@ fails. For each page directory `NN-chapter/MM-page/` of a template 1 chapter:
    the template in order, no hidden code (template2.hidden_code: a `$$` line, indented code, a
    fence in a quote or a list, invisible or control characters), its `learn` number matches its path, and its `codes` are the codes its
    outcomes show.
-2. A fresh copy of the package (`una.toml`, `verification.lock`, `src/`) has the outcome in
+2. A fresh copy of the package (`una.toml`, `verification.lock`, `src/`, or from edition 0.4
+   `ita.una`, `ita.lock`, `src/` and the path dependencies under `deps/`) has the outcome in
    `expected/`: either it checks clean at tier 1 in canonical form and `una run` prints
    `expected/output.txt` byte for byte, or `una check` reports exactly the lines of
    `expected/diagnostics.txt`, each `error <code> at <file>:<line>:<col>: <message>`, followed
@@ -43,10 +44,11 @@ release gate runs it, an unset or empty pattern is a failure; without it, the ch
 and the report says so.
 
 `una` always runs with a minimal environment (`una_env`: PATH, a HOME and TMPDIR of its own, a
-fixed locale, no colors, nothing else), on a package whose una.toml stays within MANIFEST_TABLES
-and GRANT, with the commands of COMMAND only. No symbolic link in a page or package is copied
-or followed; each is a failure, and so is a tracked one anywhere. una.toml is read with tomllib,
-or on a Python before 3.11 with the stricter `plain_toml`.
+fixed locale, no colors, nothing else), on a package with exactly one manifest, a una.toml that
+stays within MANIFEST_TABLES and GRANT or an ita.una that stays within ITA_SECTIONS and
+ITA_GRANT (`ita_manifest`), with the commands of COMMAND only. No symbolic link in a page or
+package is copied or followed; each is a failure, and so is a tracked one anywhere. una.toml is
+read with tomllib, or on a Python before 3.11 with the stricter `plain_toml`.
 
 Then every commit's author and committer must be GitHub noreply addresses, and with
 `--archives DIR`, every archive of `scripts/archive.py` must unpack to its page's or chapter's
@@ -82,7 +84,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CHAPTER = re.compile(r"^(\d\d)-[a-z0-9]+(?:-[a-z0-9]+)*$")
 PAGE = CHAPTER
-PACKAGE_FILES = ("README.md", "una.toml", "verification.lock")
+PACKAGE_FILES = ("README.md", "una.toml", "verification.lock", "ita.una", "ita.lock")
+# The manifest of a package and its lock: una.toml and verification.lock in editions 0.1 to
+# 0.3, ita.una and ita.lock from edition 0.4 (spec/30 §2), whose path dependencies are packages
+# under deps/ (spec/30 §12). A package has exactly one manifest.
+MANIFESTS = {"una.toml": "verification.lock", "ita.una": "ita.lock"}
 PARTS = ["## The program", "## What you should see", "## Try it", "## See also"]
 OPTIONAL_PARTS = ["## Notes"]
 DIAGNOSTIC = re.compile(r"^error (U\d{4}) at ([^:]+):(\d+):(\d+): (.+)$")
@@ -164,17 +170,30 @@ def front_matter(text):
 
 def package_files(directory):
     """The files of the package in `directory`, relative to it, in order: the README, the
-    manifest, the lock and every file under `src/`. A symbolic link is never followed: a
-    linked `src/` or directory under it is not entered (`symlinks` reports it)."""
+    manifest, the lock, every file under `src/`, then every file under `deps/`, the path
+    dependencies of edition 0.4. A symbolic link is never followed: a linked `src/`, `deps/` or
+    directory under them is not entered (`symlinks` reports it)."""
     out = [name for name in PACKAGE_FILES if os.path.isfile(os.path.join(directory, name))]
-    src = os.path.join(directory, "src")
-    if os.path.islink(src):
-        return out
-    for base, dirs, files in os.walk(src):
-        dirs.sort()
-        for name in sorted(files):
-            out.append(os.path.relpath(os.path.join(base, name), directory))
+    for top in ("src", "deps"):
+        tree = os.path.join(directory, top)
+        if os.path.islink(tree):
+            continue
+        for base, dirs, files in os.walk(tree):
+            dirs.sort()
+            for name in sorted(files):
+                out.append(os.path.relpath(os.path.join(base, name), directory))
     return out
+
+
+def manifest_name(directory):
+    """The manifest of the package in `directory`, `una.toml` or `ita.una`, as (name, None), or
+    (None, why) when it has both or neither."""
+    found = [name for name in MANIFESTS if os.path.isfile(os.path.join(directory, name))]
+    if len(found) == 1:
+        return found[0], None
+    which = "both una.toml and ita.una" if found else "neither una.toml nor ita.una"
+    return None, (f"{which}; a package has exactly one manifest: una.toml (with verification.lock) "
+                  "in editions 0.1 to 0.3, or ita.una (with ita.lock) from edition 0.4")
 
 
 def copy_package(directory, to, overlay=None):
@@ -247,11 +266,31 @@ def run(una, args, cwd):
 MANIFEST_TABLES = {"package", "run", "escape_budget", "labels", "trusted", "boundaries", "contracts"}
 PACKAGE_KEYS = {"name", "version", "edition"}
 GRANT = re.compile(r"^(console|clock|files:src(/[A-Za-z0-9_-]+)*:(read|write|read,write))$")
-# The commands an `expected/commands/*.txt` may run, all in the package and nowhere else.
+# The commands an `expected/commands/*.txt` may run, all in the package and nowhere else. `ita
+# lock`, with or without `--check`, writes or checks the ita.lock of an edition 0.4 package
+# (spec/30 §4 rule 4), `.` by default; it never widens a ceiling, which takes
+# `--accept-authority`.
 COMMAND = re.compile(
     r"^(--json )?(check|test|run|build|report|obligations) \.$|^fmt --check \.$|^fix --dry-run \.$"
     r"|^(--json )?explain U\d{4}$|^(--json )?(trace|contract) [A-Za-z0-9_.]+$"
+    r"|^(--json )?ita lock( --check)?( \.)?$"
 )
+
+# What a package's ita.una may hold (spec/30 §2), as its una.toml may hold MANIFEST_TABLES: a
+# head with `version` and `edition` only, then these sections. `needs` holds path dependencies
+# under deps/ only, each with `as`, `may` and `accept name`; `run` holds `entry` and `grants`,
+# with the grants of ITA_GRANT and no limit lines. The other sections are una's to check. The
+# ita.una of a dependency under deps/ holds its head only.
+ITA_SECTIONS = ("needs", "labels", "trusted", "escapes", "boundaries", "contracts", "run")
+ITA_NAME = r"[a-z][a-z0-9_]*"
+ITA_VERSION = r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))?(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?"
+ITA_HEAD = re.compile(rf"^ita {ITA_NAME}(/{ITA_NAME})?$")
+ITA_HEAD_LINE = re.compile(rf"^(version|edition) {ITA_VERSION}$")
+ITA_NEED = re.compile(rf'^{ITA_NAME}( as {ITA_NAME})? from path "deps/(?P<dir>{ITA_NAME})"$')
+ITA_CAP = rf"({ITA_NAME}\.)*[A-Z][A-Za-z0-9]*\[{ITA_NAME}(, {ITA_NAME})*\]"
+ITA_NEED_LINE = re.compile(rf"^(may {ITA_CAP}(, {ITA_CAP})*|accept name)$")
+ITA_RUN_LINE = re.compile(rf"^(entry {ITA_NAME}(\.{ITA_NAME})*|grants)$")
+ITA_GRANT = re.compile(r'^(console|clock|files "src(/[A-Za-z0-9_-]+)*/?" (read|write|read, write))$')
 
 
 TOML_KEY = re.compile(r'[A-Za-z0-9_-]+|"[^"\\\n]*"')
@@ -321,9 +360,119 @@ def plain_toml(text):
     return document
 
 
+def ita_lines(text):
+    """The lines of an ita.una, as (number, depth, words): comments, blank lines and the
+    indentation removed, every run of spaces as one and a comma followed by one space. Raises
+    ValueError for what the lexer of spec/30 §1 refuses or a una-by-example manifest never
+    holds: a tab or another control character, a character outside ASCII outside a comment, a
+    text with an escape, `{` or `}`, and an indentation that is not two spaces per level."""
+    bad = re.search(r"[\x00-\x09\x0b-\x1f\x7f]", text)
+    if bad:
+        raise ValueError(f"the control character U+{ord(bad.group(0)):04X}")
+    out = []
+    for number, raw in enumerate(text.split("\n"), start=1):
+        code = re.sub(r'"[^"\\\n]*"', lambda m: m.group(0).replace("--", "\0"), raw).split("--", 1)[0].replace("\0", "--")
+        if not code.isascii():
+            raise ValueError(f"line {number}: a character outside ASCII outside a comment")
+        if re.search(r'[\\{}]', code) or code.count('"') % 2:
+            raise ValueError(f"line {number}: a text is plain, without an escape, `{{` or `}}`")
+        if not code.strip():
+            continue
+        indent = len(code) - len(code.lstrip(" "))
+        if indent % 2:
+            raise ValueError(f"line {number}: indentation is two spaces per level")
+        words = re.sub(r"\s*,\s*", ", ", " ".join(code.split()))
+        out.append((number, indent // 2, words))
+    return out
+
+
+def ita_manifest(package, where, failures, dependency=False):
+    """Whether the ita.una of the copy at `package` is within ITA_SECTIONS and ITA_GRANT, and
+    each path dependency it needs is a package `deps/<name>/` whose ita.una holds its head only.
+    Every directory under deps/ is such a package, with ita.una and src/."""
+    name = "ita.una" if not dependency else f"{dependency}/ita.una"
+    try:
+        lines = ita_lines(read(os.path.join(package, "ita.una")))
+    except (OSError, ValueError, UnicodeDecodeError) as error:
+        failures.add(where, f"{name} cannot be read: {error}")
+        return False
+    good, seen, needed, grants = True, set(), [], False
+
+    def refuse(number, why):
+        nonlocal good
+        failures.add(where, f"{name}:{number}: {why}")
+        good = False
+
+    if not lines or lines[0][1] != 0 or not ITA_HEAD.match(lines[0][2]):
+        refuse(lines[0][0] if lines else 1, "an ita.una starts with its head, `ita <name>`")
+        return False
+    allowed = () if dependency else ITA_SECTIONS
+    section = "ita"
+    for number, depth, words in lines[1:]:
+        if depth == 0:
+            if words not in allowed or words in seen:
+                refuse(number, f"no section `{words}` in una-by-example, or twice; the sections are {list(allowed)}"
+                       + (" (a dependency's ita.una holds its head only)" if dependency else ""))
+                section = None
+                continue
+            section, grants = words, False
+            seen.add(words)
+            continue
+        if section is None:
+            continue
+        if section == "ita":
+            if depth != 1 or not ITA_HEAD_LINE.match(words):
+                refuse(number, "the head holds only `version` and `edition`")
+        elif section == "needs":
+            if depth == 1:
+                need = ITA_NEED.match(words)
+                if not need:
+                    refuse(number, 'a need is a path dependency under deps/: `<name> [as <local>] from path "deps/<dir>"`')
+                else:
+                    needed.append((number, need.group("dir")))
+            elif depth != 2 or not ITA_NEED_LINE.match(words):
+                refuse(number, "under a need, only `may <Capability>[<ops>]` and `accept name`")
+        elif section == "run":
+            if depth == 1:
+                grants = words == "grants"
+                if not ITA_RUN_LINE.match(words):
+                    refuse(number, "run holds only `entry` and `grants`")
+            elif depth != 2 or not grants or not ITA_GRANT.match(words):
+                refuse(number, f"the grant {words!r} is not allowed; grants are console, clock and files \"src[/dir]\" read|write|read, write, with no limit lines")
+    if dependency:
+        return good
+    for number, directory in needed:
+        if not os.path.isfile(os.path.join(package, "deps", directory, "ita.una")):
+            refuse(number, f"deps/{directory} is not a package of the page: it has no ita.una")
+    deps = os.path.join(package, "deps")
+    for entry in sorted(os.listdir(deps)) if os.path.isdir(deps) else []:
+        inner = os.path.join(deps, entry)
+        if not re.fullmatch(ITA_NAME, entry) or not os.path.isdir(inner) or not os.path.isdir(os.path.join(inner, "src")) \
+                or not os.path.isfile(os.path.join(inner, "ita.una")):
+            failures.add(where, f"deps/{entry}: deps/ holds path dependencies only, each a directory <name>/ with ita.una and src/")
+            good = False
+            continue
+        good = ita_manifest(inner, where, failures, dependency=f"deps/{entry}") and good
+    return good
+
+
 def manifest(package, where, failures):
-    """Whether the una.toml of the copy at `package` is within MANIFEST_TABLES and GRANT. It is
-    read with tomllib, or where Python has none, with the stricter `plain_toml`."""
+    """Whether the copy at `package` has exactly one manifest, and it is allowed: a una.toml
+    within MANIFEST_TABLES and GRANT, read with tomllib, or where Python has none, with the
+    stricter `plain_toml`; or an ita.una within ITA_SECTIONS and ITA_GRANT (`ita_manifest`). The
+    lock and the files of the other edition's layout are refused beside it."""
+    found, why = manifest_name(package)
+    if found is None:
+        failures.add(where, why)
+        return False
+    others = [name for name in ("una.toml", "verification.lock", "ita.una", "ita.lock", "deps")
+              if os.path.lexists(os.path.join(package, name)) and name not in (found, MANIFESTS[found])
+              and not (found == "ita.una" and name == "deps")]
+    if others:
+        failures.add(where, f"{found} is the manifest, so the package holds no {' or '.join(others)}")
+        return False
+    if found == "ita.una":
+        return ita_manifest(package, where, failures)
     path = os.path.join(package, "una.toml")
     try:
         with open(path, "rb") as handle:
@@ -471,7 +620,7 @@ def commands(una, package, expected, where, failures, fresh=None):
             continue
         cwd = fresh() if fresh else package
         if not manifest(cwd, where, Failures()):
-            failures.add(f"{where}/commands/{name}", "not run: the package's una.toml is not allowed")
+            failures.add(f"{where}/commands/{name}", f"not run: the package's {manifest_name(cwd)[0] or 'manifest'} is not allowed")
             continue
         args = first[len("$ una "):]
         ran = run(una, args.split(" "), cwd)
@@ -1001,6 +1150,8 @@ if args == ["--json", "check", "."]:
     sys.exit(1 if diagnostics else 0)
 if args == ["fmt", "--check", "."]:
     sys.exit(0)
+if args[:2] == ["ita", "lock"]:
+    sys.exit(0 if os.path.isfile("ita.lock") else 1)
 if args == ["test", "."]:
     print("1 example passed")
     sys.exit(0)
@@ -1107,6 +1258,24 @@ def fixture(root, readme=None, output="hi\n", try_file="bad\n"):
         "error U1001 at src/main.una:3:1: unknown name `bad`\n",
     )
     return page
+
+
+# An edition 0.4 package: ita.una and ita.lock instead of una.toml and verification.lock.
+ITA = "ita main\n  version 0.1.0\n  edition 0.4\n\nrun\n  entry main\n  grants\n    console\n"
+ITA_NEEDS = 'needs\n  tags from path "deps/tags"\n    may Console[print]\n    accept name\n\n'
+ITA_LOCK = '-- Written by `una ita`; do not edit.\nlock 1\n'
+
+
+def edition_04(page, needs=False):
+    """Moves the fixture's page to edition 0.4, with a path dependency under deps/ when `needs`."""
+    os.remove(os.path.join(page, "una.toml"))
+    os.remove(os.path.join(page, "verification.lock"))
+    head, _, rest = ITA.partition("run\n")
+    write(os.path.join(page, "ita.una"), head + (ITA_NEEDS if needs else "") + "run\n" + rest)
+    write(os.path.join(page, "ita.lock"), ITA_LOCK)
+    if needs:
+        write(os.path.join(page, "deps", "tags", "ita.una"), "ita tags\n  version 0.3.0\n  edition 0.4\n")
+        write(os.path.join(page, "deps", "tags", "src", "format.una"), "module format\n")
 
 
 def git(root, *args, email="1+someone@users.noreply.github.com"):
@@ -1263,6 +1432,31 @@ def self_test():
              lambda r, p: write(os.path.join(p, "README.md"), README.format(codes="U1001").replace("A lead.", "A zebra-canary lead.")),
              "matches the neutrality pattern", pattern="zebra-canary")
 
+        # Edition 0.4: ita.una and ita.lock, path dependencies under deps/, and `una ita lock`.
+        case("an edition 0.4 page", True, lambda r, p: edition_04(p))
+        case("an edition 0.4 page with a path dependency", True, lambda r, p: edition_04(p, needs=True), archive=True)
+        case("both manifests", False,
+             lambda r, p: write(os.path.join(p, "ita.una"), ITA), "both una.toml and ita.una")
+        case("neither manifest", False,
+             lambda r, p: os.remove(os.path.join(p, "una.toml")), "neither una.toml nor ita.una")
+        case("verification.lock beside ita.una", False,
+             lambda r, p: (edition_04(p), write(os.path.join(p, "verification.lock"), "lock\n")),
+             "ita.una is the manifest, so the package holds no verification.lock")
+        case("a need outside deps/", False,
+             lambda r, p: (edition_04(p, needs=True), write(os.path.join(p, "ita.una"), read(os.path.join(p, "ita.una")).replace('"deps/tags"', '"../tags"'))),
+             "a need is a path dependency under deps/")
+        case("a grant of the environment in ita.una", False,
+             lambda r, p: (edition_04(p), write(os.path.join(p, "ita.una"), ITA.replace("    console\n", "    console\n    env\n"))),
+             "the grant 'env' is not allowed")
+        case("a dependency with needs", False,
+             lambda r, p: (edition_04(p, needs=True), write(os.path.join(p, "deps", "tags", "ita.una"), "ita tags\n  version 0.3.0\n  edition 0.4\n\n" + ITA_NEEDS)),
+             "a dependency's ita.una holds its head only")
+        case("an ita lock command", True,
+             lambda r, p: (edition_04(p), write(os.path.join(p, "expected", "commands", "lock.txt"), "$ una ita lock --check .\n")))
+        case("an ita lock command that widens", False,
+             lambda r, p: (edition_04(p), write(os.path.join(p, "expected", "commands", "lock.txt"), "$ una ita lock --accept-authority .\n")),
+             "is not one of the commands")
+
         def tamper(directory):
             path = os.path.join(directory, "01-01-first.tar.gz")
             with tarfile.open(path, "w:gz") as archive:
@@ -1292,7 +1486,7 @@ def self_test():
         for item in failed:
             print(f"  {item}", file=sys.stderr)
         return 1
-    print("check.py: self-test PASS (47 cases, archives reproducible, and the template 2 tests)")
+    print("check.py: self-test PASS (57 cases, archives reproducible, and the template 2 tests)")
     return 0
 
 
