@@ -1,0 +1,7 @@
+2.4 kg: true
+0.0 kg: false
+-0.0 kg: false
+-1.5 kg: false
+nan kg: false
+inf kg: false
+0.75 kg: true

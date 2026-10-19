@@ -1,0 +1,16 @@
+module floats
+
+--- Prints float literals, and what the operators and a few methods give on them.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp_kg = 1.25
+  let rug_kg = 3.5
+  @console.print("{lamp_kg} and {rug_kg}")
+  @console.print("{lamp_kg + rug_kg}, {rug_kg - lamp_kg}, {lamp_kg * 4.0} and {rug_kg / 2.0}")
+  @console.print("{-lamp_kg} and {(lamp_kg + rug_kg) * 2.0}")
+  @console.print("{1_250.5}, {2.5e3}, {1.5e-3} and {6.0e-7}")
+  @console.print("{1.0e20} and {1.0e21}")
+  @console.print("{2.0.sqrt()}, {(-7.5).abs()} and {7.5.rem(by: 2.0)}")
+  @console.print("{0.1 + 0.2} and {1.0 / 3.0}")
+  @console.print("{1.10 + 2.20} and {1.5 + 2.25}")

@@ -1,0 +1,19 @@
+module specials
+
+--- Prints the special values of `F64`, and how `F64` values compare.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let empty_kg = 0.0
+  let returned_kg = -empty_kg
+  @console.print("{1.0 / empty_kg}, {-1.0 / empty_kg} and {empty_kg / empty_kg}")
+  @console.print("{infinity()}, {-infinity()} and {nan()}")
+  @console.print("{empty_kg} and {returned_kg}")
+  @console.print("{nan() == nan()} and {empty_kg == returned_kg}")
+  @console.print("{nan().ieee_eq(other: nan())} and {empty_kg.ieee_eq(other: returned_kg)}")
+  @console.print("{returned_kg < empty_kg} and {returned_kg.ieee_lt(other: empty_kg)}")
+  @console.print("{sort([2.5, nan(), -1.0, empty_kg, returned_kg, infinity()])}")
+  @console.print("{max(nan(), b: 2.5)} and {min(nan(), b: 2.5)}")
+  @console.print("{nan().is_nan()}, {infinity().is_finite()} and {returned_kg.is_zero()}")
+  let tiny = 1.0e-300
+  @console.print("{tiny * tiny}, {(tiny * tiny).is_zero()} and {-tiny * tiny}")

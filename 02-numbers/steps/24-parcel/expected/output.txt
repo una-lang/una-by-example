@@ -1,0 +1,4 @@
+Lamp box: 1.8 kg by volume
+Rug box: 15.0 kg by volume
+Lamp parcel billed at 2.6 kg
+Rug parcel billed at 15.0 kg

@@ -1,0 +1,1 @@
+error U2033 at src/scale.una:4:66: `>` compares an `F64` with a literal zero, which tells `-0.0` from `0.0` by the order of `F64`

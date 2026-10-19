@@ -1,18 +1,18 @@
 ---
 learn: "2"
 title: Numbers
-editions: ["0.2"]
-codes: [U0007, U0101, U1001, U1002, U2001, U2022, U5001]
-time: 50
+editions: ["0.2", "0.3"]
+codes: [U0007, U0101, U1001, U1002, U2001, U2022, U2033, U5001]
+time: 80
 builds: A packing slip that a store prints for the box of one order, with examples that test each line
 prerequisites: ["1"]
 template: 2
-nav: ["Values, types and let", "Whole numbers: Int", "Fixed-width integers", "Day-to-day: a packing slip", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
+nav: ["Values, types and let", "Whole numbers: Int", "Fixed-width integers", "Numbers with a fraction: F64", "Converting and rounding", "Special values of F64", "Day-to-day: a packing slip", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 2 Numbers
 
-A store counts all day: units on a shelf, lines of an order, boxes for a parcel, prices in cents. In chapter 1 every value your programs used was a text. This chapter adds numbers. You learn what a value and its type are, how to give a value a name with `let`, and how to print a number. Then you meet Una's whole numbers, `Int`, which never overflow, and the fixed-width integers, such as `U8`, for the places where a number must fit a set size. You end with the packing slip that goes into the box of an order, checked, run and tested.
+A store counts all day: units on a shelf, lines of an order, boxes for a parcel, prices in cents. In chapter 1 every value your programs used was a text. This chapter adds numbers. You learn what a value and its type are, how to give a value a name with `let`, and how to print a number. Then you meet Una's whole numbers, `Int`, which never overflow, the fixed-width integers, such as `U8`, for the places where a number must fit a set size, and `F64`, for measurements with a fraction, such as a weight in kilograms. You end with the packing slip that goes into the box of an order, checked, run and tested.
 
 ## What you'll build
 
@@ -47,7 +47,7 @@ Una makes each of these a rule that `una check` enforces before the program runs
 
 :::steps
 1. **`Int` has no largest value.** A sum or a product of whole numbers is always exact, however large it grows.
-2. **There are no inexact numbers.** Una has no type for fractions yet, so an amount such as 19.90 is counted in whole cents, the `Int` 1990, and nothing rounds unless the code says how.
+2. **Inexact numbers have a type of their own.** An amount such as 19.90 is counted in whole cents, the `Int` 1990. A measurement with a fraction is an `F64`, which never mixes with an integer, and nothing rounds unless the code says how.
 3. **A division must be safe.** A division by a value that may be zero does not pass the check, and the check says which value breaks it.
 4. **A fixed size is proved.** Where you choose a type with a set size, every operation on it must be proved to stay inside that size.
 5. **No value changes its type on its own.** A number becomes a text only where the code puts it into one.
@@ -386,13 +386,13 @@ pub main() -> Unit
 ───╯
 ```
 
-The message says that `19.90` is a **fractional literal**, a number with a fraction, and that Una's integer literals are written in decimal digits only. Una has no type for numbers with a fraction today.
+The message says that `19.90` is a **fractional literal**, a number with a fraction, and that Una's integer literals are written in decimal digits only. In edition `0.2`, the edition of this package, Una has no type for numbers with a fraction.
 
 For money, whole cents work well. Many languages store a fraction such as 0.10 as a binary approximation, so that adding prices gives totals such as 0.30000000000000004, and every program rounds them in its own way, often without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
 
-### Numbers with a fraction: still to come
+### Numbers with a fraction
 
-Two kinds of number with a fraction are planned for Una. A **decimal** type will hold amounts such as 19.90 exactly, in base ten, as people write them. **Floating-point** types will hold approximate values over a very wide range, for measurements and science, where a tiny rounding error does not matter. When they arrive, this chapter gains a section for each. Until then, keep money in cents and measures in whole small units, such as grams or millimeters, all as `Int`.
+Edition `0.3` adds a type for numbers with a fraction: `F64`, a **floating-point** number, which holds approximate values over a very wide range, for measurements, where a tiny rounding error does not matter. [Section 2.4](#s2-4) teaches it. It is not a type for money: an `F64` holds 19.90 only approximately. A **decimal** type, which will hold amounts such as 19.90 exactly, in base ten, as people write them, is planned for a later edition. Until then, keep money in cents, as `Int`.
 
 ### How to write integers and arithmetic
 
@@ -616,7 +616,7 @@ The obligation is `0 != 0`, false whatever the values are, so it needs no counte
 | A field that another program, a file or a device reads with a fixed size | a fixed-width type ([section 2.3](#s2-3)) |
 | A code made of digits, such as a postal code with a leading zero | `Text`: you never compute with it, and `01310` is not an integer literal |
 | A price with a fraction | `Int` cents, written with two decimals where the program prints it, as [exercise 3](#exercise-3-amounts-with-two-decimals) does |
-| A measure with a fraction | `Int` in a smaller unit, such as grams or millimeters |
+| A measure with a fraction | `F64` in edition `0.3` ([section 2.4](#s2-4)), or `Int` in a smaller unit, such as grams or millimeters |
 :::
 
 ### Check yourself: integers
@@ -888,7 +888,687 @@ It does not check:
 500 − 600 is −100. `saturating_sub` stops at 0. `wrapping_sub` wraps around the 65536 values of a `U16`: −100 + 65536 is 65436.
 :::
 
-## 2.4 Day-to-day: a packing slip
+## 2.4 Numbers with a fraction: `F64`
+
+### What a floating-point number is
+
+Some numbers in a store are not counts. A desk lamp weighs 1.25 kilograms, a box is 30.5 centimeters long, and the reviews of a product give it 4.3 stars on average. Each of these is a **measurement**: a number with a fraction, read from a scale or a ruler, or computed from other measurements.
+
+A **floating-point number** holds such a value as a row of digits and the place where the point goes, as scientific notation writes 1.25 × 10³ for 1250. The point "floats" to wherever the value needs it, so one type holds both the weight of a stamp and the distance to the moon. Una's floating-point type is `F64`: a number stored in 64 bits, with about 16 significant digits, from about 5 × 10⁻³²⁴ up to about 1.8 × 10³⁰⁸, positive or negative.
+
+Those 64 bits hold a fixed number of binary digits, so most fractions are not stored exactly. Think of a ruler with very fine marks: a length that falls between two marks is read as the nearest one. `0.1` is stored as the nearest value the 64 bits can hold, which is a tiny bit more than one tenth. For a measurement that is fine, since the scale itself is less precise than that. For money it is not, which is why money stays in whole cents.
+
+> [!NOTE]
+> `F64` belongs to edition `0.3`, a preview ([section 19.3](/learn/editions/#s19-3)). Every step of sections 2.4 to 2.6 says `edition = "0.3"` in its `una.toml`. In editions `0.1` and `0.2`, `1.25` is an error, as [Why money is whole cents](#why-money-is-whole-cents) shows, and `F64` is an ordinary name.
+
+### Why a store measures with `F64`
+
+[Why money is whole cents](#why-money-is-whole-cents) wrote a price with a decimal point, and edition `0.2` refused it. Change only the edition of that package:
+
+```diff include="steps/09-fraction..steps/22-fraction-0-3:una.toml" title="una.toml" context="0"
+--- a/una.toml
++++ b/una.toml
+@@ -4 +4 @@
+-edition = "0.2"
++edition = "0.3"
+```
+
+Now the package checks, and `una run .` prints:
+
+```text include="steps/22-fraction-0-3/expected/output.txt"
+19.9
+```
+
+The line `let lamp = 19.90` is the same, and now it gives an `F64`. Look at what it prints: `19.9`, not `19.90`. An `F64` is a number, not the way it was written, and a number has no trailing zeros to keep. A price tag needs exactly two digits after the point, and a total of prices needs to be exact to the cent, so a price stays an `Int` of cents. `F64` is for the other numbers with a fraction: weights, lengths, volumes, ratings and averages, where the value is a measurement and the last digit does not matter.
+
+### How to write an `F64`
+
+#### The edition in `una.toml`
+
+A package that uses `F64` names edition `0.3`:
+
+```toml include="steps/23-floats/una.toml" title="steps/23-floats/una.toml"
+[package]
+name = "floats"
+version = "0.1.0"
+edition = "0.3"
+
+[run]
+entry = "floats"
+grants = ["console"]
+```
+
+#### Float literals
+
+A **float literal** is a number written with a point: `1.25`, `3.5`, `0.75`. It is always an `F64`.
+
+- Write digits on both sides of the point: `0.5`, not `.5`, and `5.0`, not `5.`.
+- Group the digits with `_`, between two digits only: `1_250.5`.
+- Add a power of ten with `e`: `2.5e3` is 2.5 × 10³, so 2500.0, and `1.5e-3` is 1.5 × 10⁻³, so 0.0015. The `e` is lowercase, a negative exponent takes `-`, and there is no `+`.
+- The whole part has no leading zero, except `0` itself: `0.5`, not `00.5`.
+
+A number that breaks one of these rules, such as `.5`, `1.`, `1e5`, `1.0E5` or `1.0e+5`, does not check (U0007), and the message shows the form to write instead. An integer literal never becomes an `F64`: where an `F64` is expected, write `5000.0`, not `5000`. [Integers and `F64` do not mix](#integers-and-f64-do-not-mix) shows what `una check` says.
+
+#### A negative value
+
+Put a minus sign in front, as for an `Int`: `-1.25`, or `-lamp_kg` for a name. When a method is called on a negative literal, put the literal in parentheses: `(-7.5).abs()`. Without them, `-7.5.abs()` would call `abs` on `7.5` first, and then make the result negative.
+
+#### Arithmetic on `F64`
+
+`+`, `-`, `*` and `/` work on two `F64` values and give an `F64`, in the same order as on `Int` ([section 2.2](#the-order-of-operations)): `*` and `/` before `+` and `-`, left to right, and parentheses first. `/` keeps the fraction: `7.0 / 2.0` is 3.5. There is no `mod` on `F64`.
+
+#### Methods
+
+An `F64` has methods, called with a dot as `copies.to_int()` is in [section 2.3](#method-calls):
+
+| Method | Gives | Example |
+| --- | --- | --- |
+| `x.abs()` | `x` without its minus sign | `(-7.5).abs()` is 7.5 |
+| `x.sqrt()` | the square root of `x` | `2.0.sqrt()` is 1.4142135623730951 |
+| `x.rem(by: y)` | the remainder of `x` divided by `y`, with the sign of `x` | `7.5.rem(by: 2.0)` is 1.5 |
+
+[Section 2.5](#s2-5) adds the methods that convert and round, and [section 2.6](#s2-6) those that compare and test special values.
+
+### Each float form at work
+
+The step writes each form, with two weights in kilograms:
+
+```una include="steps/23-floats/src/floats.una#L7-L14" title="steps/23-floats/src/floats.una"
+  let lamp_kg = 1.25
+  let rug_kg = 3.5
+  @console.print("{lamp_kg} and {rug_kg}")
+  @console.print("{lamp_kg + rug_kg}, {rug_kg - lamp_kg}, {lamp_kg * 4.0} and {rug_kg / 2.0}")
+  @console.print("{-lamp_kg} and {(lamp_kg + rug_kg) * 2.0}")
+  @console.print("{1_250.5}, {2.5e3}, {1.5e-3} and {6.0e-7}")
+  @console.print("{1.0e20} and {1.0e21}")
+  @console.print("{2.0.sqrt()}, {(-7.5).abs()} and {7.5.rem(by: 2.0)}")
+```
+
+```text include="steps/23-floats/expected/output.txt#L1-L6"
+1.25 and 3.5
+4.75, 2.25, 5.0 and 1.75
+-1.25 and 9.5
+1250.5, 2500.0, 0.0015 and 6.0e-7
+100000000000000000000.0 and 1.0e21
+1.4142135623730951, 7.5 and 1.5
+```
+
+- `lamp_kg * 4.0` is `5.0`. A whole `F64` is printed with `.0`, so it never looks like an `Int`.
+- `1_250.5` prints as `1250.5`: the `_` is for the reader of the code only.
+- `2.5e3` prints as `2500.0`, and `1.5e-3` as `0.0015`. A very small or very large value prints with `e`: `6.0e-7` and `1.0e21`.
+- `2.0.sqrt()` calls `sqrt` on the literal `2.0`. The point that follows a digit starts the fraction; the point after the fraction calls the method.
+
+### Weighing a parcel by its volume
+
+A carrier bills a light but bulky parcel by the room it takes in the truck. Its **volumetric weight** is its length times its width times its height, in centimeters, divided by 5000, and the parcel is billed by its weight on the scale or its volumetric weight, whichever is greater:
+
+:::steps
+```una include="steps/24-parcel/src/parcel.una" title="steps/24-parcel/src/parcel.una" verified="check, run"
+module parcel
+
+--- The volumetric weight of a box in kilograms: its volume in cubic centimeters, divided by 5000.
+pub volumetric_kg(length_cm: F64, width_cm: F64, height_cm: F64) -> F64 = length_cm * width_cm * height_cm / 5000.0
+
+--- The weight a carrier bills a parcel by: its weight on the scale or its volumetric weight,
+--- whichever is greater.
+pub billed_kg(scale_kg: F64, length_cm: F64, width_cm: F64, height_cm: F64) -> F64
+=
+  let volume_kg = volumetric_kg(length_cm, width_cm: width_cm, height_cm: height_cm)
+  max(scale_kg, b: volume_kg)
+
+--- Prints the weights of two parcels: a desk lamp, and a rolled rug.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp_box = volumetric_kg(30.0, width_cm: 20.0, height_cm: 15.0)
+  let rug_box = volumetric_kg(120.0, width_cm: 25.0, height_cm: 25.0)
+  @console.print("Lamp box: {lamp_box} kg by volume")
+  @console.print("Rug box: {rug_box} kg by volume")
+  let lamp_billed = billed_kg(2.6, length_cm: 30.0, width_cm: 20.0, height_cm: 15.0)
+  let rug_billed = billed_kg(4.2, length_cm: 120.0, width_cm: 25.0, height_cm: 25.0)
+  @console.print("Lamp parcel billed at {lamp_billed} kg")
+  @console.print("Rug parcel billed at {rug_billed} kg")
+```
+
+1. **`volumetric_kg(length_cm: F64, width_cm: F64, height_cm: F64) -> F64`.** Three measurements in, one out, all `F64`.
+2. **`length_cm * width_cm * height_cm / 5000.0`.** The divisor is the float literal `5000.0`, since an `F64` divides only by an `F64`.
+3. **`max(scale_kg, b: volume_kg)`.** The prelude's `max` of [section 2.2](#functions-on-whole-numbers-abs-min-and-max) takes two `F64` values too, and gives the greater.
+4. **`volumetric_kg(30.0, width_cm: 20.0, height_cm: 15.0)`.** Each argument is a float literal. `30` would not check here.
+:::
+
+`una run .` prints:
+
+```text include="steps/24-parcel/expected/output.txt"
+Lamp box: 1.8 kg by volume
+Rug box: 15.0 kg by volume
+Lamp parcel billed at 2.6 kg
+Rug parcel billed at 15.0 kg
+```
+
+The lamp's box takes little room, 1.8 kilograms by volume, so the scale's 2.6 kilograms is billed. The rolled rug weighs 4.2 kilograms, but its long box counts as 15 kilograms, and that is what the carrier bills.
+
+### How `F64` behaves
+
+#### Most fractions are approximate
+
+An `F64` holds the binary value nearest to each literal, and each operation gives the value nearest to the exact result. Most of the time the printed result is the one you expect. Sometimes the tiny differences show:
+
+```una include="steps/23-floats/src/floats.una#L15" title="steps/23-floats/src/floats.una"
+  @console.print("{0.1 + 0.2} and {1.0 / 3.0}")
+```
+
+```text include="steps/23-floats/expected/output.txt#L7"
+0.30000000000000004 and 0.3333333333333333
+```
+
+Neither `0.1` nor `0.2` is stored exactly, and their sum lands on a value just above the one nearest to `0.3`, so it prints with all its digits. `1.0 / 3.0` stops after about 16 digits. Una computes every operation by the same rule on every machine, in the interpreter and in a built program alike, so a program prints the same digits everywhere. The rule does not make the values exact. That is why a total of prices is an `Int` of cents.
+
+#### Printing an `F64`
+
+An `F64` in braces goes into the text as the shortest row of digits that reads back as the same value: `1.25`, `0.0015`, `0.30000000000000004`. There is always at least one digit after the point. A value from 0.000001 up to below 10²¹ is written with all its digits; a smaller or larger one with `e`:
+
+```una include="steps/23-floats/src/floats.una#L12-L13" title="steps/23-floats/src/floats.una"
+  @console.print("{1_250.5}, {2.5e3}, {1.5e-3} and {6.0e-7}")
+  @console.print("{1.0e20} and {1.0e21}")
+```
+
+```text include="steps/23-floats/expected/output.txt#L4-L5"
+1250.5, 2500.0, 0.0015 and 6.0e-7
+100000000000000000000.0 and 1.0e21
+```
+
+Every printed `F64` is itself a float literal, after its sign, so you can paste it into a program and get the same value back.
+
+#### Integers and `F64` do not mix
+
+An operator takes two values of one type, as for the fixed-width integers. Write the divisor of `volumetric_kg` as the integer `5000`:
+
+```diff include="steps/24-parcel..steps/25-float-integer:src/parcel.una" title="src/parcel.una" context="0"
+--- a/src/parcel.una
++++ b/src/parcel.una
+@@ -4 +4 @@
+-pub volumetric_kg(length_cm: F64, width_cm: F64, height_cm: F64) -> F64 = length_cm * width_cm * height_cm / 5000.0
++pub volumetric_kg(length_cm: F64, width_cm: F64, height_cm: F64) -> F64 = length_cm * width_cm * height_cm / 5000
+```
+
+```text include="steps/25-float-integer/expected/rendered.txt#L1,L8"
+[U2001] Error: the integer literal `5000` is not an `F64`; a float literal has a point
+   │ Help: repair 1: write `5000.0`; edit src/parcel.una:4:110..4:114 to "5000.0"
+```
+
+The message says that `5000` is an integer literal, and that an `F64` needs a float literal, with a point. The help line is an exact edit, to `5000.0`, so `una fix .` can apply it. For a name that holds an integer, such as a count of boxes, you convert it instead, with `to_f64()`, which [section 2.5](#s2-5) teaches.
+
+#### Division by zero gives a value, not an error
+
+On `Int`, a division by a value that may be zero is refused before the program runs ([section 2.2](#division-by-zero-a-proof-obligation)). On `F64`, every operation has a result, and none stops the program: `1.0 / 0.0` is an infinity, and `0.0 / 0.0` is a value that is not a number. [Section 2.6](#s2-6) shows these values and how to test for them.
+
+### `Int`, fixed width or `F64`
+
+:::decide
+**Which to use:**
+
+| The number… | Use |
+| --- | --- |
+| Is a count of whole things | `Int` |
+| Is money | `Int` cents, never `F64` |
+| Is read or written in a set number of bits by a device or a format | a fixed-width integer |
+| Is a measurement with a fraction: a weight, a length, a rating | `F64`, in edition `0.3` |
+| Is an average or a ratio of two counts | `F64`, converting the counts with `to_f64()` |
+:::
+
+### Check yourself: `F64`
+
+The last line of `floats` adds two pairs of literals:
+
+```una include="steps/23-floats/src/floats.una#L16" title="steps/23-floats/src/floats.una"
+  @console.print("{1.10 + 2.20} and {1.5 + 2.25}")
+```
+
+What does it print? One of the two sums prints exactly as a person would write it, and the other does not. Which, and why?
+
+:::answer Show the answer
+```text include="steps/23-floats/expected/output.txt#L8"
+3.3000000000000003 and 3.75
+```
+
+`1.5` is 1 + 1/2, and `2.25` is 2 + 1/4. Halves and quarters are binary fractions, so both are stored exactly, and so is their sum, 3.75. `1.10` and `2.20` are tenths, which no binary digits hold exactly, so their sum lands one step away from the value nearest to 3.3, and prints with every digit.
+:::
+
+## 2.5 Converting and rounding
+
+### What a conversion is
+
+A **conversion** makes a value of one type from a value of another: an `F64` from an `Int`, or an `Int` from an `F64`. **Rounding** is part of the second: 2.7 kilograms becomes 2 or 3 whole kilograms only by a rule that says which. Think of a cashier who weighs loose coffee: the scale shows 0.347 kilograms, and the store's rule decides whether the receipt says 347 grams or 350.
+
+### Why conversions are written
+
+A program often mixes counts and measurements. The average rating of a product is the total of its stars, an `Int`, divided by its number of reviews, another `Int`, and the result is an `F64`. Divide an `F64` by the `Int` count of reviews, and `una check` stops:
+
+```diff include="steps/27-label..steps/28-int-operand:src/label.una" title="src/label.una" context="0"
+--- a/src/label.una
++++ b/src/label.una
+@@ -10 +10 @@
+-pub average_stars(total_stars: Int, reviews: Int) -> F64 = total_stars.to_f64() / reviews.to_f64()
++pub average_stars(total_stars: Int, reviews: Int) -> F64 = total_stars.to_f64() / reviews
+```
+
+```text include="steps/28-int-operand/expected/rendered.txt"
+[U2001] Error: an operand of `/` must be `F64`, found `Int`
+    ╭─[ src/label.una:10:83 ]
+    │
+ 10 │ pub average_stars(total_stars: Int, reviews: Int) -> F64 = total_stars.to_f64() / reviews
+    │                                                                                   ───┬───
+    │                                                                                      ╰───── an operand of `/` must be `F64`, found `Int`
+    │
+    │ Help: repair 1: convert the integer with `to_f64()`; edit src/label.una:10:83..10:90 to "(reviews).to_f64()"
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
+```
+
+The message says that an operand of `/` must be an `F64` and is an `Int`. The help is an exact edit: convert the integer with `to_f64()`. Una never converts a number on its own, in either direction. A conversion from `F64` to an integer must round, and a program that rounds without saying how gives totals that differ from another program's by a cent here and a gram there. So each conversion is a method you write, and each rounding has a name that says its rule.
+
+### How to convert and round
+
+#### From an integer: `to_f64()`
+
+`n.to_f64()` gives the `F64` of an `Int` or of a fixed-width integer: `3.to_f64()` is `3.0`. Every integer from −9,007,199,254,740,992 to 9,007,199,254,740,992 (2⁵³) converts exactly. A larger one becomes the nearest `F64`, as [Large integers are rounded](#large-integers-are-rounded) shows. It never fails.
+
+#### Back to an integer: `to_int_exact()`
+
+`x.to_int_exact()` gives the `Int` of an `F64` that is a whole number, and nothing for any other. Its result is an `Option[Int]`: either `Some(n)`, which holds the `Int` `n`, or `None`, which holds nothing. [Section 7.1](/learn/failure/#s7-1) teaches `Option` in full; here it is enough to print one. `2.0.to_int_exact()` is `Some(2)`, and `2.5.to_int_exact()` is `None`, since 2.5 has a fraction. To get an `Int` from 2.5, round it first, then convert: `2.5.floor().to_int_exact()` is `Some(2)`.
+
+#### Rounding to a whole number
+
+Each rounding method gives an `F64` with no fraction. They differ in which way they go:
+
+| Method | Goes | `2.5` gives | `-2.5` gives |
+| --- | --- | --- | --- |
+| `x.floor()` | down, toward minus infinity | 2.0 | -3.0 |
+| `x.ceil()` | up, toward plus infinity | 3.0 | -2.0 |
+| `x.trunc()` | toward zero: drops the fraction | 2.0 | -2.0 |
+| `x.round_half_even()` | to the nearest; a tie goes to the even neighbor | 2.0 | -2.0 |
+| `x.round_half_away()` | to the nearest; a tie goes away from zero | 3.0 | -3.0 |
+
+A **tie** is a value exactly halfway between two whole numbers, such as 2.5. Rounding a tie to the even neighbor, as many accounting and measurement standards do, sends half the ties up and half down, so a long column of rounded values does not drift upward. Rounding a tie away from zero is the rule most people learned at school.
+
+#### Reading a number from a text: `parse_f64`
+
+`parse_f64("2.75")` reads an `F64` from a text, as a program does with a weight typed by a person or sent by a scale. A text that is not a number makes it fail, so it is called with `attempt`, which keeps the outcome as a value: `Ok` with the number, or `Err` with the reason. [Section 7.4](/learn/failure/#s7-4) teaches `attempt`. The text is read as JSON writes numbers: `2.75`, `-0.5`, `1e3` and `1E+3` are read, and `2,75` and ` 2.75` (with a space) are not.
+
+### Each conversion at work
+
+```una include="steps/26-conversions/src/convert.una#L7-L15" title="steps/26-conversions/src/convert.una"
+  let boxes = 3
+  let tape_m: U8 = 12
+  @console.print("{boxes.to_f64()} and {tape_m.to_f64()}")
+  @console.print("{2.0.to_int_exact()}, {2.5.to_int_exact()} and {(-0.0).to_int_exact()}")
+  @console.print("{2.5.floor()}, {2.5.ceil()} and {(-2.5).trunc()}")
+  @console.print("{2.5.round_half_even()}, {3.5.round_half_even()} and {2.5.round_half_away()}")
+  @console.print("{(-2.5).floor()}, {(-2.5).ceil()} and {(-2.5).round_half_away()}")
+  @console.print("{2.7.floor().to_int_exact()} and {infinity().to_int_exact()}")
+  @console.print("{9007199254740993.to_f64()}")
+```
+
+```text include="steps/26-conversions/expected/output.txt#L1-L7"
+3.0 and 12.0
+Some(2), None and Some(0)
+2.0, 3.0 and -2.0
+2.0, 4.0 and 3.0
+-3.0, -2.0 and -3.0
+Some(2) and None
+9007199254740992.0
+```
+
+- `tape_m` is a `U8`, and `to_f64()` converts it as it converts the `Int` `boxes`.
+- `(-0.0).to_int_exact()` is `Some(0)`: the integer zero has no sign. [Section 2.6](#s2-6) explains `-0.0`.
+- On the line of ties, `round_half_even()` sends 2.5 down to 2.0 and 3.5 up to 4.0, the even neighbor each time. `round_half_away()` sends 2.5 up to 3.0.
+- `infinity().to_int_exact()` is `None`: no integer is infinite.
+
+The step then reads two texts:
+
+```una include="steps/26-conversions/src/convert.una#L16-L18" title="steps/26-conversions/src/convert.una"
+  let read = attempt parse_f64("2.75")
+  let misread = attempt parse_f64("2,75")
+  @console.print("{read} and {misread}")
+```
+
+```text include="steps/26-conversions/expected/output.txt#L8"
+Ok(2.75) and Err(NotADigit(1))
+```
+
+`NotADigit(1)` says where the reading stopped: at position 1, the comma, counting from 0.
+
+### A parcel label and a product rating
+
+The step prints the weight of a parcel for a label printer that takes whole grams, the whole kilograms a carrier bills, and the rating of a product:
+
+:::steps
+```una include="steps/27-label/src/label.una" title="steps/27-label/src/label.una" verified="check, run"
+module label
+
+--- The weight of a parcel in whole grams, for the label printer: to the nearest gram, ties to even.
+pub grams(weight_kg: F64) -> Option[Int] = (weight_kg * 1000.0).round_half_even().to_int_exact()
+
+--- The whole kilograms a carrier bills: every kilogram started counts, so the weight is rounded up.
+pub billed_kilograms(weight_kg: F64) -> Option[Int] = weight_kg.ceil().to_int_exact()
+
+--- The average of the star ratings of a product, each rating from 1 to 5.
+pub average_stars(total_stars: Int, reviews: Int) -> F64 = total_stars.to_f64() / reviews.to_f64()
+
+--- A value shown with one digit after the point: 4.2857 is shown as 4.3.
+pub one_decimal(x: F64) -> F64 = (x * 10.0).round_half_away() / 10.0
+
+--- Prints the label of a parcel, and the rating of a product.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weight_kg = 2.3456
+  @console.print("Weight in grams: {grams(weight_kg)}")
+  @console.print("Billed kilograms: {billed_kilograms(weight_kg)}")
+  let stars = average_stars(30, reviews: 7)
+  @console.print("Rating: {stars}, shown as {one_decimal(stars)}")
+  @console.print("No reviews: {average_stars(0, reviews: 0)}, and in grams {grams(nan())}")
+```
+
+1. **`(weight_kg * 1000.0).round_half_even().to_int_exact()`.** Kilograms to grams, rounded to the nearest gram, then converted. The result is an `Option[Int]`, since a weight that is not a number has no grams.
+2. **`weight_kg.ceil().to_int_exact()`.** The carrier counts every kilogram started, so the weight is rounded up.
+3. **`total_stars.to_f64() / reviews.to_f64()`.** Both counts converted, then divided, so the average keeps its fraction. An `Int` division would give 4, not 4.28.
+4. **`(x * 10.0).round_half_away() / 10.0`.** One digit after the point: 42.857 is rounded to 43.0, and divided back to 4.3.
+5. **`average_stars(0, reviews: 0)`.** A product with no reviews. The division is by `0.0`, an `F64`, so it is not refused; it gives a value that is not a number.
+:::
+
+`una run .` prints:
+
+```text include="steps/27-label/expected/output.txt"
+Weight in grams: Some(2346)
+Billed kilograms: Some(3)
+Rating: 4.285714285714286, shown as 4.3
+No reviews: nan, and in grams None
+```
+
+The last line shows the two ends of an empty case: the average prints as `nan`, "not a number", and its grams are `None`. [Section 2.6](#s2-6) shows how to test for it before it reaches a label.
+
+### How conversions behave
+
+#### `to_int` is not a conversion of `F64`
+
+The integer types convert with `to_int()` ([section 2.3](#converting-between-integer-types)). An `F64` does not:
+
+```diff include="steps/27-label..steps/29-to-int:src/label.una" title="src/label.una" context="0"
+--- a/src/label.una
++++ b/src/label.una
+@@ -7 +7 @@
+-pub billed_kilograms(weight_kg: F64) -> Option[Int] = weight_kg.ceil().to_int_exact()
++pub billed_kilograms(weight_kg: F64) -> Int = weight_kg.ceil().to_int()
+```
+
+```text include="steps/29-to-int/expected/rendered.txt#L1,L8"
+[U2001] Error: `to_int` is not a conversion of `F64`; `to_int_exact()` gives `Some` of an integral value and `None` otherwise
+   │ Help: repair 1: write `x.to_int_exact()`, after `floor()`, `ceil()`, `trunc()` or a rounding when the value may have a fraction
+```
+
+The message says that `to_int_exact()` is the conversion, and the help says to round first when the value may have a fraction. A conversion that rounds on its own would hide which way it rounds, and one that stops the program on 2.5 would fail in front of a customer. `to_int_exact()` does neither: it gives `None`, and the code says what happens then.
+
+#### No `round()`
+
+There is no method named `round`. Each rounding method's name says how it treats a tie, so a reader never has to guess.
+
+#### Large integers are rounded
+
+An `F64` holds about 16 significant digits, so a larger integer becomes the nearest `F64`:
+
+```una include="steps/26-conversions/src/convert.una#L15" title="steps/26-conversions/src/convert.una"
+  @console.print("{9007199254740993.to_f64()}")
+```
+
+```text include="steps/26-conversions/expected/output.txt#L7"
+9007199254740992.0
+```
+
+9,007,199,254,740,993 is one more than 2⁵³, and the nearest `F64` is one less. Counts in a store are far below that, but an identifier or an amount in a smaller unit can reach it: keep those as `Int`.
+
+#### Every rounding keeps special values
+
+A rounding method keeps an infinity, a value that is not a number and the sign of a zero as they are: `infinity().floor()` is still an infinity. Only `to_int_exact()` turns them into `None`.
+
+### Which rounding to use
+
+:::decide
+**Which to use:**
+
+| You need… | Use |
+| --- | --- |
+| Whole units started, such as billed kilograms or boxes to order | `ceil()`, then `to_int_exact()` |
+| Whole units completed, such as full boxes from a length of tape | `floor()`, then `to_int_exact()` |
+| The nearest value, in a long column that must not drift | `round_half_even()` |
+| The nearest value, as a person rounds by hand | `round_half_away()` |
+| To drop the fraction, whatever the sign | `trunc()` |
+| An `F64` from a count | `to_f64()` |
+:::
+
+### Check yourself: rounding
+
+The last line of `convert` rounds a negative tie three ways:
+
+```una include="steps/26-conversions/src/convert.una#L19" title="steps/26-conversions/src/convert.una"
+  @console.print("{(-1.5).round_half_even()}, {(-1.5).round_half_away()} and {(-1.5).trunc()}")
+```
+
+What does it print?
+
+:::answer Show the answer
+```text include="steps/26-conversions/expected/output.txt#L9"
+-2.0, -2.0 and -1.0
+```
+
+-1.5 lies halfway between -1 and -2. The even neighbor is -2, so `round_half_even()` gives -2.0. Away from zero is -2 too. `trunc()` drops the fraction and keeps -1.0.
+:::
+
+## 2.6 Special values and comparing `F64`
+
+### What the special values are
+
+Besides ordinary numbers, an `F64` has a few values that answer the questions an `Int` would refuse:
+
+- **Infinity**, `inf`, and minus infinity, `-inf`: what a division by zero gives, or a result too large for 64 bits.
+- **Not a number**, `nan`: what an operation without a meaningful result gives, such as `0.0 / 0.0` or the square root of `-1.0`.
+- **Minus zero**, `-0.0`: a zero that remembers it came from the negative side, such as a negative weight too small to hold.
+
+Think of the display of a scale: besides a weight, it can show "overload" or "error". The display has to show something, and a program has to test for those readings before it prints a label with them.
+
+### Why Una gives them one meaning
+
+Most languages compare `F64` values by the rules of the hardware, and those rules surprise. A `nan` is not equal to itself, so a list that holds one cannot find it, and a sort that meets one can put the other values in a wrong order. `-0.0` and `0.0` are equal, yet `1.0 / -0.0` and `1.0 / 0.0` differ.
+
+Una makes `==` and `<` plain:
+
+- **`==` is identity.** Two values are equal when they are the same value, bit for bit. So `nan() == nan()` is `true`, and `-0.0 == 0.0` is `false`.
+- **`<` is one order of every value:** minus infinity, the negative numbers, `-0.0`, `0.0`, the positive numbers, infinity, and `nan` last. So `sort` always gives the same list.
+- **The hardware's comparisons are methods**, named `ieee_eq`, `ieee_lt` and so on, for the code that means them.
+
+Where the two meanings would differ, comparing with a literal zero, `una check` asks which one you mean.
+
+### How to write and test special values
+
+#### `nan()`, `infinity()` and `-infinity()`
+
+There are no literals for the special values. The prelude gives `nan()` and `infinity()`, and `-infinity()` is the negative one. Printed, they are `nan`, `inf` and `-inf`.
+
+#### Minus zero
+
+`-0.0` is minus zero, and so is `-x` when `x` is `0.0`. It prints as `-0.0`.
+
+#### `==` and `<`
+
+`==`, `!=`, `<`, `<=`, `>` and `>=` compare two `F64` values by identity and by the one order. They are what `sort`, `min`, `max` and a map's keys use too.
+
+#### The IEEE comparisons
+
+| Method | Is `true` when |
+| --- | --- |
+| `x.ieee_eq(other: y)` | `x` equals `y`, with `-0.0` equal to `0.0`, and `nan` equal to nothing |
+| `x.ieee_ne(other: y)` | `ieee_eq` is not true |
+| `x.ieee_lt(other: y)`, `ieee_le`, `ieee_gt`, `ieee_ge` | `x` is less than (or equal, greater, greater or equal) `y`; always `false` when either is `nan` |
+
+#### Testing a value
+
+| Method | Is `true` when `x` is |
+| --- | --- |
+| `x.is_nan()` | `nan` |
+| `x.is_finite()` | neither `nan` nor an infinity |
+| `x.is_infinite()` | `inf` or `-inf` |
+| `x.is_sign_negative()` | negative, `-0.0` included, `nan` excluded |
+| `x.is_zero()` | `0.0` or `-0.0` |
+| `x.is_positive_zero()`, `x.is_negative_zero()` | `0.0`; `-0.0` |
+
+### Each special value at work
+
+```una include="steps/30-specials/src/specials.una#L7-L17" title="steps/30-specials/src/specials.una"
+  let empty_kg = 0.0
+  let returned_kg = -empty_kg
+  @console.print("{1.0 / empty_kg}, {-1.0 / empty_kg} and {empty_kg / empty_kg}")
+  @console.print("{infinity()}, {-infinity()} and {nan()}")
+  @console.print("{empty_kg} and {returned_kg}")
+  @console.print("{nan() == nan()} and {empty_kg == returned_kg}")
+  @console.print("{nan().ieee_eq(other: nan())} and {empty_kg.ieee_eq(other: returned_kg)}")
+  @console.print("{returned_kg < empty_kg} and {returned_kg.ieee_lt(other: empty_kg)}")
+  @console.print("{sort([2.5, nan(), -1.0, empty_kg, returned_kg, infinity()])}")
+  @console.print("{max(nan(), b: 2.5)} and {min(nan(), b: 2.5)}")
+  @console.print("{nan().is_nan()}, {infinity().is_finite()} and {returned_kg.is_zero()}")
+```
+
+```text include="steps/30-specials/expected/output.txt#L1-L9"
+inf, -inf and nan
+inf, -inf and nan
+0.0 and -0.0
+true and false
+false and true
+true and false
+[-1.0, -0.0, 0.0, 2.5, inf, nan]
+nan and 2.5
+true, false and true
+```
+
+- The first line divides by zero three ways: a positive number gives `inf`, a negative one `-inf`, and zero `nan`. No line stops the program.
+- `nan() == nan()` is `true`, and `empty_kg == returned_kg`, `0.0` against `-0.0`, is `false`: `==` is identity. The IEEE method says the opposite of each.
+- `returned_kg < empty_kg` is `true`, since `-0.0` comes before `0.0` in the order. For `ieee_lt`, they are equal, so neither is less.
+- `sort` puts `-0.0` before `0.0` and `nan` last.
+
+### Checking a reading of the scale
+
+A scale sends a reading for each parcel. The store uses a reading only when it is a finite weight above zero:
+
+:::steps
+```una include="steps/31-scale/src/scale.una" title="steps/31-scale/src/scale.una" verified="check, run"
+module scale
+
+--- Whether a reading of the parcel scale can be used: a finite weight above zero.
+pub usable(reading_kg: F64) -> Bool = reading_kg.is_finite() and reading_kg.ieee_gt(other: 0.0)
+
+--- Prints, for each reading of the scale, whether it can be used.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let readings = [2.4, 0.0, -0.0, -1.5, nan(), infinity(), 0.75]
+  for reading in readings
+    @console.print("{reading} kg: {usable(reading)}")
+```
+
+1. **`reading_kg.is_finite()`.** Rules out `nan`, `inf` and `-inf`, the readings of a scale in error.
+2. **`reading_kg.ieee_gt(other: 0.0)`.** Above zero in the IEEE sense: `0.0` and `-0.0` are both refused, and so is any negative reading.
+3. **`for reading in readings`.** A `for` loop runs its indented line once for each value of the list `readings` ([chapter 9](/learn/loops/#s9-1) teaches loops, and [chapter 10](/learn/collections/#s10-1) lists).
+:::
+
+`una run .` prints:
+
+```text include="steps/31-scale/expected/output.txt"
+2.4 kg: true
+0.0 kg: false
+-0.0 kg: false
+-1.5 kg: false
+nan kg: false
+inf kg: false
+0.75 kg: true
+```
+
+Only 2.4 and 0.75 can go on a label.
+
+### How special values behave
+
+#### Comparing with a literal zero is refused (U2033)
+
+Write the test of `usable` with `>`:
+
+```diff include="steps/31-scale..steps/32-zero-compare:src/scale.una" title="src/scale.una" context="0"
+--- a/src/scale.una
++++ b/src/scale.una
+@@ -4 +4 @@
+-pub usable(reading_kg: F64) -> Bool = reading_kg.is_finite() and reading_kg.ieee_gt(other: 0.0)
++pub usable(reading_kg: F64) -> Bool = reading_kg.is_finite() and reading_kg > 0.0
+```
+
+```text include="steps/32-zero-compare/expected/rendered.txt#L1,L8,L10"
+[U2033] Error: `>` compares an `F64` with a literal zero, which tells `-0.0` from `0.0` by the order of `F64`
+   │ Help 1: repair 1: compare as IEEE does, `-0.0` equal to `0.0`, with `reading_kg.ieee_gt(other: 0.0)`; edit src/scale.una:4:66..4:82 to "reading_kg.ieee_gt(other: 0.0)"
+   │ Help 2: repair 2: test the sign bit with `reading_kg.is_sign_negative()` or `not reading_kg.is_sign_negative()`
+```
+
+The message says that `>` compares an `F64` with a literal zero, where the two meanings of a comparison part: with `>`, `nan` is above every number and `-0.0` is below `0.0`, and with the IEEE methods it is not. The checker refuses every comparison of an `F64` with `0.0` or `-0.0`, by `==`, `!=`, `<`, `<=`, `>` or `>=`, so that the code says which it means. The first help is an exact edit to `ieee_gt`, which is what `usable` means; the second tests the sign instead. For an equality, `x == 0.0`, the help is `x.is_zero()`.
+
+#### `min` and `max` see `nan` as the greatest
+
+`max` and `min` use the one order, where `nan` comes last:
+
+```una include="steps/30-specials/src/specials.una#L16" title="steps/30-specials/src/specials.una"
+  @console.print("{max(nan(), b: 2.5)} and {min(nan(), b: 2.5)}")
+```
+
+```text include="steps/30-specials/expected/output.txt#L8"
+nan and 2.5
+```
+
+So `max(reading, b: 0.5)` gives `nan` for a `nan` reading. Test a reading with `is_finite()` before you take a maximum of it, as `usable` does.
+
+#### Special values stay special
+
+Every operation with a `nan` gives `nan`, and an infinity stays infinite except in operations such as `infinity() - infinity()`, which give `nan`. So one bad reading can turn a whole total into `nan`. Test the inputs, where you still know which one was wrong.
+
+### `==`, an IEEE method or a test
+
+:::decide
+**Which to use:**
+
+| You want to know… | Use |
+| --- | --- |
+| Whether two values are the same value, as a sort or a map key sees it | `==` |
+| Whether two measurements are equal as numbers, `-0.0` equal to `0.0` | `x.ieee_eq(other: y)` |
+| Whether a measurement is above, below or at zero | `ieee_gt`, `ieee_lt` and the others, `other: 0.0` |
+| Whether a value is zero, of either sign | `x.is_zero()` |
+| Whether a value can be used at all | `x.is_finite()` |
+:::
+
+### Check yourself: minus zero
+
+The last lines of `specials` multiply a very small value by itself:
+
+```una include="steps/30-specials/src/specials.una#L18-L19" title="steps/30-specials/src/specials.una"
+  let tiny = 1.0e-300
+  @console.print("{tiny * tiny}, {(tiny * tiny).is_zero()} and {-tiny * tiny}")
+```
+
+What does the line print?
+
+:::answer Show the answer
+```text include="steps/30-specials/expected/output.txt#L10"
+0.0, true and -0.0
+```
+
+10⁻³⁰⁰ times 10⁻³⁰⁰ is 10⁻⁶⁰⁰, far below the smallest `F64`, so the product is a zero, and `is_zero()` says so. With a minus sign in front, the exact product is negative, so the zero is `-0.0`: minus zero comes from ordinary arithmetic, not only from a literal.
+:::
+
+## 2.7 Day-to-day: a packing slip
 
 ### What the program must do
 
@@ -1097,7 +1777,7 @@ example "the total is in cents"
   expect result == "Total paid: 8480 cents"
 ```
 
-## 2.5 Testing it
+## 2.8 Testing it
 
 ### One example per function
 
@@ -1151,7 +1831,7 @@ Each example takes one line of the report, so when one fails, the report names t
 
 The examples do not call `main`. It only names values and prints what the functions give back, and the functions are what the examples cover. Most Una programs take this shape: a short `main` that prints, and functions with no `uses` line that hold the computations and their examples.
 
-## 2.6 Common mistakes
+## 2.9 Common mistakes
 
 Each mistake is a small change to `day-to-day/src/slip.una`, followed by what `una check .` reports. Read each diagnostic as [chapter 1](/learn/hello/#if-una-check-finds-a-mistake) shows: the message, then the place, then the help.
 
@@ -1332,7 +2012,7 @@ Copy the line of `lamps` for the rugs, and forget to change the name:
 *Fix:* write `let rugs = 1`. See [U1002](/docs/errors/U1002/).
 :::
 
-## 2.7 Exercises
+## 2.10 Exercises
 
 The exercises come with the chapter's download, `02-numbers.tar.gz`. Each starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a **stub** of each function to write: its header, with a body that gives back a **placeholder**, a value of the right type that is not the answer, such as the empty text `""` or `0`. `una test .` fails there until the exercise is done. Work in this order:
 
@@ -1508,12 +2188,12 @@ Give `amount` its body, and use it in `total_line` and its example:
 :::
 ::::
 
-## 2.8 Recap and reference
+## 2.11 Recap and reference
 
 ### For agents
 
 :::agents
-`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; `una --json test .` prints each example's outcome. U0007 carries an exact edit, the literal rewritten, which `una fix .` applies. U5001 gives a counterexample and repairs that are descriptions only (a guard, a wider type, a wrapping or saturating method). U0101, U1001, U1002, U2001 and U2022 depend on intent, so they carry no repair. The compact rule: *`Int` is unbounded and exact, with Euclidean `/` and `mod`; money is `Int` cents; every division by a value that is not a nonzero literal, and every operation or narrowing on `U8`…`U64`, `I8`…`I64`, is a proof obligation; types never convert implicitly.*
+`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; `una --json test .` prints each example's outcome. U0007 carries an exact edit, the literal rewritten, which `una fix .` applies. U5001 gives a counterexample and repairs that are descriptions only (a guard, a wider type, a wrapping or saturating method). U0101, U1001, U1002, U2001 and U2022 depend on intent, so they carry no repair. In edition `0.3`, U2001 on an integer where an `F64` is expected, and U2033, carry exact edits. The compact rule: *`Int` is unbounded and exact, with Euclidean `/` and `mod`; money is `Int` cents; every division by a value that is not a nonzero literal, and every operation or narrowing on `U8`…`U64`, `I8`…`I64`, is a proof obligation; `F64` (edition `0.3`) is IEEE binary64, with `==` as identity; types never convert implicitly.*
 :::
 
 ### Recap
@@ -1523,10 +2203,10 @@ Give `amount` its body, and use it in `total_line` and its example:
 - `let name = value` names a value; `let name: Type = value` also states its type. A body makes each name once.
 - `Int` is a whole number of any size, so a sum or a product is exact.
 - Keep money in `Int` cents, and divide last: `order * 15 / 100`.
-- `*`, `/` and `mod` come before `+` and `-`, left to right; parentheses change the order.
-- `/` and `mod` are Euclidean. A divisor that may be zero is refuted with a counterexample.
-- A fixed-width type, such as `U8`, is for a number of a set size. Every operation on it is proved to fit; wrapping and saturating are methods.
-- Integer types never mix: convert with `to_int()`, or narrow with `to_u8()` and its proof.
+- `*`, `/` and `mod` come before `+` and `-`, left to right; parentheses change the order. `/` and `mod` are Euclidean, and a divisor that may be zero is refuted with a counterexample.
+- A fixed-width type, such as `U8`, is for a number of a set size. Every operation on it is proved to fit, and it mixes with no other type: convert with `to_int()`, or narrow with `to_u8()` and its proof.
+- `F64` (edition `0.3`) is for measurements, never money. Convert with `to_f64()`; back with a rounding, then `to_int_exact()`.
+- Test an `F64` with `is_finite()`. `==` is identity; compare measurements with the IEEE methods.
 :::
 
 ### Reference
@@ -1534,7 +2214,7 @@ Give `amount` its body, and use it in `total_line` and its example:
 :::reference
 - Construct pages: [source files, comments and literals](/docs/language/lexical-structure/), [functions](/docs/language/functions/), [`example`](/docs/language/examples/example/)
 - Commands: [`una check`](/docs/cli/check/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/)
-- Standard library: [the prelude](/docs/std/) (`abs`, `min`, `max`)
-- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2022](/docs/errors/U2022/), [U5001](/docs/errors/U5001/)
-- Specification: [lexical structure](/docs/spec/01-lexical-structure/), [grammar](/docs/spec/02-grammar/), [types](/docs/spec/03-types/), [dynamic semantics](/docs/spec/11-dynamic-semantics/), [verification](/docs/spec/12-verification/), [the standard library](/docs/spec/14-standard-library/), [fixed-width integers](/docs/spec/18-fixed-width-integers/)
+- Standard library: [the prelude](/docs/std/) (`abs`, `min`, `max`, `nan`, `infinity`, `parse_f64`)
+- Diagnostics: [U0007](/docs/errors/U0007/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2022](/docs/errors/U2022/), [U2033](/docs/errors/U2033/), [U5001](/docs/errors/U5001/)
+- Specification: [lexical structure](/docs/spec/01-lexical-structure/), [grammar](/docs/spec/02-grammar/), [types](/docs/spec/03-types/), [dynamic semantics](/docs/spec/11-dynamic-semantics/), [verification](/docs/spec/12-verification/), [the standard library](/docs/spec/14-standard-library/), [fixed-width integers](/docs/spec/18-fixed-width-integers/), [numerics](/docs/spec/29-numerics/)
 :::

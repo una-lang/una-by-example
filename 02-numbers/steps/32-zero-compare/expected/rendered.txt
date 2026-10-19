@@ -1,0 +1,14 @@
+[U2033] Error: `>` compares an `F64` with a literal zero, which tells `-0.0` from `0.0` by the order of `F64`
+   ╭─[ src/scale.una:4:66 ]
+   │
+ 4 │ pub usable(reading_kg: F64) -> Bool = reading_kg.is_finite() and reading_kg > 0.0
+   │                                                                  ────────┬───────
+   │                                                                          ╰───────── `>` compares an `F64` with a literal zero, which tells `-0.0` from `0.0` by the order of `F64`
+   │
+   │ Help 1: repair 1: compare as IEEE does, `-0.0` equal to `0.0`, with `reading_kg.ieee_gt(other: 0.0)`; edit src/scale.una:4:66..4:82 to "reading_kg.ieee_gt(other: 0.0)"
+   │
+   │ Help 2: repair 2: test the sign bit with `reading_kg.is_sign_negative()` or `not reading_kg.is_sign_negative()`
+   │
+   │ Note: run `una explain U2033` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

@@ -1,0 +1,1 @@
+error U2001 at src/label.una:10:83: an operand of `/` must be `F64`, found `Int`

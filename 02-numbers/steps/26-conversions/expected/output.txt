@@ -1,0 +1,9 @@
+3.0 and 12.0
+Some(2), None and Some(0)
+2.0, 3.0 and -2.0
+2.0, 4.0 and 3.0
+-3.0, -2.0 and -3.0
+Some(2) and None
+9007199254740992.0
+Ok(2.75) and Err(NotADigit(1))
+-2.0, -2.0 and -1.0

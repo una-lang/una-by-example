@@ -1,0 +1,4 @@
+Weight in grams: Some(2346)
+Billed kilograms: Some(3)
+Rating: 4.285714285714286, shown as 4.3
+No reviews: nan, and in grams None

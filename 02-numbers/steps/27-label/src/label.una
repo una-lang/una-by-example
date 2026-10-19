@@ -1,0 +1,24 @@
+module label
+
+--- The weight of a parcel in whole grams, for the label printer: to the nearest gram, ties to even.
+pub grams(weight_kg: F64) -> Option[Int] = (weight_kg * 1000.0).round_half_even().to_int_exact()
+
+--- The whole kilograms a carrier bills: every kilogram started counts, so the weight is rounded up.
+pub billed_kilograms(weight_kg: F64) -> Option[Int] = weight_kg.ceil().to_int_exact()
+
+--- The average of the star ratings of a product, each rating from 1 to 5.
+pub average_stars(total_stars: Int, reviews: Int) -> F64 = total_stars.to_f64() / reviews.to_f64()
+
+--- A value shown with one digit after the point: 4.2857 is shown as 4.3.
+pub one_decimal(x: F64) -> F64 = (x * 10.0).round_half_away() / 10.0
+
+--- Prints the label of a parcel, and the rating of a product.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weight_kg = 2.3456
+  @console.print("Weight in grams: {grams(weight_kg)}")
+  @console.print("Billed kilograms: {billed_kilograms(weight_kg)}")
+  let stars = average_stars(30, reviews: 7)
+  @console.print("Rating: {stars}, shown as {one_decimal(stars)}")
+  @console.print("No reviews: {average_stars(0, reviews: 0)}, and in grams {grams(nan())}")

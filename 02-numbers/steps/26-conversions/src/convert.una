@@ -1,0 +1,19 @@
+module convert
+
+--- Prints conversions between integers and `F64`, and each way of rounding.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let boxes = 3
+  let tape_m: U8 = 12
+  @console.print("{boxes.to_f64()} and {tape_m.to_f64()}")
+  @console.print("{2.0.to_int_exact()}, {2.5.to_int_exact()} and {(-0.0).to_int_exact()}")
+  @console.print("{2.5.floor()}, {2.5.ceil()} and {(-2.5).trunc()}")
+  @console.print("{2.5.round_half_even()}, {3.5.round_half_even()} and {2.5.round_half_away()}")
+  @console.print("{(-2.5).floor()}, {(-2.5).ceil()} and {(-2.5).round_half_away()}")
+  @console.print("{2.7.floor().to_int_exact()} and {infinity().to_int_exact()}")
+  @console.print("{9007199254740993.to_f64()}")
+  let read = attempt parse_f64("2.75")
+  let misread = attempt parse_f64("2,75")
+  @console.print("{read} and {misread}")
+  @console.print("{(-1.5).round_half_even()}, {(-1.5).round_half_away()} and {(-1.5).trunc()}")

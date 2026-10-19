@@ -1,0 +1,12 @@
+[U2001] Error: the integer literal `5000` is not an `F64`; a float literal has a point
+   ╭─[ src/parcel.una:4:110 ]
+   │
+ 4 │ pub volumetric_kg(length_cm: F64, width_cm: F64, height_cm: F64) -> F64 = length_cm * width_cm * height_cm / 5000
+   │                                                                                                              ──┬─
+   │                                                                                                                ╰─── the integer literal `5000` is not an `F64`; a float literal has a point
+   │
+   │ Help: repair 1: write `5000.0`; edit src/parcel.una:4:110..4:114 to "5000.0"
+   │
+   │ Note: run `una explain U2001` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

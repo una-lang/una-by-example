@@ -845,7 +845,7 @@ Inference covers `uses` and `fails`, and never a type. Every parameter and every
 
 ### When a function should print
 
-Most functions should not print: they take values and give back a value. Such a pure function does the same thing every time you call it with the same arguments, so an example can test it ([section 14.1](/learn/testing/#s14-1)). Print in `main`, or in a few small functions whose only job is to print, and give each of them its `uses` line. The packing slip of [chapter 2](/learn/numbers/#s2-4) has that shape: pure functions build the lines, and `main` prints them.
+Most functions should not print: they take values and give back a value. Such a pure function does the same thing every time you call it with the same arguments, so an example can test it ([section 14.1](/learn/testing/#s14-1)). Print in `main`, or in a few small functions whose only job is to print, and give each of them its `uses` line. The packing slip of [chapter 2](/learn/numbers/#s2-7) has that shape: pure functions build the lines, and `main` prints them.
 
 ### Public or private
 

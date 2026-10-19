@@ -1,0 +1,10 @@
+inf, -inf and nan
+inf, -inf and nan
+0.0 and -0.0
+true and false
+false and true
+true and false
+[-1.0, -0.0, 0.0, 2.5, inf, nan]
+nan and 2.5
+true, false and true
+0.0, true and -0.0

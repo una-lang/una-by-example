@@ -1,0 +1,12 @@
+[U2001] Error: an operand of `/` must be `F64`, found `Int`
+    ╭─[ src/label.una:10:83 ]
+    │
+ 10 │ pub average_stars(total_stars: Int, reviews: Int) -> F64 = total_stars.to_f64() / reviews
+    │                                                                                   ───┬───
+    │                                                                                      ╰───── an operand of `/` must be `F64`, found `Int`
+    │
+    │ Help: repair 1: convert the integer with `to_f64()`; edit src/label.una:10:83..10:90 to "(reviews).to_f64()"
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

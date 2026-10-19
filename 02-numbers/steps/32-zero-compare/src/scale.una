@@ -1,0 +1,12 @@
+module scale
+
+--- Whether a reading of the parcel scale can be used: a finite weight above zero.
+pub usable(reading_kg: F64) -> Bool = reading_kg.is_finite() and reading_kg > 0.0
+
+--- Prints, for each reading of the scale, whether it can be used.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let readings = [2.4, 0.0, -0.0, -1.5, nan(), infinity(), 0.75]
+  for reading in readings
+    @console.print("{reading} kg: {usable(reading)}")

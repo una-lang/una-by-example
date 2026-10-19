@@ -1,0 +1,11 @@
+[U2001] Error: `to_int` is not a conversion of `F64`; `to_int_exact()` gives `Some` of an integral value and `None` otherwise
+   ╭─[ src/label.una:7:47 ]
+   │
+ 7 │ pub billed_kilograms(weight_kg: F64) -> Int = weight_kg.ceil().to_int()
+   │                                               ────────────┬────────────
+   │                                                           ╰────────────── `to_int` is not a conversion of `F64`; `to_int_exact()` gives `Some` of an integral value and `None` otherwise
+   │
+   │ Help: repair 1: write `x.to_int_exact()`, after `floor()`, `ceil()`, `trunc()` or a rounding when the value may have a fraction
+   │
+   │ Note: run `una explain U2001` for an explanation
+───╯

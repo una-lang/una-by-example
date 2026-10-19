@@ -1,0 +1,24 @@
+module parcel
+
+--- The volumetric weight of a box in kilograms: its volume in cubic centimeters, divided by 5000.
+pub volumetric_kg(length_cm: F64, width_cm: F64, height_cm: F64) -> F64 = length_cm * width_cm * height_cm / 5000
+
+--- The weight a carrier bills a parcel by: its weight on the scale or its volumetric weight,
+--- whichever is greater.
+pub billed_kg(scale_kg: F64, length_cm: F64, width_cm: F64, height_cm: F64) -> F64
+=
+  let volume_kg = volumetric_kg(length_cm, width_cm: width_cm, height_cm: height_cm)
+  max(scale_kg, b: volume_kg)
+
+--- Prints the weights of two parcels: a desk lamp, and a rolled rug.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp_box = volumetric_kg(30.0, width_cm: 20.0, height_cm: 15.0)
+  let rug_box = volumetric_kg(120.0, width_cm: 25.0, height_cm: 25.0)
+  @console.print("Lamp box: {lamp_box} kg by volume")
+  @console.print("Rug box: {rug_box} kg by volume")
+  let lamp_billed = billed_kg(2.6, length_cm: 30.0, width_cm: 20.0, height_cm: 15.0)
+  let rug_billed = billed_kg(4.2, length_cm: 120.0, width_cm: 25.0, height_cm: 25.0)
+  @console.print("Lamp parcel billed at {lamp_billed} kg")
+  @console.print("Rug parcel billed at {rug_billed} kg")
