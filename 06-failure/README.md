@@ -893,7 +893,7 @@ The handling clauses of [section 6.2](#s6-2) decide on the spot, at the call. So
 
 ### Why a batch needs failures as values
 
-The examples of this section read quantities with the prelude's own failing function, `parse_int`, which turns a text into an `Int` and fails with `ParseError`, a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, and `NotADigit(at)` with the position of the first wrong character, counted from 0. Unlike `to_int`, it says why a text is not a number. Both exist from edition `0.2` on.
+The examples of this section read quantities with the prelude's own failing function, `parse_int`, which turns a text into an `Int` and fails with `ParseError`, a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, `NotADigit(at)` with the position of the first wrong character, counted from 0, and `TooLong` for more than 4300 digits. Unlike `to_int`, it says why a text is not a number. Both exist from edition `0.2` on.
 
 A batch is a list of items processed one after another, such as the quantities typed into an order form. With `if error pass`, the first item that fails ends the whole function, and every later item is lost:
 
@@ -982,6 +982,7 @@ explain(failure: ParseError) -> Text
     is Empty -> "nothing was typed"
     is NoDigits -> "a sign with no digits"
     is NotADigit(at) -> "not a digit at position {at}"
+    is TooLong -> "more than 4300 digits"
 
 --- One line of the report for a typed quantity.
 describe(raw: Text, outcome: Result[Int, ParseError]) -> Text
@@ -1001,7 +1002,6 @@ pub main() -> Unit
     if outcome.is_ok()
       accepted = accepted + 1
   let last = parse_typed("7")
-  @console.print("{accepted} of {typed.len} accepted, then {last}")
 ```
 
 1. **`parse_typed(raw: Text) -> Result[Int, ParseError] = attempt raw.parse_int()`.** The whole body is `attempt`, so the function returns the outcome and cannot fail itself.
@@ -1031,7 +1031,7 @@ Every item gets its line, with its own reason. The last value interpolates as `O
 ```diff include="steps/12-attempt..steps/13-attempt-expression:src/batch.una" context="1" title="src/batch.una"
 --- a/src/batch.una
 +++ b/src/batch.una
-@@ -26,3 +26,3 @@
+@@ -27,3 +27,3 @@
    for raw in typed
 -    let outcome = attempt raw.parse_int()
 +    let outcome = attempt raw.parse_int().is_ok()
@@ -1042,9 +1042,9 @@ Every item gets its line, with its own reason. The last value interpolates as `O
 
 ```text include="steps/13-attempt-expression/expected/rendered.txt#L1-L8"
 [U2001] Error: argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
-    ╭─[ src/batch.una:27:27 ]
+    ╭─[ src/batch.una:28:27 ]
     │
- 27 │     let outcome = attempt raw.parse_int().is_ok()
+ 28 │     let outcome = attempt raw.parse_int().is_ok()
     │                           ───────┬───────
     │                                  ╰───────── argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
     │
@@ -1086,8 +1086,8 @@ The table compares the handling clauses, `attempt`, and `checked`, which [sectio
 `parse_int` does not trim spaces. Predict what this prints:
 
 ```una include="steps/12-attempt/src/batch.una#L33-L34" title="steps/12-attempt/src/batch.una"
+  @console.print("{accepted} of {typed.len} accepted, then {last}")
   let padded = parse_typed(" 5")
-  @console.print("{padded}")
 ```
 
 :::answer Show the answer
