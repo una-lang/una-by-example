@@ -1,0 +1,7 @@
+demand over 4 weeks: 20
+demand over 0 weeks: 0
+dashes in LAMP-01-BR: 2
+sign: [R U G - 0 7]
+a digit in RUG-07: true, in GIFTCARD: false
+aisle 3: 16 units
+turns of 1..3: 3

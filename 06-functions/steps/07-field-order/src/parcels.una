@@ -1,0 +1,29 @@
+module parcels
+
+--- A parcel ready to ship.
+kind Parcel
+  sku: Text
+  grams: Int
+
+--- The rate of a parcel, in cents: 790 up to 2 kg, and 1290 above.
+pub rate(parcel: Parcel) -> Int = if parcel.grams <= 2_000 then 790 else 1_290
+
+--- The rate of a parcel with a handling fee added.
+pub with_fee(parcel: Parcel, fee: Int) -> Int = parcel.rate + fee
+
+--- The line printed on a parcel's label.
+pub label(parcel: Parcel) -> Text = "{parcel.sku}, {parcel.grams} g"
+
+--- The SKU as the warehouse writes it. Its name is also the name of a field of `Parcel`.
+pub sku(parcel: Parcel) -> Text = "SKU {parcel.sku}"
+
+--- Prints one line for each form of a method call.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Parcel(grams: 1_200, sku: "LAMP-01")
+  @console.print("a call: {rate(lamp)}, the same as a method: {lamp.rate()}")
+  @console.print("without parentheses: {lamp.rate}")
+  @console.print("more arguments: {lamp.with_fee(fee: 50)}")
+  @console.print("a chain: {lamp.label.to_upper}")
+  @console.print("a field: {lamp.sku}, the function: {lamp.sku()}")

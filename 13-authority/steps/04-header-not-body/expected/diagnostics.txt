@@ -1,0 +1,4 @@
+error U5001 at src/supply.una:29:3: `@supplier.order` may run where `not dry_run` is not proven
+  counterexample: dry_run = true
+error U5001 at src/supply.una:30:3: `@supplier.order` may run where `not dry_run` is not proven
+  counterexample: dry_run = true

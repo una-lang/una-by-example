@@ -1,0 +1,15 @@
+[U5001] Error: division obligation `units != 0` is refuted
+   ╭─[ src/guards.una:8:73 ]
+   │
+ 8 │ per_unit(pack_cents: Int, units: Int) -> Int = if units < 0 then 0 else pack_cents / units
+   │                                                                         ─────────┬────────
+   │                                                                                  ╰────────── division obligation `units != 0` is refuted
+   │
+   │ Help: repair 1: guard the division with `if units != 0`
+   │
+   │ Note 1: obligation ob-e29b38d4574a (division) is refuted: units != 0
+   │
+   │ Note 2: counterexample: units = 0
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯

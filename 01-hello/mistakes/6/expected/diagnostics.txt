@@ -1,1 +1,1 @@
-error U0003 at src/slip.una:31:1: inconsistent indentation of 4 spaces; expected 0 or 2
+error U2004 at src/morning.una:51:20: argument 2 of `section` needs a label; only the first argument may go without one

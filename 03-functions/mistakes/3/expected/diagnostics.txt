@@ -1,2 +1,0 @@
-error U5001 at src/shipping.una:40:42: postcondition of `quote` is refuted
-  counterexample: grams = 1, result = -1, zone = 1

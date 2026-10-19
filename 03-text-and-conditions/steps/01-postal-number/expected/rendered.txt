@@ -1,0 +1,12 @@
+[U0007] Error: malformed integer literal `02134`
+   ╭─[ src/delivery.una:7:21 ]
+   │
+ 7 │   let postal_code = 02134
+   │                     ──┬──
+   │                       ╰──── malformed integer literal `02134`
+   │
+   │ Help: repair 1: write `2134`; edit src/delivery.una:7:21..7:26 to "2134"
+   │
+   │ Note: run `una explain U0007` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

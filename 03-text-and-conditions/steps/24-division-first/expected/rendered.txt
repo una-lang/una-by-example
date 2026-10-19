@@ -1,0 +1,15 @@
+[U5001] Error: division obligation `units != 0` is refuted
+   ╭─[ src/packs.una:5:50 ]
+   │
+ 5 │ pub cheap_each(cents: Int, units: Int) -> Bool = cents / units < 500 and units > 0
+   │                                                  ──────┬──────
+   │                                                        ╰──────── division obligation `units != 0` is refuted
+   │
+   │ Help: repair 1: guard the division with `if units != 0`
+   │
+   │ Note 1: obligation ob-81269e59fc56 (division) is refuted: units != 0
+   │
+   │ Note 2: counterexample: units = 0
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯

@@ -1,0 +1,11 @@
+module chains
+
+--- Prints a typed product name after a chain of text functions, and two facts about it.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let typed = "  Wool Rug "
+  @console.print(typed.trim.to_lower.replace(pattern: " ", by: "-"))
+  let code = typed.trim.to_upper
+  let wool = code.starts_with(prefix: "WOOL")
+  @console.print("{code.len} {wool}")

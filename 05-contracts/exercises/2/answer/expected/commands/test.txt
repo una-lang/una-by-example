@@ -1,0 +1,13 @@
+$ una test .
+example billing "two lines add up" ... ok
+example billing "a coupon worth more than the invoice takes the whole invoice" ... ok
+example billing "ten percent is rounded down" ... ok
+example billing "store credit pays first" ... ok
+example billing "credit larger than the total leaves nothing for the card" ... ok
+example billing "a refund within what was paid pays back what was asked" ... ok
+example billing "a refund of more than was paid is refused" ... ok
+example billing "an amount below 10 cents keeps its zero" ... ok
+example billing "a fixed price below the subtotal takes off the difference" ... ok
+example billing "a fixed price above the subtotal takes off nothing" ... ok
+
+10 examples: 10 passed, 0 failed

@@ -1,0 +1,1 @@
+error U2001 at src/values.una:10:25: `lamp_cents` is declared as `Int`, found `Text`

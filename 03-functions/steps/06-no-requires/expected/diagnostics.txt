@@ -1,2 +1,0 @@
-error U5001 at src/fees.una:18:3: postcondition of `parcel_rate` is refuted
-  counterexample: grams = -999, result = 200

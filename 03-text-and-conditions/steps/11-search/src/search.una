@@ -1,0 +1,17 @@
+module search
+
+--- Prints what the search functions answer about a SKU and a few typed texts.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let sku = "COFFEE-05"
+  let food = sku.starts_with(prefix: "COFFEE-")
+  let small = sku.ends_with(suffix: "-05")
+  let dash = sku.contains_text(part: "-")
+  @console.print("starts with COFFEE-: {food}, ends with -05: {small}, has a dash: {dash}")
+  let lower = sku.starts_with(prefix: "coffee-")
+  @console.print("starts with coffee-: {lower}")
+  let count = "0042"
+  let typed = "42 "
+  let empty = ""
+  @console.print("only digits: {count.is_digits}, {typed.is_digits}, {empty.is_digits}")

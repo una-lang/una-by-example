@@ -1,0 +1,1 @@
+error U0101 at src/labels.una:23:50: comparisons cannot be chained; join them with `and`, as in `a < b and b < c`

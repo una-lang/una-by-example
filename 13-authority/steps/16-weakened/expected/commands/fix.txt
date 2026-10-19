@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+fixed src/store/sale.una:9:36 U3023 restore the locked condition: write `set_price where not dry_run` in the header of `apply_sale`, or a condition that implies it

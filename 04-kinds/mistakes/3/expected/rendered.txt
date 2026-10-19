@@ -1,9 +1,9 @@
 [U2001] Error: field `zone` of `Parcel` must be `Zone`, found `Text`
-     ╭─[ src/tracking.una:105:56 ]
-     │
- 105 │   let vase = Parcel(order: "A-1002", grams: 300, zone: "Abroad")
-     │                                                        ────┬───
-     │                                                            ╰───── field `zone` of `Parcel` must be `Zone`, found `Text`
-     │
-     │ Note: run `una explain U2001` for an explanation
-─────╯
+    ╭─[ src/pricing.una:90:57 ]
+    │
+ 90 │   let lamp = Parcel(order: "A-1001", grams: 1200, zone: "National", speed: Standard, delivery: AtLocker("Station 14"))
+    │                                                         ─────┬────
+    │                                                              ╰────── field `zone` of `Parcel` must be `Zone`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

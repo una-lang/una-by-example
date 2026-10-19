@@ -1,0 +1,9 @@
+[U3008] Error: `if error pass` passes a `StockError` failure, and this code fails with `OrderError`; use `if error fail` with a variant of `OrderError`
+    ╭─[ src/orders.una:47:5 ]
+    │
+ 47 │     if error pass
+    │     ──────┬──────
+    │           ╰──────── `if error pass` passes a `StockError` failure, and this code fails with `OrderError`; use `if error fail` with a variant of `OrderError`
+    │
+    │ Note: run `una explain U3008` for an explanation
+────╯

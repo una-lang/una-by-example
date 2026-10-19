@@ -1,0 +1,9 @@
+[U0102] Error: `if error` clause after `if none`; handling clauses go in the order if error, if none
+    ╭─[ src/orders.una:48:5 ]
+    │
+ 48 │     if error fail Unavailable(sku: order.sku)
+    │     ─┬
+    │      ╰── `if error` clause after `if none`; handling clauses go in the order if error, if none
+    │
+    │ Note: run `una explain U0102` for an explanation
+────╯

@@ -1,1 +1,0 @@
-error U3013 at src/orders.una:56:15: `parse_order` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first

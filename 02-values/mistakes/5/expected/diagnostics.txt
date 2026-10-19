@@ -1,1 +1,0 @@
-error U2022 at src/labels.una:62:30: the literal `300` does not fit `U8`, which holds `0` to `255`

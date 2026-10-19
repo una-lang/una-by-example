@@ -1,0 +1,9 @@
+[U0101] Error: a block cannot end with `let`; its last line is its value
+    ╭─[ src/fees.una:20:3 ]
+    │
+ 20 │   let rate = 450 + extra * 250
+    │   ─┬─
+    │    ╰─── a block cannot end with `let`; its last line is its value
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

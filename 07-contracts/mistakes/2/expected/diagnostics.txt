@@ -1,2 +1,0 @@
-error U5001 at src/billing.una:112:22: refinement `(gross - off) >= 0` is refuted
-  counterexample: gross = 0, lines = "List#0", lines.len = 2, off = 1, total = -1

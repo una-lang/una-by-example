@@ -1,0 +1,9 @@
+$ una obligations .
+proven   ob-b852e63daefa division      src/stockroom.una:11:3 units != 0
+proven   ob-2a3920108dd8 postcondition src/stockroom.una:15:11 result <= 99
+proven   ob-0d6cd810c278 refinement    src/stockroom.una:20:1 result >= 0
+proven   ob-011bffbfed9b division      src/stockroom.una:23:72 people != 0
+proven   ob-7ed451ea7768 overflow      src/stockroom.una:29:51 shelf + 1 in 0..255
+proven   ob-20fdd4197f66 precondition  src/stockroom.una:34:31 4 >= 1
+proven   ob-82707e2c71ad refinement    src/stockroom.una:34:101 1000 >= 0
+proven   ob-8ef0d001a88c refinement    src/stockroom.una:35:61 12 in 0..999

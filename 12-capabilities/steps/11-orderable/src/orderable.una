@@ -1,0 +1,41 @@
+module orderable
+
+--- How the inventory service can fail.
+kind StoreError = | Timeout
+
+--- The inventory service: how many units of a SKU are on hand, or `None` for a SKU it does not
+--- stock.
+capability Inventory
+  op on_hand(sku: Text) -> Option[Int]
+    fails StoreError
+
+--- How many units of a SKU a customer may order on the product page. The page must show a
+--- number even when the inventory does not answer, and must never promise stock it cannot
+--- confirm, so a failure and an unknown SKU both give 0.
+orderable(sku: Text) -> Int
+  uses @inventory: Inventory[on_hand]
+=
+  let units = @inventory.on_hand(sku)
+    if error use None
+    if none use 0
+  units
+
+--- An inventory held in memory: the units on hand of each SKU.
+handler warehouse(stock: Map[Text, Int]) for Inventory
+  op on_hand(sku) = stock.get(key: sku)
+
+--- An inventory that never answers.
+handler offline() for Inventory
+  op on_hand(sku) = fail Timeout
+
+--- Prints what the product page offers for three SKUs, then for one while the inventory is
+--- offline.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let stock = empty_map().with(key: "LAMP-01", value: 4).with(key: "DESK-02", value: 1)
+  for sku in ["LAMP-01", "DESK-02", "CHAIR-09"]
+    let units = orderable(sku) with @inventory = warehouse(stock)
+    @console.print("{sku}: up to {units}")
+  let later = orderable("LAMP-01") with @inventory = offline()
+  @console.print("LAMP-01, inventory offline: up to {later}")

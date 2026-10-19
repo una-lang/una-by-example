@@ -1,0 +1,189 @@
+module restock
+
+-- The weekly restock plan of the store: for each product, the stock at the end of each week,
+-- and the orders that keep its shelf from running empty.
+
+--- A number of units. It is never negative.
+kind Units = Int where it >= 0
+
+--- What the plan knows about one product: its stock today, how many units sell in a week,
+--- the stock below which the store orders more, and how many units one order brings.
+kind Product
+  sku: Text
+  on_hand: Units
+  weekly_sales: Units
+  reorder_at: Units
+  batch: Units
+
+--- The desk lamp, which sells fast.
+pub lamp() -> Product = Product(sku: "LAMP-01", on_hand: 14, weekly_sales: 5, reorder_at: 6, batch: 10)
+
+--- The wool rug, which sells slowly.
+pub rug() -> Product = Product(sku: "RUG-07", on_hand: 3, weekly_sales: 2, reorder_at: 2, batch: 4)
+
+--- The oak desk, whose orders are too small for its sales.
+pub desk() -> Product = Product(sku: "DESK-02", on_hand: 2, weekly_sales: 3, reorder_at: 3, batch: 2)
+
+--- The department of a SKU: its characters before the first dash, such as `LAMP` for
+--- `LAMP-01`.
+pub department(sku: Text) -> Text
+=
+  let edit code = ""
+  let edit past_dash = false
+  for character in sku.chars()
+    if character == "-"
+      past_dash = true
+    if not past_dash
+      code = "{code}{character}"
+  code
+
+--- The stock after one week of sales. A shelf cannot sell more than it holds.
+pub sell_week(stock: Units, sales: Units) -> Units = if stock >= sales then stock - sales else 0
+
+--- The units to order at the end of a week: a batch when the stock is below the reorder
+--- point, and nothing otherwise.
+pub order_for(product: Product, stock: Units) -> Units
+=
+  if stock < product.reorder_at
+    product.batch
+  else
+    0
+
+--- The stock at the end of `weeks` weeks. Each week sells, then the week's order arrives.
+pub stock_after(product: Product, weeks: Int) -> Units
+=
+  let edit stock: Units = product.on_hand
+  for week in 1..weeks
+    stock = sell_week(stock, sales: product.weekly_sales)
+    stock = stock + order_for(product, stock: stock)
+  stock
+
+--- The units ordered over `weeks` weeks.
+pub units_ordered(product: Product, weeks: Int) -> Units
+=
+  let edit stock: Units = product.on_hand
+  let edit ordered: Units = 0
+  for week in 1..weeks
+    stock = sell_week(stock, sales: product.weekly_sales)
+    let order = order_for(product, stock: stock)
+    stock = stock + order
+    ordered = ordered + order
+  ordered
+
+--- How many of the `weeks` weeks start with too few units for the week's sales.
+pub weeks_short(product: Product, weeks: Int) -> Int
+=
+  let edit stock: Units = product.on_hand
+  let edit short = 0
+  for week in 1..weeks
+    if stock < product.weekly_sales
+      short = short + 1
+    stock = sell_week(stock, sales: product.weekly_sales)
+    stock = stock + order_for(product, stock: stock)
+  short
+
+--- The fewest units the shelf holds after a week's sales, over `weeks` weeks: the stock
+--- today when there are no weeks.
+pub lowest_stock(product: Product, weeks: Int) -> Units
+=
+  let edit stock: Units = product.on_hand
+  let edit lowest: Units = product.on_hand
+  for week in 1..weeks
+    stock = sell_week(stock, sales: product.weekly_sales)
+    if stock < lowest
+      lowest = stock
+    stock = stock + order_for(product, stock: stock)
+  lowest
+
+--- One line of the plan: the week, the units left after its sales, and its order, if any.
+pub plan_line(week: Int, left: Units, order: Units) -> Text
+=
+  if order > 0
+    "  week {week}: {left} left, order {order}"
+  else
+    "  week {week}: {left} left"
+
+--- Prints the plan of one product, week by week, then its totals.
+print_plan(product: Product, weeks: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{product.sku}, {department(product.sku)}")
+  let edit stock: Units = product.on_hand
+  for week in 1..weeks
+    stock = sell_week(stock, sales: product.weekly_sales)
+    let order = order_for(product, stock: stock)
+    @console.print(plan_line(week, left: stock, order: order))
+    stock = stock + order
+  let ordered = units_ordered(product, weeks: weeks)
+  let short = weeks_short(product, weeks: weeks)
+  @console.print("  {ordered} units ordered, {short} weeks short")
+
+--- Prints the restock plan of the next four weeks.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let weeks = 4
+  @console.print("Restock plan, {weeks} weeks")
+  print_plan(lamp(), weeks: weeks)
+  print_plan(rug(), weeks: weeks)
+  print_plan(desk(), weeks: weeks)
+
+example "a department is the part of the SKU before its dash"
+  do department("LAMP-01")
+  expect result == "LAMP"
+
+example "a SKU without a dash is its own department"
+  do department("GIFTCARD")
+  expect result == "GIFTCARD"
+
+example "a week sells its sales from the stock"
+  do sell_week(9, sales: 5)
+  expect result == 4
+
+example "a shelf cannot sell more than it holds"
+  do sell_week(3, sales: 5)
+  expect result == 0
+
+example "a stock below the reorder point orders a batch"
+  do order_for(lamp(), stock: 4)
+  expect result == 10
+
+example "a stock at the reorder point orders nothing"
+  do order_for(lamp(), stock: 6)
+  expect result == 0
+
+example "a plan of no weeks leaves the stock as it is"
+  do stock_after(lamp(), weeks: 0)
+  expect result == 14
+
+example "the lamp ends four weeks with 14 units"
+  do stock_after(lamp(), weeks: 4)
+  expect result == 14
+
+example "the lamp orders two batches in four weeks"
+  do units_ordered(lamp(), weeks: 4)
+  expect result == 20
+
+example "the lamp is never short"
+  do weeks_short(lamp(), weeks: 4)
+  expect result == 0
+
+example "the desk is short every week"
+  do weeks_short(desk(), weeks: 4)
+  expect result == 4
+
+example "a week with an order says how many units"
+  do plan_line(2, left: 4, order: 10)
+  expect result == "  week 2: 4 left, order 10"
+
+example "the lamp's shelf gets down to 4 units"
+  do lowest_stock(lamp(), weeks: 4)
+  expect result == 4
+
+example "the desk's shelf runs empty"
+  do lowest_stock(desk(), weeks: 4)
+  expect result == 0
+
+example "with no weeks, the lowest stock is the stock today"
+  do lowest_stock(rug(), weeks: 0)
+  expect result == 3

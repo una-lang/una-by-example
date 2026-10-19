@@ -1,0 +1,13 @@
+[U1002] Error: `store` is already bound in this scope; a local cannot rebind another
+    ╭─[ src/aisles.una:74:16 ]
+    │
+ 70 │ pickup(delivery: Delivery, store: Text) -> Text
+    │                            ──┬──
+    │                              ╰──── first defined here
+    │
+ 74 │     is AtStore(store) -> if store == store then "here" else "at {store}"
+    │                ──┬──
+    │                  ╰──── `store` is already bound in this scope; a local cannot rebind another
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯

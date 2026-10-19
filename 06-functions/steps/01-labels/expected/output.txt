@@ -1,0 +1,6 @@
+one argument: 995 and 995
+two arguments: 1790
+every argument labeled: 1790
+labels in any order: 1790
+punning: 13500
+a call inside a call: 1990

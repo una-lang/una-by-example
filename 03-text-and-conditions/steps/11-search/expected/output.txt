@@ -1,0 +1,3 @@
+starts with COFFEE-: true, ends with -05: true, has a dash: true
+starts with coffee-: false
+only digits: true, false, true

@@ -1,0 +1,9 @@
+[U0103] Error: `while` is not a keyword in Una; use `for` or recursion
+    ╭─[ src/restock.una:57:3 ]
+    │
+ 57 │   while week <= weeks
+    │   ──┬──
+    │     ╰──── `while` is not a keyword in Una; use `for` or recursion
+    │
+    │ Note: run `una explain U0103` for an explanation
+────╯

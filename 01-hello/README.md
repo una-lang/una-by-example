@@ -2,76 +2,74 @@
 learn: "1"
 title: Hello, Una
 editions: ["0.2"]
-codes: [U0001, U0003, U0101, U1001, U1008, U2001, U2004, U3004, U7001, U7002]
-time: 55
-builds: A packing slip that a store prints for the box of one order, with examples that test each line
+codes: [U0001, U0003, U0101, U1001, U1002, U1008, U2001, U2004, U3003, U3004, U7002]
+time: 50
+builds: The store's morning notices, printed on the console, with an example for each notice
 prerequisites: []
 template: 2
-nav: ["A first program", "Reading a diagnostic", "Printing and the console", "Values, types and names", "Functions and comments", "Examples and una test", "Day-to-day: a packing slip", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
+nav: ["Your first program", "Modules", "The main function", "Writing a function", "Printing and uses", "Day-to-day: morning notices", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 1 Hello, Una
 
-A program is a set of instructions that a computer follows, written in a language that both you and the computer can read. This chapter is where you write your first one. It assumes no experience: every word it uses is explained the first time it appears. You start from an empty directory, write a program that prints a line, read what Una says when the program is wrong, and end with a small program a store would really use, checked, run and tested. On the way you meet the ideas every later chapter builds on: packages, modules, functions, values, types and diagnostics.
+A program is a set of instructions that a computer follows, written in a language that both you and the computer can read. This chapter is where you write your first one. It assumes no experience: every word it uses is explained the first time it appears. You start from an empty directory and write a program that prints "Hello, world". Then you learn the parts every Una program is made of: modules, the `main` function, functions of your own, and printing. You end with a small program that a store prints every morning, checked, run and tested.
 
 ## What you'll build
 
 :::build
-A packing slip: the sheet that goes into the box with an order, so that the customer can check what arrived. The program prints the slip of one sample order:
+The morning notices of a store: the lines its console prints when the store opens, with the hours, the shipping cutoff, the offer of the day and the café. The program prints:
 
 ```text include="day-to-day/expected/output.txt"
-Packing slip for order 1042
-Ship to customer 318 <customer318@example.invalid>
-  2 x LAMP-01  Desk lamp, brass
-  1 x RUG-07  Wool rug, 120 by 180 cm
-3 units in 2 lines
-Total paid: 8480 cents
-Questions? Write to orders@example.invalid and quote the order number.
+Harbor Street store
+12 Harbor Street, by the ferry
+Good morning
+------------------------------
+Hours
+Open today from 9:00 to 18:00
+------------------------------
+Shipping
+Orders placed before 17:00 ship today
+------------------------------
+Offer
+Today's special: desk lamps
+------------------------------
+Café
+The café opens at 10:00
+------------------------------
+Questions? Ask at the help desk by the main door
 ```
 
 You will learn to:
 
-- set up a package from an empty directory: `una.toml`, `verification.lock` and a module;
-- run `una check`, `una run` and `una test`, and read what they report;
-- print on the console, and say in a function's header that it prints;
-- name values, compute with them, and put them into text;
-- write functions with doc comments, and test them with examples.
+- set up a package from an empty directory, and run `una check` and `una run` in it;
+- read what a module is, and what its first line says;
+- write the `main` function, where a program starts;
+- write functions of your own, with parameters and a result, and call them;
+- print on the console, and say in a function's header that it prints.
 :::
 
 ## Why it works this way
 
-In many languages the first program is one line, and so is the first surprise. A program that only meant to write a line on the screen can also read your files or send data over the network, and nothing in its text says whether it does. A mistake, such as a number where a word should be, often shows up only when that line runs: in front of a customer, or months later.
+A program grows. The first version prints one line; a year later it has hundreds of lines, written by several people. Two things make such a program hard to change. The first is not knowing where anything is: the same sentence typed in five places, so that a change misses one. The second is not knowing what a piece of code does to the world outside the program: whether it only computes, or also prints, writes files or sends messages.
 
-Una moves these questions to the time before the program runs. Every word in this part is taught in this chapter, in the section named after it; read it now for the idea, and come back to it later:
-
-:::steps
-1. **One command checks everything.** Before you run a program, `una check` reads all of it and lists each mistake it finds, with the place and the reason. `una run` refuses to start a program that still has a mistake in it ([section 1.2](#s1-2)).
-2. **The first lines of a function say what it may do.** A function is a named piece of a program. Its first lines say whether it may print on the screen, and Una holds the rest of the function to them ([section 1.3](#s1-3)).
-3. **Whoever runs the program decides what it gets.** A small file of settings next to the code says that the program may print. The code asks, the settings allow, and a reader can see both ([section 1.3](#s1-3)).
-4. **Tests live next to the code.** An example runs a function and says what it must give back, and `una test` checks every example ([section 1.6](#s1-6)).
-:::
+Una answers both from the first program on. Code lives in modules, files with a name, and the work is split into functions, each with a name, its inputs and its result, so that each thing is written once. The first lines of a public function, its header, also say what it may do outside the program. A public function that prints says so, and Una refuses one that prints without saying it. You can read such a header and know what the function may do, without reading its body.
 
 > [!KEY]
-> In Una, the first lines of a function say what it may do outside the program. If they do not say it, Una does not let the function do it.
+> In Una, a public function's first lines say what it takes, what it gives back, and what it may do outside the program, such as printing.
 
-## 1.1 A first program
+## 1.1 Your first program: hello world
 
 ### What a program is
 
-A **program** is a list of instructions for a computer, such as "write this line on the screen" or "add these two prices". Think of a recipe: it names what it needs, then gives the steps in order, and anyone who follows it gets the same dish. A computer follows a program the same way, one step after another, exactly as written.
+A **program** is a list of instructions for a computer, such as "write this line on the screen". Think of a recipe: it names what it needs, then gives the steps in order, and anyone who follows it gets the same dish. A computer follows a program the same way, one step after another, exactly as written.
 
 You write a program as text, in a file, in a **programming language**: a small language with strict rules, so that each line has one meaning. That text is the **source code**, or just the code. This book teaches the language Una.
 
 A few more words come up on every page:
 
 - **Running** a program means having the computer follow its instructions.
-- A **value** is one piece of data the program works with: the number `18`, the text `"The store is open"`. [Section 1.4](#s1-4) covers values.
-- The **console** is the window of text where you type commands and where a program writes its lines. [Section 1.3](#s1-3) covers it.
+- The **console** is the window of text where you type commands and where a program writes its lines. [Section 1.5](#s1-5) covers it.
 - `una` is the tool that reads Una code. It **checks** the code, which means it looks for mistakes without running it, and it **runs** the code when the check passes.
-
-### Why Una checks before it runs
-
-A mistake in a program is normal: everyone makes them while writing code. What matters is when you find out. If a mistake surfaces only when its line runs, it may surface in front of a customer, months after the code was written. Una finds as many mistakes as it can before the program starts. `una check` reads the whole program and reports each mistake with the place it is at and what is wrong, and `una run` will not start a program with a mistake it can see. [Section 1.2](#s1-2) shows what such a report looks like.
 
 ### What you need: a terminal, `una` and Z3
 
@@ -84,30 +82,73 @@ You work with `una` in a **terminal**: the program that shows the console on you
 
 In the terminal you type a **command**, a line that names a program and what it should do, and press [[Enter]]; the program runs and prints its answer under the command.
 
-Next, install `una` and the solver it uses, Z3: a program that `una check` asks to prove facts about your code, from [chapter 2](/learn/values/) on. The [install page](/docs/install/) installs both, at the versions that go together, and sets up your terminal so that typing `una` runs it from any directory.
+Next, install `una` and Z3, a program that `una` asks to prove facts about your code: to show, before the program runs, that a rule of the code holds in every case. The programs of this chapter need no proof, but from [chapter 2](/learn/numbers/) on, `una check` cannot prove anything without Z3. The [install steps](/docs/get-started/#1-install) install both, at the versions that go together, and say how to set up your terminal so that typing `una` runs it from any directory.
 
-To see that it worked, type `una --version` and press [[Enter]]. It prints the version of `una`, the editions it supports and the version of Z3 it expects. Then run `z3 --version`, which must report that same version. The programs of this chapter need no proof, so they run without Z3, but from [chapter 2](/learn/values/) on, `una check` cannot prove anything without it.
+### Checking the install: `una --version`
 
-### The package and its manifest
+To see that the install worked, type `una --version` and press [[Enter]]. It prints the version of `una`, the **editions** it supports, which are the versions of the Una language it can read ([Making the package](#making-the-package) says more), and the version of Z3 it expects. Then type `z3 --version`, which must report that same version of Z3.
+
+If `una --version` answers with this line instead, followed by a short note on how to use `una`, the `una` that ran is a release older than 0.3, which did not know `--version` yet:
+
+`error: unexpected argument '--version' found`
+
+Run the installer again, as the [install steps](/docs/get-started/#1-install) say, to get the current release.
+
+#### When an old `una` comes first
+
+When you type `una`, the terminal looks for a program of that name in a list of directories, in order, and runs the first one it finds. That list is your **PATH**. The installer puts `una` in `~/.una/bin`, where `~` stands for your home directory, but it does not change your PATH for you: when that directory is not on it, the installer prints the line to add. So if `una --version` still gives the old answer, or the terminal says it cannot find `una`, put `~/.una/bin` at the front of your PATH, once:
+
+1. Open your shell's **profile** in your text editor: a file of settings that a terminal reads each time it starts. On macOS it is `~/.zshrc`; on most Linux systems it is `~/.bashrc`. If the file does not exist yet, create it. Its name starts with a dot, which hides it: in the open dialog of macOS, [[Cmd]]+[[Shift]]+[[.]] shows hidden files.
+2. Add this line at the end of the file, and save it: `export PATH="$HOME/.una/bin:$PATH"`. It puts `~/.una/bin` in front of the directories already on your PATH.
+3. Close the terminal and open a new one, so that it reads the profile again.
+4. Type `which -a una`. It prints the path of every copy of `una` the terminal can find, the one it runs first at the top. The top line must end in `.una/bin/una`. Then type `una --version` again.
+
+An old copy may still be listed under the new one. It does no harm there, since the terminal runs the first copy it finds. If you no longer need it, you can remove it, gently: if your profile has an older line that adds the old copy's directory to PATH, delete that line; then delete the old copy's folder, if it is one you made yourself, such as an unpacked download. Leave a copy that another tool installed, such as a package manager, to that tool, which can remove it.
+
+### Hello, world: the whole program
+
+This is a whole Una program. It prints one line, `Hello, world`, the line that first programs have printed in many languages for decades:
+
+```una include="steps/01-hello/src/hello.una" title="src/hello.una" verified="check, run"
+module hello
+
+--- Greets the world.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Hello, world")
+```
+
+Each line is explained in this chapter, and you can read most of it already:
+
+- `module hello` names this file of code. [Section 1.2](#s1-2) covers modules.
+- `--- Greets the world.` is a note for people, which the computer does not run.
+- `pub main() -> Unit` and the lines under it are the function `main`, where the program starts. [Section 1.3](#s1-3) covers `main`.
+- `uses @console: Console[print]` says that this function may print on the console. [Section 1.5](#s1-5) covers printing, and [chapter 12](/learn/capabilities/) covers what `uses` can say in full.
+- `@console.print("Hello, world")` prints the text between the double quotes.
+
+To run it, you put it in a package, then ask `una` to check and run it.
+
+### Making the package
 
 Una keeps a program's files together in a **package**: a **directory** (a folder) with a manifest, `una.toml`, a lock file, `verification.lock`, and the code under a directory named `src/`. Every program in this book is a package, so it is worth making the first one by hand.
 
 A new terminal starts in your **home directory**: the directory that holds your own files and directories, such as `Documents`. The terminal is always "in" one directory, and commands work there. Two commands move you around:
 
-- `mkdir store` makes a directory named `store` in the directory you are in;
-- `cd store` moves the terminal into `store`, so that the next commands work there.
+- `mkdir hello` makes a directory named `hello` in the directory you are in;
+- `cd hello` moves the terminal into `hello`, so that the next commands work there.
 
-Make the directory `store` in your home directory, move into it, and make `src` inside it:
+Make the directory `hello` in your home directory, move into it, and make `src` inside it:
 
 ```sh
-mkdir store
-cd store
+mkdir hello
+cd hello
 mkdir src
 ```
 
-A **path** names a file or a directory by the directories that lead to it, separated by `/`: `store/src` is the directory `src` inside `store`, and `src/hello.una` is the file `hello.una` inside `src`. A path without a leading `/` starts from the directory you are in.
+A **path** names a file or a directory by the directories that lead to it, separated by `/`: `hello/src` is the directory `src` inside `hello`, and `src/hello.una` is the file `hello.una` inside `src`. A path without a leading `/` starts from the directory you are in.
 
-The **manifest** is a short file of settings that `una` reads before it reads any code. You write it with a **text editor**: a program that saves exactly the characters you type, with no fonts or formatting. Any code editor works. On macOS, TextEdit works too, once you choose Format > Make Plain Text before you type; on Linux, the text editor that comes with your system works. Create a new file, write these lines, and save it in the `store` directory with the name `una.toml` exactly. If the editor offers to add `.txt` to the name, refuse it: `una.toml.txt` is a different file, and `una` does not read it.
+The **manifest** is a short file of settings that `una` reads before it reads any code. You write it with a **text editor**: a program that saves exactly the characters you type, with no fonts or formatting. Any code editor works. On macOS, TextEdit works too, once you choose Format > Make Plain Text before you type, and turn off Edit > Substitutions > Smart Quotes: otherwise TextEdit turns each `"` you type into a curly quote, `“` or `”`, which Una does not read as a quote, and `una check` reports U0001 at it. On Linux, the text editor that comes with your system works. Create a new file, write these lines, and save it in the `hello` directory with the name `una.toml` exactly. If the editor offers to add `.txt` to the name, refuse it: `una.toml.txt` is a different file, and `una` does not read it.
 
 ```toml include="steps/01-hello/una.toml" title="una.toml"
 [package]
@@ -123,13 +164,9 @@ grants = ["console"]
 It has two tables, each a heading in brackets followed by `key = value` lines:
 
 - `[package]` names the package, gives its version, and names its **edition**: the version of the Una language its code is written in. This book uses edition `0.2`. A package keeps the rules of its edition even when `una` gets newer.
-- `[run]` says how `una run` starts the program. `entry` names the module, the file of code, that holds `main`, the function the program starts with; [The first module](#the-first-module-hello) explains both. `grants` lists what the program may use outside itself when it runs: here, the console. [Section 1.3](#s1-3) explains grants.
+- `[run]` says how `una run` starts the program. `entry` names the module that holds `main`, and `grants` lists what the program may use outside itself when it runs: here, the console. [Section 1.5](#s1-5) explains grants.
 
-The package's name, `hello`, need not match its directory's name, `store`.
-
-### The lock file: `verification.lock`
-
-`verification.lock` tells `una` which solver to use, at which exact version, and how much work it may spend, so that a check that passes on your machine passes on every other one. You do not need to understand its lines yet: copy them as they are. The file is the same in every package of this book. Create it with your editor, as you did `una.toml`, and save it in `store` with the name `verification.lock`:
+The second file, `verification.lock`, tells `una` which version of Z3 to use and how much work a proof may take, so that a check that passes on your computer passes on every other one. You do not need to understand its lines yet: copy them as they are. The file is the same in every package of this book. Create it with your editor, and save it in `hello` with the name `verification.lock`:
 
 ```text include="steps/01-hello/expected/commands/explain-u7004.txt#L32-L37"
 encoding_version = "una-smt-1"
@@ -140,35 +177,13 @@ step_budget      = 5000000
 random_seed      = 0
 ```
 
-`una explain U7004` prints these lines too, under "Fixed example", so you can copy the lock from your terminal at any time. Take that one: the lock it shows first, under "Failing example", is the broken one. For each later package, make the file again the same way, or copy it from `store` with your file manager (Finder on macOS).
+`una explain U7004` prints these lines too, under "Fixed example", so you can copy the lock from your terminal at any time. Take that one: the lock it shows first, under "Failing example", is the broken one. [Chapter 11](/learn/packages/#s11-3) explains both files in full.
 
-### The first module: `hello`
-
-Now the code. A source file is a file of Una code, and it holds one **module**: a named unit of code. Its name is the name of the file: `src/hello.una` holds the module `hello`. A module holds **declarations**, each of which gives a name to something, such as a function.
-
-A **function** is a named list of steps. Every program has one function where it starts, `main`, as a recipe has a first step. Write `src/hello.una`:
-
-:::steps
-```una include="steps/01-hello/src/hello.una" title="src/hello.una" verified="check, run"
-module hello
-
---- Says that the store is open.
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  @console.print("The store is open")
-```
-
-1. **`module hello`.** The first line names the module. It must match the file name.
-2. **`--- Says that the store is open.`** A **doc comment**: a note for people, which the computer does not run. It belongs to the declaration under it. [Section 1.5](#s1-5) covers comments.
-3. **`pub main() -> Unit`.** The function's **header**, its first line. `pub` makes it **public**, so that `una run` can reach it. `main` is its name, and `()` says it takes no inputs. `-> Unit` says what it gives back when it ends: `Unit` means nothing useful, since `main` is run for what it does, not for a value.
-4. **`uses @console: Console[print]`.** What the function may do outside the program: call the operation `print` of `Console`, the console, through the name `@console`. [Section 1.3](#s1-3) explains this line.
-5. **`=`, then the body.** The **body** is the list of steps, indented by two spaces under `=`. Its one step prints a line of text: the text between the double quotes.
-:::
+Last, save the program itself as `src/hello.una`: the file `hello.una` in the directory `src`.
 
 ### Checking and running it
 
-In the `store` directory, check the package, then run it:
+In the `hello` directory, check the package, then run it:
 
 ```sh
 una check .
@@ -178,10 +193,50 @@ una run .
 The `.` names the current directory, the package's. `una check .` prints nothing when the package is right. `una run .` checks again, then runs `main`, and the console shows what it prints:
 
 ```text include="steps/01-hello/expected/output.txt"
-The store is open
+Hello, world
 ```
 
 That is your first program. Every program in this book is made the same way: a directory with `una.toml`, `verification.lock` and a module under `src/`, then `una check .` and `una run .` in that directory.
+
+### If `una check` finds a mistake
+
+A mistake in a program is normal: everyone makes them while writing code. Una finds as many as it can before the program runs. Here is the program with one letter left out of `print`:
+
+```diff include="steps/01-hello..steps/02-typo:src/hello.una"
+--- a/src/hello.una
++++ b/src/hello.una
+@@ -4,4 +4,4 @@
+ pub main() -> Unit
+   uses @console: Console[print]
+ =
+-  @console.print("Hello, world")
++  @console.prnt("Hello, world")
+```
+
+`una check .` reports a **diagnostic**, a report of one problem:
+
+```text include="steps/02-typo/expected/rendered.txt"
+[U1001] Error: capability `Console` has no operation `prnt`
+   ╭─[ src/hello.una:7:12 ]
+   │
+ 7 │   @console.prnt("Hello, world")
+   │            ──┬─
+   │              ╰─── capability `Console` has no operation `prnt`
+   │
+   │ Help: repair 1: write `print`; edit src/hello.una:7:12..7:16 to "print"
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
+```
+
+Read it in three steps:
+
+1. **The first line says what is wrong.** `U1001` is the diagnostic's **code**, the name of this kind of problem, and the message says that the console has no **operation**, no action, named `prnt`.
+2. **The box shows where.** `src/hello.una:7:12` is the file, the line 7 and the column 12, the 12th character of the line. The line is shown under it, and the marks point at the word.
+3. **`Help` suggests a repair.** Here: write `print`. The last line says that `una fix .`, a command that makes such repairs for you, can make this one.
+
+`una run .` checks first, so it refuses to run a program with a mistake like this one, and prints the same diagnostic. Fix the word, and `una check .` prints nothing again. [Section 18.2](/learn/tools/#s18-2) reads diagnostics in depth.
 
 ### How a package is laid out
 
@@ -190,15 +245,192 @@ The pieces fit together by name, and `una` checks each link:
 - The directory holds `una.toml`, `verification.lock` and `src/`.
 - Each file `src/<name>.una` holds the module `<name>`, and its first line says `module <name>`.
 - `entry` in `una.toml` names one of those modules, and that module has `pub main() -> Unit`.
-- Each step of `main` runs in order, top to bottom, and the program ends when the last step ends.
+- `una check .` reads every file of the package; `una run .` checks, then runs `main`.
 
-When one of these links breaks, `una check` says which. [A module named unlike its file](#a-module-named-unlike-its-file-u1008), in Common mistakes, shows a broken one.
+The package's name in `una.toml`, `hello`, need not match its directory's name, though here it does.
 
 ### Check yourself: a first program
 
-This module is in `src/greeting.una`, in a package whose manifest has `entry = "greeting"`:
+You change the doc comment and the text to print, so that `main` reads:
 
-```una include="steps/02-greeting/src/greeting.una" title="steps/02-greeting/src/greeting.una"
+```una include="steps/03-hello-una/src/hello.una#main" title="src/hello.una"
+--- Greets the language you are learning.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Hello, Una")
+```
+
+What does `una run .` print now? And what does `una check .` print?
+
+:::answer Show the answer
+```text include="steps/03-hello-una/expected/output.txt"
+Hello, Una
+```
+
+`una run .` prints the new text, exactly as it stands between the double quotes. `una check .` prints nothing, since the package is still right. The doc comment changed too, but it is a note for people: it prints nothing.
+:::
+
+## 1.2 Modules
+
+### What a module is
+
+A **module** is one file of Una code, with a name. Think of the chapters of a binder of store procedures: each chapter has a title on its first page, and holds the procedures on one subject. A module's first line is its title, and what follows are its **declarations**: each one gives a name to something, such as a function, a named list of steps. In this chapter, every declaration is a function.
+
+A small program is one module. A larger one is several, each on one subject, such as prices or shipping; [chapter 11](/learn/packages/) shows how modules use each other.
+
+### Why code lives in named modules
+
+A program of one file without names would work, for a while. But a reader looking for the opening hours of the store would have to read all of it, and two people changing it at once would change the same file. Modules give each subject its own file, and their names let `una` find a module from its file, and a file from its module. That is why the name of the file and the first line of the module must agree: `una` checks that they do.
+
+### How to write a module
+
+A module is a file `src/<name>.una` in the package. Here is the module `opening`, in the file `src/opening.una`:
+
+:::steps
+```una include="steps/04-opening/src/opening.una" title="src/opening.una" verified="check, run"
+module opening
+
+-- The notices of the store's front door.
+
+--- Prints when the store opens.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- One line, for the sign on the door.
+  @console.print("The store opens at 9:00")
+
+--- Prints when the store closes.
+pub closing() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("The store closes at 18:00")
+```
+
+1. **`module opening`.** The module line: the keyword `module` and the module's name. A **keyword** is a word with a fixed meaning in the language. The name must be the file's name without `.una`, written in small letters, digits and `_`, starting with a letter.
+2. **`-- The notices of the store's front door.`** A **comment**: a note for people, which `una` skips. It starts with `--` and runs to the end of its line.
+3. **`--- Prints when the store opens.`** A **doc comment**: three dashes, right above a declaration. It belongs to that declaration and documents it; tools print it with the declaration's header. Every public declaration, one that other modules may use ([section 1.3](#s1-3)), should have one.
+4. **`pub main() -> Unit` …** The first declaration, the function `main`.
+5. **`-- One line, for the sign on the door.`** A comment may also stand inside a function, on a line of its own.
+6. **`pub closing() -> Unit` …** A second declaration, the function `closing`, after a blank line.
+:::
+
+Its package is made as in [Making the package](#making-the-package), with `entry = "opening"` in `una.toml`. `una run .` prints:
+
+```text include="steps/04-opening/expected/output.txt"
+The store opens at 9:00
+```
+
+Only one line: `una run .` runs `main`, and `main` does not call `closing`. A declaration is not a step of the program; it only gives a name to something that a step can use. [Section 1.4](#s1-4) shows how one function calls another.
+
+### Comments, line by line
+
+Una has two kinds of comment, and no other:
+
+- `--` starts a comment for the reader of the code. It may stand on a line of its own, at the top of the module or inside a body.
+- `---` starts a doc comment, which documents the declaration right under it.
+
+Una has no comment that spans several lines on its own: a note of several lines repeats `--` or `---` on each. A comment written another way is not a comment, and `una check` reports the line, as [A comment with `//`](#a-comment-with-u0101) shows.
+
+### How a module behaves
+
+`una check .` holds every module to three rules.
+
+#### The module line matches the file
+
+Change the first line of `src/opening.una` to `module door`, and `una check .` reports:
+
+```text include="steps/05-module-name/expected/rendered.txt#L1-L11"
+[U1008] Error: module `door` is in `src/opening.una`, which must hold module `opening`
+   ╭─[ src/opening.una:1:8 ]
+   │
+ 1 │ module door
+   │        ──┬─
+   │          ╰─── module `door` is in `src/opening.una`, which must hold module `opening`
+   │
+   │ Help: repair 1: declare `module opening`, or move the file to match `door`; edit src/opening.una:1:8..1:12 to "opening"
+   │
+   │ Note: run `una explain U1008` for an explanation
+───╯
+```
+
+The message says both names: the module's, `door`, and the one its file asks for, `opening`. The `Help` line offers both repairs: change the name, or move the file. A second diagnostic, `U7002`, follows: `entry` in `una.toml` names the module `opening`, which the package no longer has. Fix the first line, and both go away.
+
+#### Each name is declared once
+
+Rename `closing` to `main`, so that the module declares `main` twice:
+
+```text include="steps/06-twice/expected/rendered.txt"
+[U1002] Error: `main` is defined twice in this module, both times as a function
+    ╭─[ src/opening.una:13:5 ]
+    │
+  6 │ pub main() -> Unit
+    │     ──┬─
+    │       ╰─── first defined here
+    │
+ 13 │ pub main() -> Unit
+    │     ──┬─
+    │       ╰─── `main` is defined twice in this module, both times as a function
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯
+```
+
+Two declarations with one name would leave `una run .` unable to tell which `main` to start, so a module gives each name once. The diagnostic points at both: where the name was first given, and where it is given again.
+
+#### The order of declarations does not matter
+
+The declarations of a module may come in any order. `closing` could come before `main`, and the program would print the same line. Most modules put the small pieces first and `main` last, so that a reader meets each piece before the code that uses it.
+
+### When to start a new module
+
+:::decide
+**Which to use:**
+
+| You want to… | Use |
+| --- | --- |
+| Write a small program, as in this chapter | one module, named after what it does |
+| Keep code on another subject apart, such as prices | a module of its own ([chapter 11](/learn/packages/)) |
+| Leave a note for the reader of the code | a comment, `--` |
+| Document what a declaration is for | a doc comment, `---`, right above it |
+:::
+
+### Check yourself: modules
+
+The file `src/opening.una` starts with this line instead:
+
+```una include="steps/07-capital/src/opening.una#L1"
+module Opening
+```
+
+Does `una check .` pass?
+
+:::answer Show the answer
+No:
+
+```text include="steps/07-capital/expected/rendered.txt#L1"
+[U0101] Error: unexpected `Opening`, expected a module path
+```
+
+A module's name is written in small letters, so `Opening`, with a capital letter, is not a name a module line accepts: `una` expected "a module path", a module's name. Write `module opening`, the file's name.
+:::
+
+## 1.3 The `main` function
+
+### What `main` is
+
+A program has many functions, and one of them is where a run starts: `main`. Think of the first step of a recipe: you may read the recipe in any order, but you cook it from step one. When you type `una run .`, `una` finds the module that `entry` names in `una.toml`, finds its function `main`, and follows the steps of `main` from the first to the last. When the last step ends, the program ends.
+
+### Why a program has one starting point
+
+A module may declare many functions, in any order, as [section 1.2](#s1-2) shows. Without a fixed starting point, nobody could tell which of them runs first. With `main`, the answer is always the same: `una run .` starts at `main` of the entry module, and everything else runs because `main`, or a function it calls, asks for it.
+
+### How to write `main`
+
+Here is a `main` with three steps:
+
+:::steps
+```una include="steps/08-greeting/src/greeting.una" title="src/greeting.una" verified="check, run"
 module greeting
 
 --- Greets the first customers of the day.
@@ -210,751 +442,241 @@ pub main() -> Unit
   @console.print("Today's special: desk lamps")
 ```
 
-What does `una run .` print?
+1. **`pub`.** Makes `main` **public**: reachable from outside its module, which is how `una run .` reaches it. [Chapter 6](/learn/functions/#s6-3) covers `pub` in full.
+2. **`main`.** The name, exactly `main`.
+3. **`()`.** The parameters, the inputs of the function. `main` takes none, so the parentheses are empty.
+4. **`-> Unit`.** What the function gives back when it ends. `Unit` means nothing useful: `main` runs for what it does, not for a value.
+5. **`uses @console: Console[print]`.** What the function may do outside the program: print. [Section 1.5](#s1-5) explains the line.
+6. **`=`, then the body.** The **body** is the list of steps, each on its own line and indented by two spaces under `=`. The first lines, from `pub` to the `uses` line, are the function's **header**.
+:::
 
-:::answer Show the answer
-```text include="steps/02-greeting/expected/output.txt"
+The package's `una.toml` names the module `greeting` as its entry:
+
+```toml include="steps/08-greeting/una.toml" title="una.toml"
+[package]
+name = "greeting"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "greeting"
+grants = ["console"]
+```
+
+`una run .` prints:
+
+```text include="steps/08-greeting/expected/output.txt"
 Good morning
 The store is open
 Today's special: desk lamps
 ```
 
-Three lines, in the order of the three steps. The doc comment prints nothing: it is a note for people. The apostrophe in `Today's` is an ordinary character inside the text.
-:::
+### How `main` behaves
 
-## 1.2 Reading a diagnostic
+- **The steps run in order.** Each step runs to its end before the next one starts, from the top of the body to the bottom.
+- **The program ends with `main`.** When the last step of `main` ends, the program ends.
+- **`main` is found by its header.** `una run .` looks in the entry module for exactly `pub main() -> Unit`. A module without one may still check clean, since it may be meant for other modules to use, but `una run .` refuses to start it, and says that the module has no `pub main() -> Unit` to run. The same happens when `main` lacks `pub`.
+- **The entry names the module.** `entry = "greeting"` names the module `greeting`, the file `src/greeting.una`. A package has one entry, and so one `main` that `una run .` starts.
 
-### What a diagnostic is
+### When the program grows
 
-A **diagnostic** is a report that `una check` writes about one problem in your code. It is like the note a proofreader leaves in the margin: it points at the exact word, says what is wrong, and often suggests a correction. Each diagnostic has a **code**, such as `U1001`, that names the kind of problem.
+`main` is where a run starts, not where all the work must be. As a program grows, its steps move into functions of their own, and `main` calls them in order, so that it reads like a table of contents: first the greeting, then the hours, then the offers. [Section 1.4](#s1-4) shows how to write such functions.
 
-### Why a checker reports mistakes
+### Check yourself: `main`
 
-A computer does exactly what the code says, even when the code says something you did not mean. A misspelt name, a number where a text should be, a step that asks for something the program may not do: without a checker, each of these is found only when its line runs. `una check` finds them while you write, and says where they are.
+The sign on a store's front door is printed by this program:
 
-### A typo the checker catches
-
-Change `print` to `write`, which `Console` does not have. The block that shows the change is a **diff**: a listing of the lines that differ between two versions of a file, with `-` before each line taken out and `+` before each line put in, and a few unmarked lines around them so you can find the place:
-
-```diff include="steps/01-hello..steps/03-typo:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -4,4 +4,4 @@
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.write("The store is open")
-```
-
-`una check .` now reports:
-
-```text include="steps/03-typo/expected/rendered.txt"
-[U1001] Error: capability `Console` has no operation `write`
-   ╭─[ src/hello.una:7:12 ]
-   │
- 7 │   @console.write("The store is open")
-   │            ──┬──
-   │              ╰──── capability `Console` has no operation `write`
-   │
-   │ Note: run `una explain U1001` for an explanation
-───╯
-```
-
-### The parts of a diagnostic
-
-Each diagnostic has the same parts, in the same order:
-
-:::steps
-1. **`[U1001] Error:`** The code, which names the kind of problem. Every code has a page on this site, such as [U1001](/docs/errors/U1001/), and `una explain U1001` prints the same text in your terminal.
-2. **The message.** One sentence that says what is wrong: here, that `Console` has no operation `write`.
-3. **`src/hello.una:7:12`.** The file, the line and the column: line 7, character 12. Lines and columns count from 1.
-4. **The excerpt.** Line 7 of the file, with its number on the left. The marks under it, `──┬──`, underline the exact span, here `write`, and the line from `╰──` repeats the message next to it.
-5. **`Help` and `Note` lines.** A `Help` line proposes a repair when there is one. Some repairs are exact edits, which `una fix .` applies for you. A `Note` adds what you need to understand the problem; the last one names `una explain`.
-:::
-
-Read a diagnostic in that order: the message first, then the place, then the help. The message says what, the place says where, and the help says what to do.
-
-### Several problems in one check
-
-`una check .` reports every problem it finds in one pass, not only the first. With two misspelt operations, it reports two diagnostics:
-
-```diff include="steps/01-hello..steps/04-two-typos:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -4,4 +4,5 @@
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.write("The store is open")
-+  @console.show("Orders placed before 18:00 ship today")
-```
-
-```text include="steps/04-two-typos/expected/diagnostics.txt"
-error U1001 at src/hello.una:7:12: capability `Console` has no operation `write`
-error U1001 at src/hello.una:8:12: capability `Console` has no operation `show`
-```
-
-This book lists them here in a short form, one line each: the code, the place and the message. In your terminal, `una check .` prints each one in full, as for `write`. Fix them in any order, and run `una check .` again until it prints nothing.
-
-### Exit codes, and a run that refuses to start
-
-Every command ends with an **exit code**, a number the terminal receives when the command ends. `una check .` exits with 0 when the package checks, and with 1 when it reports a problem, so another program that runs `una check` for you, such as a code editor, can tell success from failure without reading the text.
-
-`una run .` never runs a package that does not check. It prints the same diagnostics and stops, so a program that runs is always a program that checked.
-
-### Asking `una explain`
-
-Each code has a longer explanation, with a failing example and a fixed one. `una explain` prints it:
-
-```sh
-una explain U1001
-```
-
-```text include="steps/03-typo/expected/commands/explain-u1001.txt#L2-L4"
-# U1001: Unresolved name
-
-Every name must refer to something visible where it is used: a local binding (a parameter, a `let`, a pattern binding or a lambda parameter), a declaration of the module, a name the module imports, or the prelude (ADR 0023). U1001 reports a name that none of these holds, whether it names a value, a type, a capability, a handler, a module or an imported declaration. An import names a module of the package or one of the two standard modules that can be imported: `std.host`, with the host capabilities and their failure kinds, and `std.testing`, with the helpers for examples. The prelude is always in scope and is not imported. A variant in a `when` pattern, an `is` test or after `fail` takes its kind from the context, and is checked against that kind instead. An operation that a capability does not declare is unresolved too, after `@x.` in a call and after `expect performed` or `expect not performed` in an example: the diagnostic offers the closest operation as an edit (ADR 0082).
-```
-
-The first line names the code and its meaning: U1001 is an unresolved name, a name that refers to nothing. The paragraph after it is the full rule, which names terms of later chapters and the numbered decision records behind it; a failing example and a fixed one follow it. You do not need all of it now. The site has the same text, on the page of each code, such as [U1001](/docs/errors/U1001/).
-
-### Canonical form
-
-**Canonical form** is the one layout Una accepts for any code: indentation, spaces, line breaks and the order of a few parts. `una check .` reports code that differs from it, as here, with spaces inside the parentheses:
-
-```diff include="steps/01-hello..steps/05-layout:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -4,4 +4,4 @@
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.print( "The store is open" )
-```
-
-```text include="steps/05-layout/expected/rendered.txt#L1,L8"
-[U7001] Error: line 7 is not in canonical form
-   │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/hello.una:7:1..8:1 to "  @console.print(\"The store is open\")\n"
-```
-
-The `Help` line holds the line as canonical form writes it. You rarely fix layout by hand: `una fmt .` rewrites every file of the package in canonical form. Since all Una code has one layout, no review ever argues about it.
-
-### The commands so far
-
-You have met four commands. The others come when a section needs them: `una test` in [section 1.6](#s1-6), and the rest in [chapter 13, Tools](/learn/tools/).
-
-| Command | What it does | Prints when all is well |
-| --- | --- | --- |
-| `una check .` | Looks for mistakes, without running anything | nothing |
-| `una run .` | Checks, then runs `main` | what the program prints |
-| `una explain U1001` | Explains a code | the explanation |
-| `una fmt .` | Rewrites the code in canonical form | nothing |
-
-### Check yourself: diagnostics
-
-This version of `hello` has one wrong letter order:
-
-```diff include="steps/01-hello..steps/06-misspelt:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -4,4 +4,4 @@
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.pirnt("The store is open")
-```
-
-Which code does `una check .` report, at which line and column? Then compare its `Help` line with the diagnostic for `write`, which had none.
-
-:::answer Show the answer
-```text include="steps/06-misspelt/expected/rendered.txt"
-[U1001] Error: capability `Console` has no operation `pirnt`
-   ╭─[ src/hello.una:7:12 ]
-   │
- 7 │   @console.pirnt("The store is open")
-   │            ──┬──
-   │              ╰──── capability `Console` has no operation `pirnt`
-   │
-   │ Help: repair 1: write `print`; edit src/hello.una:7:12..7:17 to "print"
-   │
-   │ Note: run `una explain U1001` for an explanation
-───╯
-1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
-```
-
-The code is U1001, at line 7, column 12, where `pirnt` starts: the same kind of problem as `write`. This time there is a `Help` line: `pirnt` is close to `print`, so the checker names the operation you most likely meant, as an exact edit that `una fix .` can apply. `write` is close to no operation of `Console`, so it got none.
-:::
-
-## 1.3 Printing and the console
-
-### What the console is
-
-The **console** is the channel of text between a program and the person who runs it. In a terminal, it is the window itself: what the program prints appears there, line after line, under the command that started it. Printing is the simplest way a program shows its results.
-
-In Una the console is a **capability**: a named set of **operations**, actions on the world outside the program. `Console` has one operation, `print`, which writes one line of text and ends it with a new line. Other capabilities reach a clock, files or the network. Think of a badge that a store gives each employee: it names the doors the employee may open. A capability is such a badge, and a function shows its badges in its header.
-
-### Why a function must ask for the console
-
-Remove the `uses` line from `main`, and keep its body:
-
-```diff include="steps/01-hello..steps/07-no-uses:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -1,7 +1,4 @@
- module hello
- 
- --- Says that the store is open.
--pub main() -> Unit
--  uses @console: Console[print]
--=
--  @console.print("The store is open")
-+pub main() -> Unit = @console.print("The store is open")
-```
-
-Canonical form writes a body of one line on the header line, after `=`. `una check .` reports:
-
-```text include="steps/07-no-uses/expected/rendered.txt#L1-L5"
-[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-   ╭─[ src/hello.una:4:22 ]
-   │
- 4 │ pub main() -> Unit = @console.print("The store is open")
-   │                      ────┬───
-```
-
-The message says that `main` uses `@console`, but its header declares no `uses`, so the function is **pure**: it computes values and touches nothing outside the program. The `Help` line offers the repair, with a warning: it widens what the function may do, so make sure that printing is part of its job.
-
-The rule protects whoever reads or runs the code. In many languages any line may print, write a file or send data over the network, and only reading every line tells you which do. In Una the header says it, and the checker holds the body to the header.
-
-### How to write `uses`
-
-A `uses` line goes under the header, indented two spaces, before `=`. Its parts:
-
-:::steps
-1. **`uses`.** The keyword that starts the line. A **keyword** is a word with a fixed meaning in the language.
-2. **`@console`.** The name the body uses for the capability. A capability name always starts with `@`. You choose the rest of it.
-3. **`: Console`.** The capability.
-4. **`[print]`.** The operations the function may call, in brackets, separated by commas. Leave the brackets out, `Console`, and the function may call every operation of the capability.
-:::
-
-In the body, a call of an operation is the name, a dot, the operation and its **argument**, the value it works on, in parentheses: `@console.print("The store is open")`.
-
-#### Another name, and every operation
-
-This program names the console `@screen`, asks for `Console` with all its operations, and prints four lines, one of them empty:
-
-```una include="steps/08-notices/src/notices.una" title="steps/08-notices/src/notices.una" verified="check, run"
-module notices
-
---- Prints the notices of the morning, with an empty line after the greeting.
-pub main() -> Unit
-  uses @screen: Console
-=
-  @screen.print("Good morning")
-  @screen.print("")
-  @screen.print("Fresh stock: desk lamps and wool rugs")
-  @screen.print("The café opens at 10:00")
-```
-
-`una run .` prints:
-
-```text include="steps/08-notices/expected/output.txt"
-Good morning
-
-Fresh stock: desk lamps and wool rugs
-The café opens at 10:00
-```
-
-The name is a choice, but most code uses `@console`, so that every reader recognizes it. `Console[print]` and `Console` grant the same thing today, since `print` is the console's only operation. Listing the operations is the habit to keep: for a capability with many operations, a header that lists the few it needs says more.
-
-### Granting the console: `[run] grants`
-
-A `uses` line asks for the console. The program gets it only when the run grants it. The `grants` line of `una.toml` is that grant:
-
-```toml include="steps/01-hello/una.toml" title="una.toml"
-[package]
-name = "hello"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "hello"
-grants = ["console"]
-```
-
-The two halves work together. The `uses` line of `main` is a promise to callers and reviewers: this function prints, and does nothing else outside the program. The `grants` line is the decision of whoever runs the program, and so is a `--grant` flag of `una run`, which adds to it for one run. If you remove `console` from the grants, `una check .` still passes, since the code is right, but `una run .` refuses to start: it reports U3012, which says that `main` uses `print` of `Console` and that nothing grants it.
-
-### How printing behaves
-
-- Each `print` writes one line, and the lines appear in the order the steps run.
-- `print` adds the end of the line itself. `print("")` writes an empty line.
-- A text may hold any printable character, `é` included, in any language.
-- `print` takes one value, and it must be a text. [Section 1.4](#s1-4) shows how to print a number.
-- A step that prints stands on its own line. Una does not let a call that prints hide inside another computation, so a reader who scans the left edge of a body sees every effect it has, in the order it has them.
-
-### When a function should print
-
-Most functions should not print: they take values and return a value, and a pure function is easy to test, as [section 1.6](#s1-6) shows. Print in `main`, or in a few functions whose job is to print, and give each of them a `uses` line. The packing slip of [section 1.7](#s1-7) has that shape: seven pure functions build the lines, and `main` prints them.
-
-### Check yourself: printing
-
-Two questions, without code.
-
-1. A package's `una.toml` has `grants = []`, and its `main` has `uses @console: Console[print]`. Does `una check .` pass? Does `una run .` start?
-2. A module has a public function `slip_title` with no `uses` line. Can its body call `@console.print`?
-
-:::answer Show the answer
-1. `una check .` passes: the code asks for the console in its header, and that is all a check needs. `una run .` refuses to start, with U3012, since the run grants nothing that `main` uses.
-2. No. A public function without `uses` is pure, and `@console` in its body is U3004, as in [Why a function must ask for the console](#why-a-function-must-ask-for-the-console).
-:::
-
-## 1.4 Values, types and names
-
-### What a value is
-
-A **value** is one piece of data: the number `18`, the text `"LAMP-01"`, the answer `true`. A program computes new values from old ones, as `18 - 9` gives `9`, and prints some of them.
-
-Every value has a **type**, which says what kind of value it is, and so what you can do with it. You can multiply two numbers, but not two product names. Think of the fields of a paper form: one box takes a date, another a phone number, and a clerk refuses a form with a name in the date box. Types are those boxes, and `una check` is the clerk. The types of this chapter:
-
-| Type | Its values | Written as |
-| --- | --- | --- |
-| `Int` | whole numbers, positive, zero or negative | `18`, `1_990`, `-500` |
-| `Text` | a sequence of characters | `"Desk lamp, brass"` |
-| `Bool` | the answer to a yes-or-no question | `true`, `false` |
-| `Unit` | one value only, which carries no information | `unit` |
-
-A value written out in the code, such as `18` or `"LAMP-01"`, is a **literal**. [Chapter 2](/learn/values/) covers each type in full.
-
-### Why every value has a type
-
-`print` takes a text. Give it a number:
-
-```diff include="steps/01-hello..steps/09-print-number:src/hello.una" title="src/hello.una"
---- a/src/hello.una
-+++ b/src/hello.una
-@@ -1,7 +1,7 @@
- module hello
- 
----- Says that the store is open.
-+--- Says until when the store is open.
- pub main() -> Unit
-   uses @console: Console[print]
- =
--  @console.print("The store is open")
-+  @console.print(18)
-```
-
-```text include="steps/09-print-number/expected/rendered.txt#L1"
-[U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
-```
-
-`print`'s argument is called `line`, and its type is `Text`; the value given is an `Int`. Some languages would turn the number into a text without a word, and some would refuse only when the line runs. Una refuses before the program runs, and it never turns a value of one type into another unless the code says so. Saying so is easy, as [Putting values into a text](#putting-values-into-a-text) shows.
-
-### How to write values and names
-
-#### Literals
-
-- An `Int` literal is written in decimal digits. An `_` may group them, so `1_990` is 1990 and easier to read. For a negative number, write a minus sign in front: `-500`.
-- A `Text` literal is written between double quotes, on one line: `"Desk lamp, brass"`. A few characters need a backslash before them: `\"` for a quote, `\\` for a backslash, and `\{` and `\}` for braces, since a brace starts an interpolation, as [Putting values into a text](#putting-values-into-a-text) shows.
-- A `Bool` literal is `true` or `false`.
-
-#### Naming a value: `let`
-
-`let` gives a name to a value, so that later steps can use it:
-
-- `let lamps = 2` names the value `2` as `lamps`. The type, `Int`, comes from the value.
-- `let lamp_cents: Int = 1_990` writes the type too, after `:`. It is optional, and it tells a reader what the name holds.
-
-The name holds that one value from its line to the end of the body. A name of a value starts with a small letter and holds small letters, digits and `_`: `lamps`, `lamp_cents`, `sku2`.
-
-#### Computing with `Int`
-
-`+`, `-` and `*` add, subtract and multiply. `/` divides and drops the remainder, and `mod` gives the remainder (for numbers that are not negative; [chapter 2](/learn/values/#euclidean-division) shows the rest): `3980 / 100` is 39, and `3980 mod 100` is 80. `*`, `/` and `mod` come before `+` and `-`, as in school arithmetic, and parentheses change the order.
-
-#### Putting values into a text
-
-A name or a computation in braces, inside a text, puts its value into the text: `"{lamps} x {sku}"`. This is an **interpolation**. Numbers, texts and `true` and `false` can all go in braces, and so can a computation, such as `{lamps * lamp_cents}`. An `Int` goes in as plain decimal digits, with no leading zero and no `_`.
-
-### Values in a store
-
-This program names four values, one of each kind it prints, and computes with them:
-
-:::steps
-```una include="steps/10-values/src/values.una" title="steps/10-values/src/values.una" verified="check, run"
-module values
-
---- Prints values of three types, and a few computations on them.
+```una include="steps/09-door-sign/src/sign.una#main" title="src/sign.una"
+--- Prints the sign for the front door, with an empty line between its two parts.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let lamps = 2
-  let lamp_cents: Int = 1_990
-  let sku = "LAMP-01"
-  let in_stock = true
-  @console.print("{lamps} x {sku}")
-  @console.print("in stock: {in_stock}")
-  @console.print("{lamps * lamp_cents} cents")
-  @console.print("{lamps * lamp_cents / 100} units and {lamps * lamp_cents mod 100} cents")
-  @console.print("a brace \{ and a quote \" in a text")
-  let opens = 9
-  let closes = 18
-  @console.print("{closes - opens - 1} hours of trading, without the lunch hour")
-  @console.print("{2 + 3 * 4} and {(2 + 3) * 4}")
+  @console.print("Welcome")
+  @console.print("")
+  @console.print("Open from 9:00 to 18:00")
+  @console.print("Closed on public holidays")
 ```
 
-1. **`let lamps = 2`.** A name for an `Int`.
-2. **`let lamp_cents: Int = 1_990`.** A name with its type written out. Money is kept in **cents**, whole numbers, so that nothing ever rounds by accident.
-3. **`let sku = "LAMP-01"`.** A `Text`. A **SKU**, a stock keeping unit, is the code a store gives each product.
-4. **`let in_stock = true`.** A `Bool`.
-5. **`"{lamps * lamp_cents / 100} units and {lamps * lamp_cents mod 100} cents"`.** Two computations inside one text.
-6. **`"a brace \{ and a quote \" in a text"`.** Two escapes.
-:::
-
-`una run .` prints, among other lines:
-
-```text include="steps/10-values/expected/output.txt#L1-L5"
-2 x LAMP-01
-in stock: true
-3980 cents
-39 units and 80 cents
-a brace { and a quote " in a text
-```
-
-### Opening hours
-
-Each program from here on is a package of its own, in a directory next to `store`. To make one, go up from `store` to your home directory with `cd ..` (`..` is the path of the directory above), then make the new directory as before:
-
-```sh
-cd ..
-mkdir opening
-cd opening
-mkdir src
-```
-
-Then write `una.toml` and `src/opening.una` with your editor, and make `verification.lock` as in [the first package](#the-lock-file-verificationlock). This program prints the store's opening hours:
-
-:::steps
-```una include="steps/11-printing/src/opening.una" title="src/opening.una" verified="check, run"
-module opening
-
---- Prints today's opening hours.
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  let opens = 9
-  let closes = 18
-  let hours = closes - opens
-  @console.print("Open today from {opens}:00 to {closes}:00")
-  @console.print("That is {hours} hours of trading")
-  @console.print("Orders placed before {closes}:00 ship today")
-```
-
-1. **`let hours = closes - opens`.** A name for a computed value: 9.
-2. **`"Open today from {opens}:00 to {closes}:00"`.** A text with interpolations. The `:00` after each brace is plain text.
-3. **Three `print` calls.** Each prints one line, in order.
-:::
-
-Its manifest names the package and its module `opening`, and grants the console, as the first package's did:
-
-```toml include="steps/11-printing/una.toml" title="una.toml"
-[package]
-name = "opening"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "opening"
-grants = ["console"]
-```
-
-`una run .` prints:
-
-```text include="steps/11-printing/expected/output.txt"
-Open today from 9:00 to 18:00
-That is 9 hours of trading
-Orders placed before 18:00 ship today
-```
-
-### How values and names behave
-
-- **No conversions behind your back.** A value keeps its type. An `Int` becomes a text only where the code puts it in braces.
-- **One name, one value.** A name made with `let` cannot be given another value, and the same name cannot be made twice in one body. [Chapter 2](/learn/values/#s2-4) shows `let edit`, for a value that must change, such as a running total.
-- **A name exists from its line on.** A step can use a name only after the `let` that makes it.
-- **Whole numbers have no size limit.** An `Int` never overflows, however large a total grows ([chapter 2](/learn/values/#s2-1)).
-- **A text literal cannot go inside braces.** Write `let wood = "oak"`, then `"{wood}"`. [Chapter 2](/learn/values/#a-text-inside-an-interpolation-u0006) shows the diagnostic.
-- **Few characters are special.** Besides the quote, the backslash and the braces, every character in a text, `:`, `<`, `x` or a space, prints as it is.
-
-### Check yourself: values
-
-The last four lines of `values` name two hours, then compute with the names and with parentheses:
-
-```una include="steps/10-values/src/values.una#L16-L19" title="steps/10-values/src/values.una"
-  let opens = 9
-  let closes = 18
-  @console.print("{closes - opens - 1} hours of trading, without the lunch hour")
-  @console.print("{2 + 3 * 4} and {(2 + 3) * 4}")
-```
-
-What do the last two lines print?
+What does `una run .` print?
 
 :::answer Show the answer
-```text include="steps/10-values/expected/output.txt#L6-L7"
-8 hours of trading, without the lunch hour
-14 and 20
+```text include="steps/09-door-sign/expected/output.txt"
+Welcome
+
+Open from 9:00 to 18:00
+Closed on public holidays
 ```
 
-`closes - opens - 1` is computed from the left: 18 − 9 is 9, and 9 − 1 is 8. In `2 + 3 * 4` the multiplication comes first, 12, then 2 + 12 is 14. The parentheses of `(2 + 3) * 4` make the addition come first: 5 × 4 is 20.
+Four lines, in the order of the four steps. The second step prints an empty text, `""`, which is a line with nothing on it.
 :::
 
-One more, without code. With `lamps` an `Int` and `sku` a `Text`, which of these steps check?
-
-1. `@console.print(lamps)`
-2. `@console.print("{lamps}")`
-3. `let both = lamps * sku`
-4. `@console.print("{lamps} x {sku}")`
-
-:::answer Show the answer
-Steps 2 and 4 check. Step 1 gives `print` an `Int` where it takes a `Text`: U2001, as in [Why every value has a type](#why-every-value-has-a-type). Step 3 multiplies a number by a text, which has no meaning, and the checker reports U2001 for it too. In steps 2 and 4 the braces put the values into a text, so `print` gets the `Text` it takes.
-:::
-
-## 1.5 Functions and comments
+## 1.4 Writing a function
 
 ### What a function is
 
-A program of one `main` grows long quickly. A **function** gives a piece of the work a name, so that you write it once and use it wherever it is needed. Think of a price lookup at a till: you give it a SKU, and it gives back the price. You do not need to know how it finds the price; you only need its name, what to give it, and what it gives back.
+A **function** is a named piece of a program. It may take inputs, it does its work, and it may give back a value when it is done. Think of a price lookup at a till: you give it a SKU, the code of a product, and it gives back the price. You need only its name, what to give it, and what it gives back; you do not need to know how it finds the price.
 
-A function's inputs are its **parameters**, and what it gives back is its **result**. Using a function is a **call**: you write its name and the values it should work with, the **arguments**, in parentheses. The code that makes the call is the **caller**, and the call stands for the result.
+A function's inputs are its **parameters**, and what it gives back is its **result**. Using a function is a **call**: you write its name and, in parentheses, the values it should work with, its **arguments**. The code that makes the call is the **caller**, and the call stands for the result.
+
+A **value** is one piece of data a program works with, such as the text `"Good morning"`. Every value has a **type**, the kind of value it is: a text in double quotes has the type `Text`. [Chapter 2](/learn/numbers/#s2-1) covers values and types in full, and [chapter 3](/learn/text-and-conditions/#s3-1) covers text.
 
 ### Why programs use functions
 
-Here is a program that prints when orders ship at three stores, each line written out in full:
+Here is a board by the entrance of a store, with the hours at the top and again at the bottom:
 
-```una include="steps/12-repeated/src/cutoffs.una" title="steps/12-repeated/src/cutoffs.una" verified="check, run"
-module cutoffs
-
---- Prints when orders ship the same day, at each of the three stores.
+```una include="steps/10-repeated/src/board.una#main" title="src/board.una" verified="check, run"
+--- Prints the board by the entrance: the hours at the top and again at the bottom.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  @console.print("Downtown: orders placed before 18:00 ship today")
-  @console.print("Harbor: orders placed before 17:00 ship today")
-  @console.print("Airport: orders placed before 20:00 ship today")
+  @console.print("Open today from 9:00 to 18:00")
+  @console.print("Fresh stock: desk lamps and wool rugs")
+  @console.print("The café opens at 10:00")
+  @console.print("Open today from 9:00 to 18:00")
 ```
 
-It works, but the sentence "orders placed before … ship today" is written three times. To change it, say to "ship the same day", you change three lines, and missing one prints two wordings. Nothing can test the sentence on its own either, since it exists only inside `print` calls. A function that builds the line from the store and the hour fixes both: the sentence is written once, and a test can call the function and check its result.
+It works, but the hours are written twice. When the store changes its hours, you must change two lines, and a missed one prints two different hours on the same board. A function that gives back the hours writes them once:
+
+```una include="steps/11-function/src/board.una" title="src/board.una" verified="check, run"
+module board
+
+--- When the store is open today.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
+
+--- Prints the board by the entrance: the hours at the top and again at the bottom.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(opening_hours())
+  @console.print("Fresh stock: desk lamps and wool rugs")
+  @console.print("The café opens at 10:00")
+  @console.print(opening_hours())
+```
+
+Both versions print the same board:
+
+```text include="steps/11-function/expected/output.txt"
+Open today from 9:00 to 18:00
+Fresh stock: desk lamps and wool rugs
+The café opens at 10:00
+Open today from 9:00 to 18:00
+```
+
+Now the hours live in one place, under one name, `opening_hours`. A change there changes every line that uses it, and the name tells the reader what the text is.
 
 ### How to write a function
 
-A function is a header and a body:
+A function is a header and a body. The function `opening_hours` takes no parameters and gives back a text:
 
 :::steps
-```una include="steps/13-functions/src/notice.una#cutoff_line" title="src/notice.una"
---- The line that tells customers until when an order ships the same day.
-pub cutoff_line(hour: Int) -> Text = "Orders placed before {hour}:00 ship today"
+```una include="steps/11-function/src/board.una#opening_hours" title="src/board.una"
+--- When the store is open today.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
 ```
 
-1. **`pub`.** Public: code in other modules may call it. Leave it out for a function only its own module uses.
-2. **`cutoff_line`.** The name, in small letters, digits and `_`, as for values.
-3. **`(hour: Int)`.** The parameters, in parentheses: each a name, `:` and a type, separated by commas. `()` means none.
-4. **`-> Text`.** The type of the result.
-5. **`= "Orders placed before {hour}:00 ship today"`.** The body: the computation whose value is the result. Inside it, `hour` holds the argument of the call.
+1. **`pub`.** Public, as for `main`: other modules may call it. Leave it out, and only its own module can.
+2. **`opening_hours`.** The name: small letters, digits and `_`, starting with a letter, with no `__` and no `_` at the end. A good name says what the result is.
+3. **`()`.** The parameters, in parentheses. `()` means none.
+4. **`-> Text`.** The type of the result: this function gives back a text.
+5. **`= "Open today from 9:00 to 18:00"`.** The body: the value the function gives back.
 :::
 
-A call writes the name and the arguments: `cutoff_line(18)` is the text `"Orders placed before 18:00 ship today"`.
-
-### A module of small functions: `notice`
-
-The module `notice` declares two small functions and a `main` that calls them:
-
-:::steps
-```una include="steps/13-functions/src/notice.una" title="src/notice.una" verified="check, run"
-module notice
-
--- The notice the store's console shows when the store opens.
-
---- The hour the store closes, on the 24-hour clock.
-pub closing_hour() -> Int = 18
-
---- The line that tells customers until when an order ships the same day.
-pub cutoff_line(hour: Int) -> Text = "Orders placed before {hour}:00 ship today"
-
---- Prints the notice.
-pub main() -> Unit
-  uses @console: Console[print]
-=
-  -- Ask for the hour, then build the line from it.
-  let hour = closing_hour()
-  @console.print(cutoff_line(hour))
-```
-
-1. **`pub closing_hour() -> Int = 18`.** A function of no parameters that returns an `Int`. A function with no `uses` line whose body is one line is written on one line, after `=`. This is its **short form**.
-2. **`pub cutoff_line(hour: Int) -> Text`.** One parameter, `hour`, of type `Int`, and a `Text` result. The body is a text that puts `hour` in its place.
-3. **`let hour = closing_hour()`.** A call. The parentheses are needed even when there are no arguments.
-4. **`cutoff_line(hour)`.** A call with one argument. The value of `hour` becomes the parameter `hour` inside the function.
-5. **`-- Ask for the hour, then build the line from it.`** A plain comment, inside a body.
-:::
-
-Its package is a directory `notice/`, made as in [Opening hours](#opening-hours), and its manifest names the module `notice`:
-
-```toml include="steps/13-functions/una.toml" title="una.toml"
-[package]
-name = "notice"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "notice"
-grants = ["console"]
-```
-
-`una run .` prints:
-
-```text include="steps/13-functions/expected/output.txt"
-Orders placed before 18:00 ship today
-```
+A call writes the name and the parentheses: `opening_hours()` stands for the text `"Open today from 9:00 to 18:00"`. The parentheses are needed even when there are no arguments. In `main`, `@console.print(opening_hours())` first calls `opening_hours`, then prints the text the call gives back.
 
 ### The forms of a function
 
-The module `shipping` has one function of each form. `main` calls each one:
+The module `notices` has one function of each form, and a `main` that calls them:
 
-```una include="steps/14-function-forms/src/shipping.una" title="steps/14-function-forms/src/shipping.una" verified="check, run"
-module shipping
+```una include="steps/12-function-forms/src/notices.una" title="src/notices.una" verified="check, run"
+module notices
 
---- The hour the store closes, on the 24-hour clock: a function with no parameters.
-pub closing_hour() -> Int = 18
-
---- The cutoff line of one store: a function with two parameters.
-pub cutoff(store: Text, hour: Int) -> Text = "{store}: orders placed before {hour}:00 ship today"
-
---- What a line of an order costs, in cents.
-pub line_cents(quantity: Int, cents: Int) -> Int = quantity * cents
-
---- What a line costs when each unit is `off` cents cheaper: the long form, with a body of
---- several lines.
-pub discounted(quantity: Int, cents: Int, off: Int) -> Int
-=
-  let each = cents - off
-  quantity * each
+--- When the store is open today: a function with no parameters, in the short form.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
 
 -- A private function: no `pub`, so only this module can call it.
-welcome(store: Text) -> Text = "Welcome to the {store} store"
+cafe_hours() -> Text = "The café opens at 10:00"
 
---- Prints the cutoff line of one store: a function that prints, so its header says so.
-pub announce(store: Text, hour: Int) -> Unit
+--- Prints a heading and the notice under it: a function with two parameters, in the long
+--- form, since its body has two steps.
+pub section(heading: Text, notice: Text) -> Unit
   uses @console: Console[print]
 =
-  @console.print(cutoff(store, hour: hour))
+  @console.print(heading)
+  @console.print(notice)
 
---- Calls each function once.
+--- Calls each function.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let hour = closing_hour()
-  @console.print(cutoff("Downtown", hour: hour))
-  @console.print("{line_cents(2, cents: 1990)} cents")
-  @console.print("{discounted(2, cents: 1990, off: 200)} cents")
-  @console.print(welcome("Harbor"))
-  announce("Airport", hour: 20)
-  @console.print("{discounted(3, cents: 500, off: 50)} cents")
-  @console.print(cutoff("Harbor", hour: hour - 1))
+  section("Hours", notice: opening_hours())
+  section("Café", notice: cafe_hours())
 ```
-
-#### No parameters
-
-`closing_hour()` takes nothing and always returns 18. A call still needs its parentheses: `closing_hour()`.
-
-#### Several parameters, and labels at the call
-
-`cutoff(store: Text, hour: Int)` takes two parameters, separated by a comma. A call with more than one argument names every argument after the first, with the name of its parameter and `:`: `cutoff("Downtown", hour: hour)`, `line_cents(2, cents: 1990)`. The first argument may go without its name. Every other one carries it, or is a name equal to the parameter's, as `hour` could be here ([chapter 3](/learn/functions/) shows that short form), so a call reads the same a year from now, without a look at the header.
-
-#### The long form: a body of several lines
-
-`discounted` has a body of two lines, so it is written in the **long form**: the header, `=` alone on its line, then the body, indented two spaces. A body's lines run in order, and the value of its last line is the result: here `quantity * each`. Una has no `return`; the last line is the result.
-
-#### Public and private
-
-`welcome` has no `pub`, so it is **private**: only the module `shipping` can call it. Keep a function private until another module needs it. Here a plain `--` comment says what it is; a doc comment would do too, but it matters most on a public function, whose readers see its header and not its body.
-
-#### A function that prints
-
-`announce` prints, so its header says so, with a `uses` line, as `main`'s does. It returns `Unit`, since it is called for what it does, and `main` calls it as a step of its own: `announce("Airport", hour: 20)`. A function can call a function that uses the console only when it holds the console too, as `main` does.
 
 `una run .` prints:
 
-```text include="steps/14-function-forms/expected/output.txt#L1-L5"
-Downtown: orders placed before 18:00 ship today
-3980 cents
-3580 cents
-Welcome to the Harbor store
-Airport: orders placed before 20:00 ship today
+```text include="steps/12-function-forms/expected/output.txt"
+Hours
+Open today from 9:00 to 18:00
+Café
+The café opens at 10:00
 ```
 
-### Two kinds of comment
+#### The short form: a body of one line
 
-A **comment** is a note for people, which the program ignores. Una has two kinds:
+`opening_hours` has a body of one line, written on the header's line after `=`. This is the **short form**. Una asks for it whenever a function has no `uses` line and its body is one line: `una fmt .`, which lays code out the way Una expects, writes such a function this way.
 
-- `--` starts a **comment**, which runs to the end of its line. It is for the reader of the code.
-- `---` starts a **doc comment**, which belongs to the declaration under it. It is part of that declaration's documentation, and tools print it with the declaration's header. Every public function should have one.
+#### Parameters, and labels at the call
 
-Una has no block comments: a comment of several lines repeats `--` or `---` on each, as the doc comment of `discounted` does.
+`section(heading: Text, notice: Text)` takes two parameters, separated by a comma. Each is a name, `:` and a type. Inside the body, `heading` and `notice` stand for the arguments of the call.
 
-### Doc comments in `una contract`
+A call with more than one argument names every argument after the first, with its parameter's name and `:`. The call `section("Hours", notice: opening_hours())` passes `"Hours"` as `heading`, since the first argument goes without its name, and the result of `opening_hours()` as `notice`. The name, the **label**, makes the call read the same a year from now, without a look at the header. One shorthand exists: an argument that is a name equal to its parameter's, such as `notice` for the parameter `notice`, counts as labeled ([section 6.1](/learn/functions/#s6-1)).
 
-Tools read doc comments too. `una contract` prints the full header of a function, with its doc comment, named by module and function:
+#### The long form: a body of several steps
 
-```sh
-una contract notice.cutoff_line
-```
+`section` has a body of two steps, so it is written in the **long form**: the header, `=` alone on its line, then the body, indented two spaces. The steps run in order, as in `main`. A function with a `uses` line is always written in the long form.
 
-```text include="steps/13-functions/expected/commands/contract.txt#L2-L3"
---- The line that tells customers until when an order ships the same day.
-pub cutoff_line(hour: Int) -> Text
-```
+#### A function that gives back nothing: `Unit`
 
-This is what a reviewer, an editor or an agent sees of the function without reading its body.
+`section` is called for what it does, printing two lines, not for a value, so its result type is `Unit`, as `main`'s is. A call of it stands on its own line in a body, as a step: `section("Café", notice: cafe_hours())`.
+
+#### Public and private
+
+`cafe_hours` has no `pub`, so it is **private**: only the module `notices` can call it. Keep a function private until another module needs it. Here a plain `--` comment says what it is; a doc comment would do too, but it matters most on a public function, whose readers see its header and not its body.
 
 ### How a call behaves
 
-#### What happens at a call
+- **The arguments are worked out first.** In `section("Hours", notice: opening_hours())`, the call `opening_hours()` runs first, and its text becomes `notice`. Then the body of `section` runs.
+- **The caller waits.** While `section` runs, `main` waits. When the body of `section` ends, `main` goes on with its next step.
+- **A call gives back the type its header says.** `opening_hours()` is always a `Text`. Una checks the body against the header: change the body of `cafe_hours` to the number `10`, a value of type `Int`, the type of whole numbers ([chapter 2](/learn/numbers/)), and `una check .` reports:
 
-1. The arguments are computed, from left to right.
-2. Each parameter holds the value of its argument.
-3. The body runs, and its value is the result.
-4. The call stands for that result in the caller.
-
-`cutoff("Harbor", hour: hour - 1)` computes `hour - 1`, 17, runs the body with `store` holding `"Harbor"` and `hour` holding 17, and gives back the line.
-
-#### Functions that cannot print
-
-`closing_hour` and `cutoff_line` are public and have no `uses` line, so neither can print, read a file or ask the clock. They take values and return a value, and that is all they can do. This is why `main` builds the line with `cutoff_line` and prints it itself: the one function that prints is the one that says so.
-
-#### Calls must match the header
-
-The checker holds every call to its function's header: the number of arguments, their types and their labels. Leave out the label of `cents`:
-
-```diff include="steps/14-function-forms..steps/15-missing-label:src/shipping.una" title="src/shipping.una" context="1"
---- a/src/shipping.una
-+++ b/src/shipping.una
-@@ -33,3 +33,3 @@
-   @console.print(cutoff("Downtown", hour: hour))
--  @console.print("{line_cents(2, cents: 1990)} cents")
-+  @console.print("{line_cents(2, 1990)} cents")
-   @console.print("{discounted(2, cents: 1990, off: 200)} cents")
+```text include="steps/15-wrong-result/expected/rendered.txt#L1"
+[U2001] Error: `cafe_hours` returns `Text`, found `Int`
 ```
 
-```text include="steps/15-missing-label/expected/rendered.txt#L1,L8"
-[U2004] Error: argument 2 of `line_cents` needs a label; only the first argument may go without one
-    │ Help: repair 1: label it `cents`; edit src/shipping.una:34:34..34:38 to "cents: 1990"
+- **Every parameter gets an argument.** Leave out the notice, `section(opening_hours())`, and the call is short of an argument:
+
+```text include="steps/14-missing-argument/expected/rendered.txt#L1"
+[U2001] Error: `section` is missing argument `notice`
 ```
 
-The message says that argument 2 of `line_cents` needs a label, and the `Help` line gives the exact edit, `cents: 1990`, which `una fix .` applies. An argument of the wrong type is U2001, as `print(18)` was.
+- **The second argument carries its label.** Leave out `notice:`, as in `section("Hours", opening_hours())`, and `una check .` reports:
 
-#### The order of declarations
+```text include="steps/13-missing-label/expected/rendered.txt"
+[U2004] Error: argument 2 of `section` needs a label; only the first argument may go without one
+    ╭─[ src/notices.una:21:20 ]
+    │
+ 21 │   section("Hours", opening_hours())
+    │                    ───────┬───────
+    │                           ╰───────── argument 2 of `section` needs a label; only the first argument may go without one
+    │
+    │ Help: repair 1: label it `notice`; edit src/notices.una:21:20..21:35 to "notice: opening_hours()"
+    │
+    │ Note: run `una explain U2004` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
+```
 
-The order of declarations in a module is free: `main` may call a function declared after it. Canonical form does not reorder declarations, so keep them in the order a reader needs: the parts first, and `main`, which puts them together, after them.
+The message says which argument needs a label, the second, and the `Help` line gives the exact repair: label it `notice`.
 
 ### When to write a function
 
@@ -963,459 +685,497 @@ The order of declarations in a module is free: `main` may call a function declar
 
 | You want to… | Use |
 | --- | --- |
-| Name a value that one body computes once | `let` |
-| Use the same computation in several places | a function |
-| Test a computation on its own | a function without `uses`, and an example ([section 1.6](#s1-6)) |
-| Print, or reach anything else outside the program | a function with a `uses` line, usually `main` |
-| Keep a helper to one module | a function without `pub` |
+| Use the same text in several places | a function that gives it back, such as `opening_hours()` |
+| Give a few steps a name, and run them from several places | a function with a body of several steps, such as `section` |
+| Keep a helper to its own module | a function without `pub` |
+| Start the program | `pub main() -> Unit` in the entry module |
 :::
 
 ### Check yourself: functions
 
-`main` of `shipping` ends with two more calls:
+The help desk of a store prints this:
 
-```una include="steps/14-function-forms/src/shipping.una#discounted" title="steps/14-function-forms/src/shipping.una"
---- What a line costs when each unit is `off` cents cheaper: the long form, with a body of
---- several lines.
-pub discounted(quantity: Int, cents: Int, off: Int) -> Int
+```una include="steps/16-order-of-calls/src/desk.una" title="src/desk.una"
+module desk
+
+--- Where customers can ask a question.
+pub help_desk() -> Text = "Ask at the help desk by the main door"
+
+--- Prints a heading and the notice under it.
+pub section(heading: Text, notice: Text) -> Unit
+  uses @console: Console[print]
 =
-  let each = cents - off
-  quantity * each
+  @console.print(heading)
+  @console.print(notice)
+
+--- Prints two sections, with a line of its own between them.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  section("Questions", notice: help_desk())
+  @console.print("Thank you for shopping with us")
+  section("Lost something?", notice: help_desk())
 ```
 
-What do `discounted(3, cents: 500, off: 50)` and `cutoff("Harbor", hour: hour - 1)`, with `hour` holding 18, give? The last two lines of `main` print them.
+What does `una run .` print?
 
 :::answer Show the answer
-```text include="steps/14-function-forms/expected/output.txt#L6-L7"
-1350 cents
-Harbor: orders placed before 17:00 ship today
+```text include="steps/16-order-of-calls/expected/output.txt"
+Questions
+Ask at the help desk by the main door
+Thank you for shopping with us
+Lost something?
+Ask at the help desk by the main door
 ```
 
-In `discounted`, `each` is 500 − 50, 450, and the result is 3 × 450, 1350. In `cutoff`, the argument `hour - 1` is computed first, 17, and the body puts it in the line.
+`main` has three steps, run in order. The first and the last call `section`, which prints its heading and then its notice, the text `help_desk()` gives back. The step between them prints its own line. The same text appears twice, written once.
 :::
 
-## 1.6 Examples and `una test`
+## 1.5 Printing: the console, `print` and `uses`
 
-### What an example is
+### What the console is
 
-An **example** is a small test, written in the module next to the code it tests: it calls a function with chosen arguments and states what the result must be. It is like checking a new calculator with 2 + 2 before you trust it with a bill. `una test` runs every example and reports which hold.
+The **console** is the channel of text between a program and the person who runs it. In a terminal, it is the window itself: what the program prints appears there, line after line, under the command that started it. Printing is the simplest way a program shows its results.
 
-### Why programs need tests
+In Una the console is a **capability**: something outside the program that a function may use, with a set of **operations**, the actions it offers. The console's capability is `Console`, and its operation `print` writes one line of text. A function that may print says so in its header, with a `uses` line. This section shows that line in its simplest form; [chapter 12](/learn/capabilities/#s12-1) covers capabilities in full.
 
-`una check` proves many things, but not what you meant. If `cutoff_line` says "ship tomorrow" when the store means "ship today", the code checks: the checker cannot know which sentence is right. An example states the sentence you meant, and fails the moment the code says something else.
+### Why a function says that it prints
 
-### Writing an example
+Printing changes the world outside the program: a line appears on someone's screen. A function that only gives back a text changes nothing; you may call it as often as you like. Una keeps the two apart, in the header, where a reader looks first. A public function that prints says so with a `uses` line, and Una refuses a public function that prints without one. So a public function's header without `uses` promises that the function does nothing outside the program. A private function may leave its `uses` line out, and Una then works it out from the body ([section 6.3](/learn/functions/#s6-3)); this book always writes it, so that every header says what its function does.
 
-A function that returns a value is easy to test: call it, and compare what it returns with what you expect. The module `notice` ends with two examples:
+### How to write `uses`
+
+A `uses` line goes under the header, indented two spaces, before `=`. Here it is on two functions:
 
 :::steps
-```una include="steps/16-examples/src/notice.una#L19-L25" title="src/notice.una" caption="two examples at the end of the module"
-example "the store closes at six in the evening"
-  do closing_hour()
-  expect result == 18
+```una include="steps/17-printing/src/signs.una" title="src/signs.una" verified="check, run"
+module signs
 
-example "the cutoff line names the hour"
-  do cutoff_line(18)
-  expect result == "Orders placed before 18:00 ship today"
+--- Prints a line of dashes, to separate the parts of a sign.
+pub rule() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("--------------------")
+
+--- Prints the sign of the café, between two rules.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  rule()
+  @console.print("The café opens at 10:00")
+  rule()
 ```
 
-1. **`example "the store closes at six in the evening"`.** An example has a name in quotes. Write it as the fact the example checks, since that is what `una test` reports.
-2. **`do closing_hour()`.** The call under test, on its own line.
-3. **`expect result == 18`.** A fact that must hold. `result` is the value the `do` call returned, and `==` compares two values: it is `true` when they are equal. An example may have several `expect` lines, and each must hold.
+1. **`uses`.** The keyword that starts the line.
+2. **`@console`.** The name the body uses for the console. A name that starts with `@` always stands for a capability.
+3. **`: Console`.** The capability: the console.
+4. **`[print]`.** The operations the function may use, in brackets: here only `print`.
+5. **`@console.print("The café opens at 10:00")`.** A call of the operation: the capability's name, a dot, the operation, and its argument in parentheses. The argument is the text to print.
+6. **`rule()`.** `main` calls `rule`, which prints. A function that calls a function that prints also prints, so `main` has its own `uses` line too.
 :::
 
-### Running the examples
+A `uses` line is the code asking for the console. The run gets it when the package's manifest allows it: the line `grants = ["console"]` in `una.toml`, which every package of this chapter has. [Chapter 12](/learn/capabilities/#s12-2) covers grants, and the other ways a run gets the console.
 
-Run every example of the package:
+`una run .` prints:
 
-```sh
-una test .
+```text include="steps/17-printing/expected/output.txt"
+--------------------
+The café opens at 10:00
+--------------------
 ```
 
-```text include="steps/16-examples/expected/commands/test.txt#L2-L5"
-example notice "the store closes at six in the evening" ... ok
-example notice "the cutoff line names the hour" ... ok
+### How printing behaves
 
-2 examples: 2 passed, 0 failed
+- **One line per call.** Each call of `print` writes one line, and ends it, so the next call starts a new line.
+- **In the order the steps run.** The lines appear in the order of the calls, as `main` and the functions it calls run them.
+- **Exactly the text.** `print` writes the text as it is, spaces and every character included, such as `é`. `print("")` writes an empty line.
+- **Only text.** `print` takes one value, a text. [Chapter 2](/learn/numbers/#s2-1) shows how to print a number.
+- **No `uses`, no printing.** A public function that prints must have a `uses` line. Take it away from `rule`, and `una check .` reports:
+
+```text include="steps/18-no-uses/expected/rendered.txt#L1-L6"
+[U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
+   ╭─[ src/signs.una:4:22 ]
+   │
+ 4 │ pub rule() -> Unit = @console.print("--------------------")
+   │                      ────┬───
+   │                          ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
 ```
 
-Each example gets a line, with the module, the name, and `ok` when every `expect` holds. The last line counts them.
+The function is **pure**: without `uses`, it may do nothing outside the program. The marks point at `@console`, the use that the header does not allow.
 
-### A failing example
-
-When an `expect` does not hold, the example fails, and the report says which line and what the value was. Here the second example expects a different wording than the function gives:
-
-```diff include="steps/16-examples..steps/17-failing:src/notice.una" title="src/notice.una" context="1"
---- a/src/notice.una
-+++ b/src/notice.una
-@@ -24,2 +24,2 @@
-   do cutoff_line(18)
--  expect result == "Orders placed before 18:00 ship today"
-+  expect result == "Orders placed before 18:00 ship the same day"
-```
-
-```text include="steps/17-failing/expected/commands/test.txt#L2-L7"
-example notice "the store closes at six in the evening" ... ok
-example notice "the cutoff line names the hour" ... FAILED
-  src/notice.una:25: expect result == "Orders placed before 18:00 ship the same day"
-  it is false, with `result` = `"Orders placed before 18:00 ship today"`
-
-2 examples: 1 passed, 1 failed
-```
-
-Read the report from the top. `FAILED` names the example. The next line gives the place of the `expect` that did not hold, `src/notice.una:25`, and repeats it. The last line gives the value of `result`, so you can compare it with what the example expects. `una test .` exits with code 1, so a script can stop on a failed test. Whether the function or the example is wrong is your call: here the function says what the store means, so the fix is to the example.
-
-### How examples behave
-
-#### Examples are checked code
-
-Examples are code, and `una check .` checks them as it checks the rest of the module. An `expect` that compares an `Int` result with a text is a type error at check time, not a failed test at run time:
-
-```diff include="steps/13-functions..steps/18-example-type:src/notice.una" title="src/notice.una" context="1"
---- a/src/notice.una
-+++ b/src/notice.una
-@@ -17 +17,9 @@
-   @console.print(cutoff_line(hour))
-+
-+example "the store closes at six in the evening"
-+  do closing_hour()
-+  expect result == "18"
-+
-+example "the cutoff line names the hour"
-+  do cutoff_line(18)
-+  expect result == "Orders placed before 18:00 ship today"
-```
-
-```text include="steps/18-example-type/expected/rendered.txt#L1"
-[U2001] Error: `==` needs operands of one type, and these are `Int` and `Text`
-```
-
-`==` compares values of one type, and `closing_hour()` returns an `Int`.
-
-#### What an example may do
-
-An example may call any function of its module, public or private, and it never prints: `una run .` ignores the examples, and `una test .` runs nothing but them. `una test .` checks the package first, as `una run .` does, so an example runs only in a package that checks clean.
-
-#### One fact per example
-
-A good example states one fact, in its name and in its `expect` lines. When it fails, its name tells you what broke before you read any code. Prefer exact values over loose ones: `expect result == "Orders placed before 18:00 ship today"` catches a change of one word, which a test of the length alone would miss.
-
-### What to test, and what not
+### When to print, and when to give back a text
 
 :::decide
 **Which to use:**
 
 | You want to… | Use |
 | --- | --- |
-| Pin what a pure function returns for one input | an example with `expect result == …` |
-| Cover an input the program does not reach today, such as zero units | one more example |
-| Know that the code has the right types and authority | `una check .`, which needs no example |
-| Test a function that prints | [chapter 10](/learn/testing/), with a fake console: a stand-in that records what would be printed |
+| Make a text the program shows | a function without `uses` that gives back a `Text` |
+| Show a line to the person running the program | `@console.print(...)` in a function with `uses @console: Console[print]` |
+| Print the same few lines from several places | a function with `uses` and a `Unit` result, such as `rule` |
+| Let the run print | `grants = ["console"]` in `una.toml` |
 :::
 
-### Check yourself: examples
+A function that gives back a text can be tested on its own, as [Testing it](#s1-7) shows, so the work of a program goes into such functions, and a few functions with `uses`, `main` first, print what they give back.
 
-This example is added at the end of `notice`:
+### Check yourself: printing
 
-```una include="steps/19-early-cutoff/src/notice.una#L27-L29" title="steps/19-early-cutoff/src/notice.una"
-example "the cutoff line for nine in the morning"
-  do cutoff_line(9)
-  expect result == "Orders placed before 09:00 ship today"
+In this version, the public function `frame` calls `rule` twice. Does `una check .` pass?
+
+```una include="steps/19-caller-no-uses/src/signs.una#frame" title="src/signs.una"
+--- Prints a rule, twice.
+pub frame() -> Unit
+=
+  rule()
+  rule()
 ```
-
-Does it pass?
 
 :::answer Show the answer
-It fails:
+No:
 
-```text include="steps/19-early-cutoff/expected/commands/test.txt#L4-L6"
-example notice "the cutoff line for nine in the morning" ... FAILED
-  src/notice.una:29: expect result == "Orders placed before 09:00 ship today"
-  it is false, with `result` = `"Orders placed before 9:00 ship today"`
+```text include="steps/19-caller-no-uses/expected/rendered.txt#L1-L6"
+[U3003] Error: `rule` uses `@console: Console[print]`, but this code declares no `uses`, so its effects would exceed its header
+    ╭─[ src/signs.una:12:3 ]
+    │
+ 12 │   rule()
+    │   ───┬──
+    │      ╰──── `rule` uses `@console: Console[print]`, but this code declares no `uses`, so its effects would exceed its header
 ```
 
-An interpolation writes an `Int` in its plain decimal form, with no leading zero: `9`, not `09`. The function is right for the store's notice, so the fix is to the example.
+There are two diagnostics, the same one for each call of `rule`; the first is shown. `rule` prints, so a call of it prints too. `frame` is public and has no `uses` line, so it may not print, and each call of `rule` in its body is `U3003`. The repair: give `frame` the line that `rule` has, `uses @console: Console[print]`, under its header. Then `frame` may print, and so must every function that calls it.
 :::
 
-## 1.7 Day-to-day: a packing slip
+## 1.6 Day-to-day: morning notices
 
 ### What the program must do
 
-A packing slip goes into every box the store ships. It names the order and the customer, lists each line of the order with its quantity, counts the units, and gives the total paid. The warehouse prints it as the box is packed.
+Every morning, when a store opens, a screen by the entrance shows the notices of the day, and the staff read them before the doors open. The notices are:
 
-The design follows from the job and from this chapter's ideas. Each line of the slip comes from its own function, which takes the values the line shows and returns its text. Those functions have no `uses` line, so they cannot print, and an example can test each one by its result. `main` holds the sample order's values, calls the functions, and prints what they return, line by line.
+- the store's name, its address and a greeting;
+- one part for each subject: the hours, the shipping cutoff, the offer of the day and the café, each a heading with its notice under it;
+- where customers can ask a question, at the end.
 
-### The slip's package and manifest
+A line of dashes separates the parts, so that a reader finds each one at a glance. The texts change often: the offer every day, the hours with the seasons. So each text should be written once, in a place with a name, and the code that prints should not need to change when a text does.
 
-The program is one module, `slip`, in a package of its own: make a directory `day-to-day` with its `src`, as in [Opening hours](#opening-hours), add `verification.lock`, and write this manifest, which grants the console:
+The program is one module, `morning`, in a package whose `una.toml` names it as the entry and grants the console:
 
 ```toml include="day-to-day/una.toml" title="day-to-day/una.toml"
 [package]
-name = "slip"
+name = "morning"
 version = "0.1.0"
 edition = "0.2"
 
 [run]
-entry = "slip"
+entry = "morning"
 grants = ["console"]
 ```
 
-### The lines of the slip
+### The notices, one function each
 
-Seven functions, each with a doc comment, each written in the short form, on one line:
+Each notice is a function that gives back its text:
 
-```una include="day-to-day/src/slip.una#title..closing" title="day-to-day/src/slip.una" caption="one function per line of the slip"
---- The first line of a slip: the order the box holds.
-pub title(order: Int) -> Text = "Packing slip for order {order}"
+```una include="day-to-day/src/morning.una#store_name..help_desk" title="day-to-day/src/morning.una" caption="the notices" verified="check"
+--- The name of the store, the first line of the notices.
+pub store_name() -> Text = "Harbor Street store"
 
---- Where the box goes: the customer's number and email address.
-pub ship_to(customer: Int, email: Text) -> Text = "Ship to customer {customer} <{email}>"
+--- Where the store is, under its name.
+pub store_address() -> Text = "12 Harbor Street, by the ferry"
 
---- One line of the order: how many units of a SKU, and what the SKU is.
-pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  {name}"
+--- The greeting under the name.
+pub greeting() -> Text = "Good morning"
 
---- What one line of the order costs, in cents.
-pub line_cents(quantity: Int, cents: Int) -> Int = quantity * cents
+--- When the store is open today.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
 
---- How much the box holds.
-pub count_line(units: Int, lines: Int) -> Text = "{units} units in {lines} lines"
+--- Until when an order placed today ships today.
+pub shipping_cutoff() -> Text = "Orders placed before 17:00 ship today"
 
---- What the customer paid for the goods, in cents.
-pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
+--- Today's offer.
+pub special() -> Text = "Today's special: desk lamps"
 
---- The last line, the same on every slip.
-pub closing() -> Text = "Questions? Write to orders@example.invalid and quote the order number."
+--- When the café inside the store opens.
+pub cafe_hours() -> Text = "The café opens at 10:00"
+
+--- Where customers can ask a question.
+pub help_desk() -> Text = "Questions? Ask at the help desk by the main door"
 ```
 
-Each function uses one idea of this chapter:
+Each has a doc comment that says what the text is for, a name that says what it holds, and the result type `Text`. None of them has a `uses` line: each only gives back a text, and prints nothing, so each is written in the short form, on one line.
 
-- `title`, `count_line` and `total_line` put `Int` parameters into a text with interpolation, as in [section 1.4](#s1-4).
-- `ship_to` and `item` take two and three parameters, separated by commas. The angle brackets in `ship_to` and the `x` in `item` are plain characters of the text: only braces are special.
-- `item` starts with two spaces, inside the text, so that the item lines stand out on paper.
-- `line_cents` returns an `Int`, not a text: it multiplies two `Int` values with `*`.
-- `closing` takes no parameters and always returns the same text.
+This is the part of the program that changes from day to day. When the café changes its hours, one line changes, the body of `cafe_hours`, and every place that prints the café's hours prints the new ones. Since these functions print nothing, each one can also be tested on its own, as [Testing it](#s1-7) shows.
 
-Money is in **cents**, as an `Int`: 1990 is 19 units and 90 cents. Whole cents never round, so the total is exact. [Chapter 2](/learn/values/) shows how to print them as an amount with two decimals.
+### Printing a part: `rule` and `section`
 
-### Printing the slip
+Two private functions print. `rule` prints the line of dashes, and `section` prints a heading, its notice and a rule:
 
-`main` names the quantities and computes the cost of each line, then prints the slip one line at a time:
+```una include="day-to-day/src/morning.una#rule..section" title="day-to-day/src/morning.una" caption="the functions that print"
+--- Prints a line of dashes, which separates the parts of the notices.
+rule() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("------------------------------")
 
-```una include="day-to-day/src/slip.una#main" title="day-to-day/src/slip.una"
---- Prints the slip of order 1042: two desk lamps and one rug.
+--- Prints a heading and the notice under it, then a rule.
+section(heading: Text, notice: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(heading)
+  @console.print(notice)
+  rule()
+```
+
+Both print: `section` prints two lines itself, and a third through `rule`. Both are private, so Una would accept them without a `uses` line and work it out from their bodies, but this book writes the line on every function that prints, so that its header says so. A function that calls `rule` prints too, so `section` holds the console as well. Both are written in the long form, as every function with a `uses` line is, and both give back `Unit`, since they are called for the lines they print.
+
+Both are private, with no `pub`: only this module uses them. `section` takes two parameters, the heading and the notice, so every part of the notices is printed the same way. To change the look of every part, such as a rule of stars in place of dashes, you change one function.
+
+### `main`
+
+`main` prints the name, the address and the greeting, a rule, then one `section` for each subject, and the help desk last:
+
+```una include="day-to-day/src/morning.una#main" title="day-to-day/src/morning.una" verified="check, run"
+--- Prints the morning notices.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let lamps = 2
-  let rugs = 1
-  let lamp_cents = line_cents(lamps, cents: 1990)
-  let rug_cents = line_cents(rugs, cents: 4500)
-  @console.print(title(1042))
-  @console.print(ship_to(318, email: "customer318@example.invalid"))
-  @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
-  @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
-  @console.print(count_line(lamps + rugs, lines: 2))
-  @console.print(total_line(lamp_cents + rug_cents))
-  @console.print(closing())
+  @console.print(store_name())
+  @console.print(store_address())
+  @console.print(greeting())
+  rule()
+  section("Hours", notice: opening_hours())
+  section("Shipping", notice: shipping_cutoff())
+  section("Offer", notice: special())
+  section("Café", notice: cafe_hours())
+  @console.print(help_desk())
 ```
 
-Read it in two parts. The four `let` lines name the order's values: how many lamps and rugs, and what each line costs, from `line_cents`. The seven `print` lines then print the slip, each one calling the function of its line. `count_line(lamps + rugs, lines: 2)` computes its first argument, 3, before the call.
+Its steps run in order, from the top. The first three print texts that functions give back; `rule()` prints the first line of dashes; each `section` prints one part. Each call of `section` labels its second argument, `notice:`, and the argument is a call: `opening_hours()` runs first, and its text becomes the notice.
 
-The calls with more than one argument name every argument after the first: `line_cents(lamps, cents: 1990)`, `item(lamps, sku: "LAMP-01", name: "Desk lamp, brass")`, as [section 1.5](#s1-5) explains. [Chapter 3](/learn/functions/) gives the full rule.
-
-Each `@console.print` call is a line of its own. In Una, a call that prints, or does anything else outside the program, always stands on a line of its own: as a step, as the whole value of a `let`, or as the last line of a body, never hidden inside another computation. A reader who scans the left edge of `main` sees every effect it has, in the order it has them.
-
-### Why one function per line of the slip
-
-Why so many small functions for a program this size? Each one is a line of the slip that someone may want to change: the wording of the closing line, the layout of an item, the email address. A change to one of them touches one line of code and one example, and the header of each tells you, without a look at its body, that it only computes a text or a number. The same program written as one `main` of seven prints, with every text in place, would be shorter, and nothing in it could be tested without reading what it prints.
+`main` reads like the notices themselves: a reader sees the order of the parts without reading how a part is printed, and adds a part with one line. The texts live in the notice functions, the layout in `rule` and `section`, and the order in `main`: each kind of change has one place.
 
 ### Running it
 
-In the package's directory, `una run .` prints the slip shown in [What you'll build](#what-youll-build): the order and the customer, two item lines, three units in two lines, and a total of 8480 cents, which is 2 times 1990 plus 4500.
+In the `day-to-day` directory:
 
-> [!SECURITY]
-> The slip's functions have no `uses` line, so the checker proves they cannot print, read files or reach the network. Only `main` touches the console, and only because its header says so and the run grants it, here through `una.toml`. When this program grows, anything new a function does outside the program shows up in that function's header, where a reviewer sees it.
+```sh
+una check .
+una run .
+```
+
+`una check .` prints nothing, and `una run .` prints the notices:
+
+```text include="day-to-day/expected/output.txt"
+Harbor Street store
+12 Harbor Street, by the ferry
+Good morning
+------------------------------
+Hours
+Open today from 9:00 to 18:00
+------------------------------
+Shipping
+Orders placed before 17:00 ship today
+------------------------------
+Offer
+Today's special: desk lamps
+------------------------------
+Café
+The café opens at 10:00
+------------------------------
+Questions? Ask at the help desk by the main door
+```
 
 ### The whole program
 
 The whole file, to read in one piece or to copy:
 
-```una include="day-to-day/src/slip.una" title="day-to-day/src/slip.una" caption="the whole program" verified="check, run, test"
-module slip
+```una include="day-to-day/src/morning.una" title="day-to-day/src/morning.una" caption="the whole program" verified="check, run, test"
+module morning
 
--- A packing slip: the sheet that goes into the box with an order, so that the customer
--- can check what arrived. This version prints the slip of one sample order.
+-- The notices that the console of the store prints each morning, when the store opens.
 
---- The first line of a slip: the order the box holds.
-pub title(order: Int) -> Text = "Packing slip for order {order}"
+--- The name of the store, the first line of the notices.
+pub store_name() -> Text = "Harbor Street store"
 
---- Where the box goes: the customer's number and email address.
-pub ship_to(customer: Int, email: Text) -> Text = "Ship to customer {customer} <{email}>"
+--- Where the store is, under its name.
+pub store_address() -> Text = "12 Harbor Street, by the ferry"
 
---- One line of the order: how many units of a SKU, and what the SKU is.
-pub item(quantity: Int, sku: Text, name: Text) -> Text = "  {quantity} x {sku}  {name}"
+--- The greeting under the name.
+pub greeting() -> Text = "Good morning"
 
---- What one line of the order costs, in cents.
-pub line_cents(quantity: Int, cents: Int) -> Int = quantity * cents
+--- When the store is open today.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
 
---- How much the box holds.
-pub count_line(units: Int, lines: Int) -> Text = "{units} units in {lines} lines"
+--- Until when an order placed today ships today.
+pub shipping_cutoff() -> Text = "Orders placed before 17:00 ship today"
 
---- What the customer paid for the goods, in cents.
-pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
+--- Today's offer.
+pub special() -> Text = "Today's special: desk lamps"
 
---- The last line, the same on every slip.
-pub closing() -> Text = "Questions? Write to orders@example.invalid and quote the order number."
+--- When the café inside the store opens.
+pub cafe_hours() -> Text = "The café opens at 10:00"
 
---- Prints the slip of order 1042: two desk lamps and one rug.
+--- Where customers can ask a question.
+pub help_desk() -> Text = "Questions? Ask at the help desk by the main door"
+
+--- Prints a line of dashes, which separates the parts of the notices.
+rule() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("------------------------------")
+
+--- Prints a heading and the notice under it, then a rule.
+section(heading: Text, notice: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(heading)
+  @console.print(notice)
+  rule()
+
+--- Prints the morning notices.
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let lamps = 2
-  let rugs = 1
-  let lamp_cents = line_cents(lamps, cents: 1990)
-  let rug_cents = line_cents(rugs, cents: 4500)
-  @console.print(title(1042))
-  @console.print(ship_to(318, email: "customer318@example.invalid"))
-  @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
-  @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
-  @console.print(count_line(lamps + rugs, lines: 2))
-  @console.print(total_line(lamp_cents + rug_cents))
-  @console.print(closing())
+  @console.print(store_name())
+  @console.print(store_address())
+  @console.print(greeting())
+  rule()
+  section("Hours", notice: opening_hours())
+  section("Shipping", notice: shipping_cutoff())
+  section("Offer", notice: special())
+  section("Café", notice: cafe_hours())
+  @console.print(help_desk())
 
-example "the title names the order"
-  do title(1042)
-  expect result == "Packing slip for order 1042"
+example "the notices start with the store's name"
+  do store_name()
+  expect result == "Harbor Street store"
 
-example "the address line holds the customer number and the email"
-  do ship_to(318, email: "customer318@example.invalid")
-  expect result == "Ship to customer 318 <customer318@example.invalid>"
+example "the address gives the street"
+  do store_address()
+  expect result == "12 Harbor Street, by the ferry"
 
-example "an item line is indented and starts with the quantity"
-  do item(2, sku: "LAMP-01", name: "Desk lamp, brass")
-  expect result == "  2 x LAMP-01  Desk lamp, brass"
+example "the greeting is for the morning"
+  do greeting()
+  expect result == "Good morning"
 
-example "a line costs its quantity times the unit price"
-  do line_cents(2, cents: 1990)
-  expect result == 3980
+example "the hours give the opening and the closing time"
+  do opening_hours()
+  expect result == "Open today from 9:00 to 18:00"
 
-example "a line of zero units costs nothing"
-  do line_cents(0, cents: 1990)
-  expect result == 0
+example "the cutoff names the hour"
+  do shipping_cutoff()
+  expect result == "Orders placed before 17:00 ship today"
 
-example "the count line gives units and lines"
-  do count_line(3, lines: 2)
-  expect result == "3 units in 2 lines"
+example "the offer names what is on sale"
+  do special()
+  expect result == "Today's special: desk lamps"
 
-example "the total is in cents"
-  do total_line(8480)
-  expect result == "Total paid: 8480 cents"
+example "the café keeps its own hours"
+  do cafe_hours()
+  expect result == "The café opens at 10:00"
+
+example "the help desk says where to go"
+  do help_desk()
+  expect result == "Questions? Ask at the help desk by the main door"
 ```
 
-## 1.8 Testing it
+## 1.7 Testing it
 
-### One example per function
+### What an example is
 
-Every function of the slip returns a value, so every one gets an example. The examples call each function with the sample order's values and state the exact text or number it must return:
+An **example** is a check that lives next to the code: it calls a function and says what the call must give back. `una test .` runs every example of the package and reports each one. The morning notices have one example per notice:
 
-```una include="day-to-day/src/slip.una#L43-L69" title="day-to-day/src/slip.una" caption="the examples"
-example "the title names the order"
-  do title(1042)
-  expect result == "Packing slip for order 1042"
+```una include="day-to-day/src/morning.una#L57-L63" title="day-to-day/src/morning.una" caption="the first two examples"
+example "the notices start with the store's name"
+  do store_name()
+  expect result == "Harbor Street store"
 
-example "the address line holds the customer number and the email"
-  do ship_to(318, email: "customer318@example.invalid")
-  expect result == "Ship to customer 318 <customer318@example.invalid>"
-
-example "an item line is indented and starts with the quantity"
-  do item(2, sku: "LAMP-01", name: "Desk lamp, brass")
-  expect result == "  2 x LAMP-01  Desk lamp, brass"
-
-example "a line costs its quantity times the unit price"
-  do line_cents(2, cents: 1990)
-  expect result == 3980
-
-example "a line of zero units costs nothing"
-  do line_cents(0, cents: 1990)
-  expect result == 0
-
-example "the count line gives units and lines"
-  do count_line(3, lines: 2)
-  expect result == "3 units in 2 lines"
-
-example "the total is in cents"
-  do total_line(8480)
-  expect result == "Total paid: 8480 cents"
+example "the address gives the street"
+  do store_address()
+  expect result == "12 Harbor Street, by the ferry"
 ```
 
-### Cases the sample order does not reach
+Each example has three lines:
 
-Two of them check more than the sample shows. "a line of zero units costs nothing" covers a case the sample order never reaches. "an item line is indented and starts with the quantity" pins the two leading spaces, which are easy to lose in an edit and hard to see in the output. An example that states the whole expected text catches a change of one character.
+1. **`example "…"`.** The keyword `example` and a sentence that says what the example shows. It names the example in the report.
+2. **`do greeting()`.** The call to make, indented two spaces.
+3. **`expect result == "Good morning"`.** What must hold afterwards: `result` stands for what the call gave back, and `==` means "is equal to".
 
-### Running the slip's examples
+This is the simplest form of an example. [Chapter 14](/learn/testing/#s14-1) covers examples in full.
 
-`una test .` prints:
+### One example per notice
 
-```text include="day-to-day/expected/commands/test.txt#L2-L10"
-example slip "the title names the order" ... ok
-example slip "the address line holds the customer number and the email" ... ok
-example slip "an item line is indented and starts with the quantity" ... ok
-example slip "a line costs its quantity times the unit price" ... ok
-example slip "a line of zero units costs nothing" ... ok
-example slip "the count line gives units and lines" ... ok
-example slip "the total is in cents" ... ok
+Every function that gives back a text has an example that states the exact text. An example of the whole text catches a change of one character, such as a missing space, which is easy to miss when you read the output.
 
-7 examples: 7 passed, 0 failed
+### Running the examples
+
+In the `day-to-day` directory, `una test .` checks the package first, then runs the examples:
+
+```text include="day-to-day/expected/commands/test.txt#L2-L11"
+example morning "the notices start with the store's name" ... ok
+example morning "the address gives the street" ... ok
+example morning "the greeting is for the morning" ... ok
+example morning "the hours give the opening and the closing time" ... ok
+example morning "the cutoff names the hour" ... ok
+example morning "the offer names what is on sale" ... ok
+example morning "the café keeps its own hours" ... ok
+example morning "the help desk says where to go" ... ok
+
+8 examples: 8 passed, 0 failed
 ```
 
-Each example takes one line of the report, so when one fails, the report names the line of the slip that changed. Tools read the same results as JSON, a text format that programs read, with `una --json test .`, one entry for each example with its outcome.
+Each example takes one line of the report. When an example fails, its line says `FAILED`, with the line of the `expect` and the value `result` had; the exercises of [Exercises](#s1-9) start from such a report.
 
-### What the examples leave out: `main`
+### What the examples leave out: the printing functions
 
-The examples do not test `main`, and they do not need to. `main` only names values and prints what the functions return, and the functions are what the examples cover. This is the shape most Una programs take: a thin `main` with the effects, and pure functions, with no `uses` line, that hold the logic and the tests. [Chapter 10, Testing](/learn/testing/), shows how to test functions that do have effects, with fakes that stand in for the console and other capabilities.
+The examples do not call `main`, `section` or `rule`. These functions print, and an example of a function that prints needs a stand-in for the console, which [chapter 14](/learn/testing/#s14-3) shows. The printing functions here only print what the tested functions give back, so the examples cover what can go wrong: the text of each notice.
 
-## 1.9 Common mistakes
+## 1.8 Common mistakes
 
-Each mistake below is a small change to `day-to-day/src/slip.una`, followed by what `una check .` reports. Read each diagnostic as [section 1.2](#s1-2) shows: the message, then the place, then the help.
+Each mistake is a small change to `day-to-day/src/morning.una`, followed by what `una check .` reports. Read each diagnostic as [If `una check` finds a mistake](#if-una-check-finds-a-mistake) shows: the message, then the place, then the help.
 
 ### Single quotes (U0001)
 
 :::mistake
-Write a text between single quotes, as many languages allow:
+Write a text between single quotes:
 
-```diff include="day-to-day..mistakes/1:src/slip.una" context="1"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -36,3 +36,3 @@
-   @console.print(ship_to(318, email: "customer318@example.invalid"))
--  @console.print(item(lamps, sku: "LAMP-01", name: "Desk lamp, brass"))
-+  @console.print(item(lamps, sku: "LAMP-01", name: 'Desk lamp, brass'))
-   @console.print(item(rugs, sku: "RUG-07", name: "Wool rug, 120 by 180 cm"))
+```diff include="day-to-day..mistakes/1:src/morning.una" context="1"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -50,3 +50,3 @@
+   rule()
+-  section("Hours", notice: opening_hours())
++  section('Hours', notice: opening_hours())
+   section("Shipping", notice: shipping_cutoff())
 ```
 
-```text include="mistakes/1/expected/rendered.txt#L1"
+```text include="mistakes/1/expected/rendered.txt#L1-L9"
 [U0001] Error: invalid character `'`; text literals use double quotes
+    ╭─[ src/morning.una:51:11 ]
+    │
+ 51 │   section('Hours', notice: opening_hours())
+    │           ┬
+    │           ╰── invalid character `'`; text literals use double quotes
+    │
+    │ Note: run `una explain U0001` for an explanation
+────╯
 ```
 
-*Why:* a text in Una is written between double quotes only. A single quote is not a character Una code may contain outside a text or a comment, so each of the two is reported. The message names the character and the rule, and the marks point at each quote.
+*Why:* a text in Una is written between double quotes, `"`. A single quote, `'`, is not a character the language uses outside a text, so the check reports it, once for each quote: the two diagnostics point at columns 11 and 17 of the same line. Curly quotes, `“` and `”`, which some editors type in place of `"`, give the same code.
 
-*Fix:* `"Desk lamp, brass"`. See [U0001](/docs/errors/U0001/).
+*Fix:* write `"Hours"`, with the straight double quote of your keyboard. See [U0001](/docs/errors/U0001/).
 :::
 
 ### A comment with `//` (U0101)
 
 :::mistake
-Start the comment at the top of the module the way C, Java or TypeScript do:
+Start a comment with `//`, as some other languages do:
 
-```diff include="day-to-day..mistakes/2:src/slip.una" context="1"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -2,4 +2,4 @@
+```diff include="day-to-day..mistakes/2:src/morning.una" context="1"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -2,3 +2,3 @@
  
---- A packing slip: the sheet that goes into the box with an order, so that the customer
---- can check what arrived. This version prints the slip of one sample order.
-+// A packing slip: the sheet that goes into the box with an order, so that the customer
-+// can check what arrived. This version prints the slip of one sample order.
+--- The notices that the console of the store prints each morning, when the store opens.
++// The notices that the console of the store prints each morning, when the store opens.
  
 ```
 
@@ -1423,314 +1183,287 @@ Start the comment at the top of the module the way C, Java or TypeScript do:
 [U0101] Error: unexpected `/`, expected a declaration
 ```
 
-*Why:* a comment in Una starts with `--`, and a doc comment with `---`. `/` is division, and a module cannot start a declaration with it. The message says what the checker found, `/`, and what it expected in that place, a declaration: a mistake of **syntax**, the rules of how code is written.
+*Why:* in Una a comment starts with `--`. `//` is not a comment, so the check reads the line as code. Outside a function, a module holds only declarations, such as functions, so the check expected a declaration and found `/` instead. The marks point at the first `/`, in column 1.
 
-*Fix:* `-- A packing slip: …`. See [U0101](/docs/errors/U0101/).
+*Fix:* write `--` at the start of the comment. See [U0101](/docs/errors/U0101/).
 :::
 
-### Printing without `uses` (U3004)
+### A public function that prints without `uses` (U3004)
 
 :::mistake
-Remove the `uses` line from `main`:
+Make `rule` public and write it on one line, without its `uses` line:
 
-```diff include="day-to-day..mistakes/3:src/slip.una" context="1"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -28,3 +28,2 @@
- pub main() -> Unit
+```diff include="day-to-day..mistakes/3:src/morning.una" context="1"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -29,6 +29,3 @@
+ --- Prints a line of dashes, which separates the parts of the notices.
+-rule() -> Unit
 -  uses @console: Console[print]
- =
+-=
+-  @console.print("------------------------------")
++pub rule() -> Unit = @console.print("------------------------------")
+ 
 ```
 
-```text include="mistakes/3/expected/rendered.txt#L1,L8"
+```text include="mistakes/3/expected/rendered.txt#L1-L6"
 [U3004] Error: `@console` is used here, but this code declares no `uses`, so it is pure
-    │ Help: repair 1 (widens authority: the function then holds this authority, and every caller must hold it too: check that the operation belongs to this function's job): declare `uses @console: ...` in the header, with the capability and the operations used
+    ╭─[ src/morning.una:30:22 ]
+    │
+ 30 │ pub rule() -> Unit = @console.print("------------------------------")
+    │                      ────┬───
+    │                          ╰───── `@console` is used here, but this code declares no `uses`, so it is pure
 ```
 
-*Why:* a public function without `uses` is pure: it cannot use any capability. una reports U3004 once for each of the seven `@console` lines, since each is a separate use. The words in parentheses in the `Help` line are a warning: this repair gives the function more authority, so check that printing is its job.
+*Why:* a public function without a `uses` line is **pure**: it may do nothing outside the program. Printing is something outside the program, so the marks point at `@console`, the use the header does not allow. The private `rule` of the program could leave the line out, but a public one cannot.
 
-*Fix:* put the line back: `uses @console: Console[print]`. See [U3004](/docs/errors/U3004/).
+*Fix:* give the header its `uses` line back, `uses @console: Console[print]`, with `=` and the body on lines of their own, or keep `rule` private. See [U3004](/docs/errors/U3004/).
 :::
 
 ### A module named unlike its file (U1008)
 
 :::mistake
-Rename the module in its first line, but not the file:
+Rename the module, but not its file:
 
-```diff include="day-to-day..mistakes/4:src/slip.una" context="1"
---- a/src/slip.una
-+++ b/src/slip.una
+```diff include="day-to-day..mistakes/4:src/morning.una" context="1"
+--- a/src/morning.una
++++ b/src/morning.una
 @@ -1,2 +1,2 @@
--module slip
-+module packing
+-module morning
++module notices
  
 ```
 
-```text include="mistakes/4/expected/rendered.txt#L1,L8,L12"
-[U1008] Error: module `packing` is in `src/slip.una`, which must hold module `slip`
-   │ Help: repair 1: declare `module slip`, or move the file to match `packing`; edit src/slip.una:1:8..1:15 to "slip"
-[U7002] Error: [run] entry `slip` is not a module of this package
+```text include="mistakes/4/expected/rendered.txt#L1"
+[U1008] Error: module `notices` is in `src/morning.una`, which must hold module `morning`
 ```
 
-*Why:* `src/slip.una` must hold the module `slip`. One change breaks two links, so una reports two diagnostics: U1008 for the file and its `module` line, and U7002, since the manifest's `entry = "slip"` now names a module that does not exist. Fix the first, and the second goes with it.
+*Why:* the file `src/morning.una` must hold the module `morning`: `una` finds a module from its file, and a file from its module, so the two names must agree. A second diagnostic, `U7002`, follows: `entry` in `una.toml` names the module `morning`, which the package no longer has.
 
-*Fix:* keep the names in step: the file, the `module` line and the `entry` of `una.toml`. `una fix .` applies the edit of the `Help` line. See [U1008](/docs/errors/U1008/).
-:::
-
-### Printing a number (U2001)
-
-:::mistake
-Print the total itself, instead of the line that holds it:
-
-```diff include="day-to-day..mistakes/5:src/slip.una" context="1"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -39,3 +39,3 @@
-   @console.print(count_line(lamps + rugs, lines: 2))
--  @console.print(total_line(lamp_cents + rug_cents))
-+  @console.print(lamp_cents + rug_cents)
-   @console.print(closing())
-```
-
-```text include="mistakes/5/expected/rendered.txt#L1"
-[U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
-```
-
-*Why:* `print` takes a `Text`, and `lamp_cents + rug_cents` is an `Int`. Una converts no value to another type unless the code says so. The message names the parameter, `line`, the type it must have and the type it got.
-
-*Fix:* put the number in a text, `"{lamp_cents + rug_cents}"`, or call `total_line`, which does. See [U2001](/docs/errors/U2001/).
+*Fix:* write `module morning`. To rename the module, rename the file and the `entry` in `una.toml` with it. See [U1008](/docs/errors/U1008/).
 :::
 
 ### Indenting by four spaces (U0003)
 
 :::mistake
-Indent the first line of the body of `main` by four spaces, a habit from other languages:
+Indent a step of a body by four spaces:
 
-```diff include="day-to-day..mistakes/6:src/slip.una" context="1"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -30,3 +30,3 @@
+```diff include="day-to-day..mistakes/5:src/morning.una" context="1"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -38,3 +38,3 @@
  =
--  let lamps = 2
-+    let lamps = 2
-   let rugs = 1
+-  @console.print(heading)
++    @console.print(heading)
+   @console.print(notice)
 ```
 
-```text include="mistakes/6/expected/rendered.txt#L1,L8,L10"
+```text include="mistakes/5/expected/rendered.txt#L1-L10"
 [U0003] Error: inconsistent indentation of 4 spaces; expected 0 or 2
-    │ Help 1: repair 1: indent with 2 spaces; edit src/slip.una:31:1..31:5 to "  "
-    │ Help 2: repair 2: remove the indentation; edit src/slip.una:31:1..31:5 to ""
+    ╭─[ src/morning.una:39:1 ]
+    │
+ 39 │     @console.print(heading)
+    │ ──┬─
+    │   ╰─── inconsistent indentation of 4 spaces; expected 0 or 2
+    │
+    │ Help 1: repair 1: indent with 2 spaces; edit src/morning.una:39:1..39:5 to "  "
+    │
+    │ Help 2: repair 2: remove the indentation; edit src/morning.una:39:1..39:5 to ""
 ```
 
-*Why:* in Una, indentation is part of the syntax: it says which lines belong to which body. Each level is exactly two spaces deeper than the one around it. The body of `main` is one level deep, so its lines start with two spaces. The message gives the two depths that would be valid, 0 and 2, and each `Help` line offers one.
+*Why:* Una indents by two spaces, always: a body's steps by two, and nothing deeper in this chapter. A line indented by four belongs to no level the check knows, so it reports the line and offers two repairs, since it cannot tell which level you meant.
 
-*Fix:* two spaces. The first repair is an exact edit, and `una fix .` applies it. Indent with spaces only: a tab in the indentation is an error too. See [U0003](/docs/errors/U0003/).
+*Fix:* indent by two spaces, as the first repair says. Many code editors insert four spaces for the [[Tab]] key; set yours to two. See [U0003](/docs/errors/U0003/).
 :::
 
-## 1.10 Exercises
+### A second argument without its label (U2004)
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end, and a **stub** of each function to write: the function's header with a body that only returns a **placeholder**, a value of the right type that is not the answer, such as the empty text `""` or `0`. `una test .` fails there until the exercise is done. Work in this order:
+:::mistake
+Leave out the label of `section`'s second argument:
 
-1. Read the examples: they say what the function must return.
-2. Write the function's body, in place of the placeholder.
-3. Run `una fmt .`, then `una check .`, and fix what it reports. Canonical form, for example, puts a body of one line on the header line.
-4. Run `una test .` until every example passes.
-
-### Exercise 1: the weight of the parcel
-
-::::exercise
-The warehouse wants the weight on the slip, in kilograms and grams. Write `weight_line(grams)`, which turns 2350 into `Parcel weight: 2 kg 350 g`. The start package ends with:
-
-```una include="exercises/1/start/src/slip.una#L71-L80" title="exercises/1/start/src/slip.una"
---- The weight of a parcel, in kilograms and grams: 2350 is "Parcel weight: 2 kg 350 g".
-pub weight_line(grams: Int) -> Text = ""
-
-example "a weight shows whole kilograms and the grams left over"
-  do weight_line(2350)
-  expect result == "Parcel weight: 2 kg 350 g"
-
-example "a parcel under one kilogram shows 0 kg"
-  do weight_line(800)
-  expect result == "Parcel weight: 0 kg 800 g"
+```diff include="day-to-day..mistakes/6:src/morning.una" context="1"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -50,3 +50,3 @@
+   rule()
+-  section("Hours", notice: opening_hours())
++  section("Hours", opening_hours())
+   section("Shipping", notice: shipping_cutoff())
 ```
 
+```text include="mistakes/6/expected/rendered.txt#L1"
+[U2004] Error: argument 2 of `section` needs a label; only the first argument may go without one
+```
+
+*Why:* every argument after the first carries its parameter's name, so that a call says what each value is. Here the second argument, `opening_hours()`, is a call, not the name `notice`, so it is not labeled. The message names the argument by its place, 2, and the function, `section`.
+
+*Fix:* write `notice: opening_hours()`, as the `Help` line of the diagnostic says, or let `una fix .` make that edit. See [U2004](/docs/errors/U2004/).
+:::
+
+## 1.9 Exercises
+
+The exercises come with the chapter's download, `01-hello.tar.gz`, which holds every package of this chapter, each ready to check and run. Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's example added, and, when the exercise asks for a new function, a **stub** of it: its header with a body that gives back a **placeholder**, the empty text `""`. `una test .` fails there until the exercise is done. Work in this order:
+
+1. Read the example: it says what the function must give back.
+2. Change the code.
+3. Run `una check .`, and fix what it reports.
+4. Run `una test .` until every example passes, then `una run .` to see the notices.
+
+### Exercise 1: the help desk moves
+
+::::exercise
+The help desk moves next to the café. The example of `help_desk` has already been changed to the new text:
+
+```una include="exercises/1/start/src/morning.una#L85-L87" title="exercises/1/start/src/morning.una"
+example "the help desk says where to go"
+  do help_desk()
+  expect result == "Questions? Ask at the help desk by the café"
+```
+
+Change `help_desk` so that the example passes.
+
 :::hint
-*Hint:* a kilogram is 1000 grams. `/` divides two `Int` values and drops the remainder, and `mod` gives the remainder: `2350 / 1000` is 2, and `2350 mod 1000` is 350. Both can go inside the braces of a text, as in [section 1.4](#s1-4).
+*Hint:* only the text in the body of `help_desk` changes. Copy the new text from the example, so that not one character differs.
 :::
 
 Check your answer with `una test .`. On the start package it reports:
 
-```text include="exercises/1/start/expected/commands/test.txt#L9-L16"
-example slip "a weight shows whole kilograms and the grams left over" ... FAILED
-  src/slip.una:76: expect result == "Parcel weight: 2 kg 350 g"
-  it is false, with `result` = `""`
-example slip "a parcel under one kilogram shows 0 kg" ... FAILED
-  src/slip.una:80: expect result == "Parcel weight: 0 kg 800 g"
-  it is false, with `result` = `""`
+```text include="exercises/1/start/expected/commands/test.txt#L9-L13"
+example morning "the help desk says where to go" ... FAILED
+  src/morning.una:87: expect result == "Questions? Ask at the help desk by the café"
+  it is false, with `result` = `"Questions? Ask at the help desk by the main door"`
 
-9 examples: 7 passed, 2 failed
+8 examples: 7 passed, 1 failed
 ```
-
-The placeholder returns the empty text, `""`, which is what each report shows as `result`.
 
 :::answer Answer (*check, run, test*; `exercises/1/answer`).
-Give `weight_line` its body:
+Give `help_desk` the new text:
 
-```diff include="exercises/1/start..exercises/1/answer:src/slip.una" context="1" title="src/slip.una"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -71,3 +71,3 @@
- --- The weight of a parcel, in kilograms and grams: 2350 is "Parcel weight: 2 kg 350 g".
--pub weight_line(grams: Int) -> Text = ""
-+pub weight_line(grams: Int) -> Text = "Parcel weight: {grams / 1000} kg {grams mod 1000} g"
+```diff include="exercises/1/start..exercises/1/answer:src/morning.una" context="1" title="src/morning.una"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -26,3 +26,3 @@
+ --- Where customers can ask a question.
+-pub help_desk() -> Text = "Questions? Ask at the help desk by the main door"
++pub help_desk() -> Text = "Questions? Ask at the help desk by the café"
  
 ```
 
-Each brace holds one computation, and the text puts the results in their places.
+The example states the new text, the function gives it back, and `main` prints it without a change of its own.
 :::
 ::::
 
-### Exercise 2: shipping and the amount to pay
+### Exercise 2: a notice for returns
 
 ::::exercise
-The slip should also show the shipping charge, 450 cents for this order, and what the customer pays in all. Write `to_pay(goods, shipping)` and `pay_line(cents)`, and print two new lines after the total: `Shipping: 450 cents` and `To pay: 8930 cents`. The start package ends with:
+Add a part for returns. Write `returns_policy()`, which gives back `Returns are free within 30 days`, and print it in `main` under the heading `Returns`, after the café. The start package ends with:
 
-```una include="exercises/2/start/src/slip.una#L71-L83" title="exercises/2/start/src/slip.una"
---- What the customer pays: the goods and the shipping, in cents.
-pub to_pay(goods: Int, shipping: Int) -> Int = 0
+```una include="exercises/2/start/src/morning.una#L89-L94" title="exercises/2/start/src/morning.una"
+--- How long customers have to bring an item back.
+pub returns_policy() -> Text = ""
 
---- The line with the amount to pay.
-pub pay_line(cents: Int) -> Text = ""
-
-example "shipping is added to the goods"
-  do to_pay(8480, shipping: 450)
-  expect result == 8930
-
-example "the pay line is in cents"
-  do pay_line(8930)
-  expect result == "To pay: 8930 cents"
+example "returns are free for 30 days"
+  do returns_policy()
+  expect result == "Returns are free within 30 days"
 ```
 
 :::hint
-*Hint:* `to_pay` adds its two parameters, and `pay_line` is written as `total_line` is. In `main`, give the sum of the two lines a name with `let`, so that both `total_line` and `to_pay` can use it, and print the new lines after the total.
+*Hint:* the body of `returns_policy` is its text, as for the other notices. In `main`, add one call of `section`, written as the one for the café is.
 :::
 
-Check your answer with `una test .`, then `una run .` for the two new lines.
+Check your answer with `una test .`, then `una run .` for the new part.
 
 :::answer Answer (*check, run, test*; `exercises/2/answer`).
-Give both functions their bodies, and print the new lines in `main`:
+Give `returns_policy` its text, and print it in `main`:
 
-```diff include="exercises/2/start..exercises/2/answer:src/slip.una" context="1" title="src/slip.una"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -39,3 +39,6 @@
-   @console.print(count_line(lamps + rugs, lines: 2))
--  @console.print(total_line(lamp_cents + rug_cents))
-+  let goods = lamp_cents + rug_cents
-+  @console.print(total_line(goods))
-+  @console.print("Shipping: 450 cents")
-+  @console.print(pay_line(to_pay(goods, shipping: 450)))
-   @console.print(closing())
-@@ -71,6 +74,6 @@
- --- What the customer pays: the goods and the shipping, in cents.
--pub to_pay(goods: Int, shipping: Int) -> Int = 0
-+pub to_pay(goods: Int, shipping: Int) -> Int = goods + shipping
- 
- --- The line with the amount to pay.
--pub pay_line(cents: Int) -> Text = ""
-+pub pay_line(cents: Int) -> Text = "To pay: {cents} cents"
+```diff include="exercises/2/start..exercises/2/answer:src/morning.una" context="1" title="src/morning.una"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -54,2 +54,3 @@
+   section("Café", notice: cafe_hours())
++  section("Returns", notice: returns_policy())
+   @console.print(help_desk())
+@@ -89,3 +90,3 @@
+ --- How long customers have to bring an item back.
+-pub returns_policy() -> Text = ""
++pub returns_policy() -> Text = "Returns are free within 30 days"
  
 ```
 
-`goods` names the sum once, and two lines use it. `to_pay(goods, shipping: 450)` labels its second argument, as every argument after the first is labeled.
+The new part prints its heading, its notice and a rule, like every other part, since `section` does the printing.
 :::
 ::::
 
-### Exercise 3: amounts with two decimals
+### Exercise 3: Sunday hours that follow the week
 
 ::::exercise
-Customers read `84.80` more easily than `8480 cents`. Write `amount(cents)`, which writes an amount of cents with two decimals, and use it in `total_line`, so that the slip says `Total paid: 84.80`. Watch the cents under ten: 1205 is `12.05`, not `12.5`. The start package ends with:
+On Sundays the store keeps the hours of every other day. Write `sunday_hours()` so that it always gives back what `opening_hours()` gives back, even after the hours change, and print it in `main` under the heading `Sundays`, after the hours. The start package ends with:
 
-```una include="exercises/3/start/src/slip.una#L71-L84" title="exercises/3/start/src/slip.una"
---- An amount of cents with two decimals: 8480 is "84.80", and 1205 is "12.05".
-pub amount(cents: Int) -> Text = ""
+```una include="exercises/3/start/src/morning.una#L89-L94" title="exercises/3/start/src/morning.una"
+--- When the store is open on Sundays: the same hours as every other day.
+pub sunday_hours() -> Text = ""
 
-example "an amount has two decimals"
-  do amount(8480)
-  expect result == "84.80"
-
-example "cents under ten keep their zero"
-  do amount(1205)
-  expect result == "12.05"
-
-example "less than one unit starts with 0"
-  do amount(7)
-  expect result == "0.07"
+example "Sundays keep the hours of every other day"
+  do sunday_hours()
+  expect result == opening_hours()
 ```
 
 :::hint
-*Hint:* write the whole units, a point, and then the two digits of the cents one by one: the tens of cents and the cents left over. Each is a `/` or a `mod` of `cents`, or both. For 1205: the units are `1205 / 100`, 12; the cents are `1205 mod 100`, 5; the tens of cents are `5 / 10`, 0; and the last digit is `5 mod 10`, 5.
+*Hint:* the example compares with `opening_hours()`, not with a text. Copying the text into `sunday_hours` passes it today, but not after the hours change. A call stands for the value it gives back, so a function's body may be a call of another function that gives back the same type.
 :::
 
-Check your answer with `una test .`, then `una run .` for the new total. The example of `total_line` must change too, since the line it tests changes.
+Check your answer with `una test .`, then `una run .`.
 
 :::answer Answer (*check, run, test*; `exercises/3/answer`).
-Give `amount` its body, and use it in `total_line` and its example:
+Make the body of `sunday_hours` a call of `opening_hours`, and print it in `main`:
 
-```diff include="exercises/3/start..exercises/3/answer:src/slip.una" context="1" title="src/slip.una"
---- a/src/slip.una
-+++ b/src/slip.una
-@@ -21,3 +21,3 @@
- --- What the customer paid for the goods, in cents.
--pub total_line(cents: Int) -> Text = "Total paid: {cents} cents"
-+pub total_line(cents: Int) -> Text = "Total paid: {amount(cents)}"
- 
-@@ -66,8 +66,8 @@
- 
--example "the total is in cents"
-+example "the total is an amount"
-   do total_line(8480)
--  expect result == "Total paid: 8480 cents"
-+  expect result == "Total paid: 84.80"
- 
- --- An amount of cents with two decimals: 8480 is "84.80", and 1205 is "12.05".
--pub amount(cents: Int) -> Text = ""
-+pub amount(cents: Int) -> Text = "{cents / 100}.{cents mod 100 / 10}{cents mod 10}"
+```diff include="exercises/3/start..exercises/3/answer:src/morning.una" context="1" title="src/morning.una"
+--- a/src/morning.una
++++ b/src/morning.una
+@@ -51,2 +51,3 @@
+   section("Hours", notice: opening_hours())
++  section("Sundays", notice: sunday_hours())
+   section("Shipping", notice: shipping_cutoff())
+@@ -89,3 +90,3 @@
+ --- When the store is open on Sundays: the same hours as every other day.
+-pub sunday_hours() -> Text = ""
++pub sunday_hours() -> Text = opening_hours()
  
 ```
 
-`cents mod 100 / 10` is the tens of cents, and `cents mod 10` the cents left over, so each digit is printed on its own and a zero is never lost. This works for an amount that is not negative; [chapter 3](/learn/functions/) shows `if`, for the cases that need a choice.
+The hours are still written once, in `opening_hours`. When they change, the Sunday line changes with them.
 :::
 ::::
 
-## 1.11 Recap and reference
+## 1.10 Recap and reference
 
 ### For agents
 
 :::agents
-Every command takes `--json` before its name and then prints one JSON document on stdout. `una --json check .` gives each diagnostic with its `code`, `message`, `primary` span and `repairs`, and `una --json test .` gives each example with its outcome. U0003, U1008, U2004 and U7001 carry exact edits, which `una fix .` applies, as U1001 does when it can name the operation meant. U0001, U0101, U2001 and U3004 depend on intent, so their repairs, when they have one, are descriptions only. The compact rule: *a package is `una.toml`, `verification.lock` and `src/<module>.una` with a matching `module` line; a function that prints declares `uses @console: Console[print]`, and the run grants `console`, in `una.toml` or with `--grant`.*
+`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; `una --json test .` prints each example's outcome. U0003, U1001 (when it can name the operation meant), U1008 and U2004 carry exact edits, which `una fix .` applies. U3003's repair adds a `uses` line, which gives the function more authority, so `una fix` never applies it: add it by hand. U0001, U0101, U2001 and U3004 depend on intent, so their repairs, when they have one, are descriptions only. The compact rule: *a package is `una.toml`, `verification.lock` and `src/<module>.una` with a matching `module` line; the entry module has `pub main() -> Unit`; a function that prints declares `uses @console: Console[print]`, and the run grants `console`.*
 :::
 
 ### Recap
 
 :::recap
-- A package is `una.toml`, `verification.lock` and modules under `src/`: `src/slip.una` holds the module `slip`.
-- `una check .` reports each problem with a code, a place and a message; `una run .` and `una test .` check first. Read the message, then the place, then the help.
-- A function that prints says so in its header, `uses @console: Console[print]`, and the run grants `console`. A public function without `uses` cannot print.
-- Every value has a type. `let` names a value, and braces put values into a text: `"{units} units"`.
-- Label every argument after the first: `line_cents(2, cents: 1990)`.
-- Comments start with `--`, and doc comments with `---`, which `una contract` prints.
-- Keep the logic in functions without `uses`, and test each one with an `example`: `do` a call, `expect` a fact about `result`.
+- A package is `una.toml`, `verification.lock` and modules under `src/`; `una check .` checks it, and `una run .` also runs it.
+- The file `src/morning.una` holds the module `morning`, and its first line says `module morning`.
+- A run starts at `pub main() -> Unit` of the module that `entry` names, and runs its steps in order.
+- A function is a header, `=`, and a body: one line in the short form, several steps in the long form.
+- Every argument after the first carries its label, or is a name equal to its parameter's: `section("Hours", notice: opening_hours())`.
+- A public function that prints says so, `uses @console: Console[print]`, and so does every public function that calls it; the run grants `console` in `una.toml`.
+- Comments start with `--`; doc comments, `---`, document the declaration under them.
+- An example calls a function and states its result: `do greeting()`, then `expect result == "Good morning"`.
 :::
 
 ### Reference
 
 :::reference
-- Start: [install](/docs/install/), [getting started](/docs/getting-started/), [canonical form and `una fmt`](/docs/language/canonical-form/)
+- Start: [install](/docs/get-started/#1-install), [get started](/docs/get-started/)
 - Construct pages: [source files, comments and literals](/docs/language/lexical-structure/), [functions](/docs/language/functions/), [`uses`](/docs/language/capabilities/uses/), [host capabilities and grants](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)
 - Configuration: [`[package] edition`](/docs/configure/package/edition/), [`[run] entry`](/docs/configure/run/entry/), [`[run] grants`](/docs/configure/run/grants/), [`verification.lock`](/docs/configure/verification-lock/)
-- Commands: [`una check`](/docs/cli/check/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/), [`una contract`](/docs/cli/contract/)
+- Commands: [`una check`](/docs/cli/check/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/)
 - Standard library: [the host capabilities](/docs/std/) (`Console`, `print`)
-- Diagnostics: [U0001](/docs/errors/U0001/), [U0003](/docs/errors/U0003/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1008](/docs/errors/U1008/), [U2001](/docs/errors/U2001/), [U2004](/docs/errors/U2004/), [U3004](/docs/errors/U3004/), [U3012](/docs/errors/U3012/), [U7001](/docs/errors/U7001/), [U7002](/docs/errors/U7002/), [U7004](/docs/errors/U7004/)
-- Specification: [lexical structure](/docs/spec/01-lexical-structure/), [types](/docs/spec/03-types/), [functions and contracts](/docs/spec/04-functions-and-contracts/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [diagnostics and the command line](/docs/spec/13-diagnostics-and-abi/), [the standard library](/docs/spec/14-standard-library/), [canonical form](/docs/spec/15-canonical-form/)
+- Diagnostics: [U0001](/docs/errors/U0001/), [U0003](/docs/errors/U0003/), [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U1008](/docs/errors/U1008/), [U2001](/docs/errors/U2001/), [U2004](/docs/errors/U2004/), [U3003](/docs/errors/U3003/), [U3004](/docs/errors/U3004/), [U7002](/docs/errors/U7002/), [U7004](/docs/errors/U7004/)
+- Specification: [lexical structure](/docs/spec/01-lexical-structure/), [functions and contracts](/docs/spec/04-functions-and-contracts/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [requirements and examples](/docs/spec/08-requirements-and-examples/), [diagnostics and the command line](/docs/spec/13-diagnostics-and-abi/)
 :::

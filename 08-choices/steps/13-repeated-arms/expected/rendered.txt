@@ -1,0 +1,35 @@
+[U2008] Error: this literal is already matched by an earlier arm
+    ╭─[ src/aisles.una:23:5 ]
+    │
+ 21 │     is "LAMP-01" -> "lamps"
+    │     ──────┬─────
+    │           ╰─────── the earlier arm
+    │
+ 23 │     is "LAMP-01" -> "lighting"
+    │     ──────┬─────
+    │           ╰─────── this literal is already matched by an earlier arm
+    │
+    │ Note: run `una explain U2008` for an explanation
+────╯
+[U2008] Error: variant `Local` is already matched by an earlier arm
+    ╭─[ src/aisles.una:68:5 ]
+    │
+ 62 │     is Local -> if grams > 1_000 then 400 else 300
+    │     ────┬───
+    │         ╰───── the earlier arm
+    │
+ 68 │     is Local -> 350
+    │     ────┬───
+    │         ╰───── variant `Local` is already matched by an earlier arm
+    │
+    │ Note: run `una explain U2008` for an explanation
+────╯
+[U2008] Error: no value reaches this `else`: the arms above match every variant of `Zone`
+    ╭─[ src/aisles.una:69:5 ]
+    │
+ 69 │     else -> 0
+    │     ──┬─
+    │       ╰─── no value reaches this `else`: the arms above match every variant of `Zone`
+    │
+    │ Note: run `una explain U2008` for an explanation
+────╯

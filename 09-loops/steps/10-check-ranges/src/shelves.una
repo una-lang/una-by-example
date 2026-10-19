@@ -1,0 +1,12 @@
+module shelves
+
+--- Prints the shelves to count this morning.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  for aisle in 1..2
+    for shelf in 2..<4
+      @console.print("{aisle}-{shelf}")
+  for aisle in 5..4
+    @console.print("aisle {aisle}")
+  @console.print("done")

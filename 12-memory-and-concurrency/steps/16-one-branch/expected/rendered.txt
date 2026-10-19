@@ -1,9 +1,0 @@
-[U2024] Error: `together` needs at least two `let` branches; with one, write a plain `let`
-    ╭─[ src/counts.una:30:3 ]
-    │
- 30 │   together
-    │   ────┬───
-    │       ╰───── `together` needs at least two `let` branches; with one, write a plain `let`
-    │
-    │ Note: run `una explain U2024` for an explanation
-────╯

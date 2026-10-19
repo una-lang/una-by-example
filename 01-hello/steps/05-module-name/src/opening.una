@@ -1,0 +1,16 @@
+module door
+
+-- The notices of the store's front door.
+
+--- Prints when the store opens.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  -- One line, for the sign on the door.
+  @console.print("The store opens at 9:00")
+
+--- Prints when the store closes.
+pub closing() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("The store closes at 18:00")

@@ -1,0 +1,2 @@
+error U5001 at src/shipping.una:83:23: precondition `chair.quote >= 0` of this call is refuted
+  counterexample: chair = "Order#3", chair.goods = 4500, chair.number = 1045, chair.parcel = "Parcel#3", desk = "Order#1", desk.goods = 15900, desk.number = 1043, desk.parcel = "Parcel#1", lamp = "Order#0", lamp.goods = 3980, lamp.number = 1042, lamp.parcel = "Parcel#0", rug = "Order#2", rug.goods = 4500, rug.number = 1044, rug.parcel = "Parcel#2"

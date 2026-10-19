@@ -1,9 +1,0 @@
-[U1001] Error: cannot find variant `TooMany` in `OrderError`
-     ╭─[ src/orders.una:140:16 ]
-     │
- 140 │   expect fails TooMany
-     │                ───┬───
-     │                   ╰───── cannot find variant `TooMany` in `OrderError`
-     │
-     │ Note: run `una explain U1001` for an explanation
-─────╯

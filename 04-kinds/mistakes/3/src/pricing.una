@@ -1,0 +1,156 @@
+module pricing
+
+-- The price of shipping a parcel: its zone, its weight, its speed and where it is collected.
+
+--- How far a parcel travels, nearest first.
+kind Zone = Local | National | Abroad
+
+--- How fast a parcel travels.
+kind Speed = Standard | Express
+
+--- Where the customer collects a parcel. Each variant carries what that place needs.
+kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text)
+
+--- A parcel ready to price.
+kind Parcel
+  order: Text
+  grams: Int
+  zone: Zone
+  speed: Speed
+  delivery: Delivery
+
+--- One part of a price: what it is for, of any type, and its amount in cents.
+kind Charge[T]
+  item: T
+  cents: Int
+
+--- The charge for the zone. One arm for each zone, and no `else`.
+zone_charge(zone: Zone) -> Charge[Zone]
+=
+  when zone
+    is Local -> Charge(item: zone, cents: 300)
+    is National -> Charge(item: zone, cents: 450)
+    is Abroad -> Charge(item: zone, cents: 1200)
+
+--- The charge for the weight, by bands.
+weight_charge(grams: Int) -> Charge[Text]
+=
+  if grams <= 500
+    Charge(item: "up to 500 g", cents: 0)
+  else if grams <= 2000
+    Charge(item: "up to 2 kg", cents: 150)
+  else
+    Charge(item: "over 2 kg", cents: 400)
+
+--- The charge for the speed. Express costs more abroad.
+speed_charge(speed: Speed, zone: Zone) -> Charge[Speed]
+=
+  when speed
+    is Standard -> Charge(item: speed, cents: 0)
+    is Express -> Charge(item: speed, cents: if zone is Abroad then 900 else 500)
+
+--- The charge for the last step: only the door costs extra.
+delivery_charge(delivery: Delivery) -> Charge[Text]
+=
+  when delivery
+    is AtDoor -> Charge(item: "to the door", cents: 250)
+    is AtLocker(locker) -> Charge(item: "locker {locker}", cents: 0)
+    is AtStore(store) -> Charge(item: "store {store}", cents: 0)
+
+--- The price of a parcel, in cents: the four charges added up.
+total(parcel: Parcel) -> Int
+=
+  let zone = zone_charge(parcel.zone)
+  let weight = weight_charge(parcel.grams)
+  let speed = speed_charge(parcel.speed, zone: parcel.zone)
+  let delivery = delivery_charge(parcel.delivery)
+  zone.cents + weight.cents + speed.cents + delivery.cents
+
+--- The same parcel, sent express. The parcel passed in does not change.
+express(parcel: Parcel) -> Parcel = Parcel(order: parcel.order, grams: parcel.grams, zone: parcel.zone, speed: Express, delivery: parcel.delivery)
+
+--- One line of the price list. Interpolating `charge.item` needs `Eq`.
+charge_line[T: Eq](charge: Charge[T]) -> Text = "  {charge.item}: {charge.cents} cents"
+
+--- Prints a parcel's charges, one per line, and its total.
+quote(parcel: Parcel) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Parcel {parcel.order}, {parcel.grams} g")
+  @console.print(charge_line(zone_charge(parcel.zone)))
+  @console.print(charge_line(weight_charge(parcel.grams)))
+  @console.print(charge_line(speed_charge(parcel.speed, zone: parcel.zone)))
+  @console.print(charge_line(delivery_charge(parcel.delivery)))
+  @console.print("  total: {total(parcel)} cents")
+
+--- Prints the quotes of the day's parcels, and what express would cost for the first.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Parcel(order: "A-1001", grams: 1200, zone: "National", speed: Standard, delivery: AtLocker("Station 14"))
+  let rug = Parcel(order: "A-1002", grams: 3500, zone: Local, speed: Express, delivery: AtDoor)
+  let gift = Parcel(order: "A-1003", grams: 400, zone: Abroad, speed: Express, delivery: AtStore("Harbour Road"))
+  quote(lamp)
+  quote(rug)
+  quote(gift)
+  @console.print("Express for {lamp.order}: {total(lamp)} cents now, {total(express(lamp))} cents express")
+
+example "each zone has its price"
+  do zone_charge(National)
+  expect result == Charge(item: National, cents: 450)
+
+example "the nearest zone is the cheapest"
+  do zone_charge(Local)
+  expect result.cents == 300
+
+example "abroad costs the most"
+  do zone_charge(Abroad)
+  expect result.cents == 1200
+
+example "500 g is still the lightest band"
+  do weight_charge(500)
+  expect result == Charge(item: "up to 500 g", cents: 0)
+
+example "501 g is the next band"
+  do weight_charge(501)
+  expect result == Charge(item: "up to 2 kg", cents: 150)
+
+example "2 kg is the last gram of the middle band"
+  do weight_charge(2000)
+  expect result.cents == 150
+
+example "over 2 kg pays the most"
+  do weight_charge(2001)
+  expect result == Charge(item: "over 2 kg", cents: 400)
+
+example "standard speed is free"
+  do speed_charge(Standard, zone: Abroad)
+  expect result.cents == 0
+
+example "express at home costs 500"
+  do speed_charge(Express, zone: National)
+  expect result == Charge(item: Express, cents: 500)
+
+example "express abroad costs 900"
+  do speed_charge(Express, zone: Abroad)
+  expect result.cents == 900
+
+example "the door costs extra"
+  do delivery_charge(AtDoor)
+  expect result == Charge(item: "to the door", cents: 250)
+
+example "a locker is free, and named"
+  do delivery_charge(AtLocker("Station 14"))
+  expect result == Charge(item: "locker Station 14", cents: 0)
+
+example "a store is free, and named"
+  do delivery_charge(AtStore("Harbour Road"))
+  expect result == Charge(item: "store Harbour Road", cents: 0)
+
+example "the total adds the four charges"
+  do total(Parcel(order: "A-1002", grams: 3500, zone: Local, speed: Express, delivery: AtDoor))
+  expect result == 1450
+
+example "express changes the speed and nothing else"
+  do express(Parcel(order: "A-1001", grams: 1200, zone: National, speed: Standard, delivery: AtDoor))
+  expect result == Parcel(order: "A-1001", grams: 1200, zone: National, speed: Express, delivery: AtDoor)

@@ -1,0 +1,2 @@
+wool-rug
+8 true

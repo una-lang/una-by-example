@@ -1,12 +1,11 @@
-[U2009] Error: variant `InTransit` needs its fields: `carrier`, `tracking`
-    ╭─[ src/tracking.una:52:41 ]
+[U2007] Error: `when` does not match variant `Abroad` of `Zone`
+    ╭─[ src/pricing.una:30:3 ]
     │
- 52 │     is DeliveredOn(day) -> if status == InTransit then Delivered(day) else status
-    │                                         ────┬────
-    │                                             ╰────── variant `InTransit` needs its fields: `carrier`, `tracking`
+ 30 │   when zone
+    │   ──┬─
+    │     ╰─── `when` does not match variant `Abroad` of `Zone`
     │
-    │ Help: repair 1: write `status is InTransit`; edit src/tracking.una:52:31..52:50 to "status is InTransit"
+    │ Help: repair 1: add an arm for each missing variant, such as `is Abroad`, or an `else` arm
     │
-    │ Note: run `una explain U2009` for an explanation
+    │ Note: run `una explain U2007` for an explanation
 ────╯
-1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

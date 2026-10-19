@@ -1,9 +1,0 @@
-[U0101] Error: unexpected end of block, expected `expect`
-    ╭─[ src/shelf.una:57:65 ]
-    │
- 57 │   do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))
-    │                                                                 │
-    │                                                                 ╰─ unexpected end of block, expected `expect`
-    │
-    │ Note: run `una explain U0101` for an explanation
-────╯

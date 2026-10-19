@@ -1,0 +1,2 @@
+error U5001 at src/names.una:4:42: precondition `part.len > 0` of this call is refuted
+  counterexample: part = "Text#0", part.len = 0

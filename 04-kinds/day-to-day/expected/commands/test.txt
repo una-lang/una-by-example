@@ -1,8 +1,18 @@
 $ una test .
-example tracking "a heavy parcel abroad pays the zone and the weight" ... ok
-example tracking "a pickup moves a packed parcel into transit" ... ok
-example tracking "a second pickup scan changes nothing" ... ok
-example tracking "a parcel cannot come back before it was delivered" ... ok
-example tracking "a refused parcel is not refunded" ... ok
+example pricing "each zone has its price" ... ok
+example pricing "the nearest zone is the cheapest" ... ok
+example pricing "abroad costs the most" ... ok
+example pricing "500 g is still the lightest band" ... ok
+example pricing "501 g is the next band" ... ok
+example pricing "2 kg is the last gram of the middle band" ... ok
+example pricing "over 2 kg pays the most" ... ok
+example pricing "standard speed is free" ... ok
+example pricing "express at home costs 500" ... ok
+example pricing "express abroad costs 900" ... ok
+example pricing "the door costs extra" ... ok
+example pricing "a locker is free, and named" ... ok
+example pricing "a store is free, and named" ... ok
+example pricing "the total adds the four charges" ... ok
+example pricing "express changes the speed and nothing else" ... ok
 
-5 examples: 5 passed, 0 failed
+15 examples: 15 passed, 0 failed

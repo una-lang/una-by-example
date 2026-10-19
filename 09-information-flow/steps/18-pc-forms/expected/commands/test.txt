@@ -1,7 +1,0 @@
-$ una test .
-example loyalty "a customer who spent 720.00 gets the gold badge" ... ok
-example loyalty "a gold customer earns double points" ... ok
-example loyalty "a silver customer gets 5 percent off" ... ok
-example loyalty "a new customer has spent nothing" ... ok
-
-4 examples: 4 passed, 0 failed

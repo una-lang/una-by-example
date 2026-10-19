@@ -1,0 +1,2 @@
+error U5001 at src/billing.una:65:29: refinement `result >= 0` is refuted
+  counterexample: amount = 0, coupon = "FixedPrice", coupon.amount = -1, coupon.cents = 3, coupon.rate = 101, result = -3

@@ -1,0 +1,11 @@
+[U0101] Error: unexpected `failure`, expected a variant
+    ╭─[ src/orders.una:79:29 ]
+    │
+ 79 │     is Err(failure) -> fail failure
+    │                             ───┬───
+    │                                ╰───── unexpected `failure`, expected a variant
+    │
+    │ Help: repair 1: `fail` takes a variant of the error kind, as in `fail Broke`, not a stored value; fail where the error is found, or pass a call's failure on with `if error pass`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

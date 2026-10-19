@@ -1,0 +1,8 @@
+[package]
+name = "fees"
+version = "0.1.0"
+edition = "0.2"
+
+[run]
+entry = "fees"
+grants = ["console"]

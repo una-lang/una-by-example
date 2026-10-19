@@ -1,0 +1,9 @@
+[U2001] Error: `report_line` returns `Text`, found `Int`
+    ╭─[ src/shipping.una:65:114 ]
+    │
+ 65 │ pub report_line(order: Order, charge: Int) -> Text = if charge == 0 then "order {order.number}: ships free" else charge
+    │                                                                                                                  ───┬──
+    │                                                                                                                     ╰──── `report_line` returns `Text`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

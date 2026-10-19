@@ -1,0 +1,9 @@
+module restock
+
+--- The units to order for a week: half as many in a weak week, when sales are slow.
+weekly_order(units: Int, weak: Bool) -> Int = if weak then units / 2 else units
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("order {weekly_order(10, weak: true)} units")

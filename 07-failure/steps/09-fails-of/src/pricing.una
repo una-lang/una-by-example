@@ -1,0 +1,41 @@
+module pricing
+
+--- Why a price list has no price for a SKU.
+kind PriceError = | NoPrice(sku: Text)
+
+--- The total of a cart of two SKUs, each priced by `price`. It fails when, and only when,
+--- `price` fails, and with the same error kind.
+pub total_of_two(first: Text, second: Text, price: fn(Text) -> Int) -> Int
+  fails of price
+=
+  let first_cents = price(first)
+    if error pass
+  let second_cents = price(second)
+    if error pass
+  first_cents + second_cents
+
+--- The store's price list. It knows two SKUs, and fails for any other.
+listed(sku: Text) -> Int
+  fails PriceError
+=
+  if sku == "LAMP-01"
+    1990
+  else if sku == "DESK-02"
+    15900
+  else
+    fail NoPrice(sku)
+
+--- A flat price for every SKU, during a sale. It never fails.
+flat(sku: Text) -> Int = 500
+
+--- Prices three carts: two with the price list, one with the flat price.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let known = total_of_two("LAMP-01", second: "DESK-02", price: listed)
+    if error use -1
+  let flat_total = total_of_two("LAMP-01", second: "VASE-03", price: flat)
+  @console.print("{known} {flat_total}")
+  let unknown = total_of_two("LAMP-01", second: "VASE-03", price: listed)
+    if error use -1
+  @console.print("{unknown}")

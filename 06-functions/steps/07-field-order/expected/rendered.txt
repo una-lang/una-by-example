@@ -1,0 +1,12 @@
+[U7001] Error: line 24 is not in canonical form
+    ╭─[ src/parcels.una:24:1 ]
+    │
+ 24 │   let lamp = Parcel(grams: 1_200, sku: "LAMP-01")
+    │ ────────────────────────┬────────────────────────
+    │                         ╰────────────────────────── line 24 is not in canonical form
+    │
+    │ Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/parcels.una:24:1..25:1 to "  let lamp = Parcel(sku: \"LAMP-01\", grams: 1_200)\n"
+    │
+    │ Note: run `una explain U7001` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

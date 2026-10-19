@@ -1,0 +1,9 @@
+[U2011] Error: this statement has type `Int`, and only `Unit` values can be discarded; bind the value with `let`
+    ╭─[ src/fees.una:40:3 ]
+    │
+ 40 │   half(1_990)
+    │   ─────┬─────
+    │        ╰─────── this statement has type `Int`, and only `Unit` values can be discarded; bind the value with `let`
+    │
+    │ Note: run `una explain U2011` for an explanation
+────╯

@@ -1,0 +1,12 @@
+$ una test .
+example shelf "three lamps cost 59.70" ... ok
+example shelf "a price is never below the price of one unit" ... ok
+example shelf "a lamp with units left is in stock" ... ok
+example shelf "a mug with no units left is not" ... ok
+example shelf "only the mug has run out" ... ok
+example shelf "a SKU the shelf does not hold is not found" ... ok
+example shelf "two lamps and a mug cost 48.70" ... ok
+example shelf "the mug is among the SKUs that have run out" ... ok
+example shelf "the shelf edge shows the SKU and the price" ... ok
+
+9 examples: 9 passed, 0 failed

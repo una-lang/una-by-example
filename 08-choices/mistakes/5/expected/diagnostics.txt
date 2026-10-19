@@ -1,0 +1,2 @@
+error U5001 at src/tracking.una:110:26: refinement `result >= 0` is refuted
+  counterexample: paid = 1, result = -599, status = "Returned", status.reason = "Refused"

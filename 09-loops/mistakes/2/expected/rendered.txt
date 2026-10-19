@@ -1,0 +1,22 @@
+[U1002] Error: `stock` is already bound in this scope; a local cannot rebind another
+    ╭─[ src/restock.una:57:9 ]
+    │
+ 55 │   let edit stock: Units = product.on_hand
+    │            ──┬──
+    │              ╰──── first defined here
+    │
+ 57 │     let stock = sell_week(stock, sales: product.weekly_sales)
+    │         ──┬──
+    │           ╰──── `stock` is already bound in this scope; a local cannot rebind another
+    │
+    │ Note: run `una explain U1002` for an explanation
+────╯
+[U2019] Error: `stock` is not editable; declare it `let edit stock`, or the parameter `edit stock`
+    ╭─[ src/restock.una:58:5 ]
+    │
+ 58 │     stock = stock + order_for(product, stock: stock)
+    │     ──┬──
+    │       ╰──── `stock` is not editable; declare it `let edit stock`, or the parameter `edit stock`
+    │
+    │ Note: run `una explain U2019` for an explanation
+────╯

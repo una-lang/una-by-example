@@ -1,0 +1,9 @@
+[U2001] Error: argument `line` of operation `Console.print` must be `Text`, found `Int`
+    ╭─[ src/slip.una:50:18 ]
+    │
+ 50 │   @console.print(lamp_cents + rug_cents)
+    │                  ───────────┬──────────
+    │                             ╰──────────── argument `line` of operation `Console.print` must be `Text`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

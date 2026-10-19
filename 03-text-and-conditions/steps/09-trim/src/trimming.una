@@ -1,0 +1,15 @@
+module trimming
+
+--- Prints what the three trimming functions leave of a few texts.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let padded = "  oak desk  "
+  @console.print("[{padded}]")
+  @console.print("[{padded.trim}]")
+  @console.print("[{padded.trim_start}]")
+  @console.print("[{padded.trim_end}]")
+  let typed = "\t RUG-07 \n"
+  @console.print("[{typed.trim}]")
+  let blank = "   "
+  @console.print("[{blank.trim}] has {blank.trim.len} characters")

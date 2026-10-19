@@ -1,0 +1,21 @@
+module signs
+
+--- Prints a line of dashes, to separate the parts of a sign.
+pub rule() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("--------------------")
+
+--- Prints a rule, twice.
+pub frame() -> Unit
+=
+  rule()
+  rule()
+
+--- Prints the sign of the café, between two rules.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  rule()
+  @console.print("The café opens at 10:00")
+  rule()

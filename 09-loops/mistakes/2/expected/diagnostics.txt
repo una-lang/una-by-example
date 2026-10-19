@@ -1,0 +1,2 @@
+error U1002 at src/restock.una:57:9: `stock` is already bound in this scope; a local cannot rebind another
+error U2019 at src/restock.una:58:5: `stock` is not editable; declare it `let edit stock`, or the parameter `edit stock`

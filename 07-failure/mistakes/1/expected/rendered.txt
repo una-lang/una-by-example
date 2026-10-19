@@ -1,0 +1,9 @@
+[U3007] Error: `parse_order` can fail with `OrderError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    ╭─[ src/orders.una:58:15 ]
+    │
+ 58 │   let order = parse_order(line)
+    │               ────────┬────────
+    │                       ╰────────── `parse_order` can fail with `OrderError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    │
+    │ Note: run `una explain U3007` for an explanation
+────╯

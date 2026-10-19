@@ -1,0 +1,2 @@
+error U2019 at src/restock.una:57:5: `stock` is not editable; declare it `let edit stock`, or the parameter `edit stock`
+error U2019 at src/restock.una:58:5: `stock` is not editable; declare it `let edit stock`, or the parameter `edit stock`

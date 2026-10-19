@@ -1,0 +1,22 @@
+module notices
+
+--- When the store is open today: a function with no parameters, in the short form.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
+
+-- A private function: no `pub`, so only this module can call it.
+cafe_hours() -> Text = "The café opens at 10:00"
+
+--- Prints a heading and the notice under it: a function with two parameters, in the long
+--- form, since its body has two steps.
+pub section(heading: Text, notice: Text) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(heading)
+  @console.print(notice)
+
+--- Calls each function.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  section("Hours", opening_hours())
+  section("Café", notice: cafe_hours())

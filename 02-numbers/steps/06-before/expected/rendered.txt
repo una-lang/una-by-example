@@ -1,0 +1,9 @@
+[U1001] Error: cannot find name `hours` in this module, its imports or the prelude
+    ╭─[ src/opening.una:10:28 ]
+    │
+ 10 │   @console.print("That is {hours} hours of trading")
+    │                            ──┬──
+    │                              ╰──── cannot find name `hours` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯

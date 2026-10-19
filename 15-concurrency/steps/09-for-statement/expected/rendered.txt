@@ -1,0 +1,9 @@
+[U0101] Error: a `together for` must be the last line of its block or the value of a `let`
+    ╭─[ src/stock.una:34:3 ]
+    │
+ 34 │   together for sku in skus
+    │   ────┬───
+    │       ╰───── a `together for` must be the last line of its block or the value of a `let`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

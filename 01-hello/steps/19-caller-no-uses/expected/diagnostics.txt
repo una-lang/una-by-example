@@ -1,0 +1,2 @@
+error U3003 at src/signs.una:12:3: `rule` uses `@console: Console[print]`, but this code declares no `uses`, so its effects would exceed its header
+error U3003 at src/signs.una:13:3: `rule` uses `@console: Console[print]`, but this code declares no `uses`, so its effects would exceed its header

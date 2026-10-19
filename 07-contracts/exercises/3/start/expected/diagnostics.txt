@@ -1,2 +1,0 @@
-error U5001 at src/billing.una:94:3: postcondition of `refund_again` is refuted
-  counterexample: already = 1, asked = 0, paid = 1, result = 1

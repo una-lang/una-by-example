@@ -1,0 +1,1 @@
+error U2019 at src/demand.una:8:5: `total` is not editable; declare it `let edit total`, or the parameter `edit total`

@@ -1,0 +1,200 @@
+module availability
+
+-- Checks an order against the stock of three warehouses, asking all of them at once.
+
+--- Why a warehouse gave no count.
+pub kind StockError = | Offline(site: Text)
+
+--- One line of an order: a SKU and how many units the customer wants.
+pub kind OrderLine
+  sku: Text
+  quantity: Int
+
+--- What each warehouse holds of one line's SKU.
+pub kind Availability
+  sku: Text
+  wanted: Int
+  north: Int
+  south: Int
+  east: Int
+
+--- A warehouse's stock service: the units of a SKU on its shelves.
+pub capability Warehouse
+  op on_hand(sku: Text) -> Int
+    fails StockError
+
+--- A warehouse whose stock is held in a map: none of a SKU it does not stock.
+pub handler shelves(stock: Map[Text, Int]) for Warehouse
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- A warehouse that does not answer.
+pub handler offline(site: Text) for Warehouse
+  op on_hand(sku) = fail Offline(site)
+
+--- What the three warehouses hold of a line's SKU, all three asked at the same time.
+pub availability(line: OrderLine) -> Availability
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  uses @east: Warehouse[on_hand]
+  fails StockError
+=
+  together
+    let north = @north.on_hand(line.sku)
+      if error pass
+    let south = @south.on_hand(line.sku)
+      if error pass
+    let east = @east.on_hand(line.sku)
+      if error pass
+  Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+
+--- Every line of an order, all the lines checked at the same time.
+pub check_order(lines: List[OrderLine]) -> List[Availability]
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  uses @east: Warehouse[on_hand]
+  fails StockError
+=
+  together for line in lines
+    availability(line)
+      if error pass
+
+--- What each warehouse holds of a line's SKU, all three asked at the same time. A warehouse
+--- that does not answer is recorded as holding none.
+pub partial(line: OrderLine) -> Availability
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  uses @east: Warehouse[on_hand]
+=
+  together
+    let north = @north.on_hand(line.sku)
+      if error use 0
+    let south = @south.on_hand(line.sku)
+      if error use 0
+    let east = @east.on_hand(line.sku)
+      if error use 0
+  Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+
+--- The units of the line's SKU in the three warehouses together.
+pub held(found: Availability) -> Int = found.north + found.south + found.east
+
+--- Whether the three warehouses together hold enough units for the line.
+pub can_ship(found: Availability) -> Bool = held(found) >= found.wanted
+
+--- Whether every line of the order can ship.
+pub ships_whole(found: List[Availability]) -> Bool = found.filter(keep: fn(line) -> not can_ship(line)).is_empty
+
+--- One line of the report: the SKU, what each warehouse holds, and whether it ships.
+pub report_line(found: Availability) -> Text
+=
+  let counts = "{found.north} + {found.south} + {found.east} = {held(found)}"
+  let verdict = if can_ship(found) then "ships" else "short by {found.wanted - held(found)}"
+  "{found.sku}: {found.wanted} wanted, {counts} on hand, {verdict}"
+
+--- What a person reads when a warehouse did not answer.
+pub reason(failure: StockError) -> Text
+=
+  when failure
+    is Offline(site) -> "the {site} warehouse did not answer; check again later"
+
+--- The stock of the north warehouse.
+pub north_stock() -> Map[Text, Int] = empty_map().with(key: "LAMP-01", value: 4).with(key: "DESK-02", value: 1)
+
+--- The stock of the south warehouse.
+pub south_stock() -> Map[Text, Int] = empty_map().with(key: "LAMP-01", value: 2).with(key: "RUG-07", value: 3)
+
+--- The stock of the east warehouse.
+pub east_stock() -> Map[Text, Int] = empty_map().with(key: "DESK-02", value: 1).with(key: "RUG-07", value: 5)
+
+--- Prints the report of one order, or why it could not be checked.
+pub print_report(order: Text, outcome: Result[List[Availability], StockError]) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Order {order}")
+  when outcome
+    is Ok(found) ->
+      for line in found
+        @console.print("  {report_line(line)}")
+      let whole = if ships_whole(found) then "the whole order ships" else "the order waits for stock"
+      @console.print("  {whole}")
+    is Err(failure) -> @console.print("  {reason(failure)}")
+
+--- Checks two orders against the three warehouses, then the first again while one is offline.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamps = [OrderLine(sku: "LAMP-01", quantity: 5), OrderLine(sku: "DESK-02", quantity: 2)]
+  let rugs = [OrderLine(sku: "RUG-07", quantity: 6), OrderLine(sku: "LAMP-01", quantity: 9)]
+  let first = attempt check_order(lamps) with @north = shelves(north_stock()), @south = shelves(south_stock()), @east = shelves(east_stock())
+  print_report("1042", outcome: first)
+  let second = attempt check_order(rugs) with @north = shelves(north_stock()), @south = shelves(south_stock()), @east = shelves(east_stock())
+  print_report("1043", outcome: second)
+  let retry = attempt check_order(lamps) with @north = shelves(north_stock()), @south = shelves(south_stock()), @east = offline("east")
+  print_report("1042, again", outcome: retry)
+
+example "each warehouse's count goes into its own field"
+  given @north = shelves(north_stock())
+  given @south = shelves(south_stock())
+  given @east = shelves(east_stock())
+  do availability(OrderLine(sku: "LAMP-01", quantity: 5))
+  expect result == Availability(sku: "LAMP-01", wanted: 5, north: 4, south: 2, east: 0)
+
+example "the lines come back in the order of the order"
+  given @north = shelves(north_stock())
+  given @south = shelves(south_stock())
+  given @east = shelves(east_stock())
+  do check_order([OrderLine(sku: "RUG-07", quantity: 1), OrderLine(sku: "DESK-02", quantity: 1)])
+  expect result.len == 2
+  expect result.first() == Some(Availability(sku: "RUG-07", wanted: 1, north: 0, south: 3, east: 5))
+
+example "an empty order asks no warehouse"
+  given @north = shelves(north_stock())
+  given @south = shelves(south_stock())
+  given @east = shelves(east_stock())
+  do check_order([])
+  expect result == []
+  expect not performed @north.on_hand
+
+example "a warehouse that does not answer fails the line"
+  given @north = shelves(north_stock())
+  given @south = shelves(south_stock())
+  given @east = offline("east")
+  do availability(OrderLine(sku: "LAMP-01", quantity: 5))
+  expect fails Offline
+
+example "the warehouses before the one that fails are still asked"
+  given @north = shelves(north_stock())
+  given @south = offline("south")
+  given @east = shelves(east_stock())
+  do availability(OrderLine(sku: "LAMP-01", quantity: 5))
+  expect fails Offline
+  expect performed @north.on_hand
+
+example "one line that cannot be checked fails the whole order"
+  given @north = shelves(north_stock())
+  given @south = offline("south")
+  given @east = shelves(east_stock())
+  do check_order([OrderLine(sku: "LAMP-01", quantity: 5), OrderLine(sku: "DESK-02", quantity: 2)])
+  expect fails Offline
+
+example "a line short of stock says by how much"
+  do report_line(Availability(sku: "LAMP-01", wanted: 9, north: 4, south: 2, east: 0))
+  expect result == "LAMP-01: 9 wanted, 4 + 2 + 0 = 6 on hand, short by 3"
+
+example "an order ships whole only when every line can ship"
+  do ships_whole([Availability(sku: "LAMP-01", wanted: 5, north: 4, south: 2, east: 0), Availability(sku: "RUG-07", wanted: 9, north: 0, south: 3, east: 5)])
+  expect not result
+
+example "an empty order ships whole"
+  do ships_whole([])
+  expect result
+
+example "the reason names the warehouse"
+  do reason(Offline("east"))
+  expect result == "the east warehouse did not answer; check again later"
+
+example "a warehouse that does not answer is recorded as holding none"
+  given @north = shelves(north_stock())
+  given @south = offline("south")
+  given @east = shelves(east_stock())
+  do partial(OrderLine(sku: "DESK-02", quantity: 2))
+  expect result == Availability(sku: "DESK-02", wanted: 2, north: 1, south: 0, east: 1)

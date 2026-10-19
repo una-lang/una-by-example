@@ -1,0 +1,1 @@
+error U5001 at src/arithmetic.una:15:20: division obligation `0 != 0` is refuted

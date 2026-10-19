@@ -1,0 +1,18 @@
+[U3001] Error: `warn_if_low` needs `@stock: Stock[left]`, which no `given` line binds
+    ╭─[ src/restock.una:43:6 ]
+    │
+ 43 │   do warn_if_low("LAMP-01")
+    │      ───────────┬──────────
+    │                 ╰──────────── `warn_if_low` needs `@stock: Stock[left]`, which no `given` line binds
+    │
+    │ Note: run `una explain U3001` for an explanation
+────╯
+[U3001] Error: `warn_if_low` needs `@mailer: Mailer[send]`, which no `given` line binds
+    ╭─[ src/restock.una:43:6 ]
+    │
+ 43 │   do warn_if_low("LAMP-01")
+    │      ───────────┬──────────
+    │                 ╰──────────── `warn_if_low` needs `@mailer: Mailer[send]`, which no `given` line binds
+    │
+    │ Note: run `una explain U3001` for an explanation
+────╯

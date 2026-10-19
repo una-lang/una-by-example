@@ -1,0 +1,1 @@
+error U3009 at src/orders.una:47:19: `BeingCounted` is a variant of `StockError`, and this code fails with `OrderError`

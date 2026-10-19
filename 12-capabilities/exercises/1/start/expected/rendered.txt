@@ -1,0 +1,18 @@
+[U1001] Error: cannot find handler `only` in this module, its imports or the prelude
+     ╭─[ src/notices.una:149:22 ]
+     │
+ 149 │   given @customers = only(Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true))
+     │                      ──┬─
+     │                        ╰─── cannot find handler `only` in this module, its imports or the prelude
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯
+[U1001] Error: cannot find handler `only` in this module, its imports or the prelude
+     ╭─[ src/notices.una:155:22 ]
+     │
+ 155 │   given @customers = only(Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true))
+     │                      ──┬─
+     │                        ╰─── cannot find handler `only` in this module, its imports or the prelude
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯

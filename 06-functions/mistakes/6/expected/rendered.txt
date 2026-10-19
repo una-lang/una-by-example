@@ -1,0 +1,14 @@
+[U7001] Error: lines 45 to 47 are not in canonical form
+    ╭─[ src/shipping.una:45:1 ]
+    │
+ 45 │ ╭─▶ pub ships_free(order: Order) -> Bool
+    ┆ ┆
+ 47 │ ├─▶   order.goods >= 10_000 and order.parcel.zone is Home
+    │ │
+    │ ╰─────────────────────────────────────────────────────────── lines 45 to 47 are not in canonical form
+    │
+    │     Help: repair 1: rewrite in canonical form, as `una fmt` does; edit src/shipping.una:45:1..48:1 to "pub ships_free(order: Order) -> Bool = order.goods >= 10_000 and order.parcel.zone is Home\n"
+    │
+    │     Note: run `una explain U7001` for an explanation
+────╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

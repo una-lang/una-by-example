@@ -1,4 +1,0 @@
-LAMP-01: 4 + 2 + 0 = 6
-["[LAMP-01] (7 characters)", "[DESK-02] (7 characters)"]
-last days: [7, 14, 21]
-no weeks: []

@@ -1,0 +1,9 @@
+[U2011] Error: this statement has type `Int`, and only `Unit` values can be discarded; bind the value with `let`
+    ╭─[ src/shipping.una:78:3 ]
+    │
+ 78 │   lamp.quote
+    │   ─────┬────
+    │        ╰────── this statement has type `Int`, and only `Unit` values can be discarded; bind the value with `let`
+    │
+    │ Note: run `una explain U2011` for an explanation
+────╯

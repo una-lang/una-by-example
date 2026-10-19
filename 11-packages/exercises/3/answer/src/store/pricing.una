@@ -1,0 +1,33 @@
+module store.pricing
+
+import store.money (Cents, format)
+
+--- The price of `quantity` units at `cents` each.
+pub line_cents(cents: Cents, quantity: Int) -> Int = cents * quantity
+
+--- What a member pays: 10 percent off, rounded in the store's favor.
+pub member_price(cents: Cents) -> Int
+  ensures result >= 0 and result <= cents
+=
+  cents - discount(cents)
+
+--- The members' discount, rounded down to a whole cent.
+discount(cents: Cents) -> Int
+  ensures result >= 0 and result <= cents
+=
+  cents / 10
+
+--- What a member pays, as a person reads it.
+pub format_member(cents: Cents) -> Text = format(member_price(cents))
+
+example "members pay 10 percent less"
+  do member_price(24900)
+  expect result == 22410
+
+example "the discount rounds down"
+  do discount(1999)
+  expect result == 199
+
+example "a member's price, as a person reads it"
+  do format_member(1990)
+  expect result == "17.91"

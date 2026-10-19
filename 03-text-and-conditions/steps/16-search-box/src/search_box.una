@@ -1,0 +1,28 @@
+module search_box
+
+-- The search box of the store's website: what a customer types, and the product names.
+
+--- What the customer typed, as the search compares it: trimmed, in small letters.
+pub tidy(typed: Text) -> Text = typed.trim.to_lower
+
+--- Whether a product name holds what the customer typed, whatever the case of its letters.
+pub matches(name: Text, typed: Text) -> Bool = name.to_lower.contains_text(part: tidy(typed))
+
+--- The last part of a product's web address: the name in small letters, with dashes for the
+--- comma and the spaces.
+pub web_name(name: Text) -> Text = name.trim.to_lower.replace(pattern: ",", by: "").replace(pattern: " ", by: "-")
+
+--- The line the search shows for one product and one search.
+pub search_line(name: Text, typed: Text) -> Text = "[{typed}] in {name}: {matches(name, typed: typed)}"
+
+--- Prints four searches, and the web address of a product.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = "Desk lamp, Brass"
+  let rug = "Wool rug, natural"
+  @console.print(search_line(lamp, typed: "LAMP "))
+  @console.print(search_line(rug, typed: "LAMP "))
+  @console.print(search_line(rug, typed: " wool"))
+  @console.print(search_line(lamp, typed: "brass"))
+  @console.print("example.invalid/products/{web_name(lamp)}")

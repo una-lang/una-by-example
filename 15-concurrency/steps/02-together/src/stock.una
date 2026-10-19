@@ -1,0 +1,35 @@
+module stock
+
+--- Why a warehouse gave no count.
+kind StockError = | Offline(site: Text)
+
+--- A warehouse's stock service: the units of a SKU on its shelves.
+capability Warehouse
+  op on_hand(sku: Text) -> Int
+    fails StockError
+
+--- A warehouse whose stock is held in a map: none of a SKU it does not stock.
+handler shelves(stock: Map[Text, Int]) for Warehouse
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- The units of `sku` in both warehouses, both asked at the same time.
+total(sku: Text) -> Int
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  fails StockError
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error pass
+    let in_south = @south.on_hand(sku)
+      if error pass
+  in_north + in_south
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let north = empty_map().with(key: "LAMP-01", value: 4)
+  let south = empty_map().with(key: "LAMP-01", value: 2)
+  let units = total("LAMP-01") with @north = shelves(north), @south = shelves(south)
+    if error use 0
+  @console.print("LAMP-01: {units} units")

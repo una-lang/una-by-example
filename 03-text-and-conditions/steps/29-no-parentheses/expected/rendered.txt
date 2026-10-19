@@ -1,0 +1,9 @@
+[U0101] Error: unexpected keyword `if`, expected an expression
+    ╭─[ src/choices.una:10:37 ]
+    │
+ 10 │ handling(goods: Int) -> Int = 190 + if goods >= 10_000 then 0 else 300
+    │                                     ─┬
+    │                                      ╰── unexpected keyword `if`, expected an expression
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

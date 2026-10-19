@@ -1,0 +1,139 @@
+module shipping
+
+-- Shipping quotes: what each order of the day costs to ship, by weight and zone.
+
+--- How far a parcel travels: within the country, to a neighboring country, or farther.
+kind Zone = Home | Neighbor | World
+
+--- A parcel: its weight in grams and the zone it ships to.
+kind Parcel
+  grams: Int
+  zone: Zone
+
+--- An order of the day: its number, the price of its goods in cents, and its parcel.
+kind Order
+  number: Int
+  goods: Int
+  parcel: Parcel
+
+--- The rate for `grams` grams within the country, in cents: 790 up to 2 kg, and 250 more
+--- for each kilogram or part of one above 2 kg.
+pub base_rate(grams: Int) -> Int
+  requires grams > 0
+  ensures result >= 790
+=
+  let extra_kilos = (grams - 2_000 + 999) / 1_000
+  if grams <= 2_000 then 790 else 790 + extra_kilos * 250
+
+--- What a zone adds to the rate, in cents.
+pub surcharge(zone: Zone) -> Int
+  ensures result >= 0
+=
+  when zone
+    is Home -> 0
+    is Neighbor -> 600
+    is World -> 1_800
+
+--- The rate of a parcel: the rate for its weight, and the surcharge of its zone.
+pub rate(parcel: Parcel) -> Int
+  requires parcel.grams > 0
+  ensures result >= 790
+=
+  base_rate(parcel.grams) + parcel.zone.surcharge
+
+--- Whether an order ships free: 10000 cents of goods or more, within the country.
+pub ships_free(order: Order) -> Bool = order.goods >= 10_000 and order.parcel.zone is Home
+
+--- What shipping costs for an order, in cents.
+pub quote(order: Order) -> Int
+  requires order.parcel.grams > 0
+  ensures result >= 0
+=
+  if order.ships_free then 0 else order.parcel.rate
+
+--- The weekend offer: half the charge, rounded up to a whole cent. It never raises the charge.
+pub weekend_price(charge: Int) -> Int
+  requires charge >= 0
+  ensures result >= 0 and result <= charge
+=
+  (charge + 1) / 2
+
+--- Cents as an amount with two decimals, for an amount that is not negative.
+pub money(cents: Int) -> Text = "{cents / 100}.{cents mod 100 / 10}{cents mod 10}"
+
+--- The line of the report for one order.
+pub report_line(order: Order, charge: Int) -> Text = if charge == 0 then "order {order.number}: ships free" else "order {order.number}: {money(charge)}"
+
+--- Prints one line of the report.
+show(order: Order, charge: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(report_line(order, charge))
+
+--- Prints the shipping report of the orders of the day.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Order(number: 1042, goods: 3_980, parcel: Parcel(grams: 1_200, zone: Home))
+  show(lamp, charge: lamp.quote)
+  let desk = Order(number: 1043, goods: 15_900, parcel: Parcel(grams: 24_000, zone: Home))
+  show(desk, charge: desk.quote)
+  let rug = Order(number: 1044, goods: 4_500, parcel: Parcel(grams: 3_200, zone: World))
+  show(rug, charge: rug.quote)
+  let chair = Order(number: 1045, goods: 4_500, parcel: Parcel(grams: 3_200, zone: World))
+  show(chair, charge: weekend_price(chair.quote))
+  let mugs = Order(number: 1046, goods: 2_500, parcel: Parcel(grams: 800, zone: Neighbor))
+  show(mugs, charge: mugs.quote)
+
+example "a parcel up to 2 kg ships at the lowest rate"
+  do base_rate(2_000)
+  expect result == 790
+
+example "each started kilogram above 2 kg adds 250 cents"
+  do base_rate(3_200)
+  expect result == 1_290
+
+example "the rest of the world adds 1800 cents"
+  do surcharge(World)
+  expect result == 1_800
+
+example "a large order within the country ships free"
+  do quote(Order(number: 1, goods: 15_900, parcel: Parcel(grams: 24_000, zone: Home)))
+  expect result == 0
+
+example "a large order abroad pays shipping"
+  do quote(Order(number: 2, goods: 15_900, parcel: Parcel(grams: 24_000, zone: Neighbor)))
+  expect result == 6_890
+
+example "the weekend offer rounds up to a whole cent"
+  do weekend_price(3_091)
+  expect result == 1_546
+
+example "the weekend offer of nothing is nothing"
+  do weekend_price(0)
+  expect result == 0
+
+example "an amount keeps its zero cents"
+  do money(705)
+  expect result == "7.05"
+
+example "a free order says so"
+  do report_line(Order(number: 1043, goods: 15_900, parcel: Parcel(grams: 24_000, zone: Home)), charge: 0)
+  expect result == "order 1043: ships free"
+
+--- The days an order takes to arrive: 2 within the country, 4 to a neighboring country, and 9
+--- to the rest of the world.
+pub delivery_days(zone: Zone) -> Int
+=
+  when zone
+    is Home -> 2
+    is Neighbor -> 4
+    is World -> 9
+
+example "an order within the country arrives in two days"
+  do delivery_days(Home)
+  expect result == 2
+
+example "an order to the rest of the world takes nine days"
+  do delivery_days(World)
+  expect result == 9

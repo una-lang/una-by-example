@@ -1,11 +1,11 @@
-[U2026] Error: equality on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
-    ╭─[ src/tracking.una:59:45 ]
+[U2026] Error: interpolation on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
+    ╭─[ src/pricing.una:73:53 ]
     │
- 59 │ pub changed[T](change: Change[T]) -> Bool = change.before != change.after
-    │                                             ──────────────┬──────────────
-    │                                                           ╰──────────────── equality on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
+ 73 │ pub charge_line[T](charge: Charge[T]) -> Text = "  {charge.item}: {charge.cents} cents"
+    │                                                     ─────┬─────
+    │                                                          ╰─────── interpolation on values of the type parameter `T` needs the constraint `Eq`; write `[T: Eq]`
     │
-    │ Help: repair 1: constrain `T` by `Eq`; edit src/tracking.una:59:13..59:14 to "T: Eq"
+    │ Help: repair 1: constrain `T` by `Eq`; edit src/pricing.una:73:17..73:18 to "T: Eq"
     │
     │ Note: run `una explain U2026` for an explanation
 ────╯

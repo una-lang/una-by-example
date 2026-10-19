@@ -1,0 +1,9 @@
+[U0101] Error: unexpected end of block, expected `else`
+    ╭─[ src/choices.una:22:1 ]
+    │
+ 22 │ pub main() -> Unit
+    │ │
+    │ ╰─ unexpected end of block, expected `else`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

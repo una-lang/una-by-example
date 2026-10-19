@@ -1,0 +1,24 @@
+module batch
+
+--- The units of the three quantities typed into an order form, added up. One quantity that
+--- is not a number fails the whole form.
+total_units(first: Text, second: Text, third: Text) -> Int
+  fails ParseError
+=
+  let first_units = first.parse_int()
+    if error pass
+  let second_units = second.parse_int()
+    if error pass
+  let third_units = third.parse_int()
+    if error pass
+  first_units + second_units + third_units
+
+--- Adds up two order forms: one with three numbers, one with two that are not.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let good = total_units("12", second: "3", third: "5")
+    if error use -1
+  let mixed = total_units("12", second: "", third: "3x")
+    if error use -1
+  @console.print("{good} and {mixed}")

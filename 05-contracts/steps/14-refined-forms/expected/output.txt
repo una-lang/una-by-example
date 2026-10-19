@@ -1,0 +1,5 @@
+staff pay 70% and 50%
+after slot 4: 5, after slot 11: 0
+family of LAMP-01: LAMP
+free units: 2
+row 2, slot 7

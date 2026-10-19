@@ -1,0 +1,19 @@
+$ una test .
+example labels "a SKU loses its spaces and is written in capitals" ... ok
+example labels "a SKU with a dash inside it looks right" ... ok
+example labels "a SKU without a dash does not" ... ok
+example labels "a SKU that ends with its dash does not either" ... ok
+example labels "a long name ends with three dots" ... FAILED
+  src/labels.una:81: expect result == "Wool rug, 120 by 180..."
+  it is false, with `result` = `"Wool rug, 120 by 180 cm,"`
+example labels "a cut name still fits the label" ... ok
+example labels "a short name is kept as it is" ... ok
+example labels "an amount keeps the zero of its cents" ... ok
+example labels "a discount over 90 percent is not a sale" ... ok
+example labels "a discount rounds down to a whole cent" ... ok
+example labels "a product not sold by weight has no price per kilogram" ... ok
+example labels "a sale shows the old and the new price" ... ok
+example labels "an empty shelf is sold out" ... ok
+example labels "a SKU that does not look right asks for a check" ... ok
+
+14 examples: 13 passed, 1 failed

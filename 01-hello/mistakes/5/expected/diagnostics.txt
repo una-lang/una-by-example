@@ -1,1 +1,1 @@
-error U2001 at src/slip.una:40:18: argument `line` of operation `Console.print` must be `Text`, found `Int`
+error U0003 at src/morning.una:39:1: inconsistent indentation of 4 spaces; expected 0 or 2

@@ -1,0 +1,2 @@
+error U3011 at src/notices.una:84:9: handler `outbox` does not implement the operation `delivered` of `Mailer`
+error U3011 at src/notices.una:88:9: handler `mail_down` does not implement the operation `delivered` of `Mailer`

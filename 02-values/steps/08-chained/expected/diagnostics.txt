@@ -1,1 +1,0 @@
-error U0101 at src/rules.una:10:56: comparisons cannot be chained; join them with `and`, as in `a < b and b < c`

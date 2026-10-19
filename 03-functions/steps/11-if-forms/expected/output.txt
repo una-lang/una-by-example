@@ -1,7 +1,0 @@
-heavy, light
-home, neighbors, world
-envelope, box of 8 liters, crate
-490, 190
-standard, bulk, use a pallet
-250, 0
-300, 500, 0

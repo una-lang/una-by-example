@@ -1,0 +1,14 @@
+module plan
+
+--- Prints the line of each week of the plan, from week 1 to week `weeks`.
+pub print_weeks(weeks: Int) -> Unit
+  uses @console: Console[print]
+=
+  for week in 1..weeks
+    @console.print("week {week}: count the lamp shelf")
+
+--- Prints a restock plan of four weeks.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  print_weeks(4)

@@ -1,0 +1,17 @@
+module hours
+
+--- How many days of the week the store stays open late, from day `first_day` on, counting
+--- Monday as day 1.
+pub late_days(first_day: Int) -> Int in 0..7
+=
+  let edit count: Int in 0..7 = 0
+  for day in 1..7
+    if day >= first_day
+      count = count + 1
+  count
+
+--- Prints how many days the store stays open late.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{late_days(5)} late days")

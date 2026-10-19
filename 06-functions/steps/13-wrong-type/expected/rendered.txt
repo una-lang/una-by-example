@@ -1,0 +1,18 @@
+[U2001] Error: `ships_free` returns `Bool`, found `Text`
+    ╭─[ src/fees.una:12:62 ]
+    │
+ 12 │ pub ships_free(goods: Int) -> Bool = if goods >= 10_000 then "yes" else "no"
+    │                                                              ──┬──
+    │                                                                ╰──── `ships_free` returns `Bool`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯
+[U2001] Error: `ships_free` returns `Bool`, found `Text`
+    ╭─[ src/fees.una:12:73 ]
+    │
+ 12 │ pub ships_free(goods: Int) -> Bool = if goods >= 10_000 then "yes" else "no"
+    │                                                                         ──┬─
+    │                                                                           ╰─── `ships_free` returns `Bool`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

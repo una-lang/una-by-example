@@ -1,0 +1,18 @@
+module stock
+
+--- Whether a shelf holds any units.
+pub in_stock(units: Int) -> Bool = units > 0
+
+--- Prints what comparisons and the operators on `Bool` give.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let units = 3
+  @console.print("{units == 3} {units != 3} {units < 3} {units <= 3} {units > 3} {units >= 3}")
+  @console.print("{true and true} {true and false} {false and false}")
+  @console.print("{true or false} {false or false}")
+  @console.print("{not true} {not false}")
+  @console.print("{in_stock(units)} {in_stock(0)} {not in_stock(0)}")
+  let few = units < 5
+  @console.print("few left: {few}")
+  @console.print("{units > 1 and units < 5} {units < 1 or units > 5}")

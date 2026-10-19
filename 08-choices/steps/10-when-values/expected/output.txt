@@ -1,0 +1,9 @@
+rugs; aisle 7
+rugs; other
+wrap it; no wrapping
+small box; large box; pallet
+empty; almost empty; stocked
+pallet rate; case rate; unit rate
+400; 600
+here; at Mill Lane
+floor; middle shelf; floor

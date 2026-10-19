@@ -1,0 +1,11 @@
+module rules
+
+--- Prints three conditions on the same two values.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let units = 3
+  let gift = true
+  @console.print("{not units > 5}")
+  @console.print("{not gift or units > 5}")
+  @console.print("{units < 2 or units < 5 and gift}")

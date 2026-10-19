@@ -1,0 +1,2 @@
+Category(name: "Lamps", parent: Some(Category(name: "Lighting", parent: None)))
+Lighting > Lamps > Desk lamps, 2 levels down

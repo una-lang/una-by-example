@@ -1,0 +1,11 @@
+[U2007] Error: `when` does not match variant `Lost` of `Status`
+    ╭─[ src/tracking.una:83:3 ]
+    │
+ 83 │   when status
+    │   ──┬─
+    │     ╰─── `when` does not match variant `Lost` of `Status`
+    │
+    │ Help: repair 1: add an arm for each missing variant, such as `is Lost`, or an `else` arm
+    │
+    │ Note: run `una explain U2007` for an explanation
+────╯

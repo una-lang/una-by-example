@@ -1,0 +1,9 @@
+[U2001] Error: `print_quote` returns `Unit`, found `Int`
+    ╭─[ src/fees.una:35:3 ]
+    │
+ 35 │   quote.cents
+    │   ─────┬─────
+    │        ╰─────── `print_quote` returns `Unit`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

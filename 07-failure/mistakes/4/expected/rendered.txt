@@ -1,0 +1,34 @@
+[U3009] Error: this code declares no error kind, so it cannot fail with `Malformed`; declare `fails` in its header
+    ╭─[ src/orders.una:32:18 ]
+    │
+ 32 │     if none fail Malformed(line)
+    │                  ────┬────
+    │                      ╰────── this code declares no error kind, so it cannot fail with `Malformed`; declare `fails` in its header
+    │
+    │ Help: repair 1: declare `fails OrderError` in the header; edit src/orders.una:29:37..29:37 to "\n  fails OrderError"
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯
+[U3009] Error: this code declares no error kind, so it cannot fail with `BadQuantity`; declare `fails` in its header
+    ╭─[ src/orders.una:35:18 ]
+    │
+ 35 │     if none fail BadQuantity(line)
+    │                  ─────┬─────
+    │                       ╰─────── this code declares no error kind, so it cannot fail with `BadQuantity`; declare `fails` in its header
+    │
+    │ Help: repair 1: declare `fails OrderError` in the header; edit src/orders.una:29:37..29:37 to "\n  fails OrderError"
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯
+[U3009] Error: this code declares no error kind, so it cannot fail with `BadQuantity`; declare `fails` in its header
+    ╭─[ src/orders.una:37:10 ]
+    │
+ 37 │     fail BadQuantity(line)
+    │          ─────┬─────
+    │               ╰─────── this code declares no error kind, so it cannot fail with `BadQuantity`; declare `fails` in its header
+    │
+    │ Help: repair 1: declare `fails OrderError` in the header; edit src/orders.una:29:37..29:37 to "\n  fails OrderError"
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯
+3 of 3 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

@@ -1,0 +1,9 @@
+[U0101] Error: unexpected `Opening`, expected a module path
+   ╭─[ src/opening.una:1:8 ]
+   │
+ 1 │ module Opening
+   │        ───┬───
+   │           ╰───── unexpected `Opening`, expected a module path
+   │
+   │ Note: run `una explain U0101` for an explanation
+───╯

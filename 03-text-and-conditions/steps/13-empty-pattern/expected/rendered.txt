@@ -1,0 +1,21 @@
+[U5001] Error: precondition `part.len > 0` of this call is refuted
+   ╭─[ src/names.una:4:42 ]
+   │
+ 4 │ dashed(name: Text, part: Text) -> Text = name.replace(pattern: part, by: "-")
+   │                                          ──────────────────┬─────────────────
+   │                                                            ╰─────────────────── precondition `part.len > 0` of this call is refuted
+   │
+   │ Help 1: repair 1: strengthen the type of the parameter `part` to a refined kind that implies `part.len > 0`
+   │
+   │ Help 2: repair 2: add `requires part.len > 0` to the enclosing function; its callers then prove it
+   │
+   │ Help 3: repair 3: add a guard (`if` or a `when` arm) that handles the values where `part.len > 0` does not hold
+   │
+   │ Help 4: repair 4 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, part.len > 0) else fail <Variant>`
+   │
+   │ Note 1: obligation ob-bdace32a444c (precondition) is refuted: part.len > 0
+   │
+   │ Note 2: counterexample: part = Text#0, part.len = 0
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯

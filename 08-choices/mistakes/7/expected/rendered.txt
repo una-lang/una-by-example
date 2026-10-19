@@ -1,0 +1,63 @@
+[U2002] Error: kind `History` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
+    ╭─[ src/tracking.una:28:10 ]
+    │
+ 28 │ pub kind History = | After(event: Event, earlier: History)
+    │          ───┬───
+    │             ╰───── kind `History` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
+    │
+    │ Note: run `una explain U2002` for an explanation
+────╯
+[U1001] Error: `History` has no variant `Start`
+    ╭─[ src/tracking.una:65:8 ]
+    │
+ 65 │     is Start -> Packed
+    │        ──┬──
+    │          ╰──── `History` has no variant `Start`
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: `History` has no variant `Start`
+    ╭─[ src/tracking.una:72:8 ]
+    │
+ 72 │     is Start -> Change(before: Packed, after: Packed)
+    │        ──┬──
+    │          ╰──── `History` has no variant `Start`
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `Start` in this module, its imports or the prelude
+     ╭─[ src/tracking.una:129:87 ]
+     │
+ 129 │   let picked = After(event: PickedUp(carrier: Courier, tracking: "CX-4471"), earlier: Start)
+     │                                                                                       ──┬──
+     │                                                                                         ╰──── cannot find name `Start` in this module, its imports or the prelude
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯
+[U1001] Error: cannot find name `Start` in this module, its imports or the prelude
+     ╭─[ src/tracking.una:137:125 ]
+     │
+ 137 │   let sent = After(event: DeliveredOn(day: 8), earlier: After(event: PickedUp(carrier: Post, tracking: "PO-2210"), earlier: Start))
+     │                                                                                                                             ──┬──
+     │                                                                                                                               ╰──── cannot find name `Start` in this module, its imports or the prelude
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯
+[U1001] Error: cannot find name `Start` in this module, its imports or the prelude
+     ╭─[ src/tracking.una:146:143 ]
+     │
+ 146 │   do latest(After(event: PickedUp(carrier: Post, tracking: "PO-1"), earlier: After(event: PickedUp(carrier: Post, tracking: "PO-1"), earlier: Start)))
+     │                                                                                                                                               ──┬──
+     │                                                                                                                                                 ╰──── cannot find name `Start` in this module, its imports or the prelude
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯
+[U1001] Error: cannot find name `Start` in this module, its imports or the prelude
+     ╭─[ src/tracking.una:150:73 ]
+     │
+ 150 │   do status_of(After(event: CameBack(reason: Damaged, day: 2), earlier: Start))
+     │                                                                         ──┬──
+     │                                                                           ╰──── cannot find name `Start` in this module, its imports or the prelude
+     │
+     │ Note: run `una explain U1001` for an explanation
+─────╯

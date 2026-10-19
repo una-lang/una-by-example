@@ -1,0 +1,18 @@
+[U3009] Error: this function can fail with `PriceError`, which the expected function type does not allow
+    ╭─[ src/pricing.una:34:65 ]
+    │
+ 34 │   let known = total_of_two("LAMP-01", second: "DESK-02", price: listed)
+    │                                                                 ───┬──
+    │                                                                    ╰──── this function can fail with `PriceError`, which the expected function type does not allow
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯
+[U3009] Error: this function can fail with `PriceError`, which the expected function type does not allow
+    ╭─[ src/pricing.una:38:67 ]
+    │
+ 38 │   let unknown = total_of_two("LAMP-01", second: "VASE-03", price: listed)
+    │                                                                   ───┬──
+    │                                                                      ╰──── this function can fail with `PriceError`, which the expected function type does not allow
+    │
+    │ Note: run `una explain U3009` for an explanation
+────╯

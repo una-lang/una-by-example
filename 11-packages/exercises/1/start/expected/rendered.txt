@@ -8,9 +8,9 @@
    │ Note: run `una explain U1001` for an explanation
 ───╯
 [U1001] Error: cannot find name `shipping_fee` in this module, its imports or the prelude
-    ╭─[ src/store/invoice.una:32:54 ]
+    ╭─[ src/store/invoice.una:31:54 ]
     │
- 32 │ pub with_shipping(subtotal: Int) -> Int = subtotal + shipping_fee(subtotal)
+ 31 │ pub with_shipping(subtotal: Int) -> Int = subtotal + shipping_fee(subtotal)
     │                                                      ──────┬─────
     │                                                            ╰─────── cannot find name `shipping_fee` in this module, its imports or the prelude
     │

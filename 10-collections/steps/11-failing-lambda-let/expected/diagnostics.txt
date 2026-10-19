@@ -1,0 +1,1 @@
+error U3009 at src/prices.una:46:86: this code declares no error kind, so it cannot fail with `NoPrice`; declare `fails` in its header

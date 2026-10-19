@@ -1,0 +1,14 @@
+module lengths
+
+--- Prints the length of four texts, and compares texts.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let sku = "LAMP-01"
+  let cafe = "Café"
+  let empty = ""
+  let space = " "
+  @console.print("{sku.len} {cafe.len} {empty.len} {space.len}")
+  let typed = "lamp-01"
+  let escaped = "Caf\u{e9}"
+  @console.print("{sku == typed} {cafe == escaped}")

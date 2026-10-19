@@ -1,0 +1,19 @@
+module stock
+
+--- "unit" or "units", whichever goes with `count`.
+pub units_word(count: Int) -> Text = if count == 1 then "unit" else "units"
+
+--- What a product page says about the stock of a product.
+pub availability(on_hand: Int) -> Text
+=
+  let few = "only {on_hand} {units_word(on_hand)} left"
+  if on_hand <= 0 then "out of stock" else if on_hand < 5 then few else "in stock"
+
+--- Prints what the product page says for four stock levels.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(availability(0))
+  @console.print(availability(1))
+  @console.print(availability(3))
+  @console.print(availability(40))

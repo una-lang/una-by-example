@@ -1,0 +1,4 @@
+$ una contract restock.to_order
+--- How many units to order so that the shelf holds `target` again, and none when it already
+--- does.
+pub to_order(on_hand: Int, target: Int) -> Int

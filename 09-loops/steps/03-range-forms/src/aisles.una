@@ -1,0 +1,47 @@
+module aisles
+
+--- Prints the aisles from `first` to `last`, `last` included: an inclusive range.
+pub through(first: Int, last: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{first}..{last}:")
+  for aisle in first..last
+    @console.print("  aisle {aisle}")
+
+--- Prints the aisles from `first` up to `last`, `last` left out: an exclusive range.
+pub before(first: Int, last: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{first}..<{last}:")
+  for aisle in first..<last
+    @console.print("  aisle {aisle}")
+
+--- Prints the two aisles after `aisle`: the ends of a range may be computed.
+pub next_two(aisle: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("after aisle {aisle}:")
+  for next in aisle + 1..aisle + 2
+    @console.print("  aisle {next}")
+
+--- Prints the last two label codes of a roll, which fit in one byte: a range of `U8`.
+pub last_codes() -> Unit
+  uses @console: Console[print]
+=
+  let first: U8 = 254
+  @console.print("codes from {first}:")
+  for code in first..255
+    @console.print("  code {code}")
+
+--- Calls each form, with a few pairs of ends.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  through(1, last: 3)
+  before(1, last: 3)
+  through(2, last: 2)
+  before(2, last: 2)
+  through(3, last: 1)
+  through(-1, last: 1)
+  next_two(4)
+  last_codes()

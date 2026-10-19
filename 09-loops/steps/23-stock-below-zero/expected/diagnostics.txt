@@ -1,0 +1,2 @@
+error U5001 at src/shelf.una:11:13: refinement `(stock - per_week) >= 0` is refuted
+  counterexample: per_week = 1, start = 0, stock = 0, stock (assigned) = -1, week = 1, weeks = 1

@@ -1,0 +1,42 @@
+module lookup
+
+--- A product the store sells, with the price of one unit in cents.
+kind Product
+  sku: Text
+  cents: Int
+
+--- The product with the SKU `sku`, or `None` when the store does not sell it.
+find_product(sku: Text) -> Option[Product]
+=
+  if sku == "LAMP-01"
+    Some(Product(sku: "LAMP-01", cents: 1990))
+  else if sku == "DESK-02"
+    Some(Product(sku: "DESK-02", cents: 15900))
+  else
+    None
+
+--- The price of `sku`, or `None` when the store does not sell it.
+price_of(sku: Text) -> Option[Int]
+=
+  let found = find_product(sku)
+  Some(found.cents)
+
+--- What a product page shows for `sku`.
+label(sku: Text) -> Text
+=
+  let price = price_of(sku)
+  when price
+    is Some(cents) -> "{sku}: {cents} cents"
+    is None -> "{sku}: not sold here"
+
+--- Prints two product pages, and three values that may be missing.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(label("DESK-02"))
+  @console.print(label("CHAIR-09"))
+  let missing = price_of("CHAIR-09")
+  @console.print("{missing} or {missing.or_else(default: 0)}")
+  let typed = "3".to_int()
+  let dash = "LAMP-01".find(text: "-")
+  @console.print("{typed} and {dash}")

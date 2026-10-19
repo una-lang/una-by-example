@@ -1,0 +1,17 @@
+heavy, light
+4 units
+24 units
+  bulk: use a pallet
+  fragile: wrap each unit
+LAMP-01: counted
+RUG-07: order 5 more
+RUG-07: hide it from the shop
+RUG-07: counted
+12, 0
+carton of 3
+  fits on a shelf
+  this side up
+carton of 30
+  heavy: lift with two people
+  stack at most three high
+  this side up

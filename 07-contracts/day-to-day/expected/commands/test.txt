@@ -1,9 +1,0 @@
-$ una test .
-example billing "a coupon worth more than the invoice takes the whole invoice" ... ok
-example billing "ten percent is rounded down" ... ok
-example billing "store credit pays first" ... ok
-example billing "credit larger than the total leaves nothing for the card" ... ok
-example billing "a refund of more than was paid is refused" ... ok
-example billing "an empty invoice costs nothing" ... ok
-
-6 examples: 6 passed, 0 failed

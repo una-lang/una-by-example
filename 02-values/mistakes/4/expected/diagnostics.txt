@@ -1,2 +1,0 @@
-error U0006 at src/labels.una:63:34: text literal inside interpolation; bind it with `let` and interpolate the name
-error U0006 at src/labels.una:63:51: text literal inside interpolation; bind it with `let` and interpolate the name

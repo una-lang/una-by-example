@@ -1,0 +1,19 @@
+[U5001] Error: overflow obligation `copies.to_u8() in 0..255` is refuted
+   ╭─[ src/tags.una:4:38 ]
+   │
+ 4 │ pub copies_byte(copies: Int) -> U8 = copies.to_u8()
+   │                                      ───────┬──────
+   │                                             ╰──────── overflow obligation `copies.to_u8() in 0..255` is refuted
+   │
+   │ Help 1: repair 1: guard the operation with `if copies in 0..255`
+   │
+   │ Help 2: repair 2: give the values a wider type, converting them explicitly
+   │
+   │ Help 3: repair 3: if wrapping or saturating is meant, use `wrapping_add`, `saturating_add` or their siblings
+   │
+   │ Note 1: obligation ob-e802f6bd9ce4 (overflow) is refuted: copies.to_u8() in 0..255
+   │
+   │ Note 2: counterexample: copies = -1
+   │
+   │ Note 3: run `una explain U5001` for an explanation
+───╯

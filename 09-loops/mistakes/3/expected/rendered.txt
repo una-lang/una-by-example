@@ -1,0 +1,9 @@
+[U2001] Error: expected `List[_]`, found `Text`
+    ╭─[ src/restock.una:33:20 ]
+    │
+ 33 │   for character in sku
+    │                    ─┬─
+    │                     ╰─── expected `List[_]`, found `Text`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

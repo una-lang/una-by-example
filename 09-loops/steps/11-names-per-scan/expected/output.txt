@@ -1,0 +1,3 @@
+after one item: 1990 cents
+after two items: 3980 cents
+after three items: 8480 cents

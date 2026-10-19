@@ -1,4 +1,0 @@
-error U2019 at src/labels.una:58:3: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
-error U2019 at src/labels.una:60:3: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
-error U2019 at src/labels.una:62:3: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`
-error U2019 at src/labels.una:64:3: `printed` is not editable; declare it `let edit printed`, or the parameter `edit printed`

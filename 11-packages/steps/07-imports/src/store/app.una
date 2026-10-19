@@ -1,25 +1,24 @@
 module store.app
 
-import store.catalog (Catalog, Product, listed)
+import store.catalog (Product, find)
 import store.money (format)
 
 --- Why a price could not be shown.
 kind PriceError = | NotListed(sku: Text)
 
---- The price of a SKU, as a person reads it.
-price_tag(sku: Text) -> Text
-  uses @catalog: Catalog[find]
+--- The price of a SKU in a catalog, as a person reads it.
+price_tag(sku: Text, catalog: List[Product]) -> Text
   fails PriceError
 =
-  let product = @catalog.find(sku)
+  let product = find(catalog, sku)
     if none fail NotListed(sku)
   "{product.name}: {format(product.cents)}"
 
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let products = [Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990)]
-  let lamp = attempt price_tag("LAMP-01") with @catalog = listed(products)
-  let chair = attempt price_tag("CHAIR-09") with @catalog = listed(products)
+  let catalog = [Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990)]
+  let lamp = attempt price_tag("LAMP-01", catalog)
+  let chair = attempt price_tag("CHAIR-09", catalog)
   @console.print("{lamp}")
   @console.print("{chair}")

@@ -1,0 +1,2 @@
+[ lamp-01] and [LAMP-01]
+the same SKU: false

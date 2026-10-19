@@ -1,0 +1,9 @@
+[U3013] Error: `pack` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
+    ╭─[ src/packing.una:15:18 ]
+    │
+ 15 │   @console.print(pack("LAMP-01"))
+    │                  ───────┬───────
+    │                         ╰───────── `pack` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
+    │
+    │ Note: run `una explain U3013` for an explanation
+────╯

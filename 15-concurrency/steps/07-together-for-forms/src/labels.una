@@ -1,0 +1,48 @@
+module labels
+
+--- A shelf label for each SKU: a `together for` over a list, as the value of a `let`.
+labels(skus: List[Text]) -> List[Text]
+  ensures result.len == skus.len
+=
+  let made = together for sku in skus
+    "label {sku}"
+  made
+
+--- The last day of each of the first `weeks` weeks of a sale: a `together for` over a range.
+last_days(weeks: Int) -> List[Int]
+  requires weeks >= 0
+  ensures result.len == weeks
+=
+  together for week in 1..weeks
+    week * 7
+
+--- A body of several lines: its last line is the task's value.
+sizes(skus: List[Text]) -> List[Text]
+=
+  together for sku in skus
+    let size = sku.len
+    let word = if size == 1 then "character" else "characters"
+    "{sku}: {size} {word}"
+
+--- A `together for` inside a `together for`: the label of each SKU of each order.
+order_labels(orders: List[List[Text]]) -> List[List[Text]]
+=
+  together for order in orders
+    labels(order)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let skus = ["LAMP-01", "DESK-02", "RUG-07"]
+  @console.print("{labels(skus)}")
+  @console.print("{labels([])}")
+  @console.print("{last_days(3)}")
+  @console.print("{last_days(0)}")
+  @console.print("{sizes(skus)}")
+  let lamps = ["LAMP-01"]
+  let desks = ["DESK-02", "DESK-05"]
+  @console.print("{order_labels([lamps, desks])}")
+  let edit shelf: List[Text] = []
+  shelf = together for sku in desks
+    "shelf {sku}"
+  @console.print("{shelf}")

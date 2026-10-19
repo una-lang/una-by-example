@@ -1,0 +1,10 @@
+module cart
+
+--- The units in a cart of exactly three lines: one parameter for each line.
+units_of_three(first: Int, second: Int, third: Int) -> Int = first + second + third
+
+--- Prints the units of a cart of three lines.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("{units_of_three(2, second: 1, third: 3)} units")

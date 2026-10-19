@@ -1,9 +1,20 @@
-Packing slip for order 1042
-Ship to customer 318 <customer318@example.invalid>
-  2 x LAMP-01  Desk lamp, brass
-  1 x RUG-07  Wool rug, 120 by 180 cm
-3 units in 2 lines
-Total paid: 8480 cents
-Shipping: 450 cents
-To pay: 8930 cents
-Questions? Write to orders@example.invalid and quote the order number.
+Harbor Street store
+12 Harbor Street, by the ferry
+Good morning
+------------------------------
+Hours
+Open today from 9:00 to 18:00
+------------------------------
+Shipping
+Orders placed before 17:00 ship today
+------------------------------
+Offer
+Today's special: desk lamps
+------------------------------
+Café
+The café opens at 10:00
+------------------------------
+Returns
+Returns are free within 30 days
+------------------------------
+Questions? Ask at the help desk by the main door

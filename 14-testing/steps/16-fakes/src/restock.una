@@ -1,0 +1,54 @@
+module restock
+
+--- A count of units, never below zero.
+kind Units = Int where it >= 0
+
+--- The warehouse's stock.
+pub capability Stock
+  op left(sku: Text) -> Int
+    ensures result >= 0
+
+--- The store's mail service.
+pub capability Mailer
+  op send(to: Text, body: Text) -> Unit
+
+--- Mails the buyer when a SKU runs low, with fewer than 3 units left. Says whether it did.
+pub warn_if_low(sku: Text) -> Bool
+  uses @stock: Stock[left]
+  uses @mailer: Mailer[send]
+=
+  let units = @stock.left(sku)
+  if units < 3
+    @mailer.send("buyer@example.invalid", body: "{sku}: {units} left")
+    true
+  else
+    false
+
+--- A fake warehouse that holds `units` of every SKU.
+handler flat_stock(units: Units) for Stock
+  op left(sku) = units
+
+--- A fake mail service: it accepts every message and delivers none.
+handler outbox() for Mailer
+  op send(to, body) = unit
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let low = warn_if_low("LAMP-01") with @stock = flat_stock(2), @mailer = outbox()
+  let plenty = warn_if_low("DESK-02") with @stock = flat_stock(40), @mailer = outbox()
+  @console.print("LAMP-01 warned: {low}, DESK-02 warned: {plenty}")
+
+example "two units left mails the buyer"
+  given @stock = flat_stock(2)
+  given @mailer = outbox()
+  do warn_if_low("LAMP-01")
+  expect result
+  expect performed @mailer.send
+
+example "forty units left mails nobody"
+  given @stock = flat_stock(40)
+  given @mailer = outbox()
+  do warn_if_low("LAMP-01")
+  expect not result
+  expect not performed @mailer.send

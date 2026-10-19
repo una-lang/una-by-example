@@ -1,0 +1,3 @@
+error U0103 at src/restock.una:4:26: `weak` is reserved for v0.3 (aliasing)
+error U0103 at src/restock.una:4:50: `weak` is reserved for v0.3 (aliasing)
+error U0103 at src/restock.una:9:43: `weak` is reserved for v0.3 (aliasing)

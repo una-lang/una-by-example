@@ -1,0 +1,7 @@
+error U2002 at src/tracking.una:28:10: kind `History` has no finite value: every variant contains a kind without one; add a variant without it, as `End`
+error U1001 at src/tracking.una:65:8: `History` has no variant `Start`
+error U1001 at src/tracking.una:72:8: `History` has no variant `Start`
+error U1001 at src/tracking.una:129:87: cannot find name `Start` in this module, its imports or the prelude
+error U1001 at src/tracking.una:137:125: cannot find name `Start` in this module, its imports or the prelude
+error U1001 at src/tracking.una:146:143: cannot find name `Start` in this module, its imports or the prelude
+error U1001 at src/tracking.una:150:73: cannot find name `Start` in this module, its imports or the prelude

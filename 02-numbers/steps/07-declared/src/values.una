@@ -1,0 +1,17 @@
+module values
+
+--- Prints a few values of two types, named with `let`, and what is computed from them.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let sku = "LAMP-01"
+  let name: Text = "Desk lamp, brass"
+  let lamps = 2
+  let lamp_cents: Int = "1990"
+  @console.print(sku)
+  @console.print(name)
+  @console.print("{lamps}")
+  @console.print("{lamps} x {sku}")
+  @console.print("{lamps * lamp_cents} cents for {lamps} lamps")
+  let total = lamps * lamp_cents
+  @console.print("Total: {total} cents")

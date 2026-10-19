@@ -1,0 +1,25 @@
+[U5001] Error: precondition `500 <= price` of this call is refuted
+    ╭─[ src/checkout.una:53:3 ]
+    │
+ 22 │   requires off <= price
+    │            ──────┬─────
+    │                  ╰─────── requires clause
+    │
+ 53 │   after_coupon(price, off: 500)
+    │   ──────────────┬──────────────
+    │                 ╰──────────────── precondition `500 <= price` of this call is refuted
+    │
+    │ Help 1: repair 1: strengthen the type of the parameter `price` to a refined kind that implies `500 <= price`
+    │
+    │ Help 2: repair 2: add `requires 500 <= price` to the enclosing function; its callers then prove it
+    │
+    │ Help 3: repair 3: add a guard (`if` or a `when` arm) that handles the values where `500 <= price` does not hold
+    │
+    │ Help 4: repair 4 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, 500 <= price) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-96a1e8b92c67 (precondition) is refuted: 500 <= price
+    │
+    │ Note 2: counterexample: price = 0
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

@@ -1,0 +1,4 @@
+error U2001 at src/labels.una:49:14: an operand of `+` must be `Int`, found `Text`
+error U2001 at src/labels.una:49:20: an operand of `+` must be `Int`, found `Text`
+error U2001 at src/labels.una:49:28: an operand of `+` must be `Int`, found `Text`
+error U2001 at src/labels.una:50:69: expected `Text`, found `Int`

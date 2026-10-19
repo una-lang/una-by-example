@@ -1,0 +1,3 @@
+packing LAMP-01
+packing RUG-07
+LAMP-01, then RUG-07

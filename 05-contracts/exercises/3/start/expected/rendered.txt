@@ -1,0 +1,21 @@
+[U5001] Error: postcondition of `refund_again` is refuted
+    ╭─[ src/billing.una:90:31 ]
+    │
+ 87 │   ensures already + result <= paid
+    │           ────────────┬───────────
+    │                       ╰───────────── ensures clause
+    │
+ 90 │   if asked > paid then 0 else refund(paid, asked: asked)
+    │                               ─────────────┬────────────
+    │                                            ╰────────────── postcondition of `refund_again` is refuted
+    │
+    │ Help 1: repair 1: add a guard or an arm so that the failing path returns a value for which `already + result <= paid` holds
+    │
+    │ Help 2: repair 2: adjust the `ensures` clause
+    │
+    │ Note 1: obligation ob-0b04b97219e5 (postcondition) is refuted: already + result <= paid
+    │
+    │ Note 2: counterexample: already = 1, asked = 1, paid = 1, result = 1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

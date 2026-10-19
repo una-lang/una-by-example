@@ -1,0 +1,13 @@
+module board
+
+--- When the store is open today.
+pub opening_hours() -> Text = "Open today from 9:00 to 18:00"
+
+--- Prints the board by the entrance: the hours at the top and again at the bottom.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(opening_hours())
+  @console.print("Fresh stock: desk lamps and wool rugs")
+  @console.print("The café opens at 10:00")
+  @console.print(opening_hours())

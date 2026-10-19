@@ -1,0 +1,2 @@
+$ una fix --dry-run .
+skipped src/notices.una:102:32 U3001 declare `uses @log: Console[print]` in the header: widens authority

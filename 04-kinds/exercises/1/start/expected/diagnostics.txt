@@ -1,2 +1,0 @@
-error U1001 at src/tracking.una:131:15: cannot find name `Lost` in this module, its imports or the prelude
-error U1001 at src/tracking.una:135:17: cannot find name `Lost` in this module, its imports or the prelude

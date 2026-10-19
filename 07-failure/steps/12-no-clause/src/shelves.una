@@ -1,0 +1,85 @@
+module shelves
+
+--- Why a shelf count could not be used.
+kind CountError = NotCounted(shelf: Text) | Unreadable(raw: Text)
+
+--- Why a shelf audit failed: the shelf, and the count's own failure as its cause.
+kind AuditError = | BadShelf(shelf: Text, cause: CountError)
+
+--- The units a clerk typed for a shelf. `if none fail`: a text that is not a number fails.
+read_count(raw: Text) -> Int
+  fails CountError
+=
+  let units = raw.trim.to_int()
+    if none fail Unreadable(raw)
+  units
+
+--- `if error use`: carry on with 0 when the count cannot be read.
+count_or_zero(raw: Text) -> Int
+=
+  let units = read_count(raw)
+  units
+
+--- `if error pass`: the same kind, `CountError`, so the failure goes to the caller as it is.
+count_label(raw: Text) -> Text
+  fails CountError
+=
+  let units = read_count(raw)
+    if error pass
+  "{units} units"
+
+--- `if error use`, with `error` in the value: a failure becomes a sentence.
+shown(raw: Text) -> Text
+=
+  let text = count_label(raw)
+    if error use explain(error)
+  text
+
+--- `if error fail`: a `CountError` becomes an `AuditError` that names the shelf.
+audit(shelf: Text, raw: Text) -> Int
+  fails AuditError
+=
+  read_count(raw)
+    if error fail BadShelf(shelf, cause: error)
+
+--- `if none use`: a shelf with no count entered counts as 0.
+counted(shelf: Text, entered: Option[Int]) -> Int
+=
+  let units = entered
+    if none use 0
+  units
+
+--- `if none fail`: a shelf with no count entered is a failure.
+required(shelf: Text, entered: Option[Int]) -> Int
+  fails CountError
+=
+  let units = entered
+    if none fail NotCounted(shelf)
+  units
+
+--- What a person reads about a count that could not be used.
+explain(failure: CountError) -> Text
+=
+  when failure
+    is NotCounted(shelf) -> "shelf {shelf} was not counted"
+    is Unreadable(raw) -> "'{raw}' is not a count"
+
+--- Calls each function once or twice.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let typed = count_or_zero(" 7 ")
+  let spelled = count_or_zero("seven")
+  let three = shown("3")
+  let cross = shown("x")
+  @console.print("{typed} {spelled} / {three} / {cross}")
+  let audited = attempt audit("A-12", raw: "seven")
+  @console.print("{audited}")
+  let missing = required("B-03", entered: None)
+    if error use -1
+  let found = counted("A-12", entered: Some(7))
+  let absent = counted("B-03", entered: None)
+  @console.print("{found} {absent} {missing}")
+  let padded = shown(" 12 ")
+  let blank = count_or_zero("")
+  @console.print("{padded} / {blank}")

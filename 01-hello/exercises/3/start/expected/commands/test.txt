@@ -1,19 +1,14 @@
 $ una test .
-example slip "the title names the order" ... ok
-example slip "the address line holds the customer number and the email" ... ok
-example slip "an item line is indented and starts with the quantity" ... ok
-example slip "a line costs its quantity times the unit price" ... ok
-example slip "a line of zero units costs nothing" ... ok
-example slip "the count line gives units and lines" ... ok
-example slip "the total is in cents" ... ok
-example slip "an amount has two decimals" ... FAILED
-  src/slip.una:76: expect result == "84.80"
-  it is false, with `result` = `""`
-example slip "cents under ten keep their zero" ... FAILED
-  src/slip.una:80: expect result == "12.05"
-  it is false, with `result` = `""`
-example slip "less than one unit starts with 0" ... FAILED
-  src/slip.una:84: expect result == "0.07"
+example morning "the notices start with the store's name" ... ok
+example morning "the address gives the street" ... ok
+example morning "the greeting is for the morning" ... ok
+example morning "the hours give the opening and the closing time" ... ok
+example morning "the cutoff names the hour" ... ok
+example morning "the offer names what is on sale" ... ok
+example morning "the café keeps its own hours" ... ok
+example morning "the help desk says where to go" ... ok
+example morning "Sundays keep the hours of every other day" ... FAILED
+  src/morning.una:94: expect result == opening_hours()
   it is false, with `result` = `""`
 
-10 examples: 7 passed, 3 failed
+9 examples: 8 passed, 1 failed

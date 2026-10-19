@@ -1,6 +1,0 @@
-Empty Low Stocked
-free shipping at 4999: false, at 5000: true
-["LAMP-01", "RUG-07"]
-20 units: 3 boxes and 2 loose
-lamps on the shelf: 10
-points for 250.00: 100

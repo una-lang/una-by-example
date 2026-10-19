@@ -1,0 +1,11 @@
+[U3001] Error: no caller of `show` binds `@console`, so its capability cannot be inferred
+   ╭─[ src/restock.una:9:39 ]
+   │
+ 9 │ show(sku: Text, units: Int) -> Unit = @console.print("{sku}: order {units}")
+   │                                       ────┬───
+   │                                           ╰───── no caller of `show` binds `@console`, so its capability cannot be inferred
+   │
+   │ Help: repair 1: declare `uses @console: <capability>[print]` in the header; this states authority its callers are already charged for
+   │
+   │ Note: run `una explain U3001` for an explanation
+───╯

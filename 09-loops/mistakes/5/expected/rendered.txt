@@ -1,0 +1,21 @@
+[U5001] Error: refinement `(stock - product.weekly_sales) >= 0` is refuted
+    ╭─[ src/restock.una:57:13 ]
+    │
+  7 │ kind Units = Int where it >= 0
+    │                        ───┬───
+    │                           ╰───── where clause
+    │
+ 57 │     stock = stock - product.weekly_sales
+    │             ──────────────┬─────────────
+    │                           ╰─────────────── refinement `(stock - product.weekly_sales) >= 0` is refuted
+    │
+    │ Help 1: repair 1: add a guard (`if` or a `when` arm) that handles the values where `(stock - product.weekly_sales) >= 0` does not hold
+    │
+    │ Help 2: repair 2 (escape: checked; a runtime test replaces the static proof: the program fails at run time where the proof would have rejected it; it counts against [escape_budget] and is listed in the build report): check the value with `checked(value, (stock - product.weekly_sales) >= 0) else fail <Variant>`
+    │
+    │ Note 1: obligation ob-6994210ead03 (refinement) is refuted: (stock - product.weekly_sales) >= 0
+    │
+    │ Note 2: counterexample: product = Product#0, product.on_hand = 0, product.weekly_sales = 1, stock = 0, stock (assigned) = -1, week = 1, weeks = 1
+    │
+    │ Note 3: run `una explain U5001` for an explanation
+────╯

@@ -1,2 +1,0 @@
-error U5001 at src/store/sale.una:20:3: `@prices.set_price` may run where `not dry_run` is not proven
-  counterexample: dry_run = true

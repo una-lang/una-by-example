@@ -1,0 +1,146 @@
+module notices
+
+--- A customer, as the customer directory knows them.
+pub kind Customer
+  id: Text
+  name: Text
+  email: Text
+  wants_notices: Bool
+
+--- An order that has left the warehouse and waits for its shipping notice.
+pub kind Shipment
+  order: Text
+  customer: Text
+  carrier: Text
+
+--- How a remote service can fail.
+pub kind ServiceError = | Timeout
+
+--- Why a shipment got no notice. Each variant carries what an operator needs to act on it.
+pub kind NoticeError = UnknownCustomer(id: Text) | OptedOut(id: Text) | DirectoryDown | MailDown
+
+--- The customer directory, a service on the network.
+pub capability Customers
+  op find(id: Text) -> Option[Customer]
+    fails ServiceError
+
+--- The mail service, a service on the network.
+pub capability Mailer
+  op send(to: Text, subject: Text, body: Text) -> Unit
+    fails ServiceError
+
+--- The text of a shipping notice. Pure: it has no `uses`, so it cannot reach any service.
+pub notice(customer: Customer, shipment: Shipment) -> Text = "Hello {customer.name}, your order {shipment.order} is on its way with {shipment.carrier}."
+
+--- Finds the customer of a shipment and emails them the notice. Returns the address it wrote to.
+pub notify(shipment: Shipment) -> Text
+  uses @customers: Customers[find]
+  uses @mailer: Mailer[send]
+  fails NoticeError
+=
+  let customer = @customers.find(shipment.customer)
+    if error fail DirectoryDown
+    if none fail UnknownCustomer(id: shipment.customer)
+  if not customer.wants_notices
+    fail OptedOut(id: customer.id)
+  else
+    @mailer.send(customer.email, subject: "Order {shipment.order} has shipped", body: notice(customer, shipment: shipment))
+      if error fail MailDown
+    customer.email
+
+--- What an operator reads in the dispatch log.
+pub reason(failure: NoticeError) -> Text
+=
+  when failure
+    is UnknownCustomer(id) -> "no customer has the id {id}"
+    is OptedOut(id) -> "customer {id} asked for no notices"
+    is DirectoryDown -> "the customer directory did not answer; retry later"
+    is MailDown -> "the mail service did not answer; retry later"
+
+--- One line of the dispatch log.
+pub log_line(shipment: Shipment, outcome: Result[Text, NoticeError]) -> Text
+=
+  when outcome
+    is Ok(address) -> "sent     {shipment.order} to {address}"
+    is Err(failure) -> "skipped  {shipment.order}: {reason(failure)}"
+
+--- Sends a notice for every shipment and logs each outcome. One failure does not stop the batch.
+pub dispatch(shipments: List[Shipment]) -> Unit
+  uses @customers: Customers[find]
+  uses @mailer: Mailer[send]
+  uses @log: Console[print]
+=
+  for shipment in shipments
+    let outcome = attempt notify(shipment)
+    @log.print(log_line(shipment, outcome: outcome))
+
+--- A directory held in memory, for this run and for tests.
+handler directory(customers: Map[Text, Customer]) for Customers
+  op find(id) = customers.get(key: id)
+
+--- A mail service that accepts every message and delivers none: a fake for this run and for tests.
+handler outbox() for Mailer
+  op send(to, subject, body) = unit
+
+--- A mail service that never answers.
+handler mail_down() for Mailer
+  op send(to, subject, body) = fail Timeout
+
+--- A directory that never answers.
+handler directory_down() for Customers
+  op find(id) = fail Timeout
+
+--- The customers of this run and of the examples. Every address is fictional.
+pub sample_customers() -> Map[Text, Customer]
+=
+  let rosa = Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true)
+  let tomas = Customer(id: "C-20", name: "Tomas", email: "tomas@example.invalid", wants_notices: true)
+  let ines = Customer(id: "C-21", name: "Ines", email: "ines@example.invalid", wants_notices: false)
+  empty_map().with(key: rosa.id, value: rosa).with(key: tomas.id, value: tomas).with(key: ines.id, value: ines)
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let customers = sample_customers()
+  let morning = [Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"), Shipment(order: "A-1002", customer: "C-20", carrier: "Parcelo"), Shipment(order: "A-1003", customer: "C-99", carrier: "Parcelo"), Shipment(order: "A-1004", customer: "C-21", carrier: "Parcelo")]
+  dispatch(morning) with @customers = directory(customers), @mailer = outbox(), @log = @console
+  let late = [Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida")]
+  dispatch(late) with @customers = directory(customers), @mailer = directory_down(), @log = @console
+
+example "a customer who wants notices gets one"
+  given @customers = directory(sample_customers())
+  given @mailer = outbox()
+  do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect result == "rosa@example.invalid"
+
+example "an unknown customer is rejected before any mail is sent"
+  given @customers = directory(sample_customers())
+  given @mailer = mail_down()
+  do notify(Shipment(order: "A-1003", customer: "C-99", carrier: "Parcelo"))
+  expect fails UnknownCustomer
+
+example "a customer who asked for no notices is rejected before any mail is sent"
+  given @customers = directory(sample_customers())
+  given @mailer = mail_down()
+  do notify(Shipment(order: "A-1004", customer: "C-21", carrier: "Parcelo"))
+  expect fails OptedOut
+
+example "a directory that does not answer is DirectoryDown, before any mail is sent"
+  given @customers = directory_down()
+  given @mailer = mail_down()
+  do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect fails DirectoryDown
+
+example "a mail service that does not answer is MailDown"
+  given @customers = directory(sample_customers())
+  given @mailer = mail_down()
+  do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect fails MailDown
+
+example "the notice names the customer, the order and the carrier"
+  do notice(Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true), shipment: Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect result == "Hello Rosa, your order A-1001 is on its way with Parcelo."
+
+example "a skipped shipment says why in the log"
+  do log_line(Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida"), outcome: Err(MailDown))
+  expect result == "skipped  A-1005: the mail service did not answer; retry later"

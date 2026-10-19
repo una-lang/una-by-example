@@ -1,0 +1,7 @@
+["label LAMP-01", "label DESK-02", "label RUG-07"]
+[]
+[7, 14, 21]
+[]
+["LAMP-01: 7 characters", "DESK-02: 7 characters", "RUG-07: 6 characters"]
+[["label LAMP-01"], ["label DESK-02", "label DESK-05"]]
+["shelf DESK-02", "shelf DESK-05"]

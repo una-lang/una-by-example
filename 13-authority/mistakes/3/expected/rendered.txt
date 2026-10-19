@@ -1,0 +1,15 @@
+[U3020] Error: `print_tag` is in the boundary `vendor.tags` and needs `@console: Console[print]`, which a call into it grants only with `with`
+    ╭─[ src/store/sale.una:47:7 ]
+    │
+ 47 │       print_tag(item.name, cents: sale)
+    │       ────────────────┬────────────────
+    │                       ╰────────────────── `print_tag` is in the boundary `vendor.tags` and needs `@console: Console[print]`, which a call into it grants only with `with`
+    │
+    ├─[ src/vendor/tags.una:6:3 ]
+    │
+  6 │   uses @console: Console[print]
+    │   ──────────────┬──────────────
+    │                 ╰──────────────── the boundary's requirement
+    │
+    │ Note: run `una explain U3020` for an explanation
+────╯

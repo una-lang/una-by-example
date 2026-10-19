@@ -1,0 +1,1 @@
+error U3004 at src/shipping.una:68:47: `@console` is used here, but this code declares no `uses`, so it is pure

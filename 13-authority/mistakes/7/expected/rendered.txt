@@ -1,0 +1,9 @@
+[U0101] Error: unexpected keyword `where`, expected `,` or `]`
+    ╭─[ src/pricing.una:43:84 ]
+    │
+ 43 │   let sale = mark_down("DESK-02", dry_run) with @prices = @prices[price, set_price where not dry_run]
+    │                                                                                    ──┬──
+    │                                                                                      ╰──── unexpected keyword `where`, expected `,` or `]`
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

@@ -1,0 +1,12 @@
+[U1001] Error: capability `Console` has no operation `prnt`
+   ╭─[ src/hello.una:7:12 ]
+   │
+ 7 │   @console.prnt("Hello, world")
+   │            ──┬─
+   │              ╰─── capability `Console` has no operation `prnt`
+   │
+   │ Help: repair 1: write `print`; edit src/hello.una:7:12..7:16 to "print"
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

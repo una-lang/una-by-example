@@ -1,5 +1,12 @@
 $ una test .
-example store.sale "a dry run of the end of a sale changes no price" ... ok
-example store.sale "the end of a sale sets the old price back" ... ok
+example store.invoice "a known SKU is found" ... ok
+example store.invoice "a line shows the members' price of one unit" ... ok
+example store.invoice "an unknown SKU is UnknownSku" ... ok
+example store.money "two digits after the point" ... ok
+example store.money "a leading zero is kept" ... ok
+example store.money "a refund keeps its sign" ... ok
+example store.pricing "members pay 10 percent less" ... ok
+example store.pricing "the discount rounds down" ... ok
+example store.pricing "a member's price, as a person reads it" ... ok
 
-2 examples: 2 passed, 0 failed
+9 examples: 9 passed, 0 failed

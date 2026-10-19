@@ -1,0 +1,2 @@
+error U5001 at src/billing.una:97:16: precondition `asked <= paid` of this call is refuted
+  counterexample: asked = 1, paid = 0

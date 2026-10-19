@@ -1,0 +1,39 @@
+module receipt
+
+--- One line of a cart: a SKU, how many units, and the price of one unit in cents.
+kind CartLine
+  sku: Text
+  quantity: Int
+  cents: Int
+
+--- The total of a cart in cents: one turn of the loop for each line.
+total(lines: List[CartLine]) -> Int
+=
+  let edit sum = 0
+  for line in lines
+    sum = sum + line.quantity * line.cents
+  sum
+
+--- Prints a shelf list, then a receipt with one line for each line of the cart.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let skus = ["LAMP-01", "RUG-07", "DESK-02"]
+  for sku in skus
+    @console.print("on the shelf list: {sku}")
+  let lamp = CartLine(sku: "LAMP-01", quantity: 2, cents: 1990)
+  let rug = CartLine(sku: "RUG-07", quantity: 1, cents: 4500)
+  let cart = [lamp, rug]
+  for line in cart
+    if line.quantity >= 2
+      @console.print("{line.sku}: {line.quantity} units, bulk")
+    else
+      @console.print("{line.sku}: {line.quantity} unit")
+  @console.print("total: {total(cart)} cents")
+  let empty: List[CartLine] = []
+  for line in empty
+    @console.print("never printed: {line.sku}")
+  @console.print("an empty cart: {total(empty)} cents")
+  for sku in skus
+    for size in ["S", "L"]
+      @console.print("label {sku}-{size}")

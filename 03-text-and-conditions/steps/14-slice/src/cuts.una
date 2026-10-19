@@ -1,0 +1,12 @@
+module cuts
+
+--- Prints the parts of a SKU, cut out with `slice`.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let sku = "COFFEE-05"
+  @console.print(sku.slice(start: 0, end: 6))
+  @console.print(sku.slice(start: 7, end: 9))
+  @console.print(sku.slice(start: 7, end: sku.len))
+  @console.print("[{sku.slice(start: 3, end: 3)}]")
+  @console.print(sku.slice(start: 0, end: sku.len))

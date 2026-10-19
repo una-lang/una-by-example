@@ -1,9 +1,0 @@
-[U2022] Error: the literal `300` does not fit `U8`, which holds `0` to `255`
-    ╭─[ src/labels.una:62:30 ]
-    │
- 62 │   printed = printed + copies(300).to_int()
-    │                              ─┬─
-    │                               ╰─── the literal `300` does not fit `U8`, which holds `0` to `255`
-    │
-    │ Note: run `una explain U2022` for an explanation
-────╯

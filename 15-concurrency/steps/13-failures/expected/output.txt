@@ -1,0 +1,2 @@
+south offline: Err(Offline("south"))
+both offline: Err(Offline("north"))

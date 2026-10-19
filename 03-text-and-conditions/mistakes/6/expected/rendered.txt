@@ -1,0 +1,11 @@
+[U0101] Error: unexpected end of line, expected `else`
+    ╭─[ src/labels.una:42:67 ]
+    │
+ 42 │ pub stock_note(units: Int) -> Text = if units <= 0 then "sold out"
+    │                                                                   ┬
+    │                                                                   ╰── unexpected end of line, expected `else`
+    │
+    │ Help: repair 1: an `if` with `then` needs `else`; to fail early, make the rest of the body its `else` branch, as in `if x < 0 then fail Broke else x`, or use the block form, whose `else` block holds the rest
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

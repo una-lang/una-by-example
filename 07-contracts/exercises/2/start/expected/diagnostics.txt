@@ -1,2 +1,0 @@
-error U1001 at src/billing.una:146:30: cannot find name `FixedPrice` in this module, its imports or the prelude
-error U1001 at src/billing.una:150:29: cannot find name `FixedPrice` in this module, its imports or the prelude

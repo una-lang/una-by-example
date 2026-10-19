@@ -1,9 +1,0 @@
-[U2023] Error: `closed` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
-    ╭─[ src/stockcount.una:73:5 ]
-    │
- 73 │     closed = closed + 1
-    │     ───┬──
-    │        ╰──── `closed` is declared outside this `together` task, which captures its value and cannot change it, so it cannot be assigned here; return the new value from the task instead
-    │
-    │ Note: run `una explain U2023` for an explanation
-────╯

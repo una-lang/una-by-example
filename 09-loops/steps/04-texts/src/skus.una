@@ -1,0 +1,30 @@
+module skus
+
+--- Prints each character of a SKU, between brackets.
+pub print_characters(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  for character in sku.chars()
+    @console.print("[{character}]")
+
+--- Prints each part of a SKU, the texts between its dashes.
+pub print_parts(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  for part in sku.split(on: "-")
+    @console.print("part: {part}")
+
+--- Prints each position of a SKU, from 0 up to its length.
+pub print_positions(sku: Text) -> Unit
+  uses @console: Console[print]
+=
+  for position in 0..<sku.len
+    @console.print("position {position} of {sku.len}")
+
+--- Walks two SKUs in each way.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  print_characters("Café-2")
+  print_parts("LAMP-01-BR")
+  print_positions("RUG")

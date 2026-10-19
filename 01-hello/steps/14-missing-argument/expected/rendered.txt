@@ -1,0 +1,9 @@
+[U2001] Error: `section` is missing argument `notice`
+    ╭─[ src/notices.una:21:3 ]
+    │
+ 21 │   section(opening_hours())
+    │   ────────────┬───────────
+    │               ╰───────────── `section` is missing argument `notice`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

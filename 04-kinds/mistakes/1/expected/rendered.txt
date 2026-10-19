@@ -1,9 +1,9 @@
-[U2009] Error: `Parcel` is missing field `zone`
-    ╭─[ src/tracking.una:97:14 ]
+[U2009] Error: `Parcel` is missing field `speed`
+    ╭─[ src/pricing.una:91:13 ]
     │
- 97 │   let lamp = Parcel(order: "A-1001", grams: 1200)
-    │              ───┬──
-    │                 ╰──── `Parcel` is missing field `zone`
+ 91 │   let rug = Parcel(order: "A-1002", grams: 3500, zone: Local, delivery: AtDoor)
+    │             ───┬──
+    │                ╰──── `Parcel` is missing field `speed`
     │
     │ Note: run `una explain U2009` for an explanation
 ────╯

@@ -1,0 +1,1 @@
+error U2001 at src/widths.una:14:29: an operand of `+` must be `U8`, found `Int`

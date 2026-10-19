@@ -1,6 +1,6 @@
 module store.invoice
 
-import store.catalog (Catalog, Product, listed)
+import store.catalog (Product, find)
 import store.money (format)
 import store.pricing (line_cents)
 
@@ -12,12 +12,11 @@ pub kind OrderLine
   sku: Text
   quantity: Int
 
---- The product an order line names.
-pub product_of(line: OrderLine) -> Product
-  uses @catalog: Catalog[find]
+--- The product an order line names, looked up in a catalog.
+pub product_of(line: OrderLine, catalog: List[Product]) -> Product
   fails InvoiceError
 =
-  @catalog.find(line.sku)
+  find(catalog, sku: line.sku)
     if none fail UnknownSku(sku: line.sku)
 
 --- One line of the invoice, as text, with the members' price of one unit.
@@ -28,8 +27,7 @@ pub describe(line: OrderLine, product: Product) -> Text
   "{line.quantity} x {product.name} at {format(product.cents)} (members {format(member)}): {format(total)}"
 
 example "a known SKU is found"
-  given @catalog = listed([Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990)])
-  do product_of(OrderLine(sku: "LAMP-01", quantity: 2))
+  do product_of(OrderLine(sku: "LAMP-01", quantity: 2), catalog: [Product(sku: "LAMP-01", name: "Desk lamp", cents: 1990)])
   expect result.name == "Desk lamp"
 
 example "a line shows the members' price of one unit"
@@ -37,6 +35,5 @@ example "a line shows the members' price of one unit"
   expect result == "2 x Desk lamp at 19.90 (members 17.91): 39.80"
 
 example "an unknown SKU is UnknownSku"
-  given @catalog = listed([])
-  do product_of(OrderLine(sku: "CHAIR-09", quantity: 1))
+  do product_of(OrderLine(sku: "CHAIR-09", quantity: 1), catalog: [])
   expect fails UnknownSku

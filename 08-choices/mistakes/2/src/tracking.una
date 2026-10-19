@@ -1,0 +1,167 @@
+module tracking
+
+--- How far a parcel travels.
+pub kind Zone = Local | National | Abroad
+
+--- A parcel ready to ship. `order` is the number on the customer's receipt.
+pub kind Parcel
+  order: Text
+  grams: Int
+  zone: Zone
+
+--- An amount of money in cents. It is never negative.
+pub kind Cents = Int where it >= 0
+
+--- Who carries a parcel.
+pub kind Carrier = Post | Courier
+
+--- Why a parcel came back.
+pub kind ReturnReason = Damaged | WrongItem | Refused
+
+--- Where a shipment is. Each state carries what is known in that state, and nothing else.
+pub kind Status = Packed | InTransit(carrier: Carrier, tracking: Text) | Delivered(day: Int) | Returned(reason: ReturnReason, day: Int)
+
+--- What a carrier or the warehouse reports about a shipment.
+pub kind Event = PickedUp(carrier: Carrier, tracking: Text) | DeliveredOn(day: Int) | CameBack(reason: ReturnReason, day: Int)
+
+--- Every event of a shipment, the latest first. `Start` is the history before any event.
+pub kind History = Start | After(event: Event, earlier: History)
+
+--- A value before and after something happened.
+pub kind Change[T]
+  before: T
+  after: T
+
+--- Postage in cents: a price for the zone, and a supplement for the weight.
+pub postage(parcel: Parcel) -> Int = zone_cents(parcel.zone) + weight_cents(parcel.grams)
+
+zone_cents(zone: Zone) -> Int
+=
+  when zone
+    is Local -> 300
+    is National -> 450
+    is Abroad -> 1200
+
+weight_cents(grams: Int) -> Int
+=
+  when grams
+    in 0..500 -> 0
+    in 501..2000 -> 150
+    in 2001..30000 -> 400
+
+--- The status after an event. An event that does not fit the status changes nothing, such
+--- as a pickup scan that a carrier sends twice.
+pub apply(status: Status, event: Event) -> Status
+=
+  when event
+    is PickedUp(carrier, tracking) -> if status is Packed then InTransit(carrier, tracking) else status
+    is DeliveredOn(day) -> if status is InTransit then Delivered(day) else status
+    is CameBack(reason, day) -> if status is Delivered then Returned(reason, day) else status
+
+--- The status a history leads to: every event applied, the oldest first.
+pub status_of(history: History) -> Status
+=
+  when history
+    is Start -> Packed
+    is After(event, earlier) -> apply(status_of(earlier), event)
+
+--- What the latest event of a history did: the status before it, and after it.
+pub latest(history: History) -> Change[Status]
+=
+  when history
+    is Start -> Change(before: Packed, after: Packed)
+    is After(event, earlier) ->
+      let before = status_of(earlier)
+      Change(before, after: apply(before, event))
+
+--- Whether something changed. Any type whose values can be compared will do.
+pub changed[T: Eq](change: Change[T]) -> Bool = change.before != change.after
+
+--- A status, for a person to read.
+pub describe(status: Status) -> Text
+=
+  when status
+    is Packed -> "packed, waiting for a carrier"
+    is InTransit(carrier, tracking) -> "with {carrier_name(carrier)}, tracking {tracking}"
+    is Delivered(day) -> "delivered on day {day}"
+    is Returned(reason, day) -> "returned on day {day}, {reason_text(reason)}"
+
+carrier_name(carrier: Carrier) -> Text
+=
+  when carrier
+    is Post -> "the post"
+    is Courier -> "the courier"
+
+reason_text(reason: ReturnReason) -> Text
+=
+  when reason
+    is Damaged -> "damaged"
+    is WrongItem -> "the wrong item"
+    is Refused -> "refused at the door"
+
+--- What the store pays back for a shipment: all of `paid` for a parcel that came back by the
+--- store's fault, `paid` less 600 cents of return postage for a refused one, and nothing
+--- otherwise. The guard keeps the refund from going below 0.
+pub refund(status: Status, paid: Cents) -> Cents
+=
+  when status
+    is Returned(reason) ->
+      if reason == Refused
+        if paid > 600 then paid - 600 else 0
+      else
+        paid
+    else -> 0
+
+--- One line of the tracking report.
+pub report(order: Text, history: History) -> Text
+=
+  let change = latest(history)
+  if changed(change)
+    "{order}: {describe(change.after)}"
+  else
+    "{order}: no change, still {describe(change.after)}"
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let lamp = Parcel(order: "A-1001", grams: 1200, zone: National)
+  @console.print("{lamp.order}: postage {postage(lamp)}")
+  let picked = After(event: PickedUp(carrier: Courier, tracking: "CX-4471"), earlier: Start)
+  @console.print(report(lamp.order, history: picked))
+  let again = After(event: PickedUp(carrier: Courier, tracking: "CX-4471"), earlier: picked)
+  @console.print(report(lamp.order, history: again))
+  let arrived = After(event: DeliveredOn(day: 3), earlier: again)
+  @console.print(report(lamp.order, history: arrived))
+  let vase = Parcel(order: "A-1002", grams: 300, zone: Abroad)
+  @console.print("{vase.order}: postage {postage(vase)}")
+  let sent = After(event: DeliveredOn(day: 8), earlier: After(event: PickedUp(carrier: Post, tracking: "PO-2210"), earlier: Start))
+  let back = After(event: CameBack(reason: Refused, day: 12), earlier: sent)
+  @console.print("{report(vase.order, history: back)}; refund {refund(status_of(back), paid: 4500)}")
+
+example "a heavy parcel abroad pays the zone and the weight"
+  do postage(Parcel(order: "A-1003", grams: 2500, zone: Abroad))
+  expect result == 1600
+
+example "a second pickup scan changes nothing"
+  do latest(After(event: PickedUp(carrier: Post, tracking: "PO-1"), earlier: After(event: PickedUp(carrier: Post, tracking: "PO-1"), earlier: Start)))
+  expect not changed(result)
+
+example "a parcel cannot come back before it was delivered"
+  do status_of(After(event: CameBack(reason: Damaged, day: 2), earlier: Start))
+  expect result is Packed
+
+example "a damaged parcel is refunded in full"
+  do refund(Returned(reason: Damaged, day: 5), paid: 4500)
+  expect result == 4500
+
+example "a refused parcel is refunded less the return postage"
+  do refund(Returned(reason: Refused, day: 5), paid: 601)
+  expect result == 1
+
+example "a refund never goes below 0"
+  do refund(Returned(reason: Refused, day: 5), paid: 400)
+  expect result == 0
+
+example "a delivered parcel is not refunded"
+  do refund(Delivered(day: 3), paid: 4500)
+  expect result == 0

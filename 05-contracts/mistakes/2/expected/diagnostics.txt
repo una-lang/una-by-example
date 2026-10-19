@@ -1,0 +1,2 @@
+error U5001 at src/billing.una:109:22: refinement `(gross - off) >= 0` is refuted
+  counterexample: desk = "Line#0", desk.quantity = 1, desk.sku = "\"DESK-02\"", desk.unit_cents = 14900, gross = 0, lamp = "Line#1", lamp.quantity = 2, lamp.sku = "\"LAMP-01\"", lamp.unit_cents = 1990, off = 1, total = -1

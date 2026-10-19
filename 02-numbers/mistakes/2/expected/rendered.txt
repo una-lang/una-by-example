@@ -1,0 +1,9 @@
+[U0101] Error: `19.90` is a fractional literal; Una's integer literals are decimal
+    ╭─[ src/slip.una:42:48 ]
+    │
+ 42 │   let lamp_cents = line_cents(lamps, cents: 19.90)
+    │                                                ─┬
+    │                                                 ╰── `19.90` is a fractional literal; Una's integer literals are decimal
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

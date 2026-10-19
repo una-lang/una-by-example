@@ -1,1 +1,0 @@
-error U1001 at src/lookup.una:12:14: `Option[Product]` has no field `cents`, and no function `cents` in scope applies

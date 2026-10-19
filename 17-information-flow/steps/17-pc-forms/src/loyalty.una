@@ -1,0 +1,76 @@
+module loyalty
+
+--- A customer's tier in the loyalty program.
+kind Tier = Gold | Silver | Standard
+
+--- `if … then … else` on a labeled condition: the badge printed on a loyalty card.
+badge(spent: confidential Int) -> confidential Text = if spent >= 50000 then "gold" else "standard"
+
+--- An `if` block on a labeled condition: the points a purchase of `cents` earns.
+points(spent: confidential Int, cents: Int) -> confidential Int
+=
+  if spent >= 50000
+    let doubled = cents / 50
+    doubled
+  else
+    cents / 100
+
+--- A `when` on a labeled value: the discount of a tier, in percent.
+discount(tier: confidential Tier) -> confidential Int
+=
+  when tier
+    is Gold -> 10
+    is Silver -> 5
+    is Standard -> 0
+
+--- `if none use` on a labeled `Option`: what a customer spent, or 0 for a new customer.
+spending(found: confidential Option[Int]) -> confidential Int
+=
+  let spent = found
+    if none use 0
+  spent
+
+--- A `for` loop over a labeled list: what a customer spent over several purchases.
+total_spent(purchases: confidential List[Int]) -> confidential Int
+=
+  let edit total: confidential Int = 0
+  for cents in purchases
+    total = total + cents
+  total
+
+--- A `for` loop over a labeled range: the stamps on a card, 10 for each visit.
+stamps(visits: confidential Int) -> confidential Int
+=
+  let edit earned: confidential Int = 0
+  for visit in 1..visits
+    earned = earned + 10
+  earned
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("loyalty rules: 6")
+
+example "a customer who spent 720.00 gets the gold badge"
+  do badge(72000)
+  expect result == "gold"
+
+example "a gold customer earns double points"
+  do points(72000, cents: 5000)
+  expect result == 100
+
+example "a silver customer gets 5 percent off"
+  do discount(Silver)
+  expect result == 5
+
+example "a new customer has spent nothing"
+  do spending(None)
+  expect result == 0
+
+example "three purchases add up"
+  do total_spent([2100, 4990, 12600])
+  expect result == 19690
+
+example "a customer with 3 visits has 30 stamps"
+  do stamps(3)
+  expect result == 30

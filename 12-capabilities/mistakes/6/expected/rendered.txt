@@ -1,0 +1,18 @@
+[U3011] Error: handler `outbox` does not implement the operation `delivered` of `Mailer`
+    ╭─[ src/notices.una:84:9 ]
+    │
+ 84 │ handler outbox() for Mailer
+    │         ───┬──
+    │            ╰──── handler `outbox` does not implement the operation `delivered` of `Mailer`
+    │
+    │ Note: run `una explain U3011` for an explanation
+────╯
+[U3011] Error: handler `mail_down` does not implement the operation `delivered` of `Mailer`
+    ╭─[ src/notices.una:88:9 ]
+    │
+ 88 │ handler mail_down() for Mailer
+    │         ────┬────
+    │             ╰────── handler `mail_down` does not implement the operation `delivered` of `Mailer`
+    │
+    │ Note: run `una explain U3011` for an explanation
+────╯

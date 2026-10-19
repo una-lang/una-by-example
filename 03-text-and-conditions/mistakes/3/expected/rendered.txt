@@ -1,0 +1,9 @@
+[U2001] Error: the condition of `if` must be `Bool`, found `Int`
+    ╭─[ src/labels.una:39:6 ]
+    │
+ 39 │   if percent then sale else if grams > 0 then weighed else regular
+    │      ───┬───
+    │         ╰───── the condition of `if` must be `Bool`, found `Int`
+    │
+    │ Note: run `una explain U2001` for an explanation
+────╯

@@ -1,0 +1,50 @@
+module stock
+
+--- Why a warehouse gave no count.
+kind StockError = | Offline(site: Text)
+
+--- A warehouse's stock service: the units of a SKU on its shelves.
+capability Warehouse
+  op on_hand(sku: Text) -> Int
+    fails StockError
+
+--- A warehouse whose stock is held in a map: none of a SKU it does not stock.
+handler shelves(stock: Map[Text, Int]) for Warehouse
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- The units of `sku` in both warehouses, both asked at the same time.
+total(sku: Text) -> Int
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  fails StockError
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error pass
+    let in_south = @south.on_hand(sku)
+      if error pass
+  in_north + in_south
+
+--- One line per SKU, every SKU counted at the same time.
+stock_lines(skus: List[Text]) -> List[Text]
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  fails StockError
+=
+  let edit asked = 0
+  let lines = together for sku in skus
+    asked = asked + 1
+    let units = total(sku)
+      if error pass
+    "{sku}: {units} units"
+  lines.append(item: "{asked} SKUs asked")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let north = empty_map().with(key: "LAMP-01", value: 4).with(key: "DESK-02", value: 3)
+  let south = empty_map().with(key: "LAMP-01", value: 2)
+  let lines = stock_lines(["LAMP-01", "DESK-02", "CHAIR-09"]) with @north = shelves(north), @south = shelves(south)
+    if error use ["a warehouse did not answer"]
+  for line in lines
+    @console.print(line)
