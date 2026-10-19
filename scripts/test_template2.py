@@ -27,7 +27,7 @@ import template2  # noqa: E402
 # renders the same on stderr, with the absolute path of the package and trailing spaces, which
 # the normalization removes; `run .` prints each `print("...")`, prints its environment's names
 # when a file holds `PRINTENV`, and writes a failing file into src/ when one holds `WRITESRC`;
-# `test .` fails when a file holds `FAILTEST`. In a template 1 page of check.py's own fixture
+# `test .` fails when a file holds `FAILTEST`; `ita lock` passes where ita.lock is. In a template 1 page of check.py's own fixture
 # (src/main.una), it hands over to check.py's stub, `una1` beside it.
 STUB = r'''#!/usr/bin/env python3
 import json, os, re, sys
@@ -65,6 +65,8 @@ if args == ["--color", "never", "check", "."]:
     sys.exit(1 if found else 0)
 if args == ["fmt", "--check", "."]:
     sys.exit(0)
+if args[:2] == ["ita", "lock"]:
+    sys.exit(0 if os.path.isfile("ita.lock") else 1)
 if args == ["run", "."]:
     if any("PRINTENV" in text for _, text in files):
         print(" ".join(sorted(os.environ)))
@@ -372,6 +374,46 @@ def chapter(root, mistakes=4, exercises=3):
     return directory
 
 
+# A step of edition 0.4 (spec/30): ita.una and ita.lock, and a path dependency under deps/.
+ITA = ('ita shelf\n  version 0.1.0\n  edition 0.4\n\nneeds\n  tags from path "deps/tags"\n    may Console[print]\n'
+       '    accept name\n\nrun\n  entry shelf\n  grants\n    console\n')
+ITA_LOCK = '-- Written by `una ita`; do not edit.\nlock 1\n\npackage tags 0.3.0\n  from path "deps/tags"\n'
+TAGS = "module format\n\n--- A shelf tag.\npub shelf_tag(sku: Text) -> Text = sku\n"
+ITA_BLOCKS = """```una include="steps/04-shelf/ita.una" verified="check, run"
+```
+
+```sh
+una ita lock
+una ita lock --check
+```
+
+```una include="steps/04-shelf/ita.lock#L4-L5"
+```
+
+```una include="steps/04-shelf/deps/tags/src/format.una#shelf_tag" title="steps/04-shelf/deps/tags/src/format.una"
+```
+
+"""
+
+
+def path_dependency(directory):
+    """Adds steps/04-shelf, of edition 0.4 with a path dependency, to the chapter at
+    `directory`, and shows its ita.una, a part of its ita.lock and a file of the dependency on
+    the page, with `una ita lock` in an `sh` block. Returns the step's directory."""
+    step = os.path.join(directory, "steps", "04-shelf")
+    write(os.path.join(step, "ita.una"), ITA)
+    write(os.path.join(step, "ita.lock"), ITA_LOCK)
+    write(os.path.join(step, "src", "shelf.una"), STEP.format(name="shelf", extra="4"))
+    write(os.path.join(step, "deps", "tags", "ita.una"), "ita tags\n  version 0.3.0\n  edition 0.4\n")
+    write(os.path.join(step, "deps", "tags", "src", "format.una"), TAGS)
+    write(os.path.join(step, "expected", "output.txt"), "shelf 4\n")
+    write(os.path.join(step, "expected", "commands", "lock.txt"), "$ una ita lock --check .\n")
+    edit(os.path.join(directory, "README.md"), "### Choosing a clause\n\n", "### Choosing a clause\n\n" + ITA_BLOCKS)
+    changed, problems = template2.fill(os.path.dirname(directory))
+    assert not problems, problems
+    return step
+
+
 def edit(path, old, new):
     text = check.read(path)
     assert old in text, (path, old)
@@ -574,10 +616,83 @@ class Units(unittest.TestCase):
 
     def test_commands(self):
         for line in ("test .", "--json check .", "run .", "fmt --check .", "fix --dry-run .", "build .",
-                     "explain U5001", "trace SOLD_OUT_1"):
+                     "explain U5001", "trace SOLD_OUT_1", "ita lock", "ita lock .", "ita lock --check", "--json ita lock --check ."):
             self.assertTrue(check.COMMAND.match(line), line)
-        for line in ("run . --grant env", "run . --grant files:/:read", "fmt /abs/path", "check ..", "test . extra", "run"):
+        for line in ("run . --grant env", "run . --grant files:/:read", "fmt /abs/path", "check ..", "test . extra", "run",
+                     "ita lock --accept-authority", "ita lock ..", "ita lock /abs/path", "ita publish"):
             self.assertFalse(check.COMMAND.match(line), line)
+
+    def test_ita_manifest(self):
+        base = tempfile.mkdtemp(prefix="una-by-example-ita-")
+        try:
+            write(os.path.join(base, "ita.lock"), ITA_LOCK)
+            write(os.path.join(base, "deps", "tags", "ita.una"), "ita tags\n  version 0.3.0\n  edition 0.4\n")
+            write(os.path.join(base, "deps", "tags", "src", "format.una"), TAGS)
+            for text, good in (
+                (ITA, True),
+                (ITA.replace("    console\n", '    console\n    clock\n    files "src/data/" read, write\n') + "-- a comment\n", True),
+                (ITA.replace("  tags from", "  tags as labels from"), True),
+                (ITA.replace("    console\n", "    env\n"), False),
+                (ITA.replace("    console\n", '    files "/" read\n'), False),
+                (ITA.replace("    console\n", '    files "src/../.." read\n'), False),
+                (ITA.replace("    console\n", '    http "https://collector.example.invalid" get\n'), False),
+                (ITA.replace("    console\n", "    console\n      limit 1\n"), False),
+                (ITA.replace('"deps/tags"', '"../tags"'), False),
+                (ITA.replace('from path "deps/tags"', "2.1"), False),
+                (ITA.replace('"deps/tags"', '"deps/other"'), False),
+                (ITA.replace("    accept name\n", "    accept name\n    avoid 1.0.0\n"), False),
+                (ITA.replace("  edition 0.4\n", "  edition 0.4\n  home \"https://example.invalid\"\n"), False),
+                (ITA + "\nsources\n  mine \"https://example.invalid\"\n", False),
+                (ITA + "\nrun\n  entry other\n", False),
+                (ITA.replace("  entry shelf\n", "  entry shelf\n  flags x\n"), False),
+                (ITA.replace("  version", "\tversion"), False),
+                (ITA.replace("  version", "   version"), False),
+                (ITA.replace("ita shelf", "package shelf"), False),
+                (ITA.replace("    console\n", "    console\n    files \"src\\x\" read\n"), False),
+            ):
+                write(os.path.join(base, "ita.una"), text)
+                failures = check.Failures()
+                self.assertEqual(check.manifest(base, "p", failures), good, (text, failures.items))
+            write(os.path.join(base, "ita.una"), ITA)
+            # A dependency holds its head only, and deps/ holds packages only.
+            write(os.path.join(base, "deps", "tags", "ita.una"), "ita tags\n  version 0.3.0\n  edition 0.4\n\nrun\n  entry format\n")
+            self.assertFalse(check.manifest(base, "p", check.Failures()))
+            write(os.path.join(base, "deps", "tags", "ita.una"), "ita tags\n  version 0.3.0\n  edition 0.4\n")
+            write(os.path.join(base, "deps", "loose.una"), "module loose\n")
+            failures = check.Failures()
+            self.assertFalse(check.manifest(base, "p", failures))
+            self.assertIn("deps/ holds path dependencies only", "\n".join(failures.items))
+            os.remove(os.path.join(base, "deps", "loose.una"))
+            self.assertTrue(check.manifest(base, "p", check.Failures()))
+            # Exactly one manifest, and nothing of the other edition's layout beside it.
+            for name, text, wants in (("una.toml", TOML, "both una.toml and ita.una"),
+                                      ("verification.lock", "lock\n", "holds no verification.lock")):
+                write(os.path.join(base, name), text)
+                failures = check.Failures()
+                self.assertFalse(check.manifest(base, "p", failures))
+                self.assertIn(wants, "\n".join(failures.items))
+                os.remove(os.path.join(base, name))
+            os.remove(os.path.join(base, "ita.una"))
+            failures = check.Failures()
+            self.assertFalse(check.manifest(base, "p", failures))
+            self.assertIn("neither una.toml nor ita.una", "\n".join(failures.items))
+            write(os.path.join(base, "una.toml"), TOML)
+            failures = check.Failures()
+            self.assertFalse(check.manifest(base, "p", failures))
+            self.assertIn("una.toml is the manifest, so the package holds no ita.lock or deps", "\n".join(failures.items))
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
+
+    def test_package_files_of_edition_0_4(self):
+        base = tempfile.mkdtemp(prefix="una-by-example-files-")
+        try:
+            path_dependency(chapter(base))
+            step = os.path.join(base, "06-failure", "steps", "04-shelf")
+            self.assertEqual(check.package_files(step), ["ita.una", "ita.lock", os.path.join("src", "shelf.una"),
+                                                         os.path.join("deps", "tags", "ita.una"),
+                                                         os.path.join("deps", "tags", "src", "format.una")])
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
 
     def test_environment(self):
         base = tempfile.mkdtemp(prefix="una-by-example-env-")
@@ -706,7 +821,9 @@ class Units(unittest.TestCase):
             return failures.items
 
         self.assertEqual(found("cd 06-failure/day-to-day\nmkdir orders\nuna run .\nuna --json check .\npython3 -B scripts/check.py --fill\n"), [])
+        self.assertEqual(found("una ita lock\nuna ita lock --check\nuna ita lock --check .\n"), [])
         for line in ("una run .   ok 99 x LAMP-01  Total: 4200 cents", "una run . --grant env", "$ una run .",
+                     "una ita lock --accept-authority", "una ita lock ../other", "$ una ita lock",
                      "cd 06-failure; rm -rf x", "python3 -B scripts/check.py --una x", "ok 2 x LAMP-01"):
             self.assertTrue(found(line + "\n"), line)
 
@@ -1222,6 +1339,38 @@ class Chapters(Base):
         _, warnings = self.run_chapters()
         self.assertTrue(any("`Recap` has 4 bullets" in w for w in warnings), warnings)
 
+    def test_an_edition_0_4_step_with_a_path_dependency(self):
+        path_dependency(self.chapter)
+        self.assertPasses()
+
+    def test_an_edition_0_4_lock_that_fails(self):
+        step = path_dependency(self.chapter)
+        os.remove(os.path.join(step, "ita.lock"))
+        self.assertFails("no ita.lock: a package holds")
+
+    def test_both_manifests_in_a_step(self):
+        step = path_dependency(self.chapter)
+        write(os.path.join(step, "una.toml"), TOML)
+        self.assertFails("both una.toml and ita.una")
+
+    def test_neither_manifest_in_a_step(self):
+        os.remove(os.path.join(self.chapter, "steps", "01-quantity", "una.toml"))
+        self.assertFails("neither una.toml nor ita.una")
+
+    def test_an_overlay_that_adds_the_other_manifest(self):
+        write(os.path.join(self.chapter, "mistakes", "1", "ita.una"), ITA)
+        self.assertFails("both una.toml and ita.una")
+
+    def test_a_file_of_a_dependency_outside_src(self):
+        step = path_dependency(self.chapter)
+        write(os.path.join(step, "deps", "tags", "notes.txt"), "x\n")
+        self.assertFails("steps/04-shelf/deps/tags/notes.txt: not a file a package holds")
+
+    def test_an_edited_include_of_ita_una(self):
+        path_dependency(self.chapter)
+        edit(self.readme, "  edition 0.4\n\nneeds", "  edition 0.3\n\nneeds")
+        self.assertFails("is not the text of include=steps/04-shelf/ita.una")
+
     def test_a_grant_of_the_environment(self):
         edit(os.path.join(self.chapter, "day-to-day", "una.toml"), 'grants = ["console"]', 'grants = ["console", "env"]')
         self.assertFails("the grant 'env' is not allowed")
@@ -1292,9 +1441,12 @@ class Archives(Base):
         archive.build(self.root, self.out, 0)
 
     def members(self, name):
+        return self.members_of(os.path.join(self.out, name))
+
+    def members_of(self, path):
         import tarfile
 
-        with tarfile.open(os.path.join(self.out, name), "r:gz") as handle:
+        with tarfile.open(path, "r:gz") as handle:
             return {m.name: (m, handle.extractfile(m).read() if m.isfile() else None) for m in handle.getmembers()}
 
     def checked(self):
@@ -1308,6 +1460,21 @@ class Archives(Base):
                          ["01-01-first.tar.gz", "06-failure.tar.gz", "SHA256SUMS", "una-by-example-9.9.9.tar.gz"])
         code, report = self.checked()
         self.assertEqual(code, 0, report)
+
+    def test_an_edition_0_4_package_is_archived_whole(self):
+        step = path_dependency(self.chapter)
+        out = os.path.join(self.base, "out-2")
+        self.archive.build(self.root, out, 0)
+        found = {n for n, (m, d) in self.members_of(os.path.join(out, "06-failure.tar.gz")).items() if m.isfile()}
+        for name in ("ita.una", "ita.lock", "src/shelf.una", "deps/tags/ita.una", "deps/tags/src/format.una"):
+            self.assertIn(f"06-failure/steps/04-shelf/{name}", found)
+        self.assertFalse([n for n in found if n.startswith("06-failure/steps/04-shelf/") and "/expected/" in n])
+        self.out = out
+        code, report = self.checked()
+        self.assertEqual(code, 0, report)
+        write(os.path.join(step, "deps", "tags", "src", "format.una"), TAGS + "-- changed after the build\n")
+        code, report = self.checked()
+        self.assertIn("does not hold exactly the repository's pages and chapters", report)
 
     def test_a_chapter_archive_holds_whole_packages(self):
         found = self.members("06-failure.tar.gz")

@@ -14,9 +14,10 @@ A chapter on template 2 holds its page, README.md, and its packages:
   exercises/N/answer/     its answer, which checks clean, runs and passes `una test`
   exercises/N/<slug>/     any other state an exercise shows
 
-Each of them is either a package (`una.toml`, `verification.lock`, `src/`) or an overlay: a
-`base.txt` naming a package of the chapter (such as `day-to-day`), and the files that replace
-that package's. Each has its own `expected/`, checked as check.py checks a page's, with one
+Each of them is either a package (`una.toml`, `verification.lock`, `src/`, or from edition 0.4
+`ita.una`, `ita.lock`, `src/` and its path dependencies `deps/<name>/`, each with `ita.una` and
+`src/`) or an overlay: a `base.txt` naming a package of the chapter (such as `day-to-day`), and
+the files that replace that package's. Each has its own `expected/`, checked as check.py checks a page's, with one
 more file: `expected/rendered.txt`, what `una --color never check .` prints on stderr, after
 `normalize`. An overlay with no files of its own is the package it names, and has no
 `expected/`. A package holds only the files of PACKAGE_FILE, and no symbolic link.
@@ -108,16 +109,19 @@ NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 KEYWORDS = {"pub", "trusted", "kind", "capability", "handler", "predicate", "opaque", "policy",
             "record", "requirement", "label", "const", "extern", "measure"}
 NOT_DECLARATIONS = {"module", "import", "example"}
-# The files a package or an overlay may hold, and the ones a block may include.
+# The files a package or an overlay may hold, and the ones a block may include. An edition 0.4
+# package holds ita.una and ita.lock, and its path dependencies under deps/<name>/, each with
+# its own ita.una and src/ (spec/30 §12).
 PACKAGE_FILE = re.compile(
-    r"^(una\.toml|verification\.lock|base\.txt|src/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.una"
+    r"^(una\.toml|verification\.lock|ita\.una|ita\.lock|base\.txt"
+    r"|(deps/[a-z][a-z0-9_]*/)?(ita\.una|src/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.una)"
     r"|expected/(output|diagnostics|rendered)\.txt|expected/commands/[a-z0-9-]+\.txt)$"
 )
 INCLUDABLE = re.compile(
-    r"^(una\.toml|src/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.una"
+    r"^(una\.toml|ita\.lock|(deps/[a-z][a-z0-9_]*/)?(ita\.una|src/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.una)"
     r"|expected/(output|diagnostics|rendered)\.txt|expected/commands/[a-z0-9-]+\.txt)$"
 )
-SOURCE = re.compile(r"^(una\.toml|src/.+\.una)$")
+SOURCE = re.compile(r"^(una\.toml|(deps/[a-z][a-z0-9_]*/)?(ita\.una|src/.+\.una))$")
 # A plain `sh` block holds only commands the reader types, never their output.
 SH_LINE = re.compile(r"^(una (?P<args>.+)|(cd|mkdir) [A-Za-z0-9_./-]+|python3 -B scripts/check\.py( --fill| --self-test)?)$")
 # The component vocabulary of TEMPLATE.md.
@@ -592,6 +596,7 @@ def chapter_packages(chapter_dir, where, failures):
         for relative in package.files():
             if not PACKAGE_FILE.match(relative):
                 failures.add(f"{here}/{relative}", "not a file a package holds: una.toml, verification.lock, src/**/*.una, base.txt in an overlay, "
+                             "ita.una, ita.lock and deps/<name>/ita.una and src/**/*.una from edition 0.4, "
                              "and expected/output.txt, diagnostics.txt, rendered.txt and commands/<name>.txt")
         if package.overlay:
             target = base.read(os.path.join(package.directory, "base.txt")).strip()
@@ -600,9 +605,14 @@ def chapter_packages(chapter_dir, where, failures):
                 failures.add(here, f"base.txt names {target!r}, which is not a package of this chapter (an overlay's base is a package, not another overlay)")
                 package.base = None
         else:
-            for name in ("una.toml", "verification.lock", "src"):
+            # Exactly one manifest, with its own lock: una.toml or, from edition 0.4, ita.una.
+            found_manifest, why = base.manifest_name(package.directory)
+            if found_manifest is None:
+                failures.add(here, f"{why}; or the package is an overlay with base.txt")
+            for name in (base.MANIFESTS[found_manifest], "src") if found_manifest else ():
                 if not os.path.exists(os.path.join(package.directory, name)):
-                    failures.add(here, f"no {name}: a package holds una.toml, verification.lock and src/, or is an overlay with base.txt")
+                    failures.add(here, f"no {name}: a package holds una.toml, verification.lock and src/, or from edition 0.4 "
+                                 "ita.una, ita.lock and src/, or is an overlay with base.txt")
         if package.ref.endswith("/answer") and package.reference_only:
             failures.add(here, "an answer changes something: an overlay with no files of its own is its base")
         if package.ref.startswith("mistakes/"):
@@ -654,7 +664,7 @@ def rendered(una_path, copy):
 
 
 def exits(code):
-    return "is not run, since its una.toml is not allowed" if code == -1 else f"exits with {code}"
+    return "is not run, since its manifest is not allowed" if code == -1 else f"exits with {code}"
 
 
 def tested(una_path, package, scratch):
@@ -774,7 +784,7 @@ def resolve(block, packages, chapter_dir):
     if package is None:
         return None, relative
     if not INCLUDABLE.match(relative):
-        return None, f"{path}: a block shows una.toml, src/**/*.una or an expected/ file, not {relative}"
+        return None, f"{path}: a block shows una.toml, src/**/*.una or an expected/ file, or from edition 0.4 ita.una, ita.lock or deps/<name>/ita.una and src/**/*.una, not {relative}"
     file = package.file(relative)
     if file is None:
         return None, f"{path} does not exist"
@@ -846,7 +856,7 @@ def check_blocks(text, packages, chapter_dir, where, failures, una_path=None, sc
         verified = [v.strip() for v in block.attrs.get("verified", "").split(",") if v.strip()]
         if "verified" in block.attrs:
             if block.lang == "diff" or not SOURCE.match(found.relative) or LINES.match(found.selector.split(",")[0] or "-"):
-                failures.add(at, "verified= goes only on a block of una.toml or a src/ file, whole or by declaration, not on a diff or lines")
+                failures.add(at, "verified= goes only on a block of una.toml or a src/ file, or of ita.una or a file of deps/<name>/ from edition 0.4, whole or by declaration, not on a diff or lines")
             if not verified:
                 failures.add(at, "verified= lists at least one of check, run, test")
         for token in verified:
@@ -1458,7 +1468,8 @@ def is_v2_chapter(root, chapter):
 def chapter_files(root, chapter):
     """What the download of a template 2 chapter holds, as {path in the chapter: source file}:
     its README.md, and every package of steps/, day-to-day/, mistakes/ and exercises/, each
-    one a whole package a reader can run as it is (una.toml, verification.lock and src/). An
+    one a whole package a reader can run as it is (una.toml, verification.lock and src/, or
+    from edition 0.4 ita.una, ita.lock, src/ and deps/). An
     overlay is resolved: its base's files, with its own over them, so base.txt is not needed.
     expected/ stays in the repository, as for a template 1 page. Symbolic links, which the
     check refuses, are never followed."""

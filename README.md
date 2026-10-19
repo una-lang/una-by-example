@@ -15,6 +15,8 @@ Every example is checked against the una release that `una.lock` names. `expecte
 - `NN-chapter/README.md`: the chapter's page.
 - `NN-chapter/MM-page/`: a page. It holds `README.md` (the page's text), `una.toml`, `verification.lock` and `src/`, the package. It also holds `expected/` and `try/`, which the checks use and `una` never reads.
 
+A package of edition `0.4` holds `ita.una` and `ita.lock` instead of `una.toml` and `verification.lock`, and its path dependencies, if any, under `deps/<name>/`, each a package with its own `ita.una` and `src/`. A package has exactly one manifest: `una.toml` or `ita.una`, never both.
+
 A chapter whose `README.md` says `template: 2` in its front matter is a single long page instead, with its packages under `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, and every block on the page included from them. `TEMPLATE.md` describes it: the parts, the includes, the components, the style guide and the review checklist. The other chapters keep the layout above until they are rewritten.
 
 ## Checking

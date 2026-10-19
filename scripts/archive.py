@@ -3,7 +3,8 @@
 
 - One archive per page of a template 1 chapter, `NN-MM-page.tar.gz` (`01-01-package.tar.gz`),
   holding only the package a reader runs: `NN-MM-page/README.md`, `una.toml`,
-  `verification.lock` and `src/`.
+  `verification.lock` and `src/`, or from edition 0.4 `ita.una`, `ita.lock`, `src/` and the
+  path dependencies under `deps/`.
 - One archive per template 2 chapter, `NN-chapter.tar.gz` (`06-failure.tar.gz`), holding
   `NN-chapter/README.md` and every package of the chapter (steps/, day-to-day/, mistakes/N/,
   exercises/N/start/, answer/ and the others), each a whole package that runs as it is: an

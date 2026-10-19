@@ -11,6 +11,8 @@ NN-chapter/
   README.md                 the page, in English
   steps/01-<slug>/          one package per example in the text, in order
     una.toml  verification.lock  src/  expected/
+                            or, from edition 0.4:
+    ita.una  ita.lock  src/  deps/<name>/  expected/
   steps/02-<slug>/ ...
   day-to-day/               the chapter's program, a package with examples
   mistakes/N/               one per common mistake: an overlay with expected/diagnostics.txt
@@ -25,10 +27,10 @@ translations/<locale>/NN-chapter/README.md
 
 Each directory under `steps/`, `day-to-day/`, `mistakes/` and `exercises/` is one of:
 
-- **A package**: `una.toml`, `verification.lock` and `src/`, as in template 1.
+- **A package**: `una.toml`, `verification.lock` and `src/`, as in template 1. From edition `0.4`, `ita.una`, `ita.lock` and `src/` instead, and its path dependencies under `deps/<name>/`, each a package with its own `ita.una` and `src/` (`spec/30 §12`). A package has exactly one manifest, `una.toml` or `ita.una`: both or neither fails, and so does `ita.lock` or `deps/` beside `una.toml`, or `verification.lock` beside `ita.una`.
 - **An overlay**: a file `base.txt` whose one line names a package of the chapter (`day-to-day`, `steps/02-handling`), and the files that replace that package's, at the same paths (`src/orders.una`). An overlay's base is always a package, never another overlay. An overlay with no files of its own (only `base.txt`) is that package, and has no `expected/`.
 
-A package or overlay holds only these files: `una.toml`, `verification.lock`, `base.txt` (in an overlay), `src/**/*.una`, and in `expected/` the files below. Anything else fails, and so does a symbolic link anywhere in the chapter.
+A package or overlay holds only these files: `una.toml`, `verification.lock`, `base.txt` (in an overlay), `src/**/*.una`, from edition `0.4` `ita.una`, `ita.lock`, `deps/<name>/ita.una` and `deps/<name>/src/**/*.una`, and in `expected/` the files below. Anything else fails, and so does a symbolic link anywhere in the chapter.
 
 Every package and every overlay with files of its own has `expected/`, checked as template 1 checks a page's:
 
@@ -39,9 +41,9 @@ Every package and every overlay with files of its own has `expected/`, checked a
 | `expected/rendered.txt` | What `una --color never check .` prints on stderr, as a reader sees it in a terminal, after the normalization below. Every mistake has one. |
 | `expected/commands/<name>.txt` | A further command: `$ una <args>` on the first line, then what it prints on stdout, byte for byte. `<name>` is lowercase letters, digits and dashes. In the output of `report .`, the `native:` line compares equal for the two targets una builds for, `aarch64-apple-darwin` and `x86_64-unknown-linux-gnu`, so a report checks on either host. |
 
-**Commands.** A command is one of: `check .`, `test .`, `run .`, `build .`, `report .` and `obligations .` (each optionally after `--json`), `fmt --check .`, `fix --dry-run .`, `explain U1234`, `trace NAME` and `contract NAME` (optionally after `--json`). No other argument, no `--grant`, and no path but `.`.
+**Commands.** A command is one of: `check .`, `test .`, `run .`, `build .`, `report .` and `obligations .` (each optionally after `--json`), `fmt --check .`, `fix --dry-run .`, `explain U1234`, `trace NAME` and `contract NAME` (optionally after `--json`), and for an edition `0.4` package `ita lock` and `ita lock --check` (optionally after `--json`, with `.` or no path). No other argument, no `--grant`, no `--accept-authority`, and no path but `.`.
 
-**What `una` may do.** `una` runs with a minimal environment: `PATH`, a `HOME` and `TMPDIR` of its own, fresh for each run, `LANG=C.UTF-8` and `NO_COLOR=1`, nothing else. A package's `una.toml` holds only the tables `[package]`, `[run]`, `[escape_budget]`, `[labels]`, `[trusted]`, `[boundaries]` and `[contracts]`; `[package]` holds only `name`, `version` and `edition`; `[run]` holds only `entry` and `grants`; and the grants are `console`, `clock` and `files:src:<access>` or `files:src/<dir>:<access>`, where `<access>` is `read`, `write` or `read,write`. No environment, no network, no files outside the package's `src/`. Each command runs on a fresh copy of the package, so what one writes never reaches another.
+**What `una` may do.** `una` runs with a minimal environment: `PATH`, a `HOME` and `TMPDIR` of its own, fresh for each run, `LANG=C.UTF-8` and `NO_COLOR=1`, nothing else. A package's `una.toml` holds only the tables `[package]`, `[run]`, `[escape_budget]`, `[labels]`, `[trusted]`, `[boundaries]` and `[contracts]`; `[package]` holds only `name`, `version` and `edition`; `[run]` holds only `entry` and `grants`; and the grants are `console`, `clock` and `files:src:<access>` or `files:src/<dir>:<access>`, where `<access>` is `read`, `write` or `read,write`. A package's `ita.una` is held to the same: its head holds only `version` and `edition`; its sections are only `needs`, `labels`, `trusted`, `escapes`, `boundaries`, `contracts` and `run`; a need is a path dependency under `deps/`, `<name> [as <local>] from path "deps/<dir>"`, with only `may` and `accept name` lines; `run` holds only `entry` and `grants`, and the grants are `console`, `clock` and `files "src" <access>` or `files "src/<dir>" <access>`, with no limit lines; and a dependency's `ita.una` holds its head only. No environment, no network, no files outside the package's `src/`. Each command runs on a fresh copy of the package, so what one writes never reaches another.
 
 **Normalization of `rendered.txt`.** The checks run each package in a fresh copy, at a path that changes on every run. Before comparing, the output is normalized: CRLF becomes LF; the copy's absolute path followed by `/` is removed, and where it stands alone it becomes `.`; spaces and tabs at the end of a line are removed; blank lines at the end are removed, and the text ends with one newline. Write `rendered.txt` already normalized. Only stderr counts: in the package, run `una --color never check . 2>&1 >/dev/null`, and remove the spaces at the ends of lines.
 
@@ -168,8 +170,9 @@ The page has no free-floating code. Every fenced block names, in its info string
 | ```` ```text include="mistakes/2/expected/rendered.txt#L1" ```` | Lines of a file: `#L3` or `#L3-L9`; on an expected file also an ascending list such as `#L1,L8-L9`. Use this to trim a long diagnostic to its message line. |
 | ```` ```diff include="day-to-day..mistakes/1:src/orders.una" ```` | A unified diff of one file between two packages (`a/` and `b/` prefixes, 3 lines of context; `context="1"` changes it). |
 | ```` ```toml include="steps/04-checked/una.toml" ```` | A manifest. |
+| ```` ```una include="steps/15-path-dependency/ita.una" ```` | A manifest of edition `0.4`; `ita.lock` and a dependency's `deps/tags/ita.una` and `deps/tags/src/format.una` are shown the same way. |
 
-A block shows only `una.toml`, `src/**/*.una` and the expected files. Paths are relative to the chapter's directory, with no `..`. An include of an overlay's file that the overlay does not replace shows its base's file.
+A block shows only `una.toml`, `src/**/*.una` and the expected files, and from edition `0.4` `ita.una`, `ita.lock`, `deps/<name>/ita.una` and `deps/<name>/src/**/*.una`. Paths are relative to the chapter's directory, with no `..`. An include of an overlay's file that the overlay does not replace shows its base's file.
 
 **Where blocks go.** Every block starts at column 0, outside quotes and lists; it may sit inside `:::` containers. These fail, since Markdown renders each as code the check would not compare:
 
@@ -198,13 +201,13 @@ It writes the body of every include, on the English page and its translations, f
 | `include="…"` | The file the block shows, as above. |
 | `title="src/orders.una"` | The path shown in the block's header: the include's path, chapter-relative (`day-to-day/src/orders.una`) or inside its package (`src/orders.una`); for a diff, its file. |
 | `caption="the kinds and the service"` | A short label after the title. It is prose: a translation translates it. |
-| `verified="check, run, test"` | The badges, only on a block of `una.toml` or a `src/` file, whole or by declaration (not on lines or a diff). Each is checked: `check` needs the package to check clean, `run` needs its `expected/output.txt`, and `test` runs `una test .` on it, which must pass. A block from a mistake has no `verified`. |
+| `verified="check, run, test"` | The badges, only on a block of `una.toml`, `ita.una` or a `src/` file, a dependency's included, whole or by declaration (not on lines or a diff). Each is checked: `check` needs the package to check clean, `run` needs its `expected/output.txt`, and `test` runs `una test .` on it, which must pass. A block from a mistake has no `verified`. |
 | `mistake="wrong"` or `mistake="right"` | The two sides of a `:::pair`. |
 | `context="N"` | The lines of context of a diff. |
 
 Any other attribute fails the check, so a misspelt `include` does not pass unnoticed.
 
-**Blocks written by hand.** Only plain `sh` blocks (```` ```sh ````, no attributes) of commands the reader types, one per line, with no `$` prompt and no output: `una <command>` with a command from the list above, `cd <path>` or `mkdir <path>` with one plain path, or `python3 -B scripts/check.py` alone, with `--fill` or with `--self-test`. Every other block, `text` and `json` included, is an include; output comes from `expected/commands/`.
+**Blocks written by hand.** Only plain `sh` blocks (```` ```sh ````, no attributes) of commands the reader types, one per line, with no `$` prompt and no output: `una <command>` with a command from the list above, such as `una ita lock`, `cd <path>` or `mkdir <path>` with one plain path, or `python3 -B scripts/check.py` alone, with `--fill` or with `--self-test`. Every other block, `text` and `json` included, is an include; output comes from `expected/commands/`.
 
 **Translations.** A translation holds the same blocks, in the same order, byte for byte, with the same includes and bodies, and the same `:::` containers in the same order: only the prose, the `caption` values and the summary after `:::answer` change. `--fill` keeps the blocks in step with the English page.
 
@@ -256,7 +259,7 @@ Failures:
 
 1. The chapter is exactly on template 2 or exactly on template 1, as above.
 2. The chapter directory holds only `README.md`, `steps/`, `day-to-day/`, `mistakes/` and `exercises/`, laid out as above, with only the allowed files and no symbolic link.
-3. Every package and overlay has an allowed `una.toml` and the outcome in its `expected/`; its commands are allowed and print what they say; its `rendered.txt` is what `una` prints, normalized.
+3. Every package and overlay has exactly one allowed manifest, `una.toml` or `ita.una`, and the outcome in its `expected/`; its commands are allowed and print what they say; its `rendered.txt` is what `una` prints, normalized.
 4. The front matter has exactly its fields; `learn` matches the directory; `codes` are the codes the outcomes show.
 5. The parts are the ones above, in order, numbered without gaps, with 3 to 6 concept sections; inside them, each concept section has 3 to 12 `### ` subsections, none titled by a generic label (`Overview`, `Details`, `Example` and the like), Day-to-day and Testing it have at least 2 `### `, no subsection anywhere has a generic title, Common mistakes and Exercises have one `### ` per card with its card in it (a mistake's title ends with a code its diagnostics show, an exercise's is `Exercise k: <goal>` in order), the anchors follow the rules of Anchors in [Inside a section](#inside-a-section) (a dangling `#id` link, a repeated slug and a slug like a section number fail in every chapter), and the closing section is `Recap and reference` with exactly `### For agents`, `### Recap` and `### Reference`. The markup is strict: no code outside the blocks the check reads (no `$$` line, no indented code, no fence inside a quote or list), no invisible or control character, no setext heading, no raw HTML, only the template's containers and callouts, at column 0.
 6. Every fenced block is an include (or a plain `sh` block of commands); its include resolves; its body is the included text; its attributes are quoted, known and given once; its `title` is its path; its `verified` badges hold.
