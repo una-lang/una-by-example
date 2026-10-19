@@ -2054,7 +2054,7 @@ U2007, U2008 and U5001 carry no `edit`, since only the author knows what a missi
 ### Reference
 
 :::reference
-- Construct pages: [`if`](/docs/language/control-flow/if/), [`when`](/docs/language/control-flow/when/), [`kind`](/docs/language/types/kind/), [`example`](/docs/language/examples/example/)
+- Construct pages: [`when`](/docs/language/control-flow/when/), [`kind`](/docs/language/types/kind/), [`example`](/docs/language/examples/example/)
 - Prelude: [`Option`](/docs/std/)
 - Commands: [`una fix`](/docs/cli/fix/), [`una obligations`](/docs/cli/obligations/)
 - Diagnostics: [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U2002](/docs/errors/U2002/), [U2007](/docs/errors/U2007/), [U2008](/docs/errors/U2008/), [U2009](/docs/errors/U2009/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U6003](/docs/errors/U6003/)
