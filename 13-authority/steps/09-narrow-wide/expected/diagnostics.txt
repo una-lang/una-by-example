@@ -1,0 +1,1 @@
+error U3021 at src/store/app.una:18:3: the call of `print_price_tag` grants `PriceList[price, set_price]` to `vendor.labels`, whose ceiling in `una.toml` allows `PriceList[price]`

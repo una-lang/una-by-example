@@ -1,21 +1,21 @@
-[U5001] Error: `@supplier.order` may run where `not dry_run` is not proven
-    ╭─[ src/restock.una:15:5 ]
+[U5001] Error: `@prices.set_price` may run where `not dry_run` is not proven
+    ╭─[ src/store/sale.una:27:3 ]
     │
-  9 │   uses @supplier: Supplier[order where not dry_run]
-    │                                        ─────┬─────
-    │                                             ╰─────── condition
+ 24 │   uses @prices: PriceList[set_price where not dry_run]
+    │                                           ─────┬─────
+    │                                                ╰─────── condition
     │
- 15 │     @supplier.order(sku, units: 20)
-    │     ───────────────┬───────────────
-    │                    ╰───────────────── `@supplier.order` may run where `not dry_run` is not proven
+ 27 │   @prices.set_price(item.sku, cents: sale)
+    │   ────────────────────┬───────────────────
+    │                       ╰───────────────────── `@prices.set_price` may run where `not dry_run` is not proven
     │
     │ Help 1: repair 1: guard the operation with `if not dry_run`
     │
     │ Help 2: repair 2: add `requires not dry_run` to the enclosing function; its callers then prove it
     │
-    │ Note 1: obligation ob-c36fd10895b1 (effect_condition) is refuted: not dry_run
+    │ Note 1: obligation ob-c33ca7fca467 (effect_condition) is refuted: not dry_run
     │
-    │ Note 2: counterexample: dry_run = true, left = 4
+    │ Note 2: counterexample: dry_run = true, item = Item#0, item.cents = 0, item.sku = Text#0, percent = 0
     │
     │ Note 3: run `una explain U5001` for an explanation
 ────╯

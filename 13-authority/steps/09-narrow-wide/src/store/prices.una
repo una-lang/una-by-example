@@ -1,0 +1,6 @@
+module store.prices
+
+--- The store's price list: reading a price, and setting one.
+pub capability PriceList
+  op price(sku: Text) -> Int
+  op set_price(sku: Text, cents: Int) -> Unit

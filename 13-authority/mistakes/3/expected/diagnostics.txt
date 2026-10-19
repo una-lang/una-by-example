@@ -1,0 +1,1 @@
+error U3020 at src/store/sale.una:47:7: `print_tag` is in the boundary `vendor.tags` and needs `@console: Console[print]`, which a call into it grants only with `with`

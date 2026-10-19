@@ -1,0 +1,8 @@
+module vendor.tags
+
+--- Prints a price tag for a shelf. This module comes from the maker of the tag printer, and
+--- `una.toml` lists it as a boundary.
+pub print_tag(name: Text, cents: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print("  tag: [{name} | {cents} cents]")

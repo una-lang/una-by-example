@@ -1,0 +1,51 @@
+module supply
+
+--- The supplier's service. A quote costs nothing; an order buys the units.
+capability Supplier
+  op quote(sku: Text, units: Int) -> Int
+  op order(sku: Text, units: Int) -> Unit
+
+--- One operation with a condition: an order only where `dry_run` is false.
+reorder(sku: Text, units: Int, dry_run: Bool) -> Unit
+  uses @supplier: Supplier[order where not dry_run]
+=
+  if not dry_run
+    @supplier.order(sku, units)
+
+--- Two operations: `quote` has no condition, and the condition on `order` has two parts.
+restock(sku: Text, units: Int, dry_run: Bool) -> Int
+  uses @supplier: Supplier[quote, order where not dry_run and units <= 50]
+=
+  let cost = @supplier.quote(sku, units)
+  if not dry_run and units <= 50
+    @supplier.order(sku, units)
+  cost
+
+--- A call is checked too: `reorder` may order only where `not dry_run` holds, and so may this
+--- function.
+reorder_pair(first: Text, second: Text, dry_run: Bool) -> Unit
+  uses @supplier: Supplier[order where not dry_run]
+=
+  reorder(first, units: 10, dry_run)
+  reorder(second, units: 10, dry_run)
+
+--- A supplier on a developer's machine: it quotes 250 cents a unit, and prints each order
+--- unless it is `quiet`. A handler's `uses` may carry a condition too.
+handler printed(quiet: Bool) for Supplier
+  uses @console: Console[print where not quiet]
+  op quote(sku, units) = units * 250
+  op order(sku, units) =
+    if not quiet
+      @console.print("ordered {units} x {sku}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  reorder("LAMP-01", units: 20, dry_run: true) with @supplier = printed(quiet: false)
+  reorder("LAMP-01", units: 20, dry_run: false) with @supplier = printed(quiet: false)
+  let small = restock("DESK-02", units: 5, dry_run: false) with @supplier = printed(quiet: false)
+  @console.print("5 desks cost {small}")
+  let large = restock("RUG-07", units: 80, dry_run: false) with @supplier = printed(quiet: false)
+  @console.print("80 rugs would cost {large}, too many to order at once")
+  reorder_pair("CHAIR-09", second: "SHELF-04", dry_run: false) with @supplier = printed(quiet: false)
+  reorder("CHAIR-09", units: 10, dry_run: false) with @supplier = printed(quiet: true)

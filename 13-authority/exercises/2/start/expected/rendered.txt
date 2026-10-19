@@ -1,7 +1,7 @@
 [U3023] Error: the header of `end_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
-    ╭─[ src/store/sale.una:18:27 ]
+    ╭─[ src/store/sale.una:87:27 ]
     │
- 18 │   uses @prices: PriceList[set_price]
+ 87 │   uses @prices: PriceList[set_price]
     │                           ────┬────
     │                               ╰────── the header of `end_sale` lets `@prices.set_price` run where `not dry_run` does not hold, which `una.toml` locks
     │
@@ -11,7 +11,7 @@
     │                          ────────────────────────┬────────────────────────
     │                                                  ╰────────────────────────── lock
     │
-    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `end_sale`, or a condition that implies it; edit src/store/sale.una:18:36..18:36 to " where not dry_run"
+    │ Help: repair 1: restore the locked condition: write `set_price where not dry_run` in the header of `end_sale`, or a condition that implies it; edit src/store/sale.una:87:36..87:36 to " where not dry_run"
     │
     │ Note 1: obligation ob-0b5fcbd98cc9 (contract_lock) is refuted: not dry_run
     │

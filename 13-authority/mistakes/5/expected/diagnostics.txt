@@ -1,0 +1,1 @@
+error U7002 at una.toml:12:1: [contracts] locks `apply_sale`, which is not a public function of this package

@@ -1,34 +1,100 @@
 module store.sale
 
---- The price list of the shop.
+import vendor.tags (print_tag)
+
+--- A discount in whole percent, from 0 to 100.
+pub kind Percent = Int in 0..100
+
+--- A product in the sale: its SKU, its name, and its price before the sale, in cents.
+pub kind Item
+  sku: Text
+  name: Text
+  cents: Int
+
+--- The store's price list, where the tills read each price.
 pub capability PriceList
   op set_price(sku: Text, cents: Int) -> Unit
 
---- Takes `percent` off the price of a product. A dry run changes nothing, and says what it would do.
-pub apply_sale(sku: Text, cents: Int, percent: Int, dry_run: Bool) -> Int
+--- The price `cents` with `percent` taken off. The discount is rounded down to whole cents.
+pub sale_price(cents: Int, percent: Percent) -> Int = cents - cents * percent / 100
+
+--- Takes `percent` off the price of one item, and gives back its sale price. A dry run changes
+--- no price.
+pub apply_sale(item: Item, percent: Percent, dry_run: Bool) -> Int
   uses @prices: PriceList[set_price where not dry_run]
 =
-  let sale = cents - cents * percent / 100
+  let sale = sale_price(item.cents, percent)
   if not dry_run
-    @prices.set_price(sku, cents: sale)
+    @prices.set_price(item.sku, cents: sale)
   sale
 
---- Puts back the price a product had before its sale. Exercise 3: honor the lock in `una.toml`.
-pub end_sale(sku: Text, cents: Int, dry_run: Bool) -> Unit
-  uses @prices: PriceList[set_price where not dry_run]
-=
-  @prices.set_price(sku, cents: cents)
+--- The line a dry run prints for one item.
+pub planned_line(item: Item, sale: Int) -> Text = "  {item.sku} would go from {item.cents} to {sale}"
 
---- A price list that keeps nothing, for examples.
+--- Runs the sale over every item, and gives back the cents taken off in all. A dry run prints
+--- what it would do, and changes no price; a real run sets each price and prints its tag.
+pub run_sale(items: List[Item], percent: Percent, dry_run: Bool) -> Int
+  uses @prices: PriceList[set_price where not dry_run]
+  uses @console: Console[print]
+=
+  let edit saved = 0
+  for item in items
+    let sale = apply_sale(item, percent, dry_run)
+    saved = saved + item.cents - sale
+    if dry_run
+      @console.print(planned_line(item, sale))
+    else
+      print_tag(item.name, cents: sale) with @console = @console
+  saved
+
+--- A price list that keeps nothing, for the examples.
 handler ignored() for PriceList
   op set_price(sku, cents) = unit
 
-example "a dry run of the end of a sale changes no price"
-  given @prices = ignored()
-  do end_sale("DESK-02", cents: 24900, dry_run: true)
-  expect not performed @prices.set_price
+example "20 percent off a desk lamp"
+  do sale_price(1990, percent: 20)
+  expect result == 1592
 
-example "the end of a sale sets the old price back"
+example "0 percent off keeps the price"
+  do sale_price(4500, percent: 0)
+  expect result == 4500
+
+example "100 percent off gives the item away"
+  do sale_price(4500, percent: 100)
+  expect result == 0
+
+example "a discount that is not whole cents is rounded down"
+  do sale_price(999, percent: 15)
+  expect result == 850
+
+example "a dry run gives the sale price"
   given @prices = ignored()
-  do end_sale("DESK-02", cents: 24900, dry_run: false)
-  expect performed @prices.set_price
+  do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: true)
+  expect result == 1592
+
+example "a real run gives the same sale price"
+  given @prices = ignored()
+  do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: false)
+  expect result == 1592
+
+example "the line of a dry run names the old and the new price"
+  do planned_line(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), sale: 3600)
+  expect result == "  RUG-07 would go from 4500 to 3600"
+
+--- Puts back the price an item had before the sale, and gives back that price. A dry run changes
+--- no price. Exercise 2: honor the lock in `una.toml`.
+pub end_sale(item: Item, dry_run: Bool) -> Int
+  uses @prices: PriceList[set_price where not dry_run]
+=
+  @prices.set_price(item.sku, cents: item.cents)
+  item.cents
+
+example "a dry run of the end of a sale gives the old price"
+  given @prices = ignored()
+  do end_sale(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), dry_run: true)
+  expect result == 4500
+
+example "the end of a sale gives the old price back"
+  given @prices = ignored()
+  do end_sale(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), dry_run: false)
+  expect result == 4500

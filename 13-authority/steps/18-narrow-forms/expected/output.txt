@@ -1,0 +1,9 @@
+Dry run:
+LAMP-01 costs 1990
+DESK-02 goes to 1791
+Review:
+LAMP-01 costs 1990
+set LAMP-01 to 2090
+set DESK-02 to 1791
+DESK-02 goes to 1791
+removed RUG-07
