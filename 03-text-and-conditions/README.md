@@ -1067,11 +1067,13 @@ The form has four rules:
 3. **A branch may hold several lines, a block.** Its lines run in order, from the top, and its value is its last line: the lines before it are steps, such as a `let`. The middle branch names `kilos` with `let`, then gives the text. A function's body of several lines works the same way, as [section 6.2](/learn/functions/#s6-2) shows in full.
 4. **The whole `if` still gives one value**, so it still has its `else`, and every branch gives the same type.
 
-A `then` at the end of the `if` line, against rule 1, is U0101, with a repair that `una fix .` applies:
+A `then` at the end of the `if` line, against rule 1, is U0101:
 
 ```text include="steps/35-then-at-line-end/expected/rendered.txt#L1"
 [U0101] Error: unexpected end of line, expected an expression
 ```
+
+Remove the `then`, so that the condition ends the line.
 
 Leave out the last `else`, against rule 4, and the check reports U0101 where the `if` ends, at the next declaration:
 
@@ -1889,7 +1891,7 @@ The first 21 characters of the rug's name end with a space, `Wool rug, 120 by 18
 ### For agents
 
 :::agents
-`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; a refuted obligation, U5001, also carries its `obligation` and a `counterexample`, and its repairs, from a guard to a `requires`, are descriptions only. U0007 and the U0101 of a `then` ending an `if` line carry exact edits, which `una fix .` applies; other U0101s, U0006 and U2001 carry none, since the right form is the author's choice. The compact rule: *join texts with interpolation, never `+`; name a text literal before it goes in braces; a condition is a `Bool`, and comparisons do not chain; a one-line `if` has `else` and branches of one type; guard a `slice` or a division with `if` or `and`.*
+`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; a refuted obligation, U5001, also carries its `obligation` and a `counterexample`, and its repairs, from a guard to a `requires`, are descriptions only. U0007 carries an exact edit, which `una fix .` applies; the U0101s, U0006 and U2001 are repaired by hand, since the right form is the author's choice. The compact rule: *join texts with interpolation, never `+`; name a text literal before it goes in braces; a condition is a `Bool`, and comparisons do not chain; a one-line `if` has `else` and branches of one type; guard a `slice` or a division with `if` or `and`.*
 :::
 
 ### Recap
