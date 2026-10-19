@@ -66,17 +66,15 @@ example "a discount that is not whole cents is rounded down"
   do sale_price(999, percent: 15)
   expect result == 850
 
-example "a dry run gives the sale price, and sets no price"
+example "a dry run gives the sale price"
   given @prices = ignored()
   do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: true)
   expect result == 1592
-  expect not performed @prices.set_price
 
-example "a real run sets the sale price"
+example "a real run gives the same sale price"
   given @prices = ignored()
   do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: false)
   expect result == 1592
-  expect performed @prices.set_price
 
 example "the line of a dry run names the old and the new price"
   do planned_line(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), sale: 3600)

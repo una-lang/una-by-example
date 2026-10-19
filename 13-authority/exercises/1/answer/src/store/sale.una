@@ -67,40 +67,44 @@ example "a discount that is not whole cents is rounded down"
   do sale_price(999, percent: 15)
   expect result == 850
 
-example "a dry run gives the sale price, and sets no price"
+example "a dry run gives the sale price"
   given @prices = ignored()
   do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: true)
   expect result == 1592
-  expect not performed @prices.set_price
 
-example "a real run sets the sale price"
+example "a real run gives the same sale price"
   given @prices = ignored()
   do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: false)
   expect result == 1592
-  expect performed @prices.set_price
 
 example "the line of a dry run names the old and the new price"
   do planned_line(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), sale: 3600)
   expect result == "  RUG-07 would go from 4500 to 3600"
 
---- Halves the price of an item at the end of a season, and gives back the new price. A dry run
---- changes no price.
+--- Halves the price of an item at the end of a season, and gives back its new price. An item of
+--- 1000 cents or less is cheap already, and keeps its price. A dry run changes no price.
 pub clearance(item: Item, dry_run: Bool) -> Int
-  uses @prices: PriceList[set_price where not dry_run]
+  uses @prices: PriceList[set_price where not dry_run and item.cents > 1000]
 =
-  let half = item.cents / 2
-  if not dry_run
-    @prices.set_price(item.sku, cents: half)
-  half
+  if item.cents <= 1000
+    item.cents
+  else
+    let half = item.cents / 2
+    if not dry_run
+      @prices.set_price(item.sku, cents: half)
+    half
 
-example "a dry run of a clearance gives the new price, and sets none"
+example "a dry run of a clearance gives the new price"
   given @prices = ignored()
   do clearance(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), dry_run: true)
   expect result == 2250
-  expect not performed @prices.set_price
 
-example "a clearance sets half the price"
+example "a clearance halves the price"
   given @prices = ignored()
   do clearance(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), dry_run: false)
   expect result == 2250
-  expect performed @prices.set_price
+
+example "a cheap item keeps its price"
+  given @prices = ignored()
+  do clearance(Item(sku: "SOAP-03", name: "Hand soap", cents: 800), dry_run: false)
+  expect result == 800

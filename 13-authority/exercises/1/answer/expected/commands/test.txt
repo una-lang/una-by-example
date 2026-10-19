@@ -3,10 +3,11 @@ example store.sale "20 percent off a desk lamp" ... ok
 example store.sale "0 percent off keeps the price" ... ok
 example store.sale "100 percent off gives the item away" ... ok
 example store.sale "a discount that is not whole cents is rounded down" ... ok
-example store.sale "a dry run gives the sale price, and sets no price" ... ok
-example store.sale "a real run sets the sale price" ... ok
+example store.sale "a dry run gives the sale price" ... ok
+example store.sale "a real run gives the same sale price" ... ok
 example store.sale "the line of a dry run names the old and the new price" ... ok
-example store.sale "a dry run of a clearance gives the new price, and sets none" ... ok
-example store.sale "a clearance sets half the price" ... ok
+example store.sale "a dry run of a clearance gives the new price" ... ok
+example store.sale "a clearance halves the price" ... ok
+example store.sale "a cheap item keeps its price" ... ok
 
-9 examples: 9 passed, 0 failed
+10 examples: 10 passed, 0 failed

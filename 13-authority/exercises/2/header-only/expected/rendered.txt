@@ -1,11 +1,11 @@
 [U5001] Error: `@prices.set_price` may run where `not dry_run` is not proven
-    ╭─[ src/store/sale.una:91:3 ]
+    ╭─[ src/store/sale.una:89:3 ]
     │
- 89 │   uses @prices: PriceList[set_price where not dry_run]
+ 87 │   uses @prices: PriceList[set_price where not dry_run]
     │                                           ─────┬─────
     │                                                ╰─────── condition
     │
- 91 │   @prices.set_price(item.sku, cents: item.cents)
+ 89 │   @prices.set_price(item.sku, cents: item.cents)
     │   ───────────────────────┬──────────────────────
     │                          ╰──────────────────────── `@prices.set_price` may run where `not dry_run` is not proven
     │

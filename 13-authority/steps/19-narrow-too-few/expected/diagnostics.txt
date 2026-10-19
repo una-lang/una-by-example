@@ -1,0 +1,1 @@
+error U3002 at src/pricing.una:40:3: `show_price` needs `@prices` to permit `price`, which it does not here

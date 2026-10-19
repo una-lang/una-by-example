@@ -1,0 +1,61 @@
+module pricing
+
+--- The store's price list: reading a price, setting one, and taking a product off the list.
+capability PriceList
+  op price(sku: Text) -> Int
+  op set_price(sku: Text, cents: Int) -> Unit
+  op remove(sku: Text) -> Unit
+
+--- Prints the price of a SKU. It only reads.
+show_price(sku: Text) -> Unit
+  uses @prices: PriceList[price]
+  uses @console: Console[print]
+=
+  let cents = @prices.price(sku)
+  @console.print("{sku} costs {cents}")
+
+--- Raises the price of a SKU by `cents`.
+raise_price(sku: Text, cents: Int) -> Unit
+  uses @prices: PriceList[price, set_price]
+=
+  let current = @prices.price(sku)
+  @prices.set_price(sku, cents: current + cents)
+
+--- Takes 10 percent off a SKU, and gives back the new price. A dry run sets no price.
+mark_down(sku: Text, dry_run: Bool) -> Int
+  uses @prices: PriceList[price, set_price where not dry_run]
+=
+  let cents = @prices.price(sku)
+  let sale = cents - cents / 10
+  if not dry_run
+    @prices.set_price(sku, cents: sale)
+  sale
+
+--- Reviews the price list. It holds every operation, and hands each helper only the ones named
+--- at the call. A dry run changes nothing.
+review(dry_run: Bool) -> Unit
+  uses @prices: PriceList[price, set_price where not dry_run, remove where not dry_run]
+  uses @console: Console[print]
+=
+  show_price("LAMP-01") with @prices = @prices[set_price]
+  if not dry_run
+    raise_price("LAMP-01", cents: 100) with @prices = @prices[price, set_price]
+  let sale = mark_down("DESK-02", dry_run) with @prices = @prices[price, set_price]
+  @console.print("DESK-02 goes to {sale}")
+  if not dry_run
+    @prices.remove("RUG-07")
+
+--- A price list where every product costs `each` cents, and that prints each change.
+handler flat(each: Int) for PriceList
+  uses @console: Console[print]
+  op price(sku) = each
+  op set_price(sku, cents) = @console.print("set {sku} to {cents}")
+  op remove(sku) = @console.print("removed {sku}")
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("Dry run:")
+  review(dry_run: true) with @prices = flat(1990)
+  @console.print("Review:")
+  review(dry_run: false) with @prices = flat(1990)

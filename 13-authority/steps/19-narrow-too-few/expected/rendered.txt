@@ -1,0 +1,9 @@
+[U3002] Error: `show_price` needs `@prices` to permit `price`, which it does not here
+    ╭─[ src/pricing.una:40:3 ]
+    │
+ 40 │   show_price("LAMP-01") with @prices = @prices[set_price]
+    │   ──────────┬──────────
+    │             ╰──────────── `show_price` needs `@prices` to permit `price`, which it does not here
+    │
+    │ Note: run `una explain U3002` for an explanation
+────╯
