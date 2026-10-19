@@ -9,6 +9,6 @@ example availability "a line short of stock says by how much" ... ok
 example availability "an order ships whole only when every line can ship" ... ok
 example availability "an empty order ships whole" ... ok
 example availability "the reason names the warehouse" ... ok
-example availability "a warehouse that does not answer counts as none in an estimate" ... ok
+example availability "a warehouse that does not answer is recorded as holding none" ... ok
 
 11 examples: 11 passed, 0 failed

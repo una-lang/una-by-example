@@ -58,9 +58,9 @@ pub check_order(lines: List[OrderLine]) -> List[Availability]
     availability(line)
       if error pass
 
---- A quick count of a line's SKU in the three warehouses, all asked at the same time. A
---- warehouse that does not answer counts as none.
-pub estimate(line: OrderLine) -> Int
+--- What each warehouse holds of a line's SKU, all three asked at the same time. A warehouse
+--- that does not answer is recorded as holding none.
+pub partial(line: OrderLine) -> Availability
   uses @north: Warehouse[on_hand]
   uses @south: Warehouse[on_hand]
   uses @east: Warehouse[on_hand]
@@ -72,7 +72,7 @@ pub estimate(line: OrderLine) -> Int
       if error use 0
     let east = @east.on_hand(line.sku)
       if error use 0
-  north + south + east
+  Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
 
 --- The units of the line's SKU in the three warehouses together.
 pub held(found: Availability) -> Int = found.north + found.south + found.east
@@ -192,9 +192,9 @@ example "the reason names the warehouse"
   do reason(Offline("east"))
   expect result == "the east warehouse did not answer; check again later"
 
-example "a warehouse that does not answer counts as none in an estimate"
+example "a warehouse that does not answer is recorded as holding none"
   given @north = shelves(north_stock())
   given @south = offline("south")
   given @east = shelves(east_stock())
-  do estimate(OrderLine(sku: "DESK-02", quantity: 2))
-  expect result == 2
+  do partial(OrderLine(sku: "DESK-02", quantity: 2))
+  expect result == Availability(sku: "DESK-02", wanted: 2, north: 1, south: 0, east: 1)

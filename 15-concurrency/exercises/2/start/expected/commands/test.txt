@@ -9,8 +9,8 @@ example availability "a line short of stock says by how much" ... ok
 example availability "an order ships whole only when every line can ship" ... ok
 example availability "an empty order ships whole" ... ok
 example availability "the reason names the warehouse" ... ok
-example availability "a warehouse that does not answer counts as none in an estimate" ... FAILED
-  src/availability.una:193: expect result == 2
-  it is false, with `result` = `0`
+example availability "a warehouse that does not answer is recorded as holding none" ... FAILED
+  src/availability.una:193: expect result == Availability(sku: "DESK-02", wanted: 2, north: 1, south: 0, east: 1)
+  it is false, with `result` = `Availability(sku: "DESK-02", wanted: 2, north: 0, south: 0, east: 0)`
 
 11 examples: 10 passed, 1 failed

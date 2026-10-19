@@ -45,7 +45,7 @@ You will learn to:
 
 Running work at the same time is one of the hardest parts of programming in most languages. The trouble comes from two places. When two pieces of work change the same value, such as a counter, the result depends on which one gets there first: one update can be lost, and only on some runs. And when the result depends on timing, a test can pass a hundred times and fail on the next run, on another computer, or under load. Such bugs are hard to reproduce, and so hard to fix.
 
-Una allows concurrency in one shape only, and that shape removes both sources. A piece of work that runs alongside others can read the values around it but cannot change them, so no two pieces ever change the same value. Every piece ends before the block that started it ends, so nothing keeps running in the background. And the result of the block is fixed: it is the result of running the pieces one after another, in the order they are written, stopping at the first failure. Running them at the same time changes how long the program waits, and the order in which the outside world sees their effects, but never what the program computes.
+Una allows concurrency in one shape only, and that shape removes both sources. A piece of work that runs alongside others can read the values around it but cannot change them, so no two pieces ever change the same value. Every piece ends before the block that started it ends, so nothing keeps running in the background. And the result of the block is fixed: it is the result of running the pieces one after another, in the order they are written, stopping at the first failure. Running them at the same time can change how long the program waits, and the order in which the outside world sees their effects, but never what the program computes.
 
 > [!KEY]
 > In Una, work that runs at the same time gives the result of running it one piece after another, in the order written: concurrency changes when things happen, not what the program computes.
@@ -54,7 +54,7 @@ Una allows concurrency in one shape only, and that shape removes both sources. A
 
 ### What concurrent work is
 
-Think of finding out how many lamps three warehouses hold, by phone. You can call the north warehouse, wait for the answer, then call the south one, then the east one. Or three clerks can each call one warehouse, at the same moment, while you wait until all three come back. The second way takes as long as the slowest call, not as long as all three together.
+Think of finding out how many lamps three warehouses hold, by phone. You can call the north warehouse, wait for the answer, then call the south one, then the east one. Or three clerks can each call one warehouse, at the same moment, while you wait until all three come back. The second way can take as long as the slowest call, not as long as all three together.
 
 Work that runs this way is **concurrent**: several pieces of it are in progress at the same time, instead of one after another. Each piece is a **task**: a part of the program that runs on its own and ends with a result. In Una, a `together` block starts its tasks, waits until every one of them has ended, and then gives their results to the code that comes after it. No task outlives the block that started it. Running tasks this way, always inside a block that waits for them all, is called **structured concurrency**.
 
@@ -64,13 +64,13 @@ A word you will meet next to this one is **parallel**: two tasks run in parallel
 
 Most of the time a program spends waiting is not spent computing. It is spent waiting for answers: from a warehouse's stock service, a payment service, a database. In [chapter 12](/learn/capabilities/#s12-3) such a service is a capability, and each call of one of its operations waits until the service answers. Over a network, an answer can take a tenth of a second or more.
 
-A program that asks two warehouses, one after the other, waits twice. Each step of a body runs to its end before the next one starts, as [chapter 1](/learn/hello/#s1-3) says, so the second question is not even sent until the first answer has come back. The two questions do not depend on each other, so nothing is gained by that order. With `together`, the program sends both and waits once, for the slower of the two.
+A program that asks two warehouses, one after the other, waits twice. Each step of a body runs to its end before the next one starts, as [chapter 1](/learn/hello/#s1-3) says, so the second question is not even sent until the first answer has come back. The two questions do not depend on each other, so nothing is gained by that order. With `together`, the program can send both and wait once, for the slower of the two.
 
-The waiting is the only thing that changes. The result stays what it was, and this chapter shows that the result cannot change: the program computes the same totals, the same failures and the same report, whether the questions are asked one after another or at the same time.
+Only the waiting can change. The result stays what it was, and this chapter shows that the result cannot change: the program computes the same totals, the same failures and the same report, whether the questions are asked one after another or at the same time.
 
 ### How to write `together`
 
-Each example of this chapter is a package of its own, a step, as [chapter 2](/learn/numbers/#each-step-is-a-package) explains. The first step asks two warehouses for the units of one SKU, one after the other. `Warehouse` is a capability with one operation, `on_hand`, which can fail with `StockError` when a warehouse does not answer, and `shelves` is a handler that answers from a map, as in [chapter 12](/learn/capabilities/#s12-3):
+Each example of this chapter is a package of its own, a step, as [chapter 2](/learn/numbers/#each-step-is-a-package) explains. The first step asks two warehouses for the units of one SKU, one after the other. `Warehouse` is a capability with one operation, `on_hand`, which can fail with `StockError` when a warehouse does not answer, and `shelves` is a handler that answers from a map, as the handler `warehouse` of [chapter 12](/learn/capabilities/#s12-3) does; here `Warehouse` names the capability, and the handler is `shelves`:
 
 ```una include="steps/01-one-after-another/src/stock.una" title="steps/01-one-after-another/src/stock.una" verified="check, run"
 module stock
@@ -159,7 +159,7 @@ The two `let` lines of `total` run in order: first the north warehouse is asked,
 LAMP-01: 6 units
 ```
 
-That is the point of the change: the result is the same, and only the waiting differs.
+That is the point of the change: the result is the same, and only the waiting can differ. Under `una run`, the tasks still run one after another, so this step takes no less time; the waiting shrinks in an executable that asks real services ([The interpreter and an executable](#the-interpreter-and-an-executable)).
 
 ### The forms of `together`
 
@@ -278,7 +278,7 @@ a clause per branch: 6
 
 #### Three branches or more
 
-`three_sites` asks three warehouses, `@north`, `@south` and `@east`, at once. A block may have as many branches as you need, each on its own `let` line, and they all start together. After the block, the three names are bound, and the last line puts them in a text.
+`three_sites` asks three warehouses, `@north`, `@south` and `@east`, at once. A block may have as many branches as you need, each on its own `let` line, and they all may run at the same time. After the block, the three names are bound, and the last line puts them in a text.
 
 #### A branch that installs a handler: `with`
 
@@ -475,13 +475,13 @@ In `estimate`, each branch handles its own failure, so the south branch gives 0 
 
 ### What `together for` is
 
-`together` suits a few pieces of work you can name one by one. Often the pieces come from a list: one question per line of an order, one label per SKU. `together for` runs one task for each element of a list, or for each number of a range, all at the same time, and gives the list of their results.
+`together` suits a few pieces of work you can name one by one. Often the pieces come from a list: one question per line of an order, one label per SKU. `together for` runs one task for each element of a list, or for each number of a range, all of them concurrent, and gives the list of their results.
 
-It reads like the `for` loop of [chapter 9](/learn/loops/#s9-1), with one difference that matters. A `for` loop takes its turns one after another, and a turn may change a name declared before the loop with `let edit`. The tasks of `together for` run at the same time, and each one gives back a value. `together for` builds a list: one element per task, in the order of the list it walks.
+It reads like the `for` loop of [chapter 9](/learn/loops/#s9-1), with one difference that matters. A `for` loop takes its turns one after another, and a turn may change a name declared before the loop with `let edit`. The tasks of `together for` run concurrently, and each one gives back a value. `together for` builds a list: one element per task, in the order of the list it walks.
 
 ### Why one task per element
 
-A store checks an order of ten lines against its warehouses. Asked one line after another, the check takes ten times as long as one line. The lines do not depend on each other, so they can all be checked at once, and the check takes about as long as the slowest line. The number of lines is known only when the program runs, so a `together` block, whose branches are written one by one, cannot do it. `together for` starts as many tasks as the list has elements.
+A store checks an order of ten lines against its warehouses. Asked one line after another, the check takes ten times as long as one line. The lines do not depend on each other, so they can all be checked at once, and in an executable the check can take about as long as the slowest line. The number of lines is known only when the program runs, so a `together` block, whose branches are written one by one, cannot do it. `together for` makes as many tasks as the list has elements.
 
 ### How to write `together for`
 
@@ -632,7 +632,7 @@ pub main() -> Unit
 1. **`together for sku in skus`.** One task per SKU, as the last line of the body, so the list it builds is the function's result.
 2. **`let units = total(sku)`, then `if error pass`.** A line of the body that can fail takes a clause, as in any block. A failure of `total` makes its task fail, and the task's failure makes `stock_lines` fail.
 3. **`"{sku}: {units} units"`.** The last line, the task's value.
-4. **Tasks inside tasks.** Each task calls `total`, whose `together` starts two tasks of its own. Three SKUs, two warehouses each: six questions, all in progress at once.
+4. **Tasks inside tasks.** Each task calls `total`, whose `together` starts two tasks of its own. Three SKUs, two warehouses each: six questions, which may all be in progress at once.
 5. **The bindings in tasks.** Each task uses `@north` and `@south`, the bindings of the `uses` lines of `stock_lines`. `main` installs both handlers for the one call, with `with`, and every task of that call sees them.
 :::
 
@@ -689,7 +689,7 @@ A `together for` that is neither named by a `let`, nor assigned, nor the last li
 ────╯
 ```
 
-The message says where a `together for` may stand: as the last line of its block, or as the value of a `let`. Name the list, or make it the last line.
+The message says where a `together for` may stand: as the last line of its block, or as the value of a `let`; an assignment to a `let edit` name, as in `main` above, works too. Name the list, or make it the last line.
 
 #### It builds a list, not a total
 
@@ -709,7 +709,7 @@ A task cannot change a name declared outside it, so a `together for` cannot add 
 | A step for each element that only prints | a `for` loop: printing in order is what you want |
 :::
 
-In an executable, each task runs on a thread of its own ([The interpreter and an executable](#the-interpreter-and-an-executable)), and starting a thread is work too. So `together for` pays off when each task waits for something, such as a service. For a short computation that waits for nothing, such as building a label, `map` reads more simply.
+In an executable, each task runs on a thread of its own ([The interpreter and an executable](#the-interpreter-and-an-executable)), and starting a thread, and copying in what the task reads, is work too. So `together for` pays off when each task waits for something, such as a service. For a short computation that waits for nothing, such as building a label, `map` reads more simply.
 
 ### Check yourself: the order of the results
 
@@ -733,7 +733,7 @@ pub main() -> Unit
   @console.print("{plan(skus, stock: stock)}")
 ```
 
-The task for `LAMP-01` has the least to do and may finish first. What does `una run .` print?
+Suppose the task for `LAMP-01` finishes first. What does `una run .` print?
 
 :::answer Show the answer
 ```text include="steps/10-restock/expected/output.txt"
@@ -824,15 +824,15 @@ CHAIR-09: 0 units
 3 SKUs asked
 ```
 
-The same rule covers the two other ways of changing a name, which [chapter 16](/learn/memory/) teaches: passing it to a function that changes it in place, as `edit` ([section 16.2](/learn/memory/#s16-2)), or that takes it over, as `take` ([section 16.3](/learn/memory/#s16-3)). Inside a task, both are U2023 for a name declared outside it. A task's own names, made in its body, are its own: it may declare them `let edit` and change them, as any block may.
+Passing an outer name to a function that changes it in place (`edit`, [section 16.2](/learn/memory/#s16-2)) or takes it over (`take`, [section 16.3](/learn/memory/#s16-3)) is U2023 too. A task's own names, made in its body, are its own: it may declare them `let edit` and change them, as any block may.
 
 ### Rule 2: the first failure in order wins
 
 When one task fails, the block fails too, and the failure it gives is the failure that a run one after another would give: the failure of the first task, in the order written, that fails.
 
-- **The tasks after it are cancelled.** A task written after a failing one is **cancelled**: it is stopped, and its result is dropped, since the block will fail anyway. A task that has not started yet never starts.
+- **The tasks after it are canceled.** A task written after a failing one is **canceled** if it is still running: it is stopped, and its result is dropped, since the block will fail anyway. One that has already ended keeps what it did, and its result is dropped too. A task that has not started yet never starts.
 - **The tasks before it run on.** A task written before the failing one keeps running to its end, since a run one after another would have run it first. It may fail in turn, and then its failure is the one that wins.
-- **Cancelling waits for a safe point.** A cancelled task stops at its next call, operation or loop turn. An operation already in progress, such as a question a warehouse is answering, completes, and what it already did stays done.
+- **Canceling waits for a safe point.** A canceled task stops at its next call, operation or loop turn. An operation already in progress, such as a question a warehouse is answering, completes, and what it already did stays done.
 - **The block still waits.** It fails only after every task has ended, failed or stopped.
 
 This step asks two warehouses with `total`, first with the south one offline, then with both offline:
@@ -901,11 +901,11 @@ example failures "the north warehouse is asked even though the south one fails" 
 1 example: 1 passed, 0 failed
 ```
 
-An example never states what a cancelled task did or did not do. The task after a failing one may have started, and asked its warehouse, before it was cancelled, or it may never have started: that depends on timing. So `expect performed` and `expect not performed` are safe on the tasks before a failing one, and on blocks that do not fail, and on nothing else ([chapter 14](/learn/testing/#s14-3)).
+Under `una test`, which runs the tasks one after another, a task after a failing one never starts, so an example could state that its warehouse was not asked, and pass every time. But that is the interpreter's schedule, not a promise of the language: in an executable, that task may have asked its warehouse before it was canceled. So `expect performed` and `expect not performed` belong on the tasks before a failing one, and on blocks that do not fail ([chapter 14](/learn/testing/#s14-3)).
 
 ### Rule 3: effects are recorded in task order
 
-What a program does to the world outside it, such as asking a service or printing a line, is an **effect**. Una keeps a record of the operations a run performs, its **trace**, which `una test` uses for `expect performed`. In the trace, the operations of a block's tasks are listed task by task, in the order of the tasks, each task's operations in its own order, whatever order they really happened in. The trace of a cancelled task ends where it stopped, with a mark that it was cancelled.
+What a program does to the world outside it, such as asking a service or printing a line, is an effect ([chapter 12](/learn/capabilities/#s12-1)). Una keeps a record of the operations a run performs, the trace that `expect performed` reads ([section 14.3](/learn/testing/#s14-3)). In the trace, the operations of a block's tasks are listed task by task, in the order of the tasks, each task's operations in its own order, whatever order they really happened in. The trace of a canceled task ends where it stopped, with a mark that it was canceled.
 
 What the record cannot fix is the moment each effect reaches the outside world. Here each task prints a line:
 
@@ -942,7 +942,7 @@ lengths: [7, 6, 7]
 
 `una run` and `una test` run your program in Una's **interpreter**, which follows the program step by step. It runs the tasks of a block one after another, in their order: that is one of the ways the tasks may run, and it is the one the guarantee describes, so the interpreter is the reference. Its runs are the same every time.
 
-`una build` turns a program into an **executable**, a file the computer runs directly ([section 18.5](/learn/tools/#s18-5)). There, each task runs on its own **thread**, a line of work that the computer runs at the same time as others, on another core when it has one. Each task gets its own copy of the values it reads when it starts, and its result is copied back when it ends. The tasks really run at the same time, and the executable gives the same result, the same failure and the same exit status as the interpreter. What may differ is only what timing decides: the order in which the lines of different tasks appear, and how far a cancelled task got.
+`una build` turns a program into an **executable**, a file the computer runs directly ([section 18.5](/learn/tools/#s18-5)). There, each task runs on its own **thread**, a line of work that the computer runs at the same time as others, on another core when it has one. Each task gets its own copy of the values it reads when it starts, and its result is copied back when it ends. The tasks may really run at the same time, but nothing promises it: an executable starts a block's tasks a group at a time, so a very long list does not run all at once, and how many run together is the implementation's choice. The executable gives the same result, the same failure and the same exit status as the interpreter, as long as the run stays within its limits. Each task's copies count toward the run's memory limit, so an executable can stop with U6003 where `una run` does not ([section 16.4](/learn/memory/#s16-4)). Within the limits, what may differ is only what timing decides: the order in which the lines of different tasks appear, and how far a canceled task got.
 
 ### What Una leaves out
 
@@ -1084,7 +1084,7 @@ pub check_order(lines: List[OrderLine]) -> List[Availability]
       if error pass
 ```
 
-`check_order` runs one task per line of the order, and each task runs `availability`, which starts three tasks of its own. An order of two lines makes six questions, all in progress at once. The list comes back in the order of the lines, and if any line fails, the whole order fails with the failure of the first line, in order, that fails.
+`check_order` runs one task per line of the order, and each task runs `availability`, which starts three tasks of its own. An order of two lines makes six questions, which may all be in progress at once. The list comes back in the order of the lines, and if any line fails, the whole order fails with the failure of the first line, in order, that fails.
 
 ### The pure parts: what is held, and the report
 
@@ -1428,7 +1428,7 @@ One warehouse offline fails the line, and one line that fails fails the whole or
 
 ### What not to test: what timing decides
 
-No example states whether the east warehouse was asked when the south one failed. The east branch comes after the failing one, so it may have asked its warehouse before it was cancelled, or never started: timing decides, and an example that depends on it could pass today and fail tomorrow. Test what the guarantee fixes: the result, the failure, and the effects of the tasks before a failing one.
+No example states whether the east warehouse was asked when the south one failed. Under `una test`, the east branch never starts, since the tasks run one after another. But the language does not promise that: in an executable, the east branch, which comes after the failing one, may have asked its warehouse before it was canceled. An example that states it would test the interpreter's schedule, not the guarantee. Test what the guarantee fixes: the result, the failure, and the effects of the tasks before a failing one.
 
 ### The pure functions
 
@@ -1705,46 +1705,54 @@ The function is pure, and asks no warehouse. For a short computation like this o
 :::
 ::::
 
-### Exercise 2: an estimate that skips a silent warehouse
+### Exercise 2: counts that record a silent warehouse as none
 
 ::::exercise
-A clerk wants a quick estimate of the stock of a SKU, even when a warehouse does not answer. Write `estimate(line)`, which asks the three warehouses at the same time and adds their counts, with a warehouse that does not answer counting as none. The start package has the stub, and an example in which the south warehouse is offline:
+A clerk wants to see what each warehouse holds of a line's SKU, even when one of them does not answer. Write `partial(line)`, which asks the three warehouses at the same time and gives back an `Availability`, as `availability` does, but records 0 in the field of a warehouse that does not answer instead of failing. The start package has the stub, and an example in which the south warehouse is offline:
 
-```una include="exercises/2/start/src/availability.una#estimate" title="exercises/2/start/src/availability.una"
---- A quick count of a line's SKU in the three warehouses, all asked at the same time. A
---- warehouse that does not answer counts as none.
-pub estimate(line: OrderLine) -> Int
+```una include="exercises/2/start/src/availability.una#partial" title="exercises/2/start/src/availability.una"
+--- What each warehouse holds of a line's SKU, all three asked at the same time. A warehouse
+--- that does not answer is recorded as holding none.
+pub partial(line: OrderLine) -> Availability
   uses @north: Warehouse[on_hand]
   uses @south: Warehouse[on_hand]
   uses @east: Warehouse[on_hand]
 =
-  0
+  Availability(sku: line.sku, wanted: line.quantity, north: 0, south: 0, east: 0)
 ```
 
 ```una include="exercises/2/start/src/availability.una#L188-L193" title="exercises/2/start/src/availability.una"
-example "a warehouse that does not answer counts as none in an estimate"
+example "a warehouse that does not answer is recorded as holding none"
   given @north = shelves(north_stock())
   given @south = offline("south")
   given @east = shelves(east_stock())
-  do estimate(OrderLine(sku: "DESK-02", quantity: 2))
-  expect result == 2
+  do partial(OrderLine(sku: "DESK-02", quantity: 2))
+  expect result == Availability(sku: "DESK-02", wanted: 2, north: 1, south: 0, east: 1)
 ```
 
 :::hint
-*Hint:* start from the `together` block of `availability`. Only the clauses change, and the last line adds the three names.
+*Hint:* start from the `together` block of `availability`. Change each branch's clause so that a warehouse that does not answer gives 0, and build the record on the line after the block.
 :::
 
-Check your answer with `una test .`.
+On the start package, `una test .` reports:
+
+```text include="exercises/2/start/expected/commands/test.txt#L12-L16"
+example availability "a warehouse that does not answer is recorded as holding none" ... FAILED
+  src/availability.una:193: expect result == Availability(sku: "DESK-02", wanted: 2, north: 1, south: 0, east: 1)
+  it is false, with `result` = `Availability(sku: "DESK-02", wanted: 2, north: 0, south: 0, east: 0)`
+
+11 examples: 10 passed, 1 failed
+```
 
 :::answer Answer (*check, run, test*; `exercises/2/answer`).
-A `together` block with a clause per branch that gives a default:
+A `together` block with a clause per branch that gives a default, then the record:
 
 ```diff include="exercises/2/start..exercises/2/answer:src/availability.una" context="1" title="src/availability.una"
 --- a/src/availability.una
 +++ b/src/availability.una
 @@ -67,3 +67,10 @@
  =
--  0
+-  Availability(sku: line.sku, wanted: line.quantity, north: 0, south: 0, east: 0)
 +  together
 +    let north = @north.on_hand(line.sku)
 +      if error use 0
@@ -1752,11 +1760,11 @@ A `together` block with a clause per branch that gives a default:
 +      if error use 0
 +    let east = @east.on_hand(line.sku)
 +      if error use 0
-+  north + south + east
++  Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
  
 ```
 
-`DESK-02` has 1 unit in the north warehouse and 1 in the east one, and the south one counts as none: 2. Every failure is handled in its branch, so the block never fails, and `estimate` needs no `fails` in its header.
+`DESK-02` has 1 unit in the north warehouse and 1 in the east one. The south one does not answer, so its branch gives 0, and its field says 0. Every failure is handled in its branch, so the block never fails, and `partial` needs no `fails` in its header. Unlike `estimate` of [section 15.1](#s15-1), which adds the counts, `partial` keeps each warehouse's count in its own field.
 :::
 ::::
 
@@ -1827,7 +1835,7 @@ The first order wants 5 lamps, and the warehouses hold 6: it ships. The second w
 - `together for x in xs` runs one task per element and gives their values in list order.
 - `together` is a statement; `together for` is a value: after `let`, in an assignment, or last in a block.
 - A task never assigns an outer name (U2023): return a value, and combine the list after the block.
-- The first failure in order wins; later tasks are cancelled, earlier ones run on.
+- The first failure in order wins; later tasks are canceled, earlier ones run on.
 - Effects are recorded in task order, but printed lines may appear in any order: print after the block.
 :::
 
