@@ -99,7 +99,7 @@ pub main() -> Unit
   @console.print(label("A-1002", grams: 300, name: "12 Elm Road", street: "Northfield", city: "Corner Bakery"))
 ```
 
-Like every example of this chapter, this one is a package of its own, made as in [Making the package](/learn/hello/#making-the-package), with its module as the `entry`. You can also take each package, whole, from the chapter's download, `04-kinds.tar.gz`. `una run .` prints:
+Like every example of this chapter, this one is a package of its own, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `04-kinds.tar.gz`, holds them all. `una run .` prints:
 
 ```text include="steps/01-loose/expected/output.txt"
 A-1001: Corner Bakery, 12 Elm Road, Northfield, 1200 g

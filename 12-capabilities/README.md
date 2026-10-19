@@ -66,7 +66,7 @@ Una treats effects as authority that must be handed out, the way a store hands o
 - A **binding** is the name a function uses for a capability it holds. It always starts with `@`, as in `@console`. You perform an operation on a binding: `@console.print("…")`.
 - A **`uses` clause** is a line of a function's header that names a binding, its capability, and the operations the function may perform with it: `uses @console: Console[print]`.
 
-The `uses` clauses of a header are the function's keycard: the complete list of what it may do outside the program. Each step of this chapter is a package, made as [Each step is a package](/learn/numbers/#each-step-is-a-package) in chapter 2 shows, and the manifest of a step that prints grants the console, as [section 12.2](#s12-2) explains.
+The `uses` clauses of a header are the function's keycard: the complete list of what it may do outside the program. Each step of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the manifest of a step that prints grants the console, as [section 12.2](#s12-2) explains.
 
 ### Why a header lists effects
 

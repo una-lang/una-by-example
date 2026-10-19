@@ -59,9 +59,7 @@ A **call** asks a function to do its work. You have written many since [chapter 
 
 Think of an order form at a supplier: every box on the form has a printed name, "quantity", "unit price", "deliver by", and you write a value in each. Nobody reads the form by the order of the boxes. They read the names. A label is that printed name, carried into the call.
 
-### Each step is a package
-
-Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#s2-1) explains: a directory with `una.toml`, `verification.lock` and the module under `src/`. You can also take each step's package, whole, from the chapter's download, `06-functions.tar.gz`. Then run `una check .` and `una run .` in the package's directory.
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `06-functions.tar.gz`, holds them all.
 
 ### Why Una labels arguments
 

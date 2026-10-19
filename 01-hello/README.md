@@ -82,7 +82,7 @@ You work with `una` in a **terminal**: the program that shows the console on you
 
 In the terminal you type a **command**, a line that names a program and what it should do, and press [[Enter]]; the program runs and prints its answer under the command.
 
-Next, install `una` and Z3, a program that `una` asks to prove facts about your code: to show, before the program runs, that a rule of the code holds in every case. The programs of this chapter need no proof, but from [chapter 2](/learn/numbers/) on, `una check` cannot prove anything without Z3. The [install page](/docs/install/) installs both, at the versions that go together, and says how to set up your terminal so that typing `una` runs it from any directory.
+Next, install `una` and Z3, a program that `una` asks to prove facts about your code: to show, before the program runs, that a rule of the code holds in every case. The programs of this chapter need no proof, but from [chapter 2](/learn/numbers/) on, `una check` cannot prove anything without Z3. The [install steps](/docs/get-started/#1-install) install both, at the versions that go together, and say how to set up your terminal so that typing `una` runs it from any directory.
 
 ### Checking the install: `una --version`
 
@@ -92,7 +92,7 @@ If `una --version` answers with this line instead, followed by a short note on h
 
 `error: unexpected argument '--version' found`
 
-Run the installer again, as the [install page](/docs/install/) says, to get the current release.
+Run the installer again, as the [install steps](/docs/get-started/#1-install) say, to get the current release.
 
 #### When an old `una` comes first
 
@@ -1459,7 +1459,7 @@ The hours are still written once, in `opening_hours`. When they change, the Sund
 ### Reference
 
 :::reference
-- Start: [install](/docs/install/), [getting started](/docs/getting-started/)
+- Start: [install](/docs/get-started/#1-install), [get started](/docs/get-started/)
 - Construct pages: [source files, comments and literals](/docs/language/lexical-structure/), [functions](/docs/language/functions/), [`uses`](/docs/language/capabilities/uses/), [host capabilities and grants](/docs/language/capabilities/host/), [`example`](/docs/language/examples/example/)
 - Configuration: [`[package] edition`](/docs/configure/package/edition/), [`[run] entry`](/docs/configure/run/entry/), [`[run] grants`](/docs/configure/run/grants/), [`verification.lock`](/docs/configure/verification-lock/)
 - Commands: [`una check`](/docs/cli/check/), [`una run`](/docs/cli/run/), [`una test`](/docs/cli/test/), [`una fmt`](/docs/cli/fmt/), [`una fix`](/docs/cli/fix/), [`una explain`](/docs/cli/explain/)

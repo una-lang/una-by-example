@@ -837,7 +837,7 @@ The counterexample, `copies = -1`, is an `Int` that no `U8` can hold. A precondi
 - **Every operation, even with literals.** `250 + 6` where a `U8` is expected is not one literal: it gets an overflow obligation, which is refuted.
 - **Division too.** `/` and `mod` on fixed-width values are Euclidean, as on `Int`, and a divisor that may be zero is a division obligation, as in [section 2.2](#division-by-zero-a-proof-obligation).
 - **Interpolation shows the number.** A fixed-width value in braces goes into the text as its decimal digits, as an `Int` does.
-- **Lengths stay `Int`.** The length of a text, which [chapter 3](/learn/text-and-conditions/#s3-2) shows, is always an `Int`.
+- **Lengths stay `Int`.** The length of a text, which [section 3.1](/learn/text-and-conditions/#s3-1) shows, is always an `Int`.
 
 ### When to use a fixed width
 

@@ -114,7 +114,7 @@ Una does not run it. `una check .` reports:
 
 You met this diagnostic in [section 2.2](/learn/numbers/#s2-2): every division by a value that is not a literal is a **proof obligation**, a fact that must be proven before the program may run, here `count != 0`. Nothing tells `una` that `count` is never 0, and the line `Note 2` gives the case that breaks it, `count = 0`: the **counterexample**. The `Help` line offers a guard, an `if` around the division, but a guard makes `installment` invent an answer for 0 installments, which has none. What `installment` needs is a way to say "never call me with 0", so that each caller, where the number comes from, makes sure of it. A precondition is that way.
 
-Each example of this chapter is a package, as [section 2.1](/learn/numbers/#s2-1) explains, and the chapter's download, `05-contracts.tar.gz`, holds them all.
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `05-contracts.tar.gz`, holds them all.
 
 ### What the verifier is
 

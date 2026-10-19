@@ -89,7 +89,7 @@ pub main() -> Unit
   @console.print("week 4: count the lamp shelf")
 ```
 
-Each example of this chapter is a package of its own, made as in [Making the package](/learn/hello/#making-the-package), and the chapter's download holds them under `steps/`. This one works, and `una run .` prints:
+Each example of this chapter is a package of its own, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `09-loops.tar.gz`, holds them all. This one works, and `una run .` prints:
 
 ```text include="steps/01-no-loop/expected/output.txt"
 week 1: count the lamp shelf

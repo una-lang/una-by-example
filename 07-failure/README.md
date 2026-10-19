@@ -72,7 +72,7 @@ Some questions have no answer. Ask a store for the price of a product it does no
 
 In many languages a search that finds nothing returns a special value, often called null, of the same type as a real answer. The type then says that a product is always there, and the first line that uses a missing product fails while the program runs, often far from the search.
 
-In Una the type says it. Each example of this chapter is a package, made as in [Making the package](/learn/hello/#making-the-package); the chapter's download, `07-failure.tar.gz`, holds them all. Here, `find_product` gives back an `Option[Product]`, and `price_of` reads the price from it as if the product were always found:
+In Una the type says it. Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `07-failure.tar.gz`, holds them all. Here, `find_product` gives back an `Option[Product]`, and `price_of` reads the price from it as if the product were always found:
 
 ```diff include="steps/01-option..steps/02-missing-price:src/lookup.una" context="1" title="src/lookup.una"
 --- a/src/lookup.una

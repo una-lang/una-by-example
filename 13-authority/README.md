@@ -2000,7 +2000,7 @@ A call of a function that may perform the operation is checked as the operation 
 ### Reference
 
 :::reference
-- Construct pages: [`uses`](/docs/language/capabilities/uses/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`where`](/docs/language/types/where/), [`example`](/docs/language/examples/example/)
+- Construct pages: [`uses`](/docs/language/capabilities/uses/), [`capability` and `op`](/docs/language/capabilities/capability/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`where`](/docs/language/types/where/), [`example`](/docs/language/examples/example/)
 - Configuration: [`[package] edition`](/docs/configure/package/edition/), [`[boundaries]`](/docs/configure/boundaries/), [`una.toml`](/docs/configure/)
 - Commands: [`una check`](/docs/cli/check/), [`una fix`](/docs/cli/fix/), [`una test`](/docs/cli/test/)
 - Diagnostics: [U0101](/docs/errors/U0101/), [U3002](/docs/errors/U3002/), [U3006](/docs/errors/U3006/), [U3020](/docs/errors/U3020/), [U3021](/docs/errors/U3021/), [U3023](/docs/errors/U3023/), [U5001](/docs/errors/U5001/), [U7002](/docs/errors/U7002/)
