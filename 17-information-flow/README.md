@@ -3,7 +3,7 @@ learn: "17"
 title: Information flow
 editions: ["0.2"]
 codes: [U1001, U2001, U3015, U4001, U4002, U4003, U4004, U4005, U4007, U7005]
-time: 55
+time: 58
 builds: The shipping-notice service with customer data labeled, and a policy that releases a masked address to the log
 prerequisites: ["7", "10", "12", "14"]
 template: 2
@@ -18,7 +18,7 @@ The shipping-notice service of [chapter 12](/learn/capabilities/) prints custome
 ## What you'll build
 
 :::build
-The dispatch step of chapter 8, with the customers' names and addresses labeled as personal data. The mail service may receive them. The log may not, so it shows each address masked, through a policy that a reviewer can find in one place:
+The dispatch step of [chapter 12](/learn/capabilities/#s12-5), with the customers' names and addresses labeled as personal data. The mail service may receive them. The log may not, so it shows each address masked, through a policy that a reviewer can find in one place:
 
 ```text include="day-to-day/expected/output.txt"
 sent     A-1001 to r***@example.invalid
@@ -51,7 +51,7 @@ Una checks the flow of data as part of the type system:
 4. **Lowering a label takes a policy.** A policy names what it releases, to what label, through which function, for what purpose and with which owner. It lives in a trusted module, which `una.toml` lists, and the build report lists every call.
 :::
 
-What the checker guarantees has a precise scope. An observer who sees only what reaches `public` places, such as the console, sees the same output from two runs whose labeled inputs differ, unless a policy released something. Timing, termination and resource use, among others, are outside that model, and the build report lists them under `out of model`.
+What the checker guarantees is called **noninterference**, and it has a precise scope. An observer who sees only what reaches `public` places, such as the console, sees the same output from two runs whose labeled inputs differ, unless a policy released something. Timing, termination and resource use, among others, are outside that model ([What the checker promises](#what-the-checker-promises)).
 
 > [!KEY]
 > Labeled data leaves a program only through a place that accepts its label, or through a policy that a reviewer can read. The checker does not trust names, comments or intentions: it follows the data.
@@ -63,7 +63,7 @@ What the checker guarantees has a precise scope. An observer who sees only what 
 
 An office stamps some folders "confidential" and some "for internal use only". The stamp travels with the folder, and anyone who copies a page from it copies the stamp too. A clerk at the front desk sees the stamp and knows that the folder stays behind the counter.
 
-A **label** is that stamp, on a value. It says how sensitive the value is, and who may see it. In Una a label is part of a value's **type**, the description of what the value is ([chapter 2](/learn/numbers/)): `Int` is a whole number, and `confidential Int` is a whole number that is confidential. The checker reads the label wherever the value goes.
+A **label** is that stamp, on a value. It says how sensitive the value is, and who may see it. In Una a label is part of a value's **type**, the description of what the value is ([chapter 2](/learn/numbers/#s2-1)): `Int` is a whole number, and `confidential Int` is a whole number that is confidential. The checker reads the label wherever the value goes.
 
 A label has a **level**. Una has five, from least to most sensitive:
 
@@ -79,29 +79,9 @@ A type with no label is `public`. A label may also name **categories**, which sa
 
 The checker knows only the order of the levels: `public` is below `internal`, which is below `confidential`, and so on up to `restricted`. What each level is meant for, in the right-hand column, is a convention you choose for your store, not a rule of the language.
 
-### Each step is a package
-
-Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
-
-```toml include="steps/01-no-labels/una.toml" title="steps/01-no-labels/una.toml"
-[package]
-name = "pricing"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "pricing"
-grants = ["console"]
-```
-
-`verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `09-information-flow.tar.gz`. Then, in the package's directory:
-
-```sh
-una check .
-una run .
-```
-
 ### Why a program needs labels
+
+Each example of this chapter is a package, made as [chapter 2](/learn/numbers/#each-step-is-a-package) explains, and the chapter's download, `17-information-flow.tar.gz`, holds them all.
 
 Here is a catalog with no labels. The store sells each product at its `price`, and pays its supplier its `cost`. The difference, the margin, is business data the store would rather not show to customers:
 
@@ -141,7 +121,7 @@ You write a label in front of the type it applies to: `confidential Int`, `secre
 
 #### On a field
 
-A field of a kind ([chapter 4](/learn/kinds/)) can carry a label. Every value of the kind then holds a labeled value in that field, next to its unlabeled ones:
+A field of a kind ([chapter 4](/learn/kinds/#s4-1)) can carry a label. Every value of the kind then holds a labeled value in that field, next to its unlabeled ones:
 
 ```una include="steps/02-label-forms/src/pricing.una#UnitCost" title="steps/02-label-forms/src/pricing.una"
 --- What the store pays its supplier for one unit of a SKU. A label on a field: the amount is
@@ -296,6 +276,38 @@ DESK-02: 18900 cents
 2 margins computed
 ```
 
+### What the checker promises
+
+`main` reads both costs to compute the margins. Would its output change if the costs did? Change them, and run it again. Here the lamp costs the store 40.00 instead of 21.00, and the desk 0.01 instead of 126.00:
+
+```diff include="steps/03-labels..steps/37-other-costs:src/pricing.una" context="1" title="src/pricing.una"
+--- a/src/pricing.una
++++ b/src/pricing.una
+@@ -17,3 +17,3 @@
+ =
+-  let catalog = [Product(sku: "LAMP-01", price: 4990, cost: 2100), Product(sku: "DESK-02", price: 18900, cost: 12600)]
++  let catalog = [Product(sku: "LAMP-01", price: 4990, cost: 4000), Product(sku: "DESK-02", price: 18900, cost: 1)]
+   for product in catalog
+```
+
+`una run .` prints:
+
+```text include="steps/37-other-costs/expected/output.txt"
+LAMP-01: 4990 cents
+DESK-02: 18900 cents
+2 margins computed
+```
+
+These are the three lines that the catalog of [A catalog with a confidential cost](#a-catalog-with-a-confidential-cost) printed, character for character. The margins are very different, and nothing on the console shows it. That is not luck with these numbers. The checker accepts this program, and the program releases nothing, so no other costs could change what it prints, as long as the run finishes.
+
+This promise is called **noninterference**: values with a high label do not *interfere* with what can be seen at a lower one. An **observer** is whoever reads one place where data leaves the program: the person who reads the console sees `public` data, and a service that accepts `internal` data sees data up to `internal`. The promise holds for every observer. Take two runs whose data is the same at the observer's label and below, and differs only above it: the observer sees the same thing in both. What an observer can see is what the program returns, the failures it reports, the arguments it passes to operations, and whether an operation runs at all.
+
+The promise has three limits:
+
+- **What a policy releases.** A policy lowers a label on purpose ([section 17.5](#s17-5)), so what it releases may differ between two runs. The build report lists every release, so you can see each one.
+- **Runs that finish.** The promise compares runs that end. A run that stops early, for instance because it runs out of memory, may stop at a point that depends on a labeled value.
+- **What the model covers.** Some ways of learning about data are outside it, such as how long a run takes and how much memory it uses: a run that is slower for some costs shows that to anyone who times it. The build report lists them under `out of model` ([What the build report shows](#what-the-build-report-shows)), and [the security model](/docs/security/) describes each one.
+
 ### How labels follow data
 
 The checker gives every value a label, and follows it through each step of the program. These are the rules, each with the example that shows it.
@@ -316,7 +328,7 @@ Reading a field gives the field's label, raised by the label of the record it co
 
 `.len` has the label of the whole it measures, not of its elements. `cost_list(...).len` is public, since the list of costs is public and only its elements are labeled. `renegotiating().len` is confidential, since the whole list is labeled.
 
-Whole values work the same way. Comparing two products with `==`, or interpolating a whole product with `"{product}"`, reads every field, `cost` included. So both results carry the label of the most sensitive field of the kind. (Interpolating a whole record needs edition `0.2`.)
+Whole values work the same way. Comparing two products with `==`, or interpolating a whole product with `"{product}"`, reads every field, `cost` included. So both results carry the label of the most sensitive field of the kind. (Interpolating a whole record needs edition `0.2`, [chapter 19](/learn/editions/).)
 
 #### A declared type is a checkpoint
 
@@ -361,16 +373,20 @@ Now print the margins themselves, as [Why a program needs labels](#why-a-program
 +  @console.print("margins: {margins}")
 ```
 
-```text include="steps/05-leak/expected/rendered.txt#L1-L6"
+```text include="steps/05-leak/expected/rendered.txt#L1-L10"
 [U4003] Error: `@console.print` accepts `public` data, and this argument is `confidential`
     ╭─[ src/pricing.una:22:18 ]
     │
  22 │   @console.print("margins: {margins}")
     │                  ──────────┬─────────
     │                            ╰─────────── `@console.print` accepts `public` data, and this argument is `confidential`
+    │
+    │ Help 1: repair 1: send `@console.print` only data labeled `public` or lower, or send this value to an operation that accepts `confidential`
+    │
+    │ Help 2: repair 2 (escape: trusted; the guarantee then rests on trusted code, whose labels are not checked: a policy releases the data, or a module joins the trusted base; it is listed in the build report and needs review): declassify the value through a policy of a trusted module
 ```
 
-The interpolation `"margins: {margins}"` carries the labels of what it interpolates, so the text is `confidential`, and `Console.print` accepts `public`. The place where data leaves the program, the **sink**, is the subject of [section 17.2](#s17-2). The repairs una lists come in order: first send only public data, or send the value to a place that accepts its label; last, release it through a policy, which it marks as an escape. [Section 17.5](#s17-5) shows when that is right.
+The interpolation `"margins: {margins}"` carries the labels of what it interpolates, so the text is `confidential`, and `Console.print` accepts `public`. The place where data leaves the program, the **sink**, is the subject of [section 17.2](#s17-2). The repairs una lists, in the Help lines, come in order: first send only public data, or send the value to a place that accepts its label; last, release it through a policy, which it marks as an escape. [Section 17.5](#s17-5) shows when that is right.
 
 ### Choosing a level
 
@@ -460,12 +476,12 @@ Each sink has a **ceiling**: the highest label it accepts. Think of a mail slot 
 
 ### Why a sink needs a ceiling
 
-The store's supplier needs the reorder list, which the program reads from a file. Here is a program that sends it. The supplier's service is a capability declared as in chapter 8, with nothing about labels:
+The store's supplier needs the reorder list, which the program reads from a file. Here is a program that sends it. The supplier's service is a capability declared as in [chapter 12](/learn/capabilities/#s12-3), with nothing about labels:
 
 ```una include="steps/09-no-accepts/src/reorder.una" title="steps/09-no-accepts/src/reorder.una"
 module reorder
 
---- The supplier's ordering service, declared as in chapter 8.
+--- The supplier's ordering service, declared as in chapter 12.
 capability Supplier
   op submit(order: Text) -> Unit
 
@@ -517,14 +533,14 @@ The operations the host provides ([chapter 12](/learn/capabilities/#s12-2)) have
 | `Env.get(name)` | `public` | an `Option[internal Text]` |
 | `Files.read(path)` | `public` | an `internal Text` |
 | `Files.write(path, content)` | `internal` | nothing |
-| `Http.get`, `post`, `put` and `delete` ([chapter 12](/learn/capabilities/#s12-2)) | `internal`, for every argument | an `internal Response` |
+| `Http.get`, `post`, `put` and `delete` ([chapter 12](/learn/capabilities/#s12-2)) | `internal`, for every argument | a `Response`, the web service's answer, labeled `internal` |
 | `Keys.hmac(key_name, data)` | `public` for the key name, any label for the data | a `Hashed`, labeled `internal` and the label of the data ([A keyed hash](#a-keyed-hash-keyshmac-and-hashed)) |
 
 So a program may print only public data, and may write to a file, or send to a web service, what it read from one, but no more than `internal`.
 
 ### Data from outside is `internal`
 
-Data read from files, the environment or the network is labeled `internal`. `Files.read` returns `internal Text`, `Env.get` returns `internal` values, and an `Http` request, a message to a web service, returns an `internal Response`: a file, an environment variable or a web service may hold anything, so the program may pass what it read to the store's own systems, but may not print it. A count of what was read, such as its length, carries the same label, as [Check yourself: sinks and keyed hashes](#check-yourself-sinks-and-keyed-hashes) shows.
+Data read from files, the environment or the network is labeled `internal`. `Files.read` returns `internal Text`, `Env.get` returns `internal` values, and an `Http` request, a message to a web service, returns a `Response`, the web service's answer, labeled `internal`: a file, an environment variable or a web service may hold anything, so the program may pass what it read to the store's own systems, but may not print it. A count of what was read, such as its length, carries the same label, as [Check yourself: sinks and keyed hashes](#check-yourself-sinks-and-keyed-hashes) shows.
 
 ### How to write `accepts`
 
@@ -634,7 +650,7 @@ The printed line is a literal, and it is still refused. The message gives the re
 #### Examples are not sinks
 
 > [!NOTE]
-> `expect` lines of examples are not sinks. An example may compare a `secret` result with a value, and in a package of edition `0.2`, `una test .` prints it in full when the example fails, since a test is the author looking at their own data. (Edition `0.1` hides the labeled fields of a result as `<redacted:level>`.) The `do` line is checked like any other code: an example can observe a secret, but cannot send it anywhere the program itself could not.
+> `expect` lines of examples are not sinks. An example may compare a `secret` result with a value, and in a package of edition `0.2`, `una test .` prints it in full when the example fails, since a test is the author looking at their own data. (Edition `0.1` hides the labeled fields of a result as `<redacted:level>`, [chapter 19](/learn/editions/).) The `do` line is checked like any other code: an example can observe a secret, but cannot send it anywhere the program itself could not.
 
 ### Raising a ceiling, or sending less
 
@@ -726,7 +742,7 @@ example "an address that is not on the list is not found"
   expect result == false
 ```
 
-- **`fake_keys`** is a handler of `Keys` ([chapter 12](/learn/capabilities/#s12-3)). It makes hashes with `fake_hash(seed)`, from the standard module `std.testing`, which the file imports with `import std.testing (fake_hash)`. The **seed** is a number that picks which fake hash you get: the same seed always gives the same hash, so `fake_hash(1)` stands for the hash of the listed address.
+- **`fake_keys`** is a handler of `Keys`, a host capability, written as a fake of a host capability is in [chapter 14](/learn/testing/#a-fake-of-a-host-capability). It makes hashes with `fake_hash(seed)`, from the standard module `std.testing`, which the file imports with `import std.testing (fake_hash)`. The **seed** is a number that picks which fake hash you get: the same seed always gives the same hash, so `fake_hash(1)` stands for the hash of the listed address.
 - **`given @keys = fake_keys()`** installs the handler for one example only. [Section 14.3](/learn/testing/#s14-3) teaches `given` and fakes in full.
 
 **Only in examples.** A function of `std.testing` may be called only in example lines and in handlers that only `given` installs, so fake hashes never reach a real run. Install `fake_keys` in `main`, with `with` and the clause that handles a `KeyError`:
@@ -815,7 +831,7 @@ Ask a colleague whether a customer spent more than 500.00 this year, and agree t
 
 A program can leak the same way. A value **flows explicitly** when it is copied or computed into another, as the cost flows into the margin. It **flows implicitly** when it decides which way the program goes: a branch on the cost that returns `0` or `790` reveals something about the cost, although `0` and `790` are constants.
 
-The checker tracks implicit flows with the label of the **program counter**: the label of what decided that the program is where it is now. At the start of a function it is `public`. Inside a branch on labeled data, it rises to the condition's label, and everything the branch decides carries that label. After the branch, it is back to what it was.
+The checker tracks implicit flows with the label of the **program counter**: the label of what decided that the program is where it is now. (The name comes from the processor, whose program counter holds the place in the program that runs next. Here it names the label of that place.) At the start of a function it is `public`. Inside a branch on labeled data, it rises to the condition's label, and everything the branch decides carries that label. After the branch, it is back to what it was.
 
 ### Why constants can leak
 
@@ -841,7 +857,7 @@ badge(spent: confidential Int) -> Text = if spent >= 50000 then "gold" else "sta
 
 ### How the program counter rises
 
-Every construct that chooses a way by a value raises the program counter by that value's label. The next step shows each one, with a confidential amount, and declares each result `confidential`:
+Every construct that chooses a way by a value raises the program counter by that value's label: the branches, and loops, which choose how many times their body runs. The next step shows each one, with a confidential amount, and declares each result `confidential`:
 
 #### `if … then … else`
 
@@ -867,7 +883,7 @@ Both branches of the block run under the condition's label: `doubled`, computed 
 
 #### `when` on a labeled value
 
-A `when` ([chapter 4](/learn/kinds/)) chooses an arm by the variant of a value. On a labeled value, which arm runs reveals the variant:
+A `when` ([chapter 8](/learn/choices/#s8-2)) chooses an arm by the variant of a value. On a labeled value, which arm runs reveals the variant:
 
 ```una include="steps/17-pc-forms/src/loyalty.una#discount" title="steps/17-pc-forms/src/loyalty.una"
 --- A `when` on a labeled value: the discount of a tier, in percent.
@@ -892,11 +908,68 @@ spending(found: confidential Option[Int]) -> confidential Int
   spent
 ```
 
+#### A `for` loop over a labeled list or range
+
+A `for` loop ([chapter 9](/learn/loops/#s9-1)) decides something too: how many times its body runs. A loop over a list runs once per element, so the number of turns reveals the list's length, which has the label of the whole list ([Length, and the label of a whole](#length-and-the-label-of-a-whole)). A loop over a range reveals its bounds. So the body runs under the label of the whole list, or of the bounds:
+
+```una include="steps/17-pc-forms/src/loyalty.una#total_spent..stamps" title="steps/17-pc-forms/src/loyalty.una"
+--- A `for` loop over a labeled list: what a customer spent over several purchases.
+total_spent(purchases: confidential List[Int]) -> confidential Int
+=
+  let edit total: confidential Int = 0
+  for cents in purchases
+    total = total + cents
+  total
+
+--- A `for` loop over a labeled range: the stamps on a card, 10 for each visit.
+stamps(visits: confidential Int) -> confidential Int
+=
+  let edit earned: confidential Int = 0
+  for visit in 1..visits
+    earned = earned + 10
+  earned
+```
+
+`total` and `earned` are editable names, accumulators that each turn updates ([chapter 9](/learn/loops/#s9-2)). An editable name keeps the label it was declared with, so each one is declared with the label the loop gives it: `let edit total: confidential Int = 0`. Without that label, `total` would be a public `Int`, and the update inside the loop would be U4001.
+
+A loop over a list whose elements alone are labeled, such as the catalog of [step 03](#a-catalog-with-a-confidential-cost), a `List[Product]` with a confidential field, runs at the program counter it had: how many products there are is public. Each element still carries its own labels. The prelude's `map`, `filter` and `fold` follow the same rule as a loop: the function they call once per element runs under the label of the whole list.
+
+An operation in the body is under the loop's label too. Print a line for each purchase:
+
+```diff include="steps/17-pc-forms..steps/38-loop-print:src/loyalty.una" context="1" title="src/loyalty.una"
+--- a/src/loyalty.una
++++ b/src/loyalty.una
+@@ -48,2 +48,9 @@
+ 
++--- Prints a line for each purchase on the receipt.
++print_purchases(purchases: confidential List[Int]) -> Unit
++  uses @console: Console[print]
++=
++  for cents in purchases
++    @console.print("one more purchase")
++
+ pub main() -> Unit
+```
+
+```text include="steps/38-loop-print/expected/rendered.txt#L1-L9"
+[U4003] Error: `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
+    ╭─[ src/loyalty.una:54:5 ]
+    │
+ 53 │   for cents in purchases
+    │                ────┬────
+    │                    ╰────── the labeled condition
+ 54 │     @console.print("one more purchase")
+    │     ─────────────────┬─────────────────
+    │                      ╰─────────────────── `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
+```
+
+The mark "the labeled condition" points at `purchases`, after `in`: the list decides how many times the body runs, so it plays the part of an `if`'s condition. The printed text is a literal, and the number of lines printed would still reveal how many purchases there are. To show the count, release it through a policy ([section 17.5](#s17-5)) and print it after the loop, or send each line to a place that accepts `confidential` data.
+
 #### Running the branch forms
 
 The examples look at each labeled result:
 
-```una include="steps/17-pc-forms/src/loyalty.una#L38-L52" title="steps/17-pc-forms/src/loyalty.una" caption="the examples"
+```una include="steps/17-pc-forms/src/loyalty.una#L54-L76" title="steps/17-pc-forms/src/loyalty.una" caption="the examples"
 example "a customer who spent 720.00 gets the gold badge"
   do badge(72000)
   expect result == "gold"
@@ -912,15 +985,25 @@ example "a silver customer gets 5 percent off"
 example "a new customer has spent nothing"
   do spending(None)
   expect result == 0
+
+example "three purchases add up"
+  do total_spent([2100, 4990, 12600])
+  expect result == 19690
+
+example "a customer with 3 visits has 30 stamps"
+  do stamps(3)
+  expect result == 30
 ```
 
-```text include="steps/17-pc-forms/expected/commands/test.txt#L2-L7"
+```text include="steps/17-pc-forms/expected/commands/test.txt#L2-L9"
 example loyalty "a customer who spent 720.00 gets the gold badge" ... ok
 example loyalty "a gold customer earns double points" ... ok
 example loyalty "a silver customer gets 5 percent off" ... ok
 example loyalty "a new customer has spent nothing" ... ok
+example loyalty "three purchases add up" ... ok
+example loyalty "a customer with 3 visits has 30 stamps" ... ok
 
-4 examples: 4 passed, 0 failed
+6 examples: 6 passed, 0 failed
 ```
 
 ### A fee decided by a branch
@@ -1106,7 +1189,7 @@ The print is now one call away, and the checker still finds it: `thank` holds th
 
 #### After the branch
 
-The program counter rises only inside the branch. The lines after the `if` or the `when` run at the label they had before it, so a function may branch on a secret, produce a labeled value, and then fail or print on public data in its next lines.
+The program counter rises only inside the branch. The lines after the `if`, the `when` or the `for` run at the label they had before it, so a function may branch on a secret, produce a labeled value, and then fail or print on public data in its next lines.
 
 ### Where to put a decision
 
@@ -1116,6 +1199,7 @@ The program counter rises only inside the branch. The lines after the `if` or th
 | You need to… | Do this |
 | --- | --- |
 | Compute a value that depends on labeled data | branch, and label the result |
+| Repeat work over a labeled list or up to a labeled bound | loop, label the accumulators, and act only on services that accept the label |
 | Report "no answer" for some labeled inputs | return a labeled `Option` or a labeled variant, not a failure |
 | Fail, or print, or call a service, depending on labeled data | release the one fact the decision needs through a policy ([section 17.5](#s17-5)), then branch on the public result |
 | Act on a service that accepts the label | do it in the branch: its `accepts` covers the condition |
@@ -1153,7 +1237,7 @@ The checker does not compare the branches' values: it sees a result chosen by a 
 
 ### What a category is
 
-A level says how sensitive data is. A **category** says what kind of data it is: personal data, a location, a payment card number. Think of a coloured sticker next to the "confidential" stamp: two folders can be equally sensitive and still belong in different cabinets.
+A level says how sensitive data is. A **category** says what kind of data it is: personal data, a location, a payment card number. Think of a colored sticker next to the "confidential" stamp: two folders can be equally sensitive and still belong in different cabinets.
 
 You write categories in square brackets after the level: `secret[PII] Text` is secret, and it is personal data (PII stands for *personally identifiable information*). Each package declares its own categories by name.
 
@@ -1365,9 +1449,9 @@ The text joins `secret[PII]` and `confidential[Location]` into `secret[Location,
 
 #### A category must be declared
 
-A category that `[labels] categories` does not declare is U4007. A misspelt category cannot create a new, unchecked kind of data:
+A category that `[labels] categories` does not declare is U4007. A misspelled category cannot create a new, unchecked kind of data:
 
-```diff include="steps/26-categories..steps/29-misspelt:src/courier.una" context="1" title="src/courier.una"
+```diff include="steps/26-categories..steps/29-misspelled:src/courier.una" context="1" title="src/courier.una"
 --- a/src/courier.una
 +++ b/src/courier.una
 @@ -6,3 +6,3 @@
@@ -1377,7 +1461,7 @@ A category that `[labels] categories` does not declare is U4007. A misspelt cate
  
 ```
 
-```text include="steps/29-misspelt/expected/rendered.txt#L1-L6"
+```text include="steps/29-misspelled/expected/rendered.txt#L1-L6"
 [U4007] Error: label category `PIl` is not declared in `[labels] categories` of `una.toml`
    ╭─[ src/courier.una:7:17 ]
    │
@@ -1494,7 +1578,7 @@ count_lines(list: internal Text) -> Int = list.split(on: "\n").filter(keep: fn(l
 | `to Int` | What it gives, with the lower label: here `public`, since there is none |
 | `via count_lines` | The function that computes the released value |
 | `purpose "…"` | Why the release is needed, in words a reviewer reads |
-| `owner purchasing` | Who answers for it: a team, in lower snake case |
+| `owner purchasing` | Who answers for it, such as a team: a name that starts with a small letter and holds only small letters, digits and `_`, as a function's name does |
 
 #### `from` and `to`
 
@@ -1560,7 +1644,7 @@ pub main() -> Unit
 
 `una report .` prints the build report ([chapter 18](/learn/tools/#s18-4)): what the package was proven to do, and what it trusts. Two of its sections are about releases:
 
-```text include="steps/31-policy/expected/commands/report.txt#L2,L9-L12,L15-L16"
+```text include="steps/31-policy/expected/commands/report.txt#L2,L9-L12,L15-L16,L25"
 package reorder 0.1.0
 information:
   release.line_count at src/release.una:14:6, purpose "report the size of the reorder list", owner purchasing
@@ -1568,10 +1652,12 @@ information:
   release.line_count at src/reorder.una:13:20, purpose "report the size of the reorder list", owner purchasing
 tcb:
   trusted modules: release (19 lines)
+out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks
 ```
 
 - **`information:`** lists every call of a policy, with its place, its purpose and its owner. Two calls are in the policy's examples, in `release.una`, and one in `main`.
 - **`tcb:`**, the *trusted computing base*, lists the code the guarantee trusts. `trusted modules: release (19 lines)` is the code a reviewer must read line by line.
+- **`out of model:`** lists what the guarantee does not cover, such as timing and termination ([What the checker promises](#what-the-checker-promises)).
 
 Adding a trusted module is a change to the manifest, and each new release adds a line to `information:`, so both show in review.
 
@@ -1579,7 +1665,7 @@ Adding a trusted module is a change to the manifest, and each new release adds a
 
 #### A policy call obeys the program counter
 
-A policy's result is lower than what it read, so a call under a labeled branch would reveal the condition. Call the policy only when the list is not empty:
+A policy call is allowed only where the program counter is at or below the policy's `to` label. A policy's result may be lower than what it read, so a call under a branch on data above `to` would reveal the condition through that result. For a policy to `public`, such as `line_count`, that means a path that public data alone decides. Call the policy only when the list is not empty:
 
 ```diff include="steps/31-policy..steps/33-release-under-branch:src/reorder.una" context="1" title="src/reorder.una"
 --- a/src/reorder.una
@@ -1602,7 +1688,7 @@ A policy's result is lower than what it read, so a call under a labeled branch w
     │                                            ╰───────── policy `line_count` lowers data to `public`, and it is called under an `internal` condition, which its result would reveal
 ```
 
-`list.len > 0` is `internal`, so the call runs under an `internal` condition, and U4002 points at both. The second diagnostic of the same run, U4003 at the print, follows from the first: `shown` was chosen by the condition. Call each release on a path that public data alone decides.
+`list.len > 0` is `internal`, so the call runs under an `internal` condition, and U4002 points at both. The second diagnostic of the same run, U4003 at the print, follows from the first: `shown` was chosen by the condition. Call each release to `public` on a path that public data alone decides. A policy whose `to` keeps a label, such as `internal Int`, may be called under a branch on data up to that label.
 
 #### A policy needs a trusted module
 
@@ -1665,7 +1751,7 @@ The `via` function must be private, used only through its policy, of the same ty
 | Code | Typical cause | Usual repair |
 | --- | --- | --- |
 | U4001 | A value flowing into a declared type with a lower label: a return, a parameter, a field, an annotated `let` | Raise the declared label, or lower the value through a policy |
-| U4002 | A failure, a call that may fail or act, or a policy call, under a branch on labeled data | Return a labeled value instead of failing, or release before the branch |
+| U4002 | A failure, or a call that may fail or act, under a branch on labeled data; a policy call under a branch on data above its `to` label | Return a labeled value instead of failing, or release before the branch |
 | U4003 | An argument of an operation above the operation's `accepts`, or an operation under a branch on data above it | Send less, or send it to a place that accepts it, or act outside the branch |
 | U4004 | A policy in a module that is not trusted | Move it into a trusted module |
 | U4005 | A policy whose `via` function is public, used directly, of the wrong types, or has a `requires` clause | Make `via` private, match the types, drop `requires`, and call the policy |
@@ -1727,9 +1813,9 @@ example release "a list of three SKUs, with a blank line between two of them" ..
 
 ## 17.6 Day-to-day: shipping notices with labels
 
-### What changes from chapter 8
+### What changes from chapter 12
 
-Now the service from chapter 8, with the customers' data labeled. Four changes make it safe: labels on the fields of `Customer`, an `accepts` clause on `Mailer`, a label on the result of `notice`, and a policy in a new trusted module, `privacy`, which `notify` calls. The rest of the program stays as it was. Each part below says what it is for, and which idea of this chapter it uses.
+Now the service from [chapter 12](/learn/capabilities/#s12-5), with the customers' data labeled. Four changes make it safe: labels on the fields of `Customer`, an `accepts` clause on `Mailer`, a label on the result of `notice`, and a policy in a new trusted module, `privacy`, which `notices.una` imports and `notify` calls. The doc comments of `Customer`, `Mailer`, `notice` and `notify` change to say so. The rest of the code is chapter 12's, and so are its examples, with one expected value changed and two examples added for the policy ([section 17.7](#s17-7)). Each part below says what it is for, and which idea of this chapter it uses.
 
 ### Labels on the data
 
@@ -1767,7 +1853,7 @@ pub notice(customer: Customer, shipment: Shipment) -> secret[PII] Text = "Hello 
 
 ### The leak the checker stops
 
-In chapter 8, `notify` returned the address it wrote to, and the log printed it. Keep that design, with the label it now needs, and the checker finds the log line:
+In chapter 12, `notify` returned the address it wrote to, and the log printed it. Keep that design, with the label it now needs, and the checker finds the log line:
 
 ```diff include="day-to-day..steps/36-leak-2:src/notices.una" context="1" title="src/notices.una"
 --- a/src/notices.una
@@ -1852,7 +1938,7 @@ pub notify(shipment: Shipment) -> Text
 
 Look at what did not change in `notify`. It still fails with `OptedOut` and `UnknownCustomer`, because the conditions it branches on, the `Option` from the directory and the field `wants_notices`, are public. Reading `customer.email` gives a `secret[PII] Text`, while `customer.wants_notices` stays a public `Bool`: a field keeps its own label. A branch on the address itself, followed by a `fail`, would be U4002, as [exercise 3](#exercise-3-a-blocked-domain) shows.
 
-The call of the policy obeys the same rule as a `fail`. It runs where the program counter is `public`: after the checks of the directory and of `wants_notices`, which are public. A call of `masked_email` inside a branch on labeled data would be U4002 too, since its public result would reveal the condition. Put each release on a path that public data alone decides.
+The call of the policy obeys the program counter too. `masked_email` releases to `public`, so it may be called only where the program counter is `public`: here, after the checks of the directory and of `wants_notices`, which are public. A call of `masked_email` inside a branch on labeled data would be U4002, since its public result would reveal the condition. Put each release to `public` on a path that public data alone decides.
 
 ### The manifest
 
@@ -1877,9 +1963,9 @@ grants = ["console"]
 
 ### Running it
 
-`una run .` prints the log shown in [What you'll build](#what-youll-build). `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 17.7](#s17-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. The handlers, `dispatch`, `log_line` and `main` are those of chapter 8, unchanged.
+`una run .` prints the log shown in [What you'll build](#what-youll-build). `una report .` lists every call of `privacy.masked_email` under `information`, with its place, purpose and owner: the one in `notify`, and the two in the policy's examples ([section 17.7](#s17-7)). It lists `privacy` under `tcb`, with its line count, as the code the guarantee trusts. `dispatch`, `log_line`, `reason`, `main`, the kinds and the handlers `directory`, `outbox`, `mail_down` and `directory_down` are those of chapter 12, unchanged.
 
-So the whole change from chapter 8 is three labels, one `accepts` clause, one call of a policy and a module of 19 lines. In exchange, a later change outside the trusted module that prints a name or an address fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 17.5](#s17-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
+So the whole change to chapter 12's program is: one `import` line, three labels (on `name`, on `email` and on the result of `notice`), one `accepts` clause, one call of a policy in `notify`, the doc comments of `Customer`, `Mailer`, `notice` and `notify`, a module of 19 lines, and in the examples, the address the first one expects and two examples of the policy. In exchange, a later change outside the trusted module that prints a name or an address fails `una check` instead of reaching the log. The `via` functions are the exception: their labels are not checked ([section 17.5](#s17-5)). A reviewer who wants to know what personal data leaves the program reads the `accepts` clauses and the trusted module, line by line, and not every other line.
 
 ### The whole program
 
@@ -1982,10 +2068,6 @@ handler mail_down() for Mailer
 handler directory_down() for Customers
   op find(id) = fail Timeout
 
---- A console that prints nothing, for tests.
-handler quiet() for Console
-  op print(line) = unit
-
 --- The customers of this run and of the examples. Every address is fictional.
 pub sample_customers() -> Map[Text, Customer]
 =
@@ -2008,28 +2090,24 @@ example "a customer who wants notices gets one"
   given @mailer = outbox()
   do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect result == "r***@example.invalid"
-  expect performed @mailer.send
 
-example "an unknown customer gets no mail"
+example "an unknown customer is rejected before any mail is sent"
   given @customers = directory(sample_customers())
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1003", customer: "C-99", carrier: "Parcelo"))
   expect fails UnknownCustomer
-  expect not performed @mailer.send
 
-example "a customer who asked for no notices gets no mail"
+example "a customer who asked for no notices is rejected before any mail is sent"
   given @customers = directory(sample_customers())
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1004", customer: "C-21", carrier: "Parcelo"))
   expect fails OptedOut
-  expect not performed @mailer.send
 
-example "a directory that does not answer is DirectoryDown, and no mail is sent"
+example "a directory that does not answer is DirectoryDown, before any mail is sent"
   given @customers = directory_down()
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect fails DirectoryDown
-  expect not performed @mailer.send
 
 example "a mail service that does not answer is MailDown"
   given @customers = directory(sample_customers())
@@ -2037,12 +2115,13 @@ example "a mail service that does not answer is MailDown"
   do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect fails MailDown
 
-example "the batch logs every shipment, even when the mail service is down"
-  given @customers = directory(sample_customers())
-  given @mailer = mail_down()
-  given @log = quiet()
-  do dispatch([Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida")])
-  expect performed @log.print
+example "the notice names the customer, the order and the carrier"
+  do notice(Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true), shipment: Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect result == "Hello Rosa, your order A-1001 is on its way with Parcelo."
+
+example "a skipped shipment says why in the log"
+  do log_line(Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida"), outcome: Err(MailDown))
+  expect result == "skipped  A-1005: the mail service did not answer; retry later"
 
 example "the log shows the first letter and the domain of an address"
   do masked_email("tomas@example.invalid")
@@ -2057,9 +2136,9 @@ example "an address the mask cannot read is hidden"
 
 ### Examples of the policy
 
-The examples of chapter 8 still pass, with one change: the first one now expects the masked address, `r***@example.invalid`, which is what `notify` returns. Two new examples test the policy itself:
+The examples are those of [section 12.6](/learn/capabilities/#s12-6), with one change: the first one expects the masked address, `r***@example.invalid`, which is what `notify` now returns. Two more examples, at the end of the file, test the policy itself:
 
-```una include="day-to-day/src/notices.una#L159-L165" title="day-to-day/src/notices.una" caption="the policy's examples"
+```una include="day-to-day/src/notices.una#L152-L158" title="day-to-day/src/notices.una" caption="the policy's examples"
 example "the log shows the first letter and the domain of an address"
   do masked_email("tomas@example.invalid")
   expect result == "t***@example.invalid"
@@ -2073,27 +2152,28 @@ A policy can be called like a function, so its examples need no fakes. Test the 
 
 ### Examples can observe a secret
 
-An `expect` line compares a value whatever its label, and a `do` line is checked like ordinary code: an example can observe a secret, but cannot send it anywhere the program itself could not ([Examples are not sinks](#examples-are-not-sinks)).
+An `expect` line compares a value whatever its label, and a `do` line is checked like ordinary code: an example can observe a secret, but cannot send it anywhere the program itself could not ([Examples are not sinks](#examples-are-not-sinks)). So chapter 12's example of `notice` still passes: its result is now a `secret[PII] Text`, and its `expect` line compares it with the text of the notice.
 
 ### The failure paths and their fakes
 
-The examples of the failure paths are those of chapter 8, unchanged: labels do not alter which paths exist or how a fake reaches them. The fakes `outbox` and `mail_down` are handlers of `Mailer`, which now accepts `secret[PII]`. They pass the check because they do nothing with what they receive. A fake mail service that printed each message, as `printed` in chapter 8 did, would be U4003: what it prints could reveal the notice ([A handler is checked for its most sensitive caller](#a-handler-is-checked-for-its-most-sensitive-caller)).
+The examples of the failure paths are chapter 12's, with its fakes: `directory_down` for the directory that does not answer, and `mail_down`. The examples of `UnknownCustomer`, `OptedOut` and `DirectoryDown` install `mail_down` on purpose, as [A failure that comes first](/learn/capabilities/#a-failure-that-comes-first) explains: had `notify` sent any mail before it failed, the example would see `MailDown`. Labels do not alter which paths exist or how a fake reaches them. ([Chapter 14](/learn/testing/#s14-3) gives a more direct way to say that no mail went out, `expect not performed`; this chapter keeps chapter 12's examples, so that only the labels change.) The fakes `outbox` and `mail_down` are handlers of `Mailer`, which now accepts `secret[PII]`. They pass the check because they do nothing with what they receive. A fake mail service that printed each message, as `printed` in [chapter 12](/learn/capabilities/#s12-3) did, would be U4003: what it prints could reveal the notice ([A handler is checked for its most sensitive caller](#a-handler-is-checked-for-its-most-sensitive-caller)).
 
 ### Running the examples
 
 `una test .` prints:
 
-```text include="day-to-day/expected/commands/test.txt#L2-L11"
+```text include="day-to-day/expected/commands/test.txt#L2-L12"
 example notices "a customer who wants notices gets one" ... ok
-example notices "an unknown customer gets no mail" ... ok
-example notices "a customer who asked for no notices gets no mail" ... ok
-example notices "a directory that does not answer is DirectoryDown, and no mail is sent" ... ok
+example notices "an unknown customer is rejected before any mail is sent" ... ok
+example notices "a customer who asked for no notices is rejected before any mail is sent" ... ok
+example notices "a directory that does not answer is DirectoryDown, before any mail is sent" ... ok
 example notices "a mail service that does not answer is MailDown" ... ok
-example notices "the batch logs every shipment, even when the mail service is down" ... ok
+example notices "the notice names the customer, the order and the carrier" ... ok
+example notices "a skipped shipment says why in the log" ... ok
 example notices "the log shows the first letter and the domain of an address" ... ok
 example notices "an address the mask cannot read is hidden" ... ok
 
-8 examples: 8 passed, 0 failed
+9 examples: 9 passed, 0 failed
 ```
 
 ## 17.8 Common mistakes
@@ -2142,7 +2222,7 @@ Remove `accepts secret[PII]` from `Mailer`:
 [U4003] Error: `@mailer.send` accepts `public` data, and this argument is `secret[PII]`
 ```
 
-*Why:* an operation accepts `public` data unless it says more. It happens when a capability is declared before its data is labeled, as in chapter 8. una reports the address and the body, one diagnostic each, since each argument is its own sink; the mark points at the argument.
+*Why:* an operation accepts `public` data unless it says more. It happens when a capability is declared before its data is labeled, as in chapter 12. una reports the address and the body, one diagnostic each, since each argument is its own sink; the mark points at the argument.
 
 *Fix:* give the operation the ceiling of the service it stands for. Do not lower the data to fit: the mail service needs the real address.
 :::
@@ -2187,11 +2267,14 @@ In [step 26](#a-courier-that-may-receive-a-phone-number), remove the `[labels]` 
  [run]
 ```
 
-```text include="mistakes/4/expected/rendered.txt#L1"
+```text include="mistakes/4/expected/rendered.txt#L1-L2,L10-L11"
 [U4007] Error: label category `PII` is not declared in `[labels] categories` of `una.toml`
+   ╭─[ src/courier.una:7:17 ]
+[U4007] Error: label category `PII` is not declared in `[labels] categories` of `una.toml`
+    ╭─[ src/courier.una:13:20 ]
 ```
 
-*Why:* each package declares its categories, so a typo cannot create one. It happens when code is copied from another package, whose manifest declared the category. The mark points at the category in the type, not at the manifest, since that is where the unknown name is used.
+*Why:* each package declares its categories, so a typo cannot create one. It happens when code is copied from another package, whose manifest declared the category. una reports each use of the category, one diagnostic each: in the field `phone`, and in the `accepts` clause of `book`. The marks point at the uses, not at the manifest, since that is where the unknown name is used.
 
 *Fix:* declare `categories = ["PII"]` under `[labels]`.
 :::
@@ -2254,7 +2337,7 @@ Each exercise starts from `exercises/N/start`: the day-to-day program with the e
 ::::exercise
 The operations team counts notices by mail provider, so it needs the domain of each address, and nothing else. Add a policy `email_domain` to `privacy.una`, from `secret[PII] Text` to `public Text`, that gives the part after the `@`, or `(none)` when there is no single `@`. The start package already imports it, so `una check .` reports U1001 until it exists, and it ends with:
 
-```una include="exercises/1/start/src/notices.una#L167-L173" title="exercises/1/start/src/notices.una"
+```una include="exercises/1/start/src/notices.una#L160-L166" title="exercises/1/start/src/notices.una"
 example "the domain of an address"
   do email_domain("rosa@example.invalid")
   expect result == "example.invalid"
@@ -2297,7 +2380,7 @@ Add the policy and its `via` function to `privacy.una`:
 +      if none use "(none)"
 ```
 
-`una test .` reports 10 examples passing. `una report .` now lists the calls of `email_domain` under `information`, with their purpose.
+`una test .` reports 11 examples passing. `una report .` now lists the calls of `email_domain` under `information`, with their purpose.
 :::
 ::::
 
@@ -2313,7 +2396,7 @@ pub subject(customer: Customer, shipment: Shipment) -> confidential Text = "Orde
 
 and these examples:
 
-```una include="exercises/2/start/src/notices.una#L171-L177" title="exercises/2/start/src/notices.una"
+```una include="exercises/2/start/src/notices.una#L164-L170" title="exercises/2/start/src/notices.una"
 example "a priority customer's subject says so"
   do subject(Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true, vip: true), shipment: Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect result == "Priority: order A-1001 has shipped"
@@ -2329,11 +2412,11 @@ example "another customer's subject is plain"
 
 Check your answer with `una test .`. On the start package it reports:
 
-```text include="exercises/2/start/expected/commands/test.txt#L10-L12,L15"
+```text include="exercises/2/start/expected/commands/test.txt#L11-L13,L16"
 example notices "a priority customer's subject says so" ... FAILED
-  src/notices.una:173: expect result == "Priority: order A-1001 has shipped"
+  src/notices.una:166: expect result == "Priority: order A-1001 has shipped"
   it is false, with `result` = `"Order A-1001 has shipped"`
-10 examples: 9 passed, 1 failed
+11 examples: 10 passed, 1 failed
 ```
 
 :::answer Answer (*check, run, test*; `exercises/2/answer`).
@@ -2360,14 +2443,15 @@ The subject is `confidential` because a confidential flag chose it. The mail ser
 ::::exercise
 A partner sends its own notices to the addresses at `blocked.example.invalid`, so the store must not mail them. The start package adds the variant `Blocked(id: Text)`, a customer at that domain, and this example:
 
-```una include="exercises/3/start/src/notices.una#L169-L174" title="exercises/3/start/src/notices.una"
-example "an address at a blocked domain gets no mail"
+```una include="exercises/3/start/src/notices.una#L162-L166" title="exercises/3/start/src/notices.una"
+example "an address at a blocked domain is rejected before any mail is sent"
   given @customers = directory(sample_customers())
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1006", customer: "C-30", carrier: "Parcelo"))
   expect fails Blocked
-  expect not performed @mailer.send
 ```
+
+Like the failure paths of the program, it installs `mail_down`, so it passes only if `notify` fails with `Blocked` before any mail goes out.
 
 The direct way, a branch on `customer.email.ends_with(suffix: "@blocked.example.invalid")` in `notify`, does not check. Among the diagnostics una reports:
 
@@ -2440,7 +2524,7 @@ Neither repair has an `edit`, so `una fix` changes nothing: each needs a decisio
 
 :::recap
 - A label is a level and categories: `public`, `internal`, `confidential`, `secret`, `restricted`, and categories such as `[PII]` that `una.toml` declares.
-- A result carries the labels of what it was computed from, and of every condition that chose it.
+- A result carries the labels of what it was computed from, and of every condition or loop that chose it.
 - Every operation argument is a sink. `Console.print` accepts `public`, and your own operations accept what `accepts` says.
 - Data read from files or the environment is `internal`. A keyed hash from `Keys.hmac`, a `Hashed`, keeps the label of what it hashed, and only `==` and `!=` read it.
 - Under a branch on labeled data, return a labeled value instead of failing or acting.
@@ -2455,6 +2539,6 @@ Neither repair has an `edit`, so `una fix` changes nothing: each needs a decisio
 - Configuration: [`[labels] categories`](/docs/configure/labels/categories/), [`[trusted] modules`](/docs/configure/trusted/modules/)
 - Standard library: [the prelude and the host capabilities](/docs/std/)
 - Diagnostics: [U1001](/docs/errors/U1001/), [U2001](/docs/errors/U2001/), [U3015](/docs/errors/U3015/), [U4001](/docs/errors/U4001/), [U4002](/docs/errors/U4002/), [U4003](/docs/errors/U4003/), [U4004](/docs/errors/U4004/), [U4005](/docs/errors/U4005/), [U4007](/docs/errors/U4007/), [U7005](/docs/errors/U7005/)
-- Specification: [information flow](/docs/spec/07-information-flow/), including [labels](/docs/spec/07-information-flow/#s2), [declassification policies](/docs/spec/07-information-flow/#s5) (rule 3: inside `via` functions labels are not checked, and they are part of the trusted computing base) and [checking](/docs/spec/07-information-flow/#s7) (rules 3 to 6), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [standard library](/docs/spec/14-standard-library/) (the host capabilities and their labels), [diagnostics and ABI](/docs/spec/13-diagnostics-and-abi/)
+- Specification: [information flow](/docs/spec/07-information-flow/), including [the guarantee and its scope](/docs/spec/07-information-flow/#s1) (noninterference), [labels](/docs/spec/07-information-flow/#s2), [declassification policies](/docs/spec/07-information-flow/#s5) (rule 3: inside `via` functions labels are not checked, and they are part of the trusted computing base) and [checking](/docs/spec/07-information-flow/#s7) (rules 3 to 6), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [memory model](/docs/spec/17-memory-model/#s6) (labels in loops and on editable names), [standard library](/docs/spec/14-standard-library/) (the host capabilities and their labels), [diagnostics and ABI](/docs/spec/13-diagnostics-and-abi/)
 - Security model: [what is proven, trusted and outside the model](/docs/security/)
 :::

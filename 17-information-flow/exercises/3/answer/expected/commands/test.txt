@@ -1,12 +1,13 @@
 $ una test .
 example notices "a customer who wants notices gets one" ... ok
-example notices "an unknown customer gets no mail" ... ok
-example notices "a customer who asked for no notices gets no mail" ... ok
-example notices "a directory that does not answer is DirectoryDown, and no mail is sent" ... ok
+example notices "an unknown customer is rejected before any mail is sent" ... ok
+example notices "a customer who asked for no notices is rejected before any mail is sent" ... ok
+example notices "a directory that does not answer is DirectoryDown, before any mail is sent" ... ok
 example notices "a mail service that does not answer is MailDown" ... ok
-example notices "the batch logs every shipment, even when the mail service is down" ... ok
+example notices "the notice names the customer, the order and the carrier" ... ok
+example notices "a skipped shipment says why in the log" ... ok
 example notices "the log shows the first letter and the domain of an address" ... ok
 example notices "an address the mask cannot read is hidden" ... ok
-example notices "an address at a blocked domain gets no mail" ... ok
+example notices "an address at a blocked domain is rejected before any mail is sent" ... ok
 
-9 examples: 9 passed, 0 failed
+10 examples: 10 passed, 0 failed

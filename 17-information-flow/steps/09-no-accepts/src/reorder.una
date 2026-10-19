@@ -1,6 +1,6 @@
 module reorder
 
---- The supplier's ordering service, declared as in chapter 8.
+--- The supplier's ordering service, declared as in chapter 12.
 capability Supplier
   op submit(order: Text) -> Unit
 

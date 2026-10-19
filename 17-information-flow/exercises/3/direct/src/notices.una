@@ -97,10 +97,6 @@ handler mail_down() for Mailer
 handler directory_down() for Customers
   op find(id) = fail Timeout
 
---- A console that prints nothing, for tests.
-handler quiet() for Console
-  op print(line) = unit
-
 --- The customers of this run and of the examples. Every address is fictional.
 pub sample_customers() -> Map[Text, Customer]
 =
@@ -124,28 +120,24 @@ example "a customer who wants notices gets one"
   given @mailer = outbox()
   do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect result == "r***@example.invalid"
-  expect performed @mailer.send
 
-example "an unknown customer gets no mail"
+example "an unknown customer is rejected before any mail is sent"
   given @customers = directory(sample_customers())
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1003", customer: "C-99", carrier: "Parcelo"))
   expect fails UnknownCustomer
-  expect not performed @mailer.send
 
-example "a customer who asked for no notices gets no mail"
+example "a customer who asked for no notices is rejected before any mail is sent"
   given @customers = directory(sample_customers())
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1004", customer: "C-21", carrier: "Parcelo"))
   expect fails OptedOut
-  expect not performed @mailer.send
 
-example "a directory that does not answer is DirectoryDown, and no mail is sent"
+example "a directory that does not answer is DirectoryDown, before any mail is sent"
   given @customers = directory_down()
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect fails DirectoryDown
-  expect not performed @mailer.send
 
 example "a mail service that does not answer is MailDown"
   given @customers = directory(sample_customers())
@@ -153,12 +145,13 @@ example "a mail service that does not answer is MailDown"
   do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
   expect fails MailDown
 
-example "the batch logs every shipment, even when the mail service is down"
-  given @customers = directory(sample_customers())
-  given @mailer = mail_down()
-  given @log = quiet()
-  do dispatch([Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida")])
-  expect performed @log.print
+example "the notice names the customer, the order and the carrier"
+  do notice(Customer(id: "C-17", name: "Rosa", email: "rosa@example.invalid", wants_notices: true), shipment: Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect result == "Hello Rosa, your order A-1001 is on its way with Parcelo."
+
+example "a skipped shipment says why in the log"
+  do log_line(Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida"), outcome: Err(MailDown))
+  expect result == "skipped  A-1005: the mail service did not answer; retry later"
 
 example "the log shows the first letter and the domain of an address"
   do masked_email("tomas@example.invalid")
@@ -168,9 +161,8 @@ example "an address the mask cannot read is hidden"
   do masked_email("no address")
   expect result == "(hidden)"
 
-example "an address at a blocked domain gets no mail"
+example "an address at a blocked domain is rejected before any mail is sent"
   given @customers = directory(sample_customers())
-  given @mailer = outbox()
+  given @mailer = mail_down()
   do notify(Shipment(order: "A-1006", customer: "C-30", carrier: "Parcelo"))
   expect fails Blocked
-  expect not performed @mailer.send

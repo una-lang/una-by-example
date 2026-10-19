@@ -3,5 +3,7 @@ example loyalty "a customer who spent 720.00 gets the gold badge" ... ok
 example loyalty "a gold customer earns double points" ... ok
 example loyalty "a silver customer gets 5 percent off" ... ok
 example loyalty "a new customer has spent nothing" ... ok
+example loyalty "three purchases add up" ... ok
+example loyalty "a customer with 3 visits has 30 stamps" ... ok
 
-4 examples: 4 passed, 0 failed
+6 examples: 6 passed, 0 failed

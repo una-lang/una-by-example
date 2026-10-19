@@ -1,0 +1,12 @@
+[U4003] Error: `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
+    ╭─[ src/loyalty.una:54:5 ]
+    │
+ 53 │   for cents in purchases
+    │                ────┬────
+    │                    ╰────── the labeled condition
+ 54 │     @console.print("one more purchase")
+    │     ─────────────────┬─────────────────
+    │                      ╰─────────────────── `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal
+    │
+    │ Note: run `una explain U4003` for an explanation
+────╯
