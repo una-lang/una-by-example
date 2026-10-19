@@ -30,10 +30,26 @@ spending(found: confidential Option[Int]) -> confidential Int
     if none use 0
   spent
 
+--- A `for` loop over a labeled list: what a customer spent over several purchases.
+total_spent(purchases: confidential List[Int]) -> confidential Int
+=
+  let edit total: confidential Int = 0
+  for cents in purchases
+    total = total + cents
+  total
+
+--- A `for` loop over a labeled range: the stamps on a card, 10 for each visit.
+stamps(visits: confidential Int) -> confidential Int
+=
+  let edit earned: confidential Int = 0
+  for visit in 1..visits
+    earned = earned + 10
+  earned
+
 pub main() -> Unit
   uses @console: Console[print]
 =
-  @console.print("loyalty rules: 4")
+  @console.print("loyalty rules: 6")
 
 example "a customer who spent 720.00 gets the gold badge"
   do badge(72000)
@@ -50,3 +66,11 @@ example "a silver customer gets 5 percent off"
 example "a new customer has spent nothing"
   do spending(None)
   expect result == 0
+
+example "three purchases add up"
+  do total_spent([2100, 4990, 12600])
+  expect result == 19690
+
+example "a customer with 3 visits has 30 stamps"
+  do stamps(3)
+  expect result == 30

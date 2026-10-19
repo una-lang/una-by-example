@@ -1,0 +1,1 @@
+error U4003 at src/loyalty.una:54:5: `@console.print` accepts `public` data, and it runs under a `confidential` condition, which it would reveal

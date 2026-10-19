@@ -1,1 +1,1 @@
-loyalty rules: 4
+loyalty rules: 6
