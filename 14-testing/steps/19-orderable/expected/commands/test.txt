@@ -1,0 +1,5 @@
+$ una test .
+example orderable "an unknown SKU offers 0" ... ok
+example orderable "an inventory that does not answer offers 0, and does not fail" ... ok
+
+2 examples: 2 passed, 0 failed

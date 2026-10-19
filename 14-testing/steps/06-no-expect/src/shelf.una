@@ -53,5 +53,13 @@ example "a SKU the shelf does not hold is not found"
   do find([Product(sku: "LAMP-01", cents: 1990, units: 4)], sku: "DESK-02")
   expect result is None
 
+example "two lamps and a mug cost 48.70"
+  do price_of(Product(sku: "LAMP-01", cents: 1990, units: 4), quantity: 2) + price_of(Product(sku: "MUG-03", cents: 890, units: 0), quantity: 1)
+  expect result == 4870
+
+example "the mug is among the SKUs that have run out"
+  do sold_out([Product(sku: "LAMP-01", cents: 1990, units: 4), Product(sku: "MUG-03", cents: 890, units: 0)])
+  expect result.contains(item: "MUG-03")
+
 example "the shelf edge shows the SKU and the price"
   do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))

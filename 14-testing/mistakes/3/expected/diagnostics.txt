@@ -1,1 +1,1 @@
-error U1001 at src/checkout.una:139:26: capability `Mail` has no operation `sent`
+error U1001 at src/checkout.una:139:28: capability `Mailer` has no operation `sent`

@@ -1,11 +1,11 @@
-[U1001] Error: capability `Mail` has no operation `sent`
-     ╭─[ src/checkout.una:139:26 ]
+[U1001] Error: capability `Mailer` has no operation `sent`
+     ╭─[ src/checkout.una:139:28 ]
      │
- 139 │   expect performed @mail.sent
-     │                          ──┬─
-     │                            ╰─── capability `Mail` has no operation `sent`
+ 139 │   expect performed @mailer.sent
+     │                            ──┬─
+     │                              ╰─── capability `Mailer` has no operation `sent`
      │
-     │ Help: repair 1: write `send`; edit src/checkout.una:139:26..139:30 to "send"
+     │ Help: repair 1: write `send`; edit src/checkout.una:139:28..139:32 to "send"
      │
      │ Note: run `una explain U1001` for an explanation
 ─────╯

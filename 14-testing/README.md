@@ -2,8 +2,8 @@
 learn: "14"
 title: Testing
 editions: ["0.2"]
-codes: [U0101, U1001, U1002, U1005, U1006, U1007, U2001, U3001, U3014, U5001]
-time: 45
+codes: [U0101, U1001, U1002, U2001, U3001, U3014, U5001]
+time: 50
 builds: A checkout that reserves stock, charges a card and mails a receipt, tested with fake services
 prerequisites: ["7", "10", "12"]
 template: 2
@@ -11,7 +11,6 @@ nav: ["do and expect", "expect fails", "Fakes and expect performed", "What proof
 ---
 
 # 14 Testing
-
 
 The verifier proves what a contract states, for every input. It cannot tell you whether a cart of two lamps costs 44.70, whether a declined card puts the stock back, or whether a receipt goes out only after the payment. You check those with examples: tests that live next to the code, run against fake services you write in Una, and see every operation the code performs. This chapter writes examples for values, for failures and for effects, and shows where an example ends and a contract begins.
 
@@ -29,11 +28,10 @@ the cart is empty
 
 You will learn to:
 
-- write an `example` with `do` and `expect`, and read what `una test` reports when one fails;
+- write an `example` in every form, with `do` and the conditions `expect` takes, and read what `una test` reports when one fails;
 - test every failure path with `expect fails`;
-- replace a service with a fake handler, and check what a call did with `expect performed`;
-- decide what belongs in a contract and what belongs in an example;
-- link a contract to the requirement it implements, and trace it with `una trace`.
+- replace a service with a fake handler installed by `given`, and check what a call did with `expect performed` and `expect not performed`;
+- decide what belongs in a contract and what belongs in an example.
 :::
 
 ## Why it works this way
@@ -54,23 +52,22 @@ Una takes a different route:
 
 ## 14.1 Examples: `do` and `expect`
 
-
 ### What an example is
 
 A recipe book shows, next to each recipe, a photo of the finished dish. You follow the steps, then compare what is on your plate with the photo. If they differ, something went wrong, and you know it before the guests arrive.
 
-An **example** is that photo, for a function. It names a case in plain words, calls the function once with chosen arguments, and states what must be true of what came back. A **test** is any such check that runs the code and compares the outcome with what you expect; in Una, examples are the tests. You met them briefly in [chapter 14](#s14-1). This section covers every part of them.
+An **example** is that photo, for a function. It names a case in plain words, runs the code once with chosen arguments, and states what must be true of what came back. A **test** is any check that runs code and compares the outcome with what you expect; in Una, examples are the tests.
 
-A few words name the parts, and the rest of the chapter uses them:
+You have written examples since [section 1.7](/learn/hello/#s1-7), and every chapter since has used them, mostly in the same three lines: `example "…"` with a name, a `do` line that makes one call, and `expect result == …`. That is the simplest form. This section starts from it and covers every line an example can hold, and every condition an `expect` line can state. A few words name the parts, and the rest of the chapter uses them:
 
-- The **`do` line** is the call under test.
+- The **`do` line** is the code under test, usually one call.
 - **`result`** is the value the `do` line gave back.
-- An **`expect` line** is a condition that must hold after the call. An example **passes** when every `expect` line holds, and **fails** otherwise.
+- An **`expect` line** is a condition that must hold after the `do` line has run. An example **passes** when every `expect` line holds, and **fails** otherwise.
 - **`una test`** is the command that runs every example of a package and reports each one.
 
 ### Why tests live next to the code
 
-Here is a cart that adds up its lines. It has a bug: it counts one unit per line, instead of the line's quantity:
+Each step of this chapter is a package, made as [chapter 2 explains](/learn/numbers/#each-step-is-a-package); the chapter's download, `14-testing.tar.gz`, holds them all. Here is a cart that adds up its lines. It has a bug: it counts one unit per line, instead of the line's quantity:
 
 ```una include="steps/01-unchecked/src/cart.una" title="steps/01-unchecked/src/cart.una" verified="check, run"
 module cart
@@ -110,47 +107,24 @@ pub main() -> Unit
 2 units, 4870 cents
 ```
 
-Two lamps and a mug are 3 units, not 2. Nothing in the program says so. The header of `summarize` promises a `Summary`, and it returns one; the checker has no way to know that `units` should count every unit. You would notice the wrong number only by reading the output, on the one cart that `main` happens to try, and only if you knew the right answer.
+Two lamps and a mug are 3 units, not 2. Nothing in the program says so. The header of `summarize` promises a `Summary`, and it returns one; the checker has no way to know that `units` should count every unit. `una check` proves many things, such as types, labels and contracts, but not what you meant. You would notice the wrong number only by reading the output, on the one cart that `main` happens to try, and only if you knew the right answer.
 
-An example writes the right answer down, once, next to the function, and `una test` compares it on every run. When a later change breaks the count, the example fails, and says where.
-
-### Each step is a package
-
-Each step of this chapter is a package, as in [chapter 1, Hello, Una](/learn/hello/#s1-1): a directory with `una.toml`, `verification.lock` and the module under `src/`. The manifest names the package and the module that `una run` starts:
-
-```toml include="steps/02-examples/una.toml" title="steps/02-examples/una.toml"
-[package]
-name = "cart"
-version = "0.1.0"
-edition = "0.2"
-
-[run]
-entry = "cart"
-grants = ["console"]
-```
-
-`verification.lock` pins the solver and is the same in every example: copy it from chapter 1, or take the step's package, whole, from the chapter's download, `10-testing.tar.gz`. Then, in the package's directory:
-
-```sh
-una check .
-una run .
-una test .
-```
+An example writes the right answer down, once, next to the function, and `una test` compares it on every run. When a later change breaks the count, the example fails, and says where. Because the example sits in the same module, a reader who opens `summarize` finds, a few lines down, what it must give for a real cart.
 
 ### How to write an example
 
-An example is a top-level declaration of a module, like a function. Its lines, in this order:
+An example is a top-level declaration of a module, like a function. Its lines come in this order, each under `example` indented two spaces:
 
 1. **`example "…"`.** The keyword, and a name in double quotes. The name is what `una test` prints, so write it as the fact the example checks. Names are unique within a module.
-2. **`given` lines, if the call needs services.** Each installs a fake for one capability. [Section 14.3](#s14-3) covers them; the examples of this section call functions that need none.
-3. **One `do` line.** The expression under test, run once.
+2. **`given` lines, if the code needs services.** Each installs a fake for one capability. [Section 14.3](#s14-3) covers them; the examples of this section call functions that need none.
+3. **One `do` line.** The code under test, run once.
 4. **One or more `expect` lines.** Each states something that must hold.
 
-The lines under `example` are indented two spaces. An `expect` line takes one of four forms: a condition, `expect fails`, `expect performed` and `expect not performed`. This section covers the first. [Section 14.2](#s14-2) covers `expect fails`, and [section 14.3](#s14-3) the other two.
+An `expect` line takes one of four forms: a condition, `expect fails`, `expect performed` and `expect not performed`. This section covers the first. [Section 14.2](#s14-2) covers `expect fails`, and [section 14.3](#s14-3) the other two.
 
-The next step shows each way to write a condition, on a shelf of products:
+The next step shows each way to write the `do` line and a condition, on a shelf of products:
 
-```una include="steps/03-example-forms/src/shelf.una#Product..edge_label" title="steps/03-example-forms/src/shelf.una" caption="the code under test"
+```una include="steps/02-example-forms/src/shelf.una#Product..edge_label" title="steps/02-example-forms/src/shelf.una" caption="the code under test"
 --- A product on a shelf: its SKU, its price in cents, and how many units are left.
 pub kind Product
   sku: Text
@@ -175,9 +149,9 @@ edge_label(product: Product) -> Text = "{product.sku} {product.cents}"
 
 #### A comparison with `==`
 
-The most common condition compares `result` with the value you expect:
+The most common condition compares `result` with the value you expect. It is the form of chapter 1:
 
-```una include="steps/03-example-forms/src/shelf.una#L30-L32" title="steps/03-example-forms/src/shelf.una"
+```una include="steps/02-example-forms/src/shelf.una#L30-L32" title="steps/02-example-forms/src/shelf.una"
 example "three lamps cost 59.70"
   do price_of(Product(sku: "LAMP-01", cents: 1990, units: 4), quantity: 3)
   expect result == 5970
@@ -185,9 +159,9 @@ example "three lamps cost 59.70"
 
 #### Other comparisons, and several `expect` lines
 
-Any condition that is `true` or `false` works: `!=`, `<`, `<=`, `>`, `>=`, and `and`, `or`, `not` to combine them. Use them when only a bound matters. An example may hold several `expect` lines, and every one must hold:
+Any condition that is `true` or `false` works: `!=`, `<`, `<=`, `>`, `>=`, and `and`, `or`, `not` to combine them ([section 3.3](/learn/text-and-conditions/#s3-3)). Use them when only a bound matters. An example may hold several `expect` lines, and every one must hold:
 
-```una include="steps/03-example-forms/src/shelf.una#L34-L37" title="steps/03-example-forms/src/shelf.una"
+```una include="steps/02-example-forms/src/shelf.una#L34-L37" title="steps/02-example-forms/src/shelf.una"
 example "a price is never below the price of one unit"
   do price_of(Product(sku: "LAMP-01", cents: 1990, units: 4), quantity: 3)
   expect result >= 1990
@@ -196,9 +170,9 @@ example "a price is never below the price of one unit"
 
 #### A result that is already a condition
 
-When the function returns a `Bool`, `result` is the condition itself. `expect not result` states that it is `false`:
+When the function returns a `Bool`, `result` is the condition itself. `expect result` states that it is `true`, and `expect not result` that it is `false`:
 
-```una include="steps/03-example-forms/src/shelf.una#L39-L45" title="steps/03-example-forms/src/shelf.una"
+```una include="steps/02-example-forms/src/shelf.una#L39-L45" title="steps/02-example-forms/src/shelf.una"
 example "a lamp with units left is in stock"
   do in_stock(Product(sku: "LAMP-01", cents: 1990, units: 4))
   expect result
@@ -210,9 +184,9 @@ example "a mug with no units left is not"
 
 #### Fields, lengths and variants
 
-`result` is a value like any other, so you can read its fields, its `.len`, or test its variant with `is` ([chapter 4](/learn/kinds/)):
+`result` is a value like any other, so you can read its fields, its `.len`, or test its variant with `is` ([section 4.2](/learn/kinds/#s4-2)):
 
-```una include="steps/03-example-forms/src/shelf.una#L47-L54" title="steps/03-example-forms/src/shelf.una"
+```una include="steps/02-example-forms/src/shelf.una#L47-L54" title="steps/02-example-forms/src/shelf.una"
 example "only the mug has run out"
   do sold_out([Product(sku: "LAMP-01", cents: 1990, units: 4), Product(sku: "MUG-03", cents: 890, units: 0)])
   expect result.len == 1
@@ -225,11 +199,33 @@ example "a SKU the shelf does not hold is not found"
 
 `expect result is None` holds when `find` found nothing. A whole value can be compared at once too: `expect result == ["MUG-03"]` compares the list element by element.
 
+#### Any expression on the `do` line
+
+The `do` line is usually one call, but it may be any expression. Here it adds two prices, and `result` is the sum:
+
+```una include="steps/02-example-forms/src/shelf.una#L56-L58" title="steps/02-example-forms/src/shelf.una"
+example "two lamps and a mug cost 48.70"
+  do price_of(Product(sku: "LAMP-01", cents: 1990, units: 4), quantity: 2) + price_of(Product(sku: "MUG-03", cents: 890, units: 0), quantity: 1)
+  expect result == 4870
+```
+
+Keep the expression short: the name of the example says what it computes, and a long `do` line is harder to read than two examples.
+
+#### A call in an `expect` line
+
+An `expect` line may call functions too, those of the prelude or of the module, as long as the whole line is a `Bool`. `contains` ([section 10.1](/learn/collections/#s10-1)) asks whether the list holds an element:
+
+```una include="steps/02-example-forms/src/shelf.una#L60-L62" title="steps/02-example-forms/src/shelf.una"
+example "the mug is among the SKUs that have run out"
+  do sold_out([Product(sku: "LAMP-01", cents: 1990, units: 4), Product(sku: "MUG-03", cents: 890, units: 0)])
+  expect result.contains(item: "MUG-03")
+```
+
 #### A private function
 
 An example belongs to its module, so it may call the module's private functions, those without `pub`, such as a helper you want to pin down on its own:
 
-```una include="steps/03-example-forms/src/shelf.una#L56-L58" title="steps/03-example-forms/src/shelf.una"
+```una include="steps/02-example-forms/src/shelf.una#L64-L66" title="steps/02-example-forms/src/shelf.una"
 example "the shelf edge shows the SKU and the price"
   do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))
   expect result == "LAMP-01 1990"
@@ -239,7 +235,7 @@ example "the shelf edge shows the SKU and the price"
 
 `una test .` prints one line per example, then a count:
 
-```text include="steps/03-example-forms/expected/commands/test.txt"
+```text include="steps/02-example-forms/expected/commands/test.txt"
 $ una test .
 example shelf "three lamps cost 59.70" ... ok
 example shelf "a price is never below the price of one unit" ... ok
@@ -247,9 +243,11 @@ example shelf "a lamp with units left is in stock" ... ok
 example shelf "a mug with no units left is not" ... ok
 example shelf "only the mug has run out" ... ok
 example shelf "a SKU the shelf does not hold is not found" ... ok
+example shelf "two lamps and a mug cost 48.70" ... ok
+example shelf "the mug is among the SKUs that have run out" ... ok
 example shelf "the shelf edge shows the SKU and the price" ... ok
 
-7 examples: 7 passed, 0 failed
+9 examples: 9 passed, 0 failed
 ```
 
 ### Two lamps and a mug
@@ -257,7 +255,7 @@ example shelf "the shelf edge shows the SKU and the price" ... ok
 Now the cart of [Why tests live next to the code](#why-tests-live-next-to-the-code), with the bug fixed and two examples:
 
 :::steps
-```una include="steps/02-examples/src/cart.una" title="steps/02-examples/src/cart.una" verified="check, run, test"
+```una include="steps/03-examples/src/cart.una" title="steps/03-examples/src/cart.una" verified="check, run, test"
 module cart
 
 --- One line of a cart: a SKU, how many units, and the price of one unit in cents.
@@ -298,23 +296,23 @@ example "an empty cart holds nothing"
   expect result == Summary(units: 0, cents: 0)
 ```
 
-1. **`example "two lamps and a mug"`.** The text names the case. It is what `una test` prints, so write it as a sentence a reviewer can read. Names are unique within a module.
-2. **`do summarize([...])`.** The `do` line runs the expression under test, once. An example has exactly one `do` line.
-3. **`expect result.units == 3`.** Each `expect` line is a `Bool` that must be true. `result` is the value the `do` line gave, so you can read its fields. An example has at least one `expect` line, and may have several: here, one for each field.
-4. **`expect result == Summary(units: 0, cents: 0)`.** Records compare field by field, so one line can state a whole value. The empty cart is the edge case: a loop over no lines must still give a correct summary.
+1. **`example "two lamps and a mug"`.** The text names the case. It is what `una test` prints, so write it as a sentence a reader can follow.
+2. **`do summarize([...])`.** The `do` line runs the code under test, once. An example has exactly one `do` line.
+3. **`expect result.units == 3`.** Each `expect` line is a `Bool` that must be true. `result` is the value the `do` line gave, so you can read its fields. Here there is one `expect` line for each field.
+4. **`expect result == Summary(units: 0, cents: 0)`.** Records compare field by field ([section 4.1](/learn/kinds/#s4-1)), so one line can state a whole value. The empty cart is the edge case: a loop over no lines must still give a correct summary.
 :::
 
 ### Running the examples with `una test`
 
 `una run .` runs `main` only, and ignores the examples:
 
-```text include="steps/02-examples/expected/output.txt"
+```text include="steps/03-examples/expected/output.txt"
 3 units, 4870 cents
 ```
 
-`una test .` checks the package first, as `una check` does, then runs every example of every module, each in a fresh machine, as if the program had just started with nothing left from another run, and prints one line per example:
+`una test .` checks the package first, as `una check` does, then runs every example of every module and prints one line per example. It runs nothing else: `main` runs only if an example calls it.
 
-```text include="steps/02-examples/expected/commands/test.txt"
+```text include="steps/03-examples/expected/commands/test.txt"
 $ una test .
 example cart "two lamps and a mug" ... ok
 example cart "an empty cart holds nothing" ... ok
@@ -330,7 +328,7 @@ Each line names the module, `cart`, and the example. `ok` means every `expect` l
 
 Put the bug back. Count one unit per line, instead of the line's quantity:
 
-```diff include="steps/02-examples..steps/04-a-bug:src/cart.una" context="1" title="src/cart.una"
+```diff include="steps/03-examples..steps/04-a-bug:src/cart.una" context="1" title="src/cart.una"
 --- a/src/cart.una
 +++ b/src/cart.una
 @@ -19,3 +19,3 @@
@@ -352,7 +350,7 @@ example cart "an empty cart holds nothing" ... ok
 2 examples: 1 passed, 1 failed
 ```
 
-Read the failure from the top. `FAILED` marks the example. The next line gives the file and line of the `expect` that did not hold, `src/cart.una:33`, and its text. The last line says why: *it is false, with `result` = …*, followed by the whole value the `do` line gave. Here `units` is 2, so the count is wrong, and `cents` is right, so the price is not. `una test` exits with code 1 when any example fails, so a build script or a continuous-integration job, a job that checks every change automatically, stops there. In a package of edition `0.2`, the value is shown in full, labeled fields included ([chapter 17](/learn/information-flow/#examples-are-not-sinks)).
+Read the failure from the top. `FAILED` marks the example. The next line gives the file and line of the `expect` that did not hold, `src/cart.una:33`, and its text. The last line says why: *it is false, with `result` = …*, followed by the whole value the `do` line gave. Here `units` is 2, so the count is wrong, and `cents` is right, so the price is not. `una test` exits with code 1 when any example fails, so a build script, or a continuous-integration job that checks every change automatically, stops there.
 
 #### The checks run in order
 
@@ -360,13 +358,13 @@ The `expect` lines of an example are checked from the top, and the first that do
 
 #### Each example runs alone
 
-Each example runs in a fresh machine, with nothing left over from another example or from `main`. The order of examples in the file does not matter, and an example cannot depend on another.
+Each example runs in a fresh machine, as if the program had just started, with nothing left over from another example or from `main`. The order of examples in the file does not matter, and an example cannot depend on another.
 
 #### An example is code, and is checked
 
 `una check .` checks examples like any other code: names, types, labels and proofs. An example that compares a number with a text does not run at all:
 
-```diff include="steps/03-example-forms..steps/05-wrong-type:src/shelf.una" context="1" title="src/shelf.una"
+```diff include="steps/02-example-forms..steps/05-wrong-type:src/shelf.una" context="1" title="src/shelf.una"
 --- a/src/shelf.una
 +++ b/src/shelf.una
 @@ -31,3 +31,3 @@
@@ -385,32 +383,40 @@ Each example runs in a fresh machine, with nothing left over from another exampl
     │                  ╰────────── `==` needs operands of one type, and these are `Int` and `Text`
 ```
 
-`una test .` reports the same diagnostic and runs nothing: a package that does not check has no examples to run.
+`==` compares values of one type, and `price_of` returns an `Int`. `una test .` reports the same diagnostic and runs nothing: a package that does not check has no examples to run.
 
-#### An example needs an `expect` line
+#### One `do` line, then at least one `expect` line
 
-An example with a `do` line and nothing to expect checks nothing, and una refuses it:
+An example with a `do` line and nothing to expect checks nothing, and Una refuses it:
 
-```diff include="steps/03-example-forms..steps/06-no-expect:src/shelf.una" context="1" title="src/shelf.una"
+```diff include="steps/02-example-forms..steps/06-no-expect:src/shelf.una" context="1" title="src/shelf.una"
 --- a/src/shelf.una
 +++ b/src/shelf.una
-@@ -57,2 +57 @@
+@@ -65,2 +65 @@
    do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))
 -  expect result == "LAMP-01 1990"
 ```
 
 ```text include="steps/06-no-expect/expected/rendered.txt#L1-L6"
 [U0101] Error: unexpected end of block, expected `expect`
-    ╭─[ src/shelf.una:57:65 ]
+    ╭─[ src/shelf.una:65:65 ]
     │
- 57 │   do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))
+ 65 │   do edge_label(Product(sku: "LAMP-01", cents: 1990, units: 4))
     │                                                                 │
     │                                                                 ╰─ unexpected end of block, expected `expect`
 ```
 
-The mark points at the end of the `do` line, where una expected an `expect` line. Two `do` lines are refused the same way: an example tests one call.
+The mark points at the end of the `do` line, where Una expected an `expect` line. The order of the lines is fixed too. A second `do` line is the same error, U0101, with the message ``unexpected keyword `do`, expected `expect` ``: an example tests one piece of code. A `given` line after the `do` line is refused the same way.
 
-### An example, or a print in `main`
+### One fact, stated exactly
+
+A good example states one fact, in its name and in its `expect` lines. When it fails, its name tells you what broke before you read any code.
+
+Prefer exact values over loose ones. `expect result == 4870` catches a price that is off by one cent, which `expect result > 0` would miss. A bound is right when the bound is the rule, as in "a price is never below the price of one unit"; [section 14.4](#s14-4) shows that such rules usually belong in a contract.
+
+When an example fails, the report alone cannot tell you which side is wrong: the code, or the example. Read the function's doc comment and decide which states what the store means, then fix that side. Never change an example only to make it pass.
+
+### An example, a print in `main`, or a contract
 
 :::decide
 **Which to use:**
@@ -420,6 +426,7 @@ The mark points at the end of the `do` line, where una expected an `expect` line
 | See what a function gives, once, while you write it | a print in `main`, with `una run .` |
 | State the right answer, and be told when it changes | an `example`, with `una test .` |
 | Pin down an edge case, such as an empty cart | an `example` for that case alone |
+| Know that the code has the right types and authority | `una check .`, which needs no example |
 | A rule that must hold for every input | a contract ([section 14.4](#s14-4)) |
 :::
 
@@ -446,162 +453,19 @@ example cart "three mugs on one line" ... FAILED
 `summarize` counts units, so three mugs are 3, and the first `expect` fails. The second line, about `cents`, is not reported: the first failing `expect` ends the example. Here the code is right and the example is wrong, which the report alone cannot tell you: read the function's doc comment, then fix whichever side is wrong.
 :::
 
-
-### What an example is
-
-An **example** is a small test, written in the module next to the code it tests: it calls a function with chosen arguments and states what the result must be. It is like checking a new calculator with 2 + 2 before you trust it with a bill. `una test` runs every example and reports which hold.
-
-### Why programs need tests
-
-`una check` proves many things, but not what you meant. If `cutoff_line` says "ship tomorrow" when the store means "ship today", the code checks: the checker cannot know which sentence is right. An example states the sentence you meant, and fails the moment the code says something else.
-
-### Writing an example
-
-A function that returns a value is easy to test: call it, and compare what it returns with what you expect. The module `notice` ends with two examples:
-
-:::steps
-```una include="steps/09-examples-2/src/notice.una#L19-L25" title="src/notice.una" caption="two examples at the end of the module"
-example "the store closes at six in the evening"
-  do closing_hour()
-  expect result == 18
-
-example "the cutoff line names the hour"
-  do cutoff_line(18)
-  expect result == "Orders placed before 18:00 ship today"
-```
-
-1. **`example "the store closes at six in the evening"`.** An example has a name in quotes. Write it as the fact the example checks, since that is what `una test` reports.
-2. **`do closing_hour()`.** The call under test, on its own line.
-3. **`expect result == 18`.** A fact that must hold. `result` is the value the `do` call returned, and `==` compares two values: it is `true` when they are equal. An example may have several `expect` lines, and each must hold.
-:::
-
-### Running the examples
-
-Run every example of the package:
-
-```sh
-una test .
-```
-
-```text include="steps/09-examples-2/expected/commands/test.txt#L2-L5"
-example notice "the store closes at six in the evening" ... ok
-example notice "the cutoff line names the hour" ... ok
-
-2 examples: 2 passed, 0 failed
-```
-
-Each example gets a line, with the module, the name, and `ok` when every `expect` holds. The last line counts them.
-
-### A failing example
-
-When an `expect` does not hold, the example fails, and the report says which line and what the value was. Here the second example expects a different wording than the function gives:
-
-```diff include="steps/09-examples-2..steps/10-failing:src/notice.una" title="src/notice.una" context="1"
---- a/src/notice.una
-+++ b/src/notice.una
-@@ -24,2 +24,2 @@
-   do cutoff_line(18)
--  expect result == "Orders placed before 18:00 ship today"
-+  expect result == "Orders placed before 18:00 ship the same day"
-```
-
-```text include="steps/10-failing/expected/commands/test.txt#L2-L7"
-example notice "the store closes at six in the evening" ... ok
-example notice "the cutoff line names the hour" ... FAILED
-  src/notice.una:25: expect result == "Orders placed before 18:00 ship the same day"
-  it is false, with `result` = `"Orders placed before 18:00 ship today"`
-
-2 examples: 1 passed, 1 failed
-```
-
-Read the report from the top. `FAILED` names the example. The next line gives the place of the `expect` that did not hold, `src/notice.una:25`, and repeats it. The last line gives the value of `result`, so you can compare it with what the example expects. `una test .` exits with code 1, so a script can stop on a failed test. Whether the function or the example is wrong is your call: here the function says what the store means, so the fix is to the example.
-
-### How examples behave
-
-#### Examples are checked code
-
-Examples are code, and `una check .` checks them as it checks the rest of the module. An `expect` that compares an `Int` result with a text is a type error at check time, not a failed test at run time:
-
-```diff include="steps/08-functions..steps/11-example-type:src/notice.una" title="src/notice.una" context="1"
---- a/src/notice.una
-+++ b/src/notice.una
-@@ -17 +17,9 @@
-   @console.print(cutoff_line(hour))
-+
-+example "the store closes at six in the evening"
-+  do closing_hour()
-+  expect result == "18"
-+
-+example "the cutoff line names the hour"
-+  do cutoff_line(18)
-+  expect result == "Orders placed before 18:00 ship today"
-```
-
-```text include="steps/11-example-type/expected/rendered.txt#L1"
-[U2001] Error: `==` needs operands of one type, and these are `Int` and `Text`
-```
-
-`==` compares values of one type, and `closing_hour()` returns an `Int`.
-
-#### What an example may do
-
-An example may call any function of its module, public or private, and it never prints: `una run .` ignores the examples, and `una test .` runs nothing but them. `una test .` checks the package first, as `una run .` does, so an example runs only in a package that checks clean.
-
-#### One fact per example
-
-A good example states one fact, in its name and in its `expect` lines. When it fails, its name tells you what broke before you read any code. Prefer exact values over loose ones: `expect result == "Orders placed before 18:00 ship today"` catches a change of one word, which a test of the length alone would miss.
-
-### What to test, and what not
-
-:::decide
-**Which to use:**
-
-| You want to… | Use |
-| --- | --- |
-| Pin what a pure function returns for one input | an example with `expect result == …` |
-| Cover an input the program does not reach today, such as zero units | one more example |
-| Know that the code has the right types and authority | `una check .`, which needs no example |
-| Test a function that prints | [chapter 14](/learn/testing/), with a fake console: a stand-in that records what would be printed |
-:::
-
-### Check yourself: examples
-
-This example is added at the end of `notice`:
-
-```una include="steps/12-early-cutoff/src/notice.una#L27-L29" title="steps/12-early-cutoff/src/notice.una"
-example "the cutoff line for nine in the morning"
-  do cutoff_line(9)
-  expect result == "Orders placed before 09:00 ship today"
-```
-
-Does it pass?
-
-:::answer Show the answer
-It fails:
-
-```text include="steps/12-early-cutoff/expected/commands/test.txt#L4-L6"
-example notice "the cutoff line for nine in the morning" ... FAILED
-  src/notice.una:29: expect result == "Orders placed before 09:00 ship today"
-  it is false, with `result` = `"Orders placed before 9:00 ship today"`
-```
-
-An interpolation writes an `Int` in its plain decimal form, with no leading zero: `9`, not `09`. The function is right for the store's notice, so the fix is to the example.
-:::
-
 ## 14.2 Testing failures: `expect fails`
-
 
 ### What a failure path is
 
-A function that can fail ([chapter 6, Failure](/learn/failure/)) declares how, with `fails` and a kind of errors, and fails with `fail` and one of the kind's variants. Each way a function can end, by returning or by failing with a given variant, is a **path** through it. The return is the happy path; each variant it can fail with is a **failure path**.
+A function that can fail ([section 7.2](/learn/failure/#s7-2)) declares how, with `fails` and a kind of errors, and fails with `fail` and one of the kind's variants. Each way a function can end, by returning or by failing with a given variant, is a **path** through it. The return is the happy path; each variant it can fail with is a **failure path**.
 
-A failure path is behavior, as much as a returned value is. A coupon code that does not exist must be refused, and saying so is part of what the function is for.
+A failure path is behavior, as much as a returned value is. A coupon code that does not exist must be refused, and saying so is part of what the function is for. The order intake of [section 7.8](/learn/failure/#s7-8) already tested its failure paths with `expect fails`, with a short explanation. This section covers it in full.
 
 ### Why every failure path needs an example
 
 Here is a coupon function where an unknown code takes nothing off, instead of failing, and its one example:
 
-```una include="steps/13-happy-only/src/coupons.una" title="steps/13-happy-only/src/coupons.una" verified="check, run, test"
+```una include="steps/08-happy-only/src/coupons.una" title="steps/08-happy-only/src/coupons.una" verified="check, run, test"
 module coupons
 
 --- The percent that a coupon code takes off. An unknown code takes nothing off.
@@ -624,11 +488,11 @@ example "SPRING10 takes 10 percent off"
 
 `una run .` prints:
 
-```text include="steps/13-happy-only/expected/output.txt"
+```text include="steps/08-happy-only/expected/output.txt"
 SPRING10: 4500, WINTER5: 5000
 ```
 
-```text include="steps/13-happy-only/expected/commands/test.txt"
+```text include="steps/08-happy-only/expected/commands/test.txt"
 $ una test .
 example coupons "SPRING10 takes 10 percent off" ... ok
 
@@ -644,14 +508,14 @@ Every check passes. Yet a customer who mistypes `SPRING10` pays full price and i
 - **`expect fails Unknown`** holds when the `do` line failed with the variant `Unknown`.
 - **Name the variant only,** without its fields: `expect fails Unknown`, not `expect fails Unknown("WINTER5")`.
 - **The variant is of the `do` call's error kind,** the kind its `fails` clause names.
-- **The `do` line needs no handling clause.** Whatever it fails with, the example catches it, and `expect fails` names the variant. A handling clause such as `if error use` under a `do` line is a syntax error, U0101. When you want the failure as a value instead, `do attempt f(…)` gives a `Result` ([chapter 7](/learn/failure/#s7-4)), which `expect result is Err` can test. [A failure as a value](#a-failure-as-a-value-do-attempt) shows both.
+- **The `do` line needs no handling clause.** Whatever it fails with, the example catches it, and `expect fails` names the variant. A handling clause such as `if error use` under a `do` line is a syntax error, U0101. When you want the failure as a value instead, `do attempt f(…)` gives a `Result` ([section 7.4](/learn/failure/#s7-4)), which `expect result is Err` can test. [A failure as a value](#a-failure-as-a-value-do-attempt) shows both.
 
 ### The failure paths of a coupon
 
 This step applies a coupon code to a cart. A code can be unknown, and a coupon needs a cart of at least 20.00:
 
 :::steps
-```una include="steps/14-failures/src/coupons.una" title="steps/14-failures/src/coupons.una" verified="check, run, test"
+```una include="steps/09-failures/src/coupons.una" title="steps/09-failures/src/coupons.una" verified="check, run, test"
 module coupons
 
 --- Why a coupon was not accepted.
@@ -704,7 +568,7 @@ example "the code is checked before the amount"
 4. **`"the code is checked before the amount"`.** When both inputs are wrong, the order of the checks decides which failure the caller sees. An example pins that order down, so a later edit that swaps the checks fails a test.
 :::
 
-```text include="steps/14-failures/expected/commands/test.txt"
+```text include="steps/09-failures/expected/commands/test.txt"
 $ una test .
 example coupons "SPRING10 takes 10 percent off" ... ok
 example coupons "an unknown code is Unknown" ... ok
@@ -720,7 +584,7 @@ example coupons "the code is checked before the amount" ... ok
 
 The expectations of an example are checked in order, and the first that does not hold fails it. Two mistakes are common. Here are both, written on purpose:
 
-```una include="steps/15-misread/src/coupons.una#L30-L36" title="steps/15-misread/src/coupons.una"
+```una include="steps/10-misread/src/coupons.una#L30-L36" title="steps/10-misread/src/coupons.una"
 example "SPRING10 on 50.00 is refused"
   do apply_coupon("SPRING10", cents: 5000)
   expect fails BelowMinimum
@@ -730,7 +594,7 @@ example "WINTER5 takes 5 percent off"
   expect result == 4750
 ```
 
-```text include="steps/15-misread/expected/commands/test.txt"
+```text include="steps/10-misread/expected/commands/test.txt"
 $ una test .
 example coupons "SPRING10 on 50.00 is refused" ... FAILED
   src/coupons.una:32: expect fails BelowMinimum
@@ -751,32 +615,32 @@ A third rule closes the gap between those two mistakes. When the `do` line fails
 
 #### A failure stops the `do` line
 
-A `do` line may nest several calls, and more than one of them may fail or use a service; unlike the other lines of a program, a `do` line is not limited to one such call (elsewhere, a call that can fail is the whole of its line: [chapter 7](/learn/failure/#nesting-a-call-that-can-fail-u3013)). They run from left to right, the first failure ends the `do` line, and the example then checks its `expect` lines against that failure.
+A `do` line may nest several calls, and more than one of them may fail or use a service. Elsewhere, a call that can fail is the whole of its line ([chapter 7](/learn/failure/#nesting-a-call-that-can-fail-u3013)); a `do` line is free of that rule. The calls run from left to right, the first failure ends the `do` line, and the example then checks its `expect` lines against that failure.
 
 #### A failure as a value: `do attempt`
 
 A `do` line takes no handling clause. Handle the unknown code on the `do` line of a new example, as a statement elsewhere would:
 
-```una include="steps/16-clause-on-do/src/coupons.una#L46-L49" title="steps/16-clause-on-do/src/coupons.una"
+```una include="steps/11-clause-on-do/src/coupons.una#L46-L49" title="steps/11-clause-on-do/src/coupons.una"
 example "an unknown code, handled on the do line"
   do apply_coupon("WINTER5", cents: 5000)
     if error use 0
   expect result == 0
 ```
 
-```text include="steps/16-clause-on-do/expected/rendered.txt#L1"
+```text include="steps/11-clause-on-do/expected/rendered.txt#L1"
 [U0101] Error: unexpected indentation, expected `expect`
 ```
 
-The example ends at the `do` line, so una expects an `expect` line where the clause stands. To look at the failure as a value instead, put `attempt` in front of the call ([chapter 7](/learn/failure/#s7-4)). The `do` line then gives a `Result`, `Err` for a failure, and an `expect` line can test its variant with `is`:
+The example ends at the `do` line, so Una expects an `expect` line where the clause stands. To look at the failure as a value instead, put `attempt` in front of the call ([section 7.4](/learn/failure/#s7-4)). The `do` line then gives a `Result`, `Err` for a failure, and an `expect` line can test its variant with `is`:
 
-```una include="steps/17-attempt-on-do/src/coupons.una#L46-L48" title="steps/17-attempt-on-do/src/coupons.una"
+```una include="steps/12-attempt-on-do/src/coupons.una#L46-L48" title="steps/12-attempt-on-do/src/coupons.una"
 example "an unknown code, kept as a value"
   do attempt apply_coupon("WINTER5", cents: 5000)
   expect result is Err
 ```
 
-```text include="steps/17-attempt-on-do/expected/commands/test.txt#L6-L8"
+```text include="steps/12-attempt-on-do/expected/commands/test.txt#L6-L8"
 example coupons "an unknown code, kept as a value" ... ok
 
 5 examples: 5 passed, 0 failed
@@ -801,7 +665,7 @@ Prefer `expect fails Unknown`: it names the variant and reads as the rule. Use `
 
 A new example, at the end of the coupon step:
 
-```una include="steps/18-wrong-order/src/coupons.una#L46-L48" title="steps/18-wrong-order/src/coupons.una"
+```una include="steps/13-wrong-order/src/coupons.una#L46-L48" title="steps/13-wrong-order/src/coupons.una"
 example "a small cart with a lowercase code is BelowMinimum"
   do apply_coupon("vip25", cents: 1500)
   expect fails BelowMinimum
@@ -812,7 +676,7 @@ The cart is under 20.00. Does the example pass?
 :::answer Show the answer
 No:
 
-```text include="steps/18-wrong-order/expected/commands/test.txt#L6-L8"
+```text include="steps/13-wrong-order/expected/commands/test.txt#L6-L8"
 example coupons "a small cart with a lowercase code is BelowMinimum" ... FAILED
   src/coupons.una:48: expect fails BelowMinimum
   the `do` line failed with `Unknown("vip25")`
@@ -823,12 +687,11 @@ Codes are compared exactly, so `vip25` is not `VIP25`, and the code is checked b
 
 ## 14.3 Fakes: `given`, `expect performed` and `expect not performed`
 
-
 ### What a fake is
 
 A pilot trains in a flight simulator before flying a real plane. The simulator answers like the plane: it climbs, it stalls, it can lose an engine on demand. Nothing is at risk, and the same exercise can be run again and again.
 
-Most code worth testing talks to something: a warehouse, a card processor, a mail service. In Una that something is a **capability** ([chapter 8, Capabilities](/learn/capabilities/)), a declared service with operations, and the code that does its work is a **handler**. A **fake** is a handler written for tests: it answers like the real service, from values you choose, and touches nothing outside the program. An example installs a fake with a `given` line.
+Most code worth testing talks to something: a warehouse, a card processor, a mail service. In Una that something is a **capability** ([chapter 12](/learn/capabilities/)), a declared service with operations, and the code that does its work is a **handler** ([section 12.3](/learn/capabilities/#s12-3)). A **fake** is a handler written for tests: it answers like the real service, from values you choose, and touches nothing outside the program. A program installs a handler for one call with `with` ([section 12.4](/learn/capabilities/#s12-4)); an example installs a fake with a `given` line.
 
 ### Why an example cannot use a real service
 
@@ -836,24 +699,24 @@ An example must give the same result on every machine and every day. A real mail
 
 Here is a function that needs two services. The warehouse says how many units of a SKU are left, and the mail service sends the buyer a message when the stock runs low:
 
-```una include="steps/20-no-given/src/restock.una#Inventory..warn_if_low" title="steps/20-no-given/src/restock.una"
+```una include="steps/14-no-given/src/restock.una#Stock..warn_if_low" title="steps/14-no-given/src/restock.una"
 --- The warehouse's stock.
-pub capability Inventory
+pub capability Stock
   op left(sku: Text) -> Int
     ensures result >= 0
 
 --- The store's mail service.
-pub capability Mail
+pub capability Mailer
   op send(to: Text, body: Text) -> Unit
 
 --- Mails the buyer when a SKU runs low, with fewer than 3 units left. Says whether it did.
 pub warn_if_low(sku: Text) -> Bool
-  uses @inventory: Inventory[left]
-  uses @mail: Mail[send]
+  uses @stock: Stock[left]
+  uses @mailer: Mailer[send]
 =
-  let units = @inventory.left(sku)
+  let units = @stock.left(sku)
   if units < 3
-    @mail.send("buyer@example.invalid", body: "{sku}: {units} left")
+    @mailer.send("buyer@example.invalid", body: "{sku}: {units} left")
     true
   else
     false
@@ -861,7 +724,7 @@ pub warn_if_low(sku: Text) -> Bool
 
 An example of it calls it with nothing standing in for the warehouse or the mail service:
 
-```una include="steps/20-no-given/src/restock.una#L42-L44" title="steps/20-no-given/src/restock.una"
+```una include="steps/14-no-given/src/restock.una#L42-L44" title="steps/14-no-given/src/restock.una"
 example "two units left mails the buyer"
   do warn_if_low("LAMP-01")
   expect result
@@ -869,12 +732,12 @@ example "two units left mails the buyer"
 
 `una check .` refuses it, once for each service:
 
-```text include="steps/20-no-given/expected/diagnostics.txt"
-error U3001 at src/restock.una:43:6: `warn_if_low` needs `@inventory: Inventory[left]`, which no `given` line binds
-error U3001 at src/restock.una:43:6: `warn_if_low` needs `@mail: Mail[send]`, which no `given` line binds
+```text include="steps/14-no-given/expected/diagnostics.txt"
+error U3001 at src/restock.una:43:6: `warn_if_low` needs `@stock: Stock[left]`, which no `given` line binds
+error U3001 at src/restock.una:43:6: `warn_if_low` needs `@mailer: Mailer[send]`, which no `given` line binds
 ```
 
-Both diagnostics are U3001: `warn_if_low` needs `@inventory` and `@mail`, and nothing in the example provides them. The words `given` and `binds` in the message name the line that would: a `given` line, which installs a fake for one service and is the subject of the next subsection. An example never falls back to a real service. A function that needs a host capability, such as the console, gets a fake of it too ([A fake of a host capability](#a-fake-of-a-host-capability)).
+Both diagnostics are U3001: `warn_if_low` needs `@stock` and `@mailer`, and nothing in the example provides them. The words `given` and `binds` in the message name the line that would: a `given` line, which installs a fake for one service and is the subject of the next subsection. An example never falls back to a real service. A function that needs a host capability, such as the console, gets a fake of it too ([A fake of a host capability](#a-fake-of-a-host-capability)).
 
 ### How to write a fake and install it
 
@@ -884,7 +747,7 @@ Both diagnostics are U3001: `warn_if_low` needs `@inventory` and `@mail`, and no
 
 The next step quotes prices from a catalog service, and has one fake per kind of answer a test needs:
 
-```una include="steps/21-fake-forms/src/quotes.una#CatalogError..quote" title="steps/21-fake-forms/src/quotes.una" caption="the code under test"
+```una include="steps/15-fake-forms/src/quotes.una#CatalogError..quote" title="steps/15-fake-forms/src/quotes.una" caption="the code under test"
 --- How the catalog service can fail.
 pub kind CatalogError = | CatalogDown
 
@@ -909,7 +772,7 @@ pub quote(sku: Text, quantity: Int) -> Int
 
 #### A fake that always answers the same
 
-```una include="steps/21-fake-forms/src/quotes.una#flat_price" title="steps/21-fake-forms/src/quotes.una"
+```una include="steps/15-fake-forms/src/quotes.una#flat_price" title="steps/15-fake-forms/src/quotes.una"
 --- A catalog that gives every SKU the same price.
 handler flat_price(cents: Int) for Catalog
   op price(sku) = Some(cents)
@@ -919,17 +782,17 @@ The handler's parameter, `cents`, is given where it is installed, so each exampl
 
 #### A fake that holds data
 
-```una include="steps/21-fake-forms/src/quotes.una#price_list" title="steps/21-fake-forms/src/quotes.una"
+```una include="steps/15-fake-forms/src/quotes.una#price_list" title="steps/15-fake-forms/src/quotes.una"
 --- A catalog that knows the prices in `prices`, and no others.
 handler price_list(prices: Map[Text, Int]) for Catalog
   op price(sku) = prices.get(key: sku)
 ```
 
-A map ([chapter 10](/learn/collections/#s10-4)) of the prices it knows. A SKU outside the map gives `None`, which is the path where the catalog has no price.
+A map ([section 10.4](/learn/collections/#s10-4)) of the prices it knows. A SKU outside the map gives `None`, which is the path where the catalog has no price.
 
 #### A fake that fails
 
-```una include="steps/21-fake-forms/src/quotes.una#catalog_down" title="steps/21-fake-forms/src/quotes.una"
+```una include="steps/15-fake-forms/src/quotes.una#catalog_down" title="steps/15-fake-forms/src/quotes.una"
 --- A catalog that never answers.
 handler catalog_down() for Catalog
   op price(sku) = fail CatalogDown
@@ -939,7 +802,7 @@ A service that never answers is a case you cannot easily make with a real one. A
 
 #### A fake that decides by its arguments
 
-```una include="steps/21-fake-forms/src/quotes.una#mugs_only" title="steps/21-fake-forms/src/quotes.una"
+```una include="steps/15-fake-forms/src/quotes.una#mugs_only" title="steps/15-fake-forms/src/quotes.una"
 --- A catalog that decides by the SKU it is asked about: mugs cost 890, and it is down for
 --- anything else.
 handler mugs_only() for Catalog
@@ -952,26 +815,26 @@ An operation of a fake can branch on what it receives, so one handler can answer
 
 A handler may implement a host capability too, such as `Console`. This one prints nothing:
 
-```una include="steps/21-fake-forms/src/quotes.una#quiet" title="steps/21-fake-forms/src/quotes.una"
+```una include="steps/15-fake-forms/src/quotes.una#quiet" title="steps/15-fake-forms/src/quotes.una"
 --- A console that prints nothing: a fake of a host capability.
 handler quiet() for Console
   op print(line) = unit
 ```
 
-With it, an example can run a function that prints, `main` included, without reaching the terminal.
+With it, an example can run a function that prints, `main` included, without reaching the terminal. A function that holds the console under another name gets the same fake through that name, as [A console held under another name](#a-console-held-under-another-name) shows.
 
 ### What the code did: `expect performed`
 
 Each run of an example keeps a **trace**: the list of operations the code performed, in order, each with its arguments and its outcome. Two forms of `expect` read it:
 
-- **`expect performed @mail.send`** holds when the trace has at least one `send` on the binding `@mail`, whether it completed or failed.
-- **`expect not performed @mail.send`** holds when it has none.
+- **`expect performed @mailer.send`** holds when the trace has at least one `send` on the binding `@mailer`, whether it completed or failed.
+- **`expect not performed @mailer.send`** holds when it has none.
 
-The binding is the one a `given` line installed, and the operation must exist on its capability.
+The binding is the one a `given` line installed, and the operation must exist on its capability. Neither line mentions `result`, so both are checked even when the `do` line failed.
 
 #### Running the fake forms
 
-```una include="steps/21-fake-forms/src/quotes.una#L51-L76" title="steps/21-fake-forms/src/quotes.una" caption="the examples"
+```una include="steps/15-fake-forms/src/quotes.una#L51-L76" title="steps/15-fake-forms/src/quotes.una" caption="the examples"
 example "two lamps at a flat price"
   given @catalog = flat_price(1990)
   do quote("LAMP-01", quantity: 2)
@@ -1000,7 +863,7 @@ example "main prints, and nothing reaches the terminal"
   expect performed @console.print
 ```
 
-```text include="steps/21-fake-forms/expected/commands/test.txt"
+```text include="steps/15-fake-forms/expected/commands/test.txt"
 $ una test .
 example quotes "two lamps at a flat price" ... ok
 example quotes "a SKU the list does not hold has no price" ... ok
@@ -1018,71 +881,71 @@ The third example states both what the call returned, a failure, and what it did
 This step mails the buyer when a SKU runs low. The warehouse promises, in the `ensures` of its operation, that it never reports fewer than 0 units:
 
 :::steps
-```una include="steps/19-fakes/src/restock.una" title="steps/19-fakes/src/restock.una" verified="check, run, test"
+```una include="steps/16-fakes/src/restock.una" title="steps/16-fakes/src/restock.una" verified="check, run, test"
 module restock
 
 --- A count of units, never below zero.
 kind Units = Int where it >= 0
 
 --- The warehouse's stock.
-pub capability Inventory
+pub capability Stock
   op left(sku: Text) -> Int
     ensures result >= 0
 
 --- The store's mail service.
-pub capability Mail
+pub capability Mailer
   op send(to: Text, body: Text) -> Unit
 
 --- Mails the buyer when a SKU runs low, with fewer than 3 units left. Says whether it did.
 pub warn_if_low(sku: Text) -> Bool
-  uses @inventory: Inventory[left]
-  uses @mail: Mail[send]
+  uses @stock: Stock[left]
+  uses @mailer: Mailer[send]
 =
-  let units = @inventory.left(sku)
+  let units = @stock.left(sku)
   if units < 3
-    @mail.send("buyer@example.invalid", body: "{sku}: {units} left")
+    @mailer.send("buyer@example.invalid", body: "{sku}: {units} left")
     true
   else
     false
 
 --- A fake warehouse that holds `units` of every SKU.
-handler shelf(units: Units) for Inventory
+handler flat_stock(units: Units) for Stock
   op left(sku) = units
 
 --- A fake mail service: it accepts every message and delivers none.
-handler outbox() for Mail
+handler outbox() for Mailer
   op send(to, body) = unit
 
 pub main() -> Unit
   uses @console: Console[print]
 =
-  let low = warn_if_low("LAMP-01") with @inventory = shelf(2), @mail = outbox()
-  let plenty = warn_if_low("DESK-02") with @inventory = shelf(40), @mail = outbox()
+  let low = warn_if_low("LAMP-01") with @stock = flat_stock(2), @mailer = outbox()
+  let plenty = warn_if_low("DESK-02") with @stock = flat_stock(40), @mailer = outbox()
   @console.print("LAMP-01 warned: {low}, DESK-02 warned: {plenty}")
 
 example "two units left mails the buyer"
-  given @inventory = shelf(2)
-  given @mail = outbox()
+  given @stock = flat_stock(2)
+  given @mailer = outbox()
   do warn_if_low("LAMP-01")
   expect result
-  expect performed @mail.send
+  expect performed @mailer.send
 
 example "forty units left mails nobody"
-  given @inventory = shelf(40)
-  given @mail = outbox()
+  given @stock = flat_stock(40)
+  given @mailer = outbox()
   do warn_if_low("LAMP-01")
   expect not result
-  expect not performed @mail.send
+  expect not performed @mailer.send
 ```
 
-1. **`handler shelf(units: Units) for Inventory`.** A fake warehouse that holds `units` of every SKU. `Units` is a refined kind ([chapter 7, Contracts and the verifier](/learn/contracts/#s5-3)): an `Int` that is never below zero. Its parameter is given where it is installed, so each example sets the stock it needs: `shelf(2)`, `shelf(40)`.
-2. **`handler outbox() for Mail`.** A fake mail service that accepts every message. It delivers nothing, and it does not need to: the example only needs to know that a message was sent.
-3. **`given @inventory = shelf(2)`.** Installs the handler as `@inventory` for this example only, as `with` does for one call. Every capability the `do` line needs must have a `given` line.
+1. **`handler flat_stock(units: Units) for Stock`.** A fake warehouse that holds `units` of every SKU. `Units` is a refined kind ([section 5.3](/learn/contracts/#s5-3)): an `Int` that is never below zero. Its parameter is given where it is installed, so each example sets the stock it needs: `flat_stock(2)`, `flat_stock(40)`.
+2. **`handler outbox() for Mailer`.** A fake mail service that accepts every message. It delivers nothing, and it does not need to: the example only needs to know that a message was sent.
+3. **`given @stock = flat_stock(2)`.** Installs the handler as `@stock` for this example only, as `with` does for one call in `main`. Every capability the `do` line needs must have a `given` line.
 4. **`expect result` and `expect not result`.** `warn_if_low` returns a `Bool`, so `result` is already the condition.
-5. **`expect performed @mail.send`.** This line holds when the trace has at least one `send` on `@mail`. `expect not performed @mail.send` holds when it has none.
+5. **`expect performed @mailer.send`.** This line holds when the trace has at least one `send` on `@mailer`. `expect not performed @mailer.send` holds when it has none.
 :::
 
-```text include="steps/19-fakes/expected/commands/test.txt"
+```text include="steps/16-fakes/expected/commands/test.txt"
 $ una test .
 example restock "two units left mails the buyer" ... ok
 example restock "forty units left mails nobody" ... ok
@@ -1090,23 +953,230 @@ example restock "forty units left mails nobody" ... ok
 2 examples: 2 passed, 0 failed
 ```
 
+### A console held under another name
+
+The dispatch step of [section 12.5](/learn/capabilities/#s12-5) writes its log through `@log`, the console under a name that says what it is for. [Section 12.6](/learn/capabilities/#s12-6) left `dispatch` without an example, since it prints. With a fake console it can have one:
+
+```una include="steps/17-dispatch/src/notices.una#dispatch" title="steps/17-dispatch/src/notices.una"
+--- Sends a notice for every shipment and logs each outcome. One failure does not stop the batch.
+pub dispatch(shipments: List[Shipment]) -> Unit
+  uses @customers: Customers[find]
+  uses @mailer: Mailer[send]
+  uses @log: Console[print]
+=
+  for shipment in shipments
+    let outcome = attempt notify(shipment)
+    @log.print(log_line(shipment, outcome: outcome))
+```
+
+This step is the program of section 12.5 with two handlers added, `quiet` and `printed`, and with its examples replaced by the two of this subsection:
+
+```una include="steps/17-dispatch/src/notices.una#quiet..printed" title="steps/17-dispatch/src/notices.una"
+--- A console that prints nothing: a fake of a host capability.
+handler quiet() for Console
+  op print(line) = unit
+
+--- A mail service for a developer's machine: it prints each message instead of sending it.
+handler printed(prefix: Text) for Mailer
+  uses @console: Console[print]
+  op send(to, subject, body) = @console.print("{prefix} to {to}: {subject}")
+```
+
+A `given` line names the binding of the function's header, not its capability. `dispatch` holds the console as `@log`, so its example installs the fake console with `given @log = quiet()`:
+
+```una include="steps/17-dispatch/src/notices.una#L119-L125" title="steps/17-dispatch/src/notices.una"
+example "a skipped shipment still writes a log line"
+  given @customers = directory(sample_customers())
+  given @mailer = mail_down()
+  given @log = quiet()
+  do dispatch([Shipment(order: "A-1005", customer: "C-17", carrier: "Rapida")])
+  expect performed @log.print
+  expect performed @mailer.send
+```
+
+The mail service never answers, so `notify` fails for the one shipment, and `attempt` keeps that failure as a value. `dispatch` itself does not fail, so the example has no `expect fails` line. `expect performed @mailer.send` shows that the mail service was asked, and `expect performed @log.print` that the log was written even though the mail failed.
+
+#### A fake with capabilities of its own
+
+`printed` is the mail service of [section 12.3](/learn/capabilities/#a-handler-with-capabilities-of-its-own) that prints each message instead of sending it, so it holds the console itself. A fake's own `uses` come from the `given` lines above it. In this example, `given @console = quiet()` comes first, and `printed` takes its console from it:
+
+```una include="steps/17-dispatch/src/notices.una#L127-L133" title="steps/17-dispatch/src/notices.una"
+example "a notice goes out through a mail service that prints"
+  given @customers = directory(sample_customers())
+  given @console = quiet()
+  given @mailer = printed("[mail]")
+  do notify(Shipment(order: "A-1001", customer: "C-17", carrier: "Parcelo"))
+  expect result == "rosa@example.invalid"
+  expect performed @console.print
+```
+
+So the order of the `given` lines matters here. With `given @mailer = printed("[mail]")` first, no `given` line above it binds `@console`, and Una refuses the example with U3014: `printed` would need the host's console, which an example never uses.
+
+```text include="steps/17-dispatch/expected/commands/test.txt"
+$ una test .
+example notices "a skipped shipment still writes a log line" ... ok
+example notices "a notice goes out through a mail service that prints" ... ok
+
+2 examples: 2 passed, 0 failed
+```
+
+### An order line that never reaches the inventory
+
+The order intake of [section 7.7](/learn/failure/#s7-7) read its stock from a function, `on_hand`. In a store, the stock lives in a service. This step replaces that function with the inventory service of [section 12.3](/learn/capabilities/#recovering-with-a-default-from-a-service): the same `Inventory` capability, the same failure kind, `StoreError`, and the same two handlers, `warehouse` and `offline`. Here `StoreError` and `Inventory` are declared `pub`, since the public functions of the module use them.
+
+```una include="steps/18-order-intake/src/orders.una#StoreError..Inventory" title="steps/18-order-intake/src/orders.una"
+--- How the inventory service can fail.
+pub kind StoreError = | Timeout
+
+--- The inventory service: how many units of a SKU are on hand, or `None` for a SKU it does not
+--- stock.
+pub capability Inventory
+  op on_hand(sku: Text) -> Option[Int]
+    fails StoreError
+```
+
+```una include="steps/18-order-intake/src/orders.una#warehouse..offline" title="steps/18-order-intake/src/orders.una"
+--- An inventory held in memory: the units on hand of each SKU.
+handler warehouse(stock: Map[Text, Int]) for Inventory
+  op on_hand(sku) = stock.get(key: sku)
+
+--- An inventory that never answers.
+handler offline() for Inventory
+  op on_hand(sku) = fail Timeout
+```
+
+`Order`, `OrderError` and `parse_order` are those of section 7.7, unchanged. The rest changes in three places:
+
+- **`check_stock` asks the service.** It calls `@inventory.on_hand` where 7.7 called `on_hand`, so it declares `uses @inventory: Inventory[on_hand]`. So does `accept`, which calls it, since a caller holds at least what its callees use ([section 12.1](/learn/capabilities/#s12-1)).
+- **`Unavailable` means that the inventory did not answer.** It still carries the SKU, and `reason` now says "the inventory did not answer about" that SKU.
+- **A batch function replaces `report`.** `process` runs every line of a batch and keeps each outcome with `attempt`, so one bad line does not stop the others. `describe` writes the report line of one outcome, and `main` runs the batch.
+
+```una include="steps/18-order-intake/src/orders.una#check_stock..process" title="steps/18-order-intake/src/orders.una"
+--- Confirms that the inventory holds enough units of the order's SKU.
+pub check_stock(order: Order) -> Order
+  uses @inventory: Inventory[on_hand]
+  fails OrderError
+=
+  let left = @inventory.on_hand(order.sku)
+    if error fail Unavailable(sku: order.sku)
+    if none fail UnknownSku(sku: order.sku)
+  if order.quantity > left
+    fail OutOfStock(sku: order.sku, wanted: order.quantity, left: left)
+  else
+    order
+
+--- One line, from text to an order that can be shipped.
+pub accept(line: Text) -> Order
+  uses @inventory: Inventory[on_hand]
+  fails OrderError
+=
+  let order = parse_order(line)
+    if error pass
+  check_stock(order)
+    if error pass
+
+--- Every line, accepted or rejected: one bad line does not stop the batch.
+pub process(lines: List[Text]) -> List[Result[Order, OrderError]]
+  uses @inventory: Inventory[on_hand]
+=
+  let edit results: List[Result[Order, OrderError]] = []
+  for line in lines
+    let outcome = attempt accept(line)
+    results = results.append(item: outcome)
+  results
+```
+
+`accept` parses the line first, then asks the inventory. A malformed line must be rejected before anyone is asked about stock. An example can state that order of the steps:
+
+```una include="steps/18-order-intake/src/orders.una#L112-L116" title="steps/18-order-intake/src/orders.una"
+example "a malformed line never reaches the inventory"
+  given @inventory = offline()
+  do accept("LAMP-01")
+  expect fails Malformed
+  expect not performed @inventory.on_hand
+```
+
+`expect fails Malformed` says what the caller sees. `expect not performed @inventory.on_hand` says what the code did not do: it never asked the inventory. The fake is `offline()` on purpose. Had the code asked it, the call would have failed with `Unavailable`, and the first line would fail too. The example of a quantity that is not a number states the same order:
+
+```una include="steps/18-order-intake/src/orders.una#L128-L132" title="steps/18-order-intake/src/orders.una"
+example "a quantity that is not a number is BadQuantity, before the inventory is asked"
+  given @inventory = offline()
+  do accept("LAMP-01, two")
+  expect fails BadQuantity
+  expect not performed @inventory.on_hand
+```
+
+The other examples of the step test the paths that reach the inventory: a line in stock, too many units, an inventory that does not answer, and a SKU it does not know:
+
+```text include="steps/18-order-intake/expected/commands/test.txt#L2-L9"
+example orders "a line in stock is accepted" ... ok
+example orders "too many units are out of stock" ... ok
+example orders "a malformed line never reaches the inventory" ... ok
+example orders "an inventory that does not answer is Unavailable" ... ok
+example orders "a SKU the inventory does not know is UnknownSku" ... ok
+example orders "a quantity that is not a number is BadQuantity, before the inventory is asked" ... ok
+
+6 examples: 6 passed, 0 failed
+```
+
+### A fallback, tested with fakes
+
+The product page of [section 12.3](/learn/capabilities/#recovering-with-a-default-from-a-service) must offer a number even when the inventory does not answer, so `orderable` turns every failure into 0:
+
+```una include="steps/19-orderable/src/orderable.una#orderable" title="steps/19-orderable/src/orderable.una"
+--- How many units of a SKU a customer may order on the product page. The page must show a
+--- number even when the inventory does not answer, and must never promise stock it cannot
+--- confirm, so a failure and an unknown SKU both give 0.
+orderable(sku: Text) -> Int
+  uses @inventory: Inventory[on_hand]
+=
+  let units = @inventory.on_hand(sku)
+    if error use None
+    if none use 0
+  units
+```
+
+A fallback is a path like any other, and it is easy to break without noticing: the page still shows a number. This step is the package of section 12.3 with two examples added. Its fakes are the handlers of section 12.3, `warehouse` and `offline`, and each example reaches one fallback:
+
+```una include="steps/19-orderable/src/orderable.una#L43-L52" title="steps/19-orderable/src/orderable.una"
+example "an unknown SKU offers 0"
+  given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
+  do orderable("CHAIR-09")
+  expect result == 0
+
+example "an inventory that does not answer offers 0, and does not fail"
+  given @inventory = offline()
+  do orderable("LAMP-01")
+  expect result == 0
+  expect performed @inventory.on_hand
+```
+
+```text include="steps/19-orderable/expected/commands/test.txt#L2-L5"
+example orderable "an unknown SKU offers 0" ... ok
+example orderable "an inventory that does not answer offers 0, and does not fail" ... ok
+
+2 examples: 2 passed, 0 failed
+```
+
+The second example has no `expect fails` line, and passes: the clause `if error use None` turns the inventory's failure into a value, so no failure leaves `orderable`. `expect performed @inventory.on_hand` shows that the inventory was asked, so the 0 comes from the fallback. If a later change let the failure through, this example would fail and name it.
+
 ### How fakes behave
 
 #### Fakes are checked too
 
-A fake is a handler, and the verifier checks every handler against the operations it implements. Give `shelf` a plain `Int` instead of `Units`, the count that is never below zero:
+A fake is a handler, and the verifier checks every handler against the operations it implements. Give `flat_stock` a plain `Int` instead of `Units`, the count that is never below zero:
 
-```diff include="steps/19-fakes..steps/22-dishonest-fake:src/restock.una" context="1" title="src/restock.una"
+```diff include="steps/16-fakes..steps/20-dishonest-fake:src/restock.una" context="1" title="src/restock.una"
 --- a/src/restock.una
 +++ b/src/restock.una
 @@ -27,3 +27,3 @@
  --- A fake warehouse that holds `units` of every SKU.
--handler shelf(units: Units) for Inventory
-+handler shelf(units: Int) for Inventory
+-handler flat_stock(units: Units) for Stock
++handler flat_stock(units: Int) for Stock
    op left(sku) = units
 ```
 
-```text include="steps/22-dishonest-fake/expected/rendered.txt#L1,L18"
+```text include="steps/20-dishonest-fake/expected/rendered.txt#L1,L18"
 [U5001] Error: postcondition of `left` is refuted
     │ Note 2: counterexample: result = -1, units = -1
 ```
@@ -1117,14 +1187,14 @@ The counterexample, `units = -1`, is a warehouse no real store has. A test that 
 
 `expect performed` runs even when the `do` line failed, but the failure still has to be expected. Here is the example of the catalog that does not answer, without its `expect fails` line:
 
-```una include="steps/23-unexpected-failure/src/quotes.una#L78-L81" title="steps/23-unexpected-failure/src/quotes.una"
+```una include="steps/21-unexpected-failure/src/quotes.una#L78-L81" title="steps/21-unexpected-failure/src/quotes.una"
 example "a catalog that does not answer was asked"
   given @catalog = catalog_down()
   do quote("LAMP-01", quantity: 1)
   expect performed @catalog.price
 ```
 
-```text include="steps/23-unexpected-failure/expected/commands/test.txt#L7-L8"
+```text include="steps/21-unexpected-failure/expected/commands/test.txt#L7-L8"
 example quotes "a catalog that does not answer was asked" ... FAILED
   the `do` line failed with `Unavailable`, and no `expect fails` line expects a failure
 ```
@@ -1133,12 +1203,12 @@ The report names the failure, and says that no `expect fails` line expects it. A
 
 #### What `expect performed` does not say
 
-`expect performed` says that an operation ran, not how often or with which arguments. When those matter, return them: a value the example can compare is the clearest evidence. The JSON report shown in [For agents](#for-agents) also lists every operation with its arguments; an argument labeled above `public` appears there as `<redacted:level>`.
+`expect performed` says that an operation ran, not how often or with which arguments. When those matter, return them: a value the example can compare is the clearest evidence. `una --json test .` also lists every operation with its arguments, in the `trace` of each example, whose fields [For agents](#for-agents) names.
 
 #### A fake holds no state
 
 > [!NOTE]
-> A handler holds no state between operations: `outbox` cannot count the messages it was given, and a fake cannot fail once and then answer. Each `given` line makes a fresh instance, and each example runs in a fresh machine, so no example sees what another did.
+> A handler holds no state between operations: `outbox` cannot count the messages it was given, and a fake cannot fail once and then answer. Each `given` line installs a fresh copy of the handler, and each example runs in a fresh machine, so no example sees what another did.
 
 ### Which fake to write
 
@@ -1152,18 +1222,19 @@ The report names the failure, and says that no `expect fails` line expects it. A
 | Knows some data and not other data | takes a map or a list, such as `price_list(…)` |
 | Does not answer | fails, such as `catalog_down()` |
 | Answers some calls and refuses others | branches on its arguments, such as `card(limit: 10000)` in [section 14.5](#s14-5) |
+| Must not be reached at all | fails, such as `offline()`, and `expect not performed` |
 :::
 
 ### Check yourself: fakes
 
 The restock step gains an example with exactly 3 units left:
 
-```una include="steps/24-three-units/src/restock.una#L56-L60" title="steps/24-three-units/src/restock.una"
+```una include="steps/22-three-units/src/restock.una#L56-L60" title="steps/22-three-units/src/restock.una"
 example "three units left mails the buyer"
-  given @inventory = shelf(3)
-  given @mail = outbox()
+  given @stock = flat_stock(3)
+  given @mailer = outbox()
   do warn_if_low("LAMP-01")
-  expect performed @mail.send
+  expect performed @mailer.send
 ```
 
 Does it pass?
@@ -1171,50 +1242,31 @@ Does it pass?
 :::answer Show the answer
 No:
 
-```text include="steps/24-three-units/expected/commands/test.txt#L4-L6"
+```text include="steps/22-three-units/expected/commands/test.txt#L4-L6"
 example restock "three units left mails the buyer" ... FAILED
-  src/restock.una:60: expect performed @mail.send
-  the trace has no `@mail.send`
+  src/restock.una:60: expect performed @mailer.send
+  the trace has no `@mailer.send`
 ```
 
 `warn_if_low` mails when fewer than 3 units are left, `units < 3`, so 3 units send nothing, and the trace has no `send`. The fake did its job: it gave the stock the example chose, and the trace shows what the code did with it. A boundary like this one is where examples earn their place.
 :::
 
-### Testing the fallback with fakes
-
-`prices.una` ends with two examples, one per fallback.
-
-> [!TIP]
-> An `example` is a test that lives next to the code. Its `given` lines install fakes, `do` calls the code under test, `result` is what that call returned, and each `expect` line states something that must hold. `una test .` runs every example and reports each one. [Chapter 10, Testing](/learn/testing/), covers examples in full.
-
-`una test .` prints:
-
-```text include="steps/25-defaults/expected/commands/test.txt#L2-L5"
-example prices "an unknown SKU shows 0" ... ok
-example prices "a catalog that is down shows 0, and does not fail" ... ok
-
-2 examples: 2 passed, 0 failed
-```
-
-The handlers `fixed` and `down` are fake catalogs. This is how every failure path in this chapter gets tested without a real service.
-
 ## 14.4 What the verifier proves, and what examples show
-
 
 ### Two kinds of evidence
 
-A contract ([chapter 5](/learn/contracts/)) and an example both state what a function must do, and una checks both. They differ in how much they cover:
+A contract ([chapter 5](/learn/contracts/)) and an example both state what a function must do, and Una checks both. [A contract or an example](/learn/contracts/#a-contract-or-an-example), in section 5.2, compared them in a table. This section shows the difference on real bugs:
 
 - A **contract**, `requires` and `ensures` in the header, is proven by the verifier for every input, before the program runs. It states a rule, such as "the fee is never above 4.90".
-- An **example** is checked by running the function on one input. It states one exact case, such as "an order of 49.99 pays 4.90".
+- An **example** is checked by running the code on one input. It states one exact case, such as "an order of 49.99 pays 4.90".
 
-A **requirement** ties both to where the rule came from: a sentence of the store's terms, a law, a decision of the team.
+Neither is weaker. A contract covers inputs no one thought to try. An example states the exact answer, which a contract that gives a range does not.
 
 ### Why one kind is not enough
 
-Take the store's shipping fee: 4.90, and free from 50.00 on. The rule comes from the store's terms, so the code records it as a requirement, and the contract that implements it says where it came from:
+Take the store's shipping fee: 4.90, and free from 50.00 on. The rule comes from the store's terms, so the step records it as a requirement and ties the contract to it with `derived from`, as [section 5.5](/learn/contracts/#s5-5) teaches:
 
-```una include="steps/26-contracts/src/shipping.una" title="steps/26-contracts/src/shipping.una" verified="check, run, test"
+```una include="steps/23-contracts/src/shipping.una" title="steps/23-contracts/src/shipping.una" verified="check, run, test"
 module shipping
 
 requirement SHIPPING_1
@@ -1251,7 +1303,7 @@ Now compare two bugs.
 
 In the first, the threshold is off by one, `>` instead of `>=`:
 
-```diff include="steps/26-contracts..steps/27-off-by-one:src/shipping.una" context="0" title="src/shipping.una"
+```diff include="steps/23-contracts..steps/24-off-by-one:src/shipping.una" context="0" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -15 +15 @@
@@ -1259,7 +1311,7 @@ In the first, the threshold is off by one, `>` instead of `>=`:
 +  if subtotal > 5000 then 0 else 490
 ```
 
-```text include="steps/27-off-by-one/expected/diagnostics.txt"
+```text include="steps/24-off-by-one/expected/diagnostics.txt"
 error U5001 at src/shipping.una:15:34: postcondition of `shipping_fee` is refuted
   counterexample: result = 490, subtotal = 5000
 ```
@@ -1270,7 +1322,7 @@ The verifier rejects it before anything runs, and its counterexample, `subtotal 
 
 In the second bug, a zero is missing from the fee:
 
-```diff include="steps/26-contracts..steps/28-dropped-zero:src/shipping.una" context="0" title="src/shipping.una"
+```diff include="steps/23-contracts..steps/25-dropped-zero:src/shipping.una" context="0" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -15 +15 @@
@@ -1280,7 +1332,7 @@ In the second bug, a zero is missing from the fee:
 
 The package checks clean: 49 cents is between 0 and 490, so every promise still holds. Only the example sees it:
 
-```text include="steps/28-dropped-zero/expected/commands/test.txt"
+```text include="steps/25-dropped-zero/expected/commands/test.txt"
 $ una test .
 example shipping "an order of 49.99 pays 4.90" ... FAILED
   src/shipping.una:24: expect result == 490
@@ -1292,148 +1344,28 @@ example shipping "an order of exactly 50.00 ships for free" ... ok
 
 The contract states a range, and the example states one exact value. Neither replaces the other.
 
-### How to write a requirement
-
-A requirement is a top-level declaration with four lines, all required:
-
-```una include="steps/29-requirement-forms/src/shipping.una#L3-L25" title="steps/29-requirement-forms/src/shipping.una" caption="four requirements"
-requirement SHIPPING_1
-  text "Orders of 50.00 or more ship for free"
-  source policy "Store terms, section 4"
-  owner checkout
-  status active
-
-requirement SHIPPING_2
-  text "A shipping fee is never negative"
-  source human
-  owner checkout
-  status active
-
-requirement SHIPPING_3
-  text "The fee shown before payment is the fee charged"
-  source regulation "Consumer code, article 31"
-  owner checkout
-  status active
-
-requirement SHIPPING_4
-  text "The fee never exceeds 4.90"
-  source generated "pricing review task"
-  owner checkout
-  status proposed
-```
-
-| Line | Says |
-| --- | --- |
-| `requirement SHIPPING_1` | Its identifier, in upper snake case, ending with `_` and a number |
-| `text "…"` | The rule, in the words of its source |
-| `source …` | Where it came from: `human`, `policy "<document>"`, `regulation "<document>"`, or `generated "<task>"` for one an agent proposed |
-| `owner checkout` | The team that answers for it, in lower snake case |
-| `status active` | `proposed` or `active` |
-
-A function names the requirements it implements with `derived from`, the last clause of the header, after `ensures`, `uses` and `fails`, and may name several, separated by commas:
-
-```una include="steps/29-requirement-forms/src/shipping.una#shipping_fee" title="steps/29-requirement-forms/src/shipping.una"
---- The shipping fee of an order, in cents: 4.90, and nothing from 50.00 on.
-pub shipping_fee(subtotal: Int) -> Int
-  ensures result >= 0 and result <= 490
-  ensures subtotal >= 5000 implies result == 0
-  derived from SHIPPING_1, SHIPPING_2, SHIPPING_4
-=
-  if subtotal >= 5000 then 0 else 490
-```
-
 ### The parts of the shipping rule
 
 :::steps
-1. **`requirement SHIPPING_1`.** It records the rule in words, its source, the team that owns it, and whether it is active.
+1. **`requirement SHIPPING_1`.** The rule in words, where it came from, and who answers for it ([section 5.5](/learn/contracts/#s5-5)).
 2. **`ensures`.** Two promises, proven for every `subtotal`: the fee is between 0 and 4.90, and an order of 50.00 or more pays nothing.
 3. **`derived from SHIPPING_1`.** Ties the contract to the requirement.
-4. **The examples.** Two chosen cases, one on each side of the threshold.
+4. **The examples.** Two chosen cases, one on each side of the threshold: 49.99 pays 4.90, and exactly 50.00 pays nothing.
 :::
 
-### Tracing a requirement with `una trace`
+### How proofs and examples work together
 
-`una trace` follows the requirement to the functions derived from it, their contracts, and the status of each proof. Each proof is an **obligation**, a fact the verifier had to establish ([chapter 5](/learn/contracts/#s5-4)):
+#### `una test` proves before it runs
 
-```sh
-una trace SHIPPING_1
-```
+`una test .` checks the package first, proofs included. A bug that breaks a contract therefore stops every example of the package: the verifier reports it, with a counterexample, and nothing runs. A bug that keeps every contract reaches the examples, which are the only check left.
 
-```text include="steps/26-contracts/expected/commands/trace.txt"
-$ una trace SHIPPING_1
-requirement SHIPPING_1 (active)
-  text "Orders of 50.00 or more ship for free"
-  source policy "Store terms, section 4"
-  owner checkout
-shipping.shipping_fee
-  ensures result >= 0 and result <= 490
-  ensures subtotal >= 5000 implies result == 0
-  proven   ob-0e65adfc62af postcondition result >= 0 and result <= 490
-  proven   ob-93e87c6acd5e postcondition subtotal >= 5000 implies result == 0
-```
+#### A counterexample becomes an example
 
-The build report ([chapter 18](/learn/tools/#s18-4)) lists every requirement and the functions derived from it. For the four requirements of the forms step:
+The counterexample of the off-by-one bug, `subtotal = 5000`, is the order of the second example, "an order of exactly 50.00 ships for free". [From a counterexample to an example](/learn/contracts/#from-a-counterexample-to-an-example), in section 5.2, keeps such a case as an example. The proof already covers it; the example shows a reader the edge the rule turns on, in the words of a real order.
 
-```text include="steps/29-requirement-forms/expected/commands/report.txt#L18-L22"
-requirements:
-  SHIPPING_1 (active): shipping.shipping_fee
-  SHIPPING_2 (active): shipping.shipping_fee
-  SHIPPING_3 (active): 
-  SHIPPING_4 (proposed): shipping.shipping_fee
-```
+#### What each one covers
 
-`SHIPPING_3` has no function yet, which a reviewer sees at once, and `SHIPPING_4` is still `proposed`.
-
-### How requirements are checked
-
-#### The identifier's form (U1005)
-
-```diff include="steps/26-contracts..steps/30-requirement-name:src/shipping.una" context="0" title="src/shipping.una"
---- a/src/shipping.una
-+++ b/src/shipping.una
-@@ -3 +3 @@
--requirement SHIPPING_1
-+requirement SHIPPING_FREE
-@@ -13 +13 @@
--  derived from SHIPPING_1
-+  derived from SHIPPING_FREE
-```
-
-```text include="steps/30-requirement-name/expected/rendered.txt#L1"
-[U1005] Error: requirement identifier `SHIPPING_FREE` must be upper snake case ending with `_` and a number, as in `SHIPPING_FREE_1`
-```
-
-The number at the end lets a team add `SHIPPING_2` next to `SHIPPING_1` without renaming anything.
-
-#### Every name in `derived from` is declared (U1006)
-
-```diff include="steps/26-contracts..steps/31-unknown-requirement:src/shipping.una" context="0" title="src/shipping.una"
---- a/src/shipping.una
-+++ b/src/shipping.una
-@@ -13 +13 @@
--  derived from SHIPPING_1
-+  derived from SHIPPING_9
-```
-
-```text include="steps/31-unknown-requirement/expected/rendered.txt#L1"
-[U1006] Error: requirement `SHIPPING_9` is not declared in this package
-```
-
-#### A generated requirement starts as proposed (U1007)
-
-```diff include="steps/26-contracts..steps/32-generated-active:src/shipping.una" context="0" title="src/shipping.una"
---- a/src/shipping.una
-+++ b/src/shipping.una
-@@ -5 +5 @@
--  source policy "Store terms, section 4"
-+  source generated "pricing review task"
-```
-
-```text include="steps/32-generated-active/expected/rendered.txt#L1"
-[U1007] Error: requirement `SHIPPING_1` has source `generated`, so its status must be `proposed`
-```
-
-A requirement an agent proposed, `source generated`, may only be `proposed`. To make it `active`, a person changes its source to `human`, `policy` or `regulation`, which shows in review. A function derived from a proposed requirement still compiles, and the build report flags it.
+A contract covers every input, but only the facts it states. An example covers one input, but states the whole answer, and with fakes, the effects. So write the rule as a contract, and add an example at each edge of the rule, such as each side of a threshold, and for each exact value a reader should see.
 
 ### Choosing a contract or an example
 
@@ -1447,14 +1379,14 @@ A requirement an agent proposed, `source generated`, may only be `proposed`. To 
 | An exact value for a case a reader should see | an `example` with `expect result == …` |
 | A failure path | an `example` with `expect fails` |
 | What a call did, or did not do, to a service | an `example` with fakes and `expect performed` |
-| Where a rule came from | a `requirement`, `derived from`, and `una trace` |
+| Where a rule came from | a `requirement` and `derived from` ([section 5.5](/learn/contracts/#s5-5)) |
 :::
 
 ### Check yourself: proofs and examples
 
 A third bug: the fee becomes 5.00 instead of 4.90.
 
-```diff include="steps/26-contracts..steps/33-fee-500:src/shipping.una" context="0" title="src/shipping.una"
+```diff include="steps/23-contracts..steps/26-fee-500:src/shipping.una" context="0" title="src/shipping.una"
 --- a/src/shipping.una
 +++ b/src/shipping.una
 @@ -15 +15 @@
@@ -1467,7 +1399,7 @@ Which catches it first: `una check`, or the example `"an order of 49.99 pays 4.9
 :::answer Show the answer
 `una check`, before any example runs:
 
-```text include="steps/33-fee-500/expected/diagnostics.txt"
+```text include="steps/26-fee-500/expected/diagnostics.txt"
 error U5001 at src/shipping.una:15:35: postcondition of `shipping_fee` is refuted
   counterexample: result = 500, subtotal = 4999
 ```
@@ -1509,7 +1441,7 @@ pub capability Payments
     fails PaymentError
 
 --- The store's mail service.
-pub capability Mail
+pub capability Mailer
   op send(to: Text, body: Text) -> Unit
 ```
 
@@ -1519,7 +1451,7 @@ pub capability Mail
 
 ### The total, a pure step
 
-`shipping_fee` is the function of [section 10.4](#why-one-kind-is-not-enough), with its contract. `total` adds the lines and the fee. It performs no operation, so its examples need no fakes.
+`shipping_fee` is the function of [section 14.4](#why-one-kind-is-not-enough), with its contract and without the requirement. `total` adds the lines and the fee. It performs no operation, so its examples need no fakes.
 
 ```una include="day-to-day/src/checkout.una#shipping_fee..total" title="day-to-day/src/checkout.una"
 --- The shipping fee in cents: 4.90, and nothing from 50.00 on.
@@ -1570,7 +1502,7 @@ An empty cart fails before any service is asked. Then the stock is reserved, and
 pub checkout(lines: List[Line], email: Text) -> Text
   uses @inventory: Inventory[reserve, release]
   uses @payments: Payments[charge]
-  uses @mail: Mail[send]
+  uses @mailer: Mailer[send]
   fails CheckoutError
 =
   if lines.len == 0
@@ -1582,7 +1514,7 @@ pub checkout(lines: List[Line], email: Text) -> Text
     let charged = attempt @payments.charge(cents)
     when charged
       is Ok(reference) ->
-        @mail.send(email, body: "Paid {cents} cents. Reference {reference}.")
+        @mailer.send(email, body: "Paid {cents} cents. Reference {reference}.")
         reference
       is Err(problem) ->
         release_all(lines)
@@ -1636,11 +1568,11 @@ handler card(limit: Int) for Payments
   op charge(cents) = if cents <= limit then "PAY-{cents}" else fail Refused
 
 --- A fake card processor that never answers.
-handler offline() for Payments
+handler processor_down() for Payments
   op charge(cents) = fail Unreachable
 
 --- A fake mail service: it accepts every message and delivers none.
-handler outbox() for Mail
+handler outbox() for Mailer
   op send(to, body) = unit
 ```
 
@@ -1658,7 +1590,7 @@ pub main() -> Unit
   let one_desk = [Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)]
   let empty: List[Line] = []
   for cart in [lamps, two_desks, one_desk, empty]
-    let outcome = attempt checkout(cart, email: "ana@example.invalid") with @inventory = shelf(stock), @payments = card(limit: 10000), @mail = outbox()
+    let outcome = attempt checkout(cart, email: "ana@example.invalid") with @inventory = shelf(stock), @payments = card(limit: 10000), @mailer = outbox()
     @console.print(describe(outcome))
 ```
 
@@ -1699,7 +1631,7 @@ pub capability Payments
     fails PaymentError
 
 --- The store's mail service.
-pub capability Mail
+pub capability Mailer
   op send(to: Text, body: Text) -> Unit
 
 --- The shipping fee in cents: 4.90, and nothing from 50.00 on.
@@ -1738,7 +1670,7 @@ release_all(lines: List[Line]) -> Unit
 pub checkout(lines: List[Line], email: Text) -> Text
   uses @inventory: Inventory[reserve, release]
   uses @payments: Payments[charge]
-  uses @mail: Mail[send]
+  uses @mailer: Mailer[send]
   fails CheckoutError
 =
   if lines.len == 0
@@ -1750,7 +1682,7 @@ pub checkout(lines: List[Line], email: Text) -> Text
     let charged = attempt @payments.charge(cents)
     when charged
       is Ok(reference) ->
-        @mail.send(email, body: "Paid {cents} cents. Reference {reference}.")
+        @mailer.send(email, body: "Paid {cents} cents. Reference {reference}.")
         reference
       is Err(problem) ->
         release_all(lines)
@@ -1783,11 +1715,11 @@ handler card(limit: Int) for Payments
   op charge(cents) = if cents <= limit then "PAY-{cents}" else fail Refused
 
 --- A fake card processor that never answers.
-handler offline() for Payments
+handler processor_down() for Payments
   op charge(cents) = fail Unreachable
 
 --- A fake mail service: it accepts every message and delivers none.
-handler outbox() for Mail
+handler outbox() for Mailer
   op send(to, body) = unit
 
 pub main() -> Unit
@@ -1799,7 +1731,7 @@ pub main() -> Unit
   let one_desk = [Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)]
   let empty: List[Line] = []
   for cart in [lamps, two_desks, one_desk, empty]
-    let outcome = attempt checkout(cart, email: "ana@example.invalid") with @inventory = shelf(stock), @payments = card(limit: 10000), @mail = outbox()
+    let outcome = attempt checkout(cart, email: "ana@example.invalid") with @inventory = shelf(stock), @payments = card(limit: 10000), @mailer = outbox()
     @console.print(describe(outcome))
 
 example "a cart under 50.00 pays shipping"
@@ -1809,25 +1741,25 @@ example "a cart under 50.00 pays shipping"
 example "a cart of two lamps is charged and mailed"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
   given @payments = card(limit: 10000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
   expect result == "PAY-4470"
-  expect performed @mail.send
+  expect performed @mailer.send
 
 example "an empty cart asks nobody anything"
   given @inventory = shelf(empty_map())
-  given @payments = offline()
-  given @mail = outbox()
+  given @payments = processor_down()
+  given @mailer = outbox()
   do checkout([], email: "ana@example.invalid")
   expect fails EmptyCart
   expect not performed @inventory.reserve
   expect not performed @payments.charge
-  expect not performed @mail.send
+  expect not performed @mailer.send
 
 example "a cart the warehouse cannot hold is never charged"
   given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
   given @payments = card(limit: 100000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "DESK-02", quantity: 2, unit_cents: 24900)], email: "ana@example.invalid")
   expect fails OutOfStock
   expect not performed @payments.charge
@@ -1835,16 +1767,16 @@ example "a cart the warehouse cannot hold is never charged"
 example "a declined card releases the stock and mails nothing"
   given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
   given @payments = card(limit: 10000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)], email: "ana@example.invalid")
   expect fails Declined
   expect performed @inventory.release
-  expect not performed @mail.send
+  expect not performed @mailer.send
 
 example "a card processor that does not answer is PaymentDown"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
-  given @payments = offline()
-  given @mail = outbox()
+  given @payments = processor_down()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
   expect fails PaymentDown
   expect performed @inventory.release
@@ -1864,25 +1796,25 @@ example "a cart under 50.00 pays shipping"
 example "a cart of two lamps is charged and mailed"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
   given @payments = card(limit: 10000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
   expect result == "PAY-4470"
-  expect performed @mail.send
+  expect performed @mailer.send
 
 example "an empty cart asks nobody anything"
   given @inventory = shelf(empty_map())
-  given @payments = offline()
-  given @mail = outbox()
+  given @payments = processor_down()
+  given @mailer = outbox()
   do checkout([], email: "ana@example.invalid")
   expect fails EmptyCart
   expect not performed @inventory.reserve
   expect not performed @payments.charge
-  expect not performed @mail.send
+  expect not performed @mailer.send
 
 example "a cart the warehouse cannot hold is never charged"
   given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
   given @payments = card(limit: 100000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "DESK-02", quantity: 2, unit_cents: 24900)], email: "ana@example.invalid")
   expect fails OutOfStock
   expect not performed @payments.charge
@@ -1890,16 +1822,16 @@ example "a cart the warehouse cannot hold is never charged"
 example "a declined card releases the stock and mails nothing"
   given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
   given @payments = card(limit: 10000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)], email: "ana@example.invalid")
   expect fails Declined
   expect performed @inventory.release
-  expect not performed @mail.send
+  expect not performed @mailer.send
 
 example "a card processor that does not answer is PaymentDown"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
-  given @payments = offline()
-  given @mail = outbox()
+  given @payments = processor_down()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
   expect fails PaymentDown
   expect performed @inventory.release
@@ -1987,7 +1919,7 @@ Leave out the card processor in the happy-path example:
 @@ -134,3 +134,2 @@
    given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
 -  given @payments = card(limit: 10000)
-   given @mail = outbox()
+   given @mailer = outbox()
 ```
 
 ```text include="mistakes/2/expected/rendered.txt#L1"
@@ -1999,29 +1931,29 @@ Leave out the card processor in the happy-path example:
 *Fix:* add `given @payments = card(limit: 10000)`.
 :::
 
-### A misspelt operation (U1001)
+### A misspelled operation (U1001)
 
 :::mistake
-Write `@mail.sent` for `@mail.send`:
+Write `@mailer.sent` for `@mailer.send`:
 
 ```diff include="day-to-day..mistakes/3:src/checkout.una" context="1" title="src/checkout.una"
 --- a/src/checkout.una
 +++ b/src/checkout.una
 @@ -138,3 +138,3 @@
    expect result == "PAY-4470"
--  expect performed @mail.send
-+  expect performed @mail.sent
+-  expect performed @mailer.send
++  expect performed @mailer.sent
  
 ```
 
 ```text include="mistakes/3/expected/rendered.txt#L1,L8"
-[U1001] Error: capability `Mail` has no operation `sent`
-     │ Help: repair 1: write `send`; edit src/checkout.una:139:26..139:30 to "send"
+[U1001] Error: capability `Mailer` has no operation `sent`
+     │ Help: repair 1: write `send`; edit src/checkout.una:139:28..139:32 to "send"
 ```
 
 *Why:* `expect performed` names an operation of the capability, and the checker resolves it like a call. It happens because the line reads like English, where *sent* is natural. The help line gives the closest operation, and the exact edit.
 
-*Fix:* `una fix .` applies the repair shown.
+*Fix:* `una fix .` applies the repair shown ([section 18.2](/learn/tools/#s18-2)).
 :::
 
 ### Expecting the service's failure (U1001)
@@ -2084,10 +2016,10 @@ Move the card processor from a `given` line to the `do` line:
 +++ b/src/checkout.una
 @@ -169,5 +169,4 @@
    given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
--  given @payments = offline()
-   given @mail = outbox()
+-  given @payments = processor_down()
+   given @mailer = outbox()
 -  do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
-+  do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid") with @payments = offline()
++  do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid") with @payments = processor_down()
    expect fails PaymentDown
 ```
 
@@ -2095,14 +2027,14 @@ Move the card processor from a `given` line to the `do` line:
 [U0101] Error: unexpected keyword `with`, expected end of line
 ```
 
-*Why:* a `do` line is one expression, and an example installs its handlers with `given` lines only. It happens because `with` is how `main` installs handlers. The message is a syntax error, U0101: una read the call, and did not expect another word after it.
+*Why:* a `do` line is one expression, and an example installs its handlers with `given` lines only. It happens because `with` is how `main` installs handlers. The message is a syntax error, U0101: Una read the call, and did not expect another word after it.
 
-*Fix:* write `given @payments = offline()` above the `do` line.
+*Fix:* write `given @payments = processor_down()` above the `do` line.
 :::
 
 ## 14.8 Exercises
 
-Each exercise starts from `exercises/N/start`: the day-to-day program with the exercise's examples added at the end. `una test .` fails there until the exercise is done. Work in the start package: run `una test .` first and read which example fails and why, edit the code, run `una fmt .` to put it in canonical form, since the check requires it, then `una test .` again.
+Each exercise starts from `exercises/N/start`, a package of the chapter's download: for exercises 1 to 3, the day-to-day program, and for exercises 4 and 5, the order intake of [section 14.3](#an-order-line-that-never-reaches-the-inventory), each with the exercise's examples added at the end. `una test .` fails there until the exercise is done. Work in the start package: run `una test .` first and read which example fails and why, edit the code, run `una fmt .` to put it in canonical form, since the check requires it, then `una test .` again.
 
 ### Exercise 1: a card that refuses everything
 
@@ -2113,7 +2045,7 @@ The start package has an example that needs a fake card processor which refuses 
 example "a card that refuses every charge is Declined"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
   given @payments = refusing()
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 1, unit_cents: 1990)], email: "ana@example.invalid")
   expect fails Declined
   expect performed @inventory.release
@@ -2126,7 +2058,7 @@ error U1001 at src/checkout.una:178:21: cannot find handler `refusing` in this m
 ```
 
 :::hint
-*Hint:* a handler implements every operation of its capability ([How to write a fake and install it](#how-to-write-a-fake-and-install-it)). `Payments` has one operation, `charge`, and it fails with `PaymentError`. Copy `offline`, rename it, and fail with the other variant.
+*Hint:* a handler implements every operation of its capability ([How to write a fake and install it](#how-to-write-a-fake-and-install-it)). `Payments` has one operation, `charge`, and it fails with `PaymentError`. Copy `processor_down`, rename it, and fail with the other variant.
 :::
 
 Check your answer with `una test .`.
@@ -2157,10 +2089,10 @@ When the card is declined, the store wants to mail the customer, so that they ca
 example "a declined card mails the customer"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
   given @payments = card(limit: 1000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
   expect fails Declined
-  expect performed @mail.send
+  expect performed @mailer.send
 ```
 
 :::hint
@@ -2171,8 +2103,8 @@ If you change only the code, `una test .` reports another example:
 
 ```text include="exercises/2/code-only/expected/commands/test.txt#L6-L8"
 example checkout "a declined card releases the stock and mails nothing" ... FAILED
-  src/checkout.una:168: expect not performed @mail.send
-  the trace has `@mail.send` at event 4
+  src/checkout.una:168: expect not performed @mailer.send
+  the trace has `@mailer.send` at event 4
 ```
 
 That example states the old behavior. A change of behavior changes the examples that describe it, in the same edit.
@@ -2189,7 +2121,7 @@ Mail the customer in the `Refused` arm, and update the example that said no mail
          when problem
 -          is Refused -> fail Declined(cents)
 +          is Refused ->
-+            @mail.send(email, body: "Your card was declined for {cents} cents. Nothing was charged.")
++            @mailer.send(email, body: "Your card was declined for {cents} cents. Nothing was charged.")
 +            fail Declined(cents)
            is Unreachable -> fail PaymentDown
 @@ -158,3 +160,3 @@
@@ -2199,7 +2131,7 @@ Mail the customer in the `Refused` arm, and update the example that said no mail
    given @inventory = shelf(empty_map().with(key: "DESK-02", value: 1))
 @@ -165,3 +167,2 @@
    expect performed @inventory.release
--  expect not performed @mail.send
+-  expect not performed @mailer.send
  
 ```
 :::
@@ -2208,13 +2140,13 @@ Mail the customer in the `Refused` arm, and update the example that said no mail
 ### Exercise 3: put back what was reserved
 
 ::::exercise
-Fix the gap named in [section 10.5](#running-it). The start package has two examples. The first fails: a cart whose second line is out of stock must release the first. The second passes, and must keep passing: a cart whose first line is out of stock has nothing to release.
+Fix the gap named in [section 14.5](#running-it). The start package has two examples. The first fails: a cart whose second line is out of stock must release the first. The second passes, and must keep passing: a cart whose first line is out of stock has nothing to release.
 
 ```una include="exercises/3/start/src/checkout.una#L176-L190" title="exercises/3/start/src/checkout.una"
 example "a line out of stock releases the lines reserved before it"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
   given @payments = card(limit: 100000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990), Line(sku: "DESK-02", quantity: 1, unit_cents: 24900)], email: "ana@example.invalid")
   expect fails OutOfStock
   expect performed @inventory.release
@@ -2222,7 +2154,7 @@ example "a line out of stock releases the lines reserved before it"
 example "a first line out of stock releases nothing"
   given @inventory = shelf(empty_map().with(key: "LAMP-01", value: 4))
   given @payments = card(limit: 100000)
-  given @mail = outbox()
+  given @mailer = outbox()
   do checkout([Line(sku: "DESK-02", quantity: 1, unit_cents: 24900), Line(sku: "LAMP-01", quantity: 2, unit_cents: 1990)], email: "ana@example.invalid")
   expect fails OutOfStock
   expect not performed @inventory.release
@@ -2238,7 +2170,7 @@ example checkout "a first line out of stock releases nothing" ... ok
 ```
 
 :::hint
-*Hint:* in `reserve_all`, keep a `let edit` list of the lines reserved so far ([chapter 9](/learn/loops/#s9-1)), and hand them to `release_all` before you fail. `reserve_all` then needs `release` in its `uses` too. Releasing every line of the cart passes the first example, but not the second.
+*Hint:* in `reserve_all`, keep a `let edit` list of the lines reserved so far ([section 9.2](/learn/loops/#s9-2)), and hand them to `release_all` before you fail. `reserve_all` then needs `release` in its `uses` too. Releasing every line of the cart passes the first example, but not the second.
 :::
 
 Check your answer with `una test .`.
@@ -2271,12 +2203,67 @@ Track the reserved lines, and release them at the first line that cannot be held
 :::
 ::::
 
-### Exercise 4: fall back to the backup
+### Exercise 4: units shipped
 
 ::::exercise
-The store keeps a backup copy of its inventory. When the inventory does not answer, ask the backup once before giving up. The start package has `on_hand_or_backup`, which asks only the inventory, and three examples:
+This exercise works on the order intake of [An order line that never reaches the inventory](#an-order-line-that-never-reaches-the-inventory). Write `shipped(results)`, the total of the units of the accepted lines of a batch. The start package has it with a body of `0`, and this example:
 
-```una include="exercises/4/start/src/orders.una#on_hand_or_backup" title="exercises/4/start/src/orders.una"
+```una include="exercises/4/start/src/orders.una#L134-L140" title="exercises/4/start/src/orders.una"
+--- How many units a batch ships in all. Exercise 4: replace the 0.
+pub shipped(results: List[Result[Order, OrderError]]) -> Int = 0
+
+example "a batch ships only its accepted units"
+  given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
+  do shipped(process(["LAMP-01, 2", "LAMP-01, 9", "LAMP-01, 1"]))
+  expect result == 3
+```
+
+The `do` line nests two calls. `process` asks the inventory, which the `given` line fakes, and `shipped` adds up what `process` gave back. `shipped` itself performs no operation.
+
+:::hint
+*Hint:* first write a private function from one outcome to its units: a `when` over the `Result` ([section 7.4](/learn/failure/#s7-4)) whose `Ok` arm gives the order's quantity and whose `Err` arm gives 0. Then `shipped` is one line: `map` that function over the results, and `sum` the list ([section 10.3](/learn/collections/#s10-3)).
+:::
+
+Check your answer with `una test .`. On the start package it reports:
+
+```text include="exercises/4/start/expected/commands/test.txt#L8-L12"
+example orders "a batch ships only its accepted units" ... FAILED
+  src/orders.una:140: expect result == 3
+  it is false, with `result` = `0`
+
+7 examples: 6 passed, 1 failed
+```
+
+:::answer Answer (*check, run, test*; `exercises/4/answer`).
+Add `units`, and give `shipped` its body:
+
+```diff include="exercises/4/start..exercises/4/answer:src/orders.una" context="1" title="src/orders.una"
+--- a/src/orders.una
++++ b/src/orders.una
+@@ -133,4 +133,11 @@
+ 
+---- How many units a batch ships in all. Exercise 4: replace the 0.
+-pub shipped(results: List[Result[Order, OrderError]]) -> Int = 0
++--- The units an outcome ships: its quantity when accepted, 0 when rejected.
++units(outcome: Result[Order, OrderError]) -> Int
++=
++  when outcome
++    is Ok(value) -> value.quantity
++    is Err -> 0
++
++--- How many units a batch ships in all.
++pub shipped(results: List[Result[Order, OrderError]]) -> Int = results.map(each: units).sum()
+ 
+```
+:::
+::::
+
+### Exercise 5: fall back to the backup
+
+::::exercise
+This exercise works on the order intake of [An order line that never reaches the inventory](#an-order-line-that-never-reaches-the-inventory). The store keeps a backup copy of its inventory. When the inventory does not answer, ask the backup once before giving up. The start package has `on_hand_or_backup`, which asks only the inventory, and three examples:
+
+```una include="exercises/5/start/src/orders.una#on_hand_or_backup" title="exercises/5/start/src/orders.una"
 --- The units of `sku` on hand: asks the inventory, and asks the backup copy once when the
 --- inventory does not answer.
 pub on_hand_or_backup(sku: Text) -> Option[Int]
@@ -2284,12 +2271,12 @@ pub on_hand_or_backup(sku: Text) -> Option[Int]
   uses @backup: Inventory[on_hand]
   fails StoreError
 =
-  -- Exercise 3: ask @backup when this call fails.
+  -- Exercise 5: ask @backup when this call fails.
   @inventory.on_hand(sku)
     if error pass
 ```
 
-```una include="exercises/4/start/src/orders.una#L148-L165" title="exercises/4/start/src/orders.una"
+```una include="exercises/5/start/src/orders.una#L145-L162" title="exercises/5/start/src/orders.una"
 example "when the inventory does not answer, the backup does"
   given @inventory = offline()
   given @backup = warehouse(empty_map().with(key: "LAMP-01", value: 4))
@@ -2318,15 +2305,15 @@ A handler holds no state, so no example can make one inventory fail once and the
 
 Check your answer with `una test .`. The first example fails on the start package, and the second fails on an answer that always asks the backup.
 
-:::answer Answer (*check, run, test*; `exercises/4/answer`).
+:::answer Answer (*check, run, test*; `exercises/5/answer`).
 Replace the body:
 
-```diff include="exercises/4/start..exercises/4/answer:src/orders.una" context="1" title="src/orders.una"
+```diff include="exercises/5/start..exercises/5/answer:src/orders.una" context="1" title="src/orders.una"
 --- a/src/orders.una
 +++ b/src/orders.una
-@@ -143,5 +143,8 @@
+@@ -140,5 +140,8 @@
  =
--  -- Exercise 3: ask @backup when this call fails.
+-  -- Exercise 5: ask @backup when this call fails.
 -  @inventory.on_hand(sku)
 -    if error pass
 +  let first = attempt @inventory.on_hand(sku)
@@ -2347,15 +2334,15 @@ To use it in the program, call it from `check_stock` in place of `@inventory.on_
 ### For agents
 
 :::agents
-`una --json check .` reports example mistakes in the same shape as any other. For [a misspelt operation](#a-misspelt-operation-u1001), with its exact edit:
+`una --json check .` reports example mistakes in the same shape as any other. For [a misspelled operation](#a-misspelled-operation-u1001), with its exact edit:
 
 ```json include="mistakes/3/expected/commands/json.txt#L2"
-{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1001","severity":"error","domain":"names","message":"capability `Mail` has no operation `sent`","primary":{"file":"src/checkout.una","start":{"line":139,"col":26},"end":{"line":139,"col":30}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `send`","edit":{"file":"src/checkout.una","start":{"line":139,"col":26},"end":{"line":139,"col":30},"replacement":"send"}}],"explain":"una explain U1001"}],"fixable":1}
+{"schema":"una.diagnostics/1","diagnostics":[{"schema":"una.diagnostic/1","code":"U1001","severity":"error","domain":"names","message":"capability `Mailer` has no operation `sent`","primary":{"file":"src/checkout.una","start":{"line":139,"col":28},"end":{"line":139,"col":32}},"related":[],"repairs":[{"rank":1,"escape_cost":0,"description":"write `send`","edit":{"file":"src/checkout.una","start":{"line":139,"col":28},"end":{"line":139,"col":32},"replacement":"send"}}],"explain":"una explain U1001"}],"fixable":1}
 ```
 
-`una --json test .` prints `una.test/1`. Each example has `outcome`, `reason`, the `expectation` that failed with its file and line, the `result`, and the `trace`. Each event of a trace has `seq`, `instance`, `capability`, `op`, `args` and `outcome`, so an agent can check arguments that `expect performed` does not (arguments labeled above `public` appear as `<redacted:level>`). For [the dropped zero](#a-bug-only-an-example-catches-a-dropped-zero) of section 10.4:
+`una --json test .` prints `una.test/1`. Each example has `outcome`, `reason`, the `expectation` that failed with its file and line, the `result`, and the `trace`. Each event of a trace has `seq`, `instance`, `capability`, `op`, `args` and `outcome`, so an agent can check arguments that `expect performed` does not. For [the dropped zero](#a-bug-only-an-example-catches-a-dropped-zero) of section 14.4:
 
-```json include="steps/28-dropped-zero/expected/commands/json-test.txt#L2"
+```json include="steps/25-dropped-zero/expected/commands/json-test.txt#L2"
 {"schema":"una.test/1","tier":1,"redacted":false,"diagnostics":[],"examples":[{"module":"shipping","name":"an order of 49.99 pays 4.90","outcome":"fail","reason":"it is false, with `result` = `49`","expectation":{"file":"src/shipping.una","line":24,"text":"expect result == 490"},"result":{"kind":"ok","value":"49"},"trace":[]},{"module":"shipping","name":"an order of exactly 50.00 ships for free","outcome":"pass","reason":null,"expectation":null,"result":{"kind":"ok","value":"0"},"trace":[]}],"passed":1,"failed":1}
 ```
 
@@ -2371,13 +2358,13 @@ The compact rule: *an example has `given` lines for every capability its `do` li
 - Replace each service with a fake handler installed by `given`. Examples never use host capabilities.
 - Check effects with `expect performed` and `expect not performed`: what a call must do, and what it must not.
 - A fake is checked against the operations it implements, so it keeps their promises.
-- Prove in `ensures` what must hold for every input; pin exact values and effects with examples. Trace rules to contracts with `requirement`, `derived from` and `una trace`.
+- Prove in `ensures` what must hold for every input; pin exact values, the edges of each rule, and effects with examples.
 :::
 
 ### Reference
 
 :::reference
-- Construct pages: [`example`](/docs/language/examples/example/), [`requirement` and `derived from`](/docs/language/requirements/requirement/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`capability` and `op`](/docs/language/capabilities/capability/), [`ensures`](/docs/language/functions/ensures/), [`attempt`](/docs/language/errors/attempt/)
-- Diagnostics: [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U1005](/docs/errors/U1005/), [U1006](/docs/errors/U1006/), [U1007](/docs/errors/U1007/), [U2001](/docs/errors/U2001/), [U3001](/docs/errors/U3001/), [U3014](/docs/errors/U3014/), [U5001](/docs/errors/U5001/)
+- Construct pages: [`example`](/docs/language/examples/example/), [`handler`](/docs/language/capabilities/handler/), [`with`](/docs/language/capabilities/with/), [`capability` and `op`](/docs/language/capabilities/capability/), [`ensures`](/docs/language/functions/ensures/), [`attempt`](/docs/language/errors/attempt/)
+- Diagnostics: [U0101](/docs/errors/U0101/), [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U2001](/docs/errors/U2001/), [U3001](/docs/errors/U3001/), [U3014](/docs/errors/U3014/), [U5001](/docs/errors/U5001/)
 - Specification: [requirements and examples](/docs/spec/08-requirements-and-examples/), [capabilities and effects](/docs/spec/05-capabilities-and-effects/), [verification](/docs/spec/12-verification/), [dynamic semantics](/docs/spec/11-dynamic-semantics/) (traces and the example harness), [diagnostics and the command line](/docs/spec/13-diagnostics-and-abi/)
 :::

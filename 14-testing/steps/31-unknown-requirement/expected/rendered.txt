@@ -1,9 +1,0 @@
-[U1006] Error: requirement `SHIPPING_9` is not declared in this package
-    ╭─[ src/shipping.una:13:16 ]
-    │
- 13 │   derived from SHIPPING_9
-    │                ─────┬────
-    │                     ╰────── requirement `SHIPPING_9` is not declared in this package
-    │
-    │ Note: run `una explain U1006` for an explanation
-────╯

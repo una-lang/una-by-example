@@ -6,34 +6,30 @@ pub kind Order
   quantity: Int
 
 --- Why an order line was rejected. Each variant carries what a person needs to act on it.
-pub kind OrderError = Malformed(line: Text) | BadQuantity(line: Text) | UnknownSku(sku: Text) | OutOfStock(sku: Text, wanted: Int, left: Int) | Unavailable
+pub kind OrderError = Malformed(line: Text) | BadQuantity(line: Text) | UnknownSku(sku: Text) | OutOfStock(sku: Text, wanted: Int, left: Int) | Unavailable(sku: Text)
 
 --- How the inventory service can fail.
 pub kind StoreError = | Timeout
 
---- The inventory service: how many units of a SKU are on hand, or `None` for an unknown SKU.
+--- The inventory service: how many units of a SKU are on hand, or `None` for a SKU it does not
+--- stock.
 pub capability Inventory
   op on_hand(sku: Text) -> Option[Int]
     fails StoreError
 
---- Reads `"SKU, quantity"`. Pure: it only looks at the text.
+--- Reads `"SKU, quantity"`. It only looks at the text.
 pub parse_order(line: Text) -> Order
   fails OrderError
 =
-  let parts = line.split(on: ",")
-  if parts.len != 2
-    fail Malformed(line)
+  let comma = line.find(text: ",")
+    if none fail Malformed(line)
+  let sku = line.slice(start: 0, end: comma).trim
+  let quantity = line.slice(start: comma + 1, end: line.len).trim.to_int()
+    if none fail BadQuantity(line)
+  if quantity < 1
+    fail BadQuantity(line)
   else
-    let sku = parts.at(index: 0)
-      if none fail Malformed(line)
-    let raw = parts.at(index: 1)
-      if none fail Malformed(line)
-    let quantity = raw.trim.to_int()
-      if none fail BadQuantity(line)
-    if quantity < 1
-      fail BadQuantity(line)
-    else
-      Order(sku: sku.trim, quantity: quantity)
+    Order(sku: sku, quantity: quantity)
 
 --- Confirms that the inventory holds enough units of the order's SKU.
 pub check_stock(order: Order) -> Order
@@ -41,7 +37,7 @@ pub check_stock(order: Order) -> Order
   fails OrderError
 =
   let left = @inventory.on_hand(order.sku)
-    if error fail Unavailable
+    if error fail Unavailable(sku: order.sku)
     if none fail UnknownSku(sku: order.sku)
   if order.quantity > left
     fail OutOfStock(sku: order.sku, wanted: order.quantity, left: left)
@@ -76,16 +72,16 @@ pub reason(failure: OrderError) -> Text
     is BadQuantity(line) -> "the quantity in '{line}' is not a whole number above 0"
     is UnknownSku(sku) -> "no product has the SKU {sku}"
     is OutOfStock(sku, wanted, left) -> "{wanted} of {sku} wanted, {left} left"
-    is Unavailable -> "the inventory did not answer; retry later"
+    is Unavailable(sku) -> "the inventory did not answer about {sku}; retry later"
 
---- One line of the batch report.
+--- One line of the batch report: the order accepted, or the reason it was not.
 pub describe(outcome: Result[Order, OrderError]) -> Text
 =
   when outcome
-    is Ok(value) -> "ok      {value.quantity} x {value.sku}"
+    is Ok(order) -> "ok      {order.quantity} x {order.sku}"
     is Err(failure) -> "reject  {reason(failure)}"
 
---- An inventory held in memory, for this example run and for tests.
+--- An inventory held in memory: the units on hand of each SKU.
 handler warehouse(stock: Map[Text, Int]) for Inventory
   op on_hand(sku) = stock.get(key: sku)
 
@@ -93,6 +89,7 @@ handler warehouse(stock: Map[Text, Int]) for Inventory
 handler offline() for Inventory
   op on_hand(sku) = fail Timeout
 
+--- Prints the batch report of the day's order lines.
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -134,35 +131,17 @@ example "a quantity that is not a number is BadQuantity, before the inventory is
   expect fails BadQuantity
   expect not performed @inventory.on_hand
 
---- The units of `sku` on hand: asks the inventory, and asks the backup copy once when the
---- inventory does not answer.
-pub on_hand_or_backup(sku: Text) -> Option[Int]
-  uses @inventory: Inventory[on_hand]
-  uses @backup: Inventory[on_hand]
-  fails StoreError
+--- The units an outcome ships: its quantity when accepted, 0 when rejected.
+units(outcome: Result[Order, OrderError]) -> Int
 =
-  let first = attempt @inventory.on_hand(sku)
-  when first
-    is Ok(value) -> value
-    is Err ->
-      @backup.on_hand(sku)
-        if error pass
+  when outcome
+    is Ok(value) -> value.quantity
+    is Err -> 0
 
-example "when the inventory does not answer, the backup does"
-  given @inventory = offline()
-  given @backup = warehouse(empty_map().with(key: "LAMP-01", value: 4))
-  do on_hand_or_backup("LAMP-01")
-  expect result == Some(4)
+--- How many units a batch ships in all.
+pub shipped(results: List[Result[Order, OrderError]]) -> Int = results.map(each: units).sum()
 
-example "the backup is not asked when the inventory answers"
+example "a batch ships only its accepted units"
   given @inventory = warehouse(empty_map().with(key: "LAMP-01", value: 4))
-  given @backup = offline()
-  do on_hand_or_backup("LAMP-01")
-  expect result == Some(4)
-  expect not performed @backup.on_hand
-
-example "when neither answers, the failure is Timeout"
-  given @inventory = offline()
-  given @backup = offline()
-  do on_hand_or_backup("LAMP-01")
-  expect fails Timeout
+  do shipped(process(["LAMP-01, 2", "LAMP-01, 9", "LAMP-01, 1"]))
+  expect result == 3

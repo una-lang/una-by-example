@@ -5,10 +5,8 @@ example orders "a malformed line never reaches the inventory" ... ok
 example orders "an inventory that does not answer is Unavailable" ... ok
 example orders "a SKU the inventory does not know is UnknownSku" ... ok
 example orders "a quantity that is not a number is BadQuantity, before the inventory is asked" ... ok
-example orders "when the inventory does not answer, the backup does" ... FAILED
-  src/orders.una:152: expect result == Some(4)
-  the `do` line failed with `Timeout`, so `result` has no value
-example orders "the backup is not asked when the inventory answers" ... ok
-example orders "when neither answers, the failure is Timeout" ... ok
+example orders "a batch ships only its accepted units" ... FAILED
+  src/orders.una:140: expect result == 3
+  it is false, with `result` = `0`
 
-9 examples: 8 passed, 1 failed
+7 examples: 6 passed, 1 failed
