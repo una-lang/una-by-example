@@ -1,0 +1,4 @@
+error U7012 at ita.una:6:3: `tags` is a local package with a name a registry may hold; write `accept name` under the need to use it
+error U1001 at src/store.una:3:8: module `tags.format` is not a module of this package; the standard modules that can be imported are `std.host`, `std.testing`, `std.time`, `std.drive` and `std.collections`
+error U1001 at src/store.una:9:18: cannot find name `shelf_tag` in this module, its imports or the prelude
+error U1001 at src/store.una:10:18: cannot find name `shelf_tag` in this module, its imports or the prelude

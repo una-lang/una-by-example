@@ -1,13 +1,13 @@
 ---
 learn: "11"
 title: Packages and modules
-editions: ["0.2"]
-codes: [U1001, U1002, U1003, U1004, U1008, U1009, U7001, U7002]
-time: 35
+editions: ["0.2", "0.4"]
+codes: [U1001, U1002, U1003, U1004, U1008, U1009, U1010, U3021, U7001, U7002, U7012]
+time: 55
 builds: A store's invoice, split into modules for money, the catalog, prices and the invoice itself
 prerequisites: ["1", "6", "7"]
 template: 2
-nav: ["Packages and modules", "pub and import", "The manifest and the lock", "Day-to-day: the store's invoice", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
+nav: ["Packages and modules", "pub and import", "The manifest and the lock", "Path dependencies", "Day-to-day: the store's invoice", "Testing it", "Common mistakes", "Exercises", "Recap and reference"]
 ---
 
 # 11 Packages and modules
@@ -729,15 +729,15 @@ checked_per_module = 0
 
 The package still runs as before, with the same modules. Only `una.toml` changed.
 
-### No dependencies on other packages yet
+### No dependencies before edition `0.4`
 
-una 0.3.16 has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
+In editions `0.1` to `0.3`, a package cannot depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
 
 ```text include="steps/13-no-dependencies/expected/rendered.txt#L1"
 [U1001] Error: module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
 ```
 
-So everything a package runs is in its own `src/`, the prelude, or the host capabilities that `una run` grants, in `[run] grants` or by a `--grant` flag. Until a release adds dependencies, code from elsewhere, such as a supplier's library, is copied into `src/` as modules of the package, where the checker sees all of it. Code copied in this way is called **vendored** code. Edition `0.3` can then put a limit on what such a module may do, as [chapter 13](/learn/authority/) shows.
+So everything a package runs is in its own `src/`, the prelude, or the host capabilities that `una run` grants, in `[run] grants` or by a `--grant` flag. Edition `0.4` adds path dependencies ([section 11.4](#s11-4)). Before it, code from elsewhere, such as a supplier's library, is copied into `src/` as modules of the package, where the checker sees all of it. Code copied in this way is called **vendored** code. Edition `0.3` can then put a limit on what such a module may do, as [chapter 13](/learn/authority/) shows.
 
 ### `verification.lock`
 
@@ -803,7 +803,322 @@ It does not check:
 In TOML, a value without quotes is a number, and `version` must be a text: the mark points at the value. Write it in quotes, `version = "2.0.0"`. The file is valid TOML, but not a valid manifest: una checks the type of each value too, not only the names of the keys.
 :::
 
-## 11.4 Day-to-day: the store's invoice
+## 11.4 Path dependencies
+
+### What a dependency is
+
+A **dependency** is another package that your package uses: its modules are imported by yours, and both are checked and run as one program. Think of a store that sells a supplier's goods under the supplier's own label. The goods come from outside, but they go on the store's shelves, and the store decides what the supplier's staff may do in its building.
+
+A **path dependency** is a dependency that lives in a directory on the same machine, named by its path: a supplier's package copied next to yours, or a second package of your own. Edition `0.4` adds path dependencies. Dependencies fetched from a registry, a shared store of published packages, are planned for later editions.
+
+### Why a package uses another package
+
+[No dependencies before edition `0.4`](#no-dependencies-before-edition-04) showed the way of editions `0.1` to `0.3`: copy the supplier's code into your `src/`, as modules of your package. That works, and it has three costs. The copied modules take paths inside your package, so the supplier's module `format` becomes your `vendor.tags.format`, and every import in the supplier's code has to be edited to match. Nothing records which version of the supplier's code you copied, so a later copy can change a module without anyone noticing. And the supplier's code is yours to the checker: it can use any capability your `main` passes it.
+
+A path dependency keeps the supplier's code as a package of its own, unchanged, with its own name, version and modules. Your manifest says where it is and what it may receive, a lock records exactly which files you checked it with, and `una check` checks it with your code as one program.
+
+> [!NOTE]
+> Path dependencies belong to edition `0.4`, a preview. A package of edition `0.4` describes itself in `ita.una` and `ita.lock` instead of `una.toml` and `verification.lock`. Every step of this section is of edition `0.4`.
+
+### How to write a path dependency
+
+#### `ita.una`, the manifest of edition `0.4`
+
+From edition `0.4`, the manifest is `ita.una`, written in Una's own lexical style: words, indentation by two spaces, and texts in double quotes. Here is the store's:
+
+```una include="steps/15-path-dependency/ita.una" title="steps/15-path-dependency/ita.una"
+ita store
+  version 0.1.0
+  edition 0.4
+
+needs
+  tags from path "deps/tags"
+    accept name
+
+run
+  entry store
+  grants
+    console
+```
+
+- **`ita store`** opens the file and names the package, `store`.
+- **`version`** and **`edition`**, indented below it, are what `[package]` holds in `una.toml`.
+- **`needs`** lists the dependencies, one per line. It is new; [How to write a need](#how-to-write-a-need) explains it.
+- **`run`** is what `[run]` holds: the module `una run` starts, and below `grants`, one capability per line.
+
+`ita.una` is checked as `una.toml` is: a line it does not know is an error at that line (U7008).
+
+#### The dependency is a package
+
+The supplier's package is in the directory `deps/tags`, inside the store's package. It is an ordinary package of edition `0.4`, with its own `ita.una` and `src/`:
+
+```una include="steps/15-path-dependency/deps/tags/ita.una" title="steps/15-path-dependency/deps/tags/ita.una"
+ita tags
+  version 0.3.0
+  edition 0.4
+```
+
+```una include="steps/15-path-dependency/deps/tags/src/format.una" title="steps/15-path-dependency/deps/tags/src/format.una"
+module format
+
+--- A shelf tag: the SKU and the price, between brackets.
+pub shelf_tag(sku: Text, cents: Int) -> Text = "[{sku} | {amount(cents)}]"
+
+--- An amount in cents as a person reads it: 1990 is "19.90".
+amount(cents: Int) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"
+```
+
+Its module is `format`, at `src/format.una` of its own package, as [section 11.1](#s11-1) says for any package. Its `run` section, if it had one, would not be read: only the store's package decides what runs.
+
+#### How to write a need
+
+A need is one line under `needs`, with its options on lines indented below it:
+
+- **`<name>`** is the name the dependency's `ita.una` gives itself: `tags`. A different name there is an error (U7008).
+- **`from path "<directory>"`** is where it is, relative to your package: `"deps/tags"`. A path need has no version: the version is the one the dependency's `ita.una` gives, `0.3.0`.
+- **`accept name`**, on its own line below, says that you accept a local package under that name ([Without `accept name` (U7012)](#without-accept-name-u7012) says why).
+- **`as <local>`** gives the dependency another name in your code, as [Check yourself: a local name](#check-yourself-a-local-name) shows.
+- **`may`** lines say which capabilities its code may receive from yours ([Printing through the supplier's package](#printing-through-the-suppliers-package)).
+
+#### Importing under the local name
+
+Each dependency has a **local name**: the name of the need, or the `as` name. Its module `format` is the module `tags.format` in your package, so an import names it so:
+
+```una include="steps/15-path-dependency/src/store.una#L3" title="steps/15-path-dependency/src/store.una"
+import tags.format (shelf_tag)
+```
+
+Only the dependency's `pub` names can be imported, as for your own modules ([section 11.2](#s11-2)): `shelf_tag` can, and the helper `amount` cannot.
+
+#### `ita.lock` and `una ita lock`
+
+`ita.lock` pins the package: the verifier, as `verification.lock` does, and each dependency, with its version, its directory and a **digest**, a fingerprint of its files that changes when any byte of them changes. You never write it by hand. After you add or change a dependency, run, in your package:
+
+```sh
+una ita lock
+```
+
+It writes this lock:
+
+```una include="steps/15-path-dependency/ita.lock" title="steps/15-path-dependency/ita.lock"
+-- Written by `una ita`; do not edit.
+lock 1
+
+solver
+  encoding "una-smt-1"
+  name "z3"
+  version "5.1.0"
+  logic "QF_UFLIA"
+  steps 5000000
+  seed 0
+
+package tags 0.3.0
+  from path "deps/tags"
+  digest "sha256:5dea33f97ea0359680c574b8c56df07ee9e812a010c3235d4166a1d067c657d5"
+```
+
+The first line says not to edit it. The `solver` lines are the six keys of `verification.lock`. The `package` lines record the dependency. `una check` refuses a package whose lock is missing or does not match its needs (U7009), and `una ita lock --check` also tells you when the dependency's files changed since the lock was written. Commit `ita.lock` with your package, so that a reviewer sees in its diff when a dependency changes.
+
+### A supplier's shelf tags
+
+The store prints shelf tags with the supplier's `format` module:
+
+:::steps
+```una include="steps/15-path-dependency/src/store.una" title="steps/15-path-dependency/src/store.una" verified="check, run"
+module store
+
+import tags.format (shelf_tag)
+
+--- Prints the shelf tags of two products, made by the supplier's package.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(shelf_tag("LAMP-01", cents: 1990))
+  @console.print(shelf_tag("RUG-07", cents: 8900))
+```
+
+1. **`import tags.format (shelf_tag)`.** `tags` is the local name of the need, and `format` the module of the dependency.
+2. **`shelf_tag("LAMP-01", cents: 1990)`.** A call into the dependency, like a call into a module of your own. `shelf_tag` is pure, so it needs no capability.
+:::
+
+`una run .` prints:
+
+```text include="steps/15-path-dependency/expected/output.txt"
+[LAMP-01 | 19.90]
+[RUG-07 | 89.00]
+```
+
+`una check .` checked the store's module and the supplier's together, as one program, and `una run .` ran them together.
+
+### Printing through the supplier's package
+
+The supplier's package also has a module that prints a tag, so it needs the console:
+
+```una include="steps/16-path-grant/deps/tags/src/printer.una" title="steps/16-path-grant/deps/tags/src/printer.una"
+module printer
+
+import format (shelf_tag)
+
+--- Prints the shelf tag of a product.
+pub print_tag(sku: Text, cents: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(shelf_tag(sku, cents: cents))
+```
+
+Inside its own package, `printer` imports `format` by its own path, `format`, not `tags.format`: a dependency never sees the local name you gave it.
+
+A dependency is a **boundary** ([section 13.2](/learn/authority/#s13-2)): code that may receive only what your manifest allows, its **ceiling**. The ceiling of a dependency is written with `may` lines under its need, and with no `may` line, it may receive no capability at all:
+
+:::steps
+```una include="steps/16-path-grant/ita.una" title="steps/16-path-grant/ita.una"
+ita store
+  version 0.1.0
+  edition 0.4
+
+needs
+  tags from path "deps/tags"
+    may Console[print]
+    accept name
+
+run
+  entry store
+  grants
+    console
+```
+
+1. **`may Console[print]`.** The supplier's code may receive the console, and only its operation `print`.
+2. **`accept name`.** As before.
+:::
+
+A call into the dependency hands over each capability with `with`, as for any boundary:
+
+```una include="steps/16-path-grant/src/store.una#main" title="steps/16-path-grant/src/store.una" verified="check, run"
+--- Prints the shelf tags of two products, through the supplier's printer.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  print_tag("LAMP-01", cents: 1990) with @console = @console[print]
+  print_tag("RUG-07", cents: 8900) with @console = @console[print]
+```
+
+```text include="steps/16-path-grant/expected/output.txt"
+[LAMP-01 | 19.90]
+[RUG-07 | 89.00]
+```
+
+`with @console = @console[print]` says, at each call, that `print_tag` receives the store's console with its operation `print` only ([section 13.2](/learn/authority/#granting-less-at-the-call-with-x-yops) explains the form). The lock records the ceiling too, as `granted by store may Console[print]`:
+
+```una include="steps/16-path-grant/ita.lock#L12-L15" title="steps/16-path-grant/ita.lock"
+package tags 0.3.0
+  from path "deps/tags"
+  digest "sha256:c17858eb19bf48cc069f6ad577a3faa5fb4fe1ed8c492defc951737999444ee0"
+  granted by store may Console[print]
+```
+
+`una ita lock` writes a new or wider ceiling only when you run it as `una ita lock --accept-authority`, so a dependency never gains authority without a step you take on purpose, and the change shows in the lock's diff.
+
+### How a path dependency behaves
+
+#### Without `accept name` (U7012)
+
+Leave out `accept name`:
+
+```text include="steps/17-no-accept/expected/rendered.txt#L1-L9"
+[U7012] Error: `tags` is a local package with a name a registry may hold; write `accept name` under the need to use it
+   ╭─[ ita.una:6:3 ]
+   │
+ 6 │   tags from path "deps/tags"
+   │   ─────────────┬────────────
+   │                ╰────────────── `tags` is a local package with a name a registry may hold; write `accept name` under the need to use it
+   │
+   │ Note: run `una explain U7012` for an explanation
+───╯
+```
+
+The message says that `tags` is a local package with a name a registry may hold. A package named `tags` may one day be published, by someone else, and a local directory with that name must never take its place by accident. `accept name` is your statement that this directory is the package you mean. Until then, the dependency is not used: its modules cannot be imported, so the import and each use of `shelf_tag` are reported too (U1001).
+
+#### A grant beyond the ceiling (U3021)
+
+Take away the `may` line, and keep the calls of [Printing through the supplier's package](#printing-through-the-suppliers-package):
+
+```text include="steps/18-beyond-ceiling/expected/rendered.txt#L1-L9"
+[U3021] Error: the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+   ╭─[ src/store.una:9:3 ]
+   │
+ 9 │   print_tag("LAMP-01", cents: 1990) with @console = @console[print]
+   │   ────────────────┬────────────────
+   │                   ╰────────────────── the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+   │
+   │ Note: run `una explain U3021` for an explanation
+───╯
+```
+
+The call grants `Console[print]` to `tags`, and the ceiling of `tags` allows no operation of `Console`. A new version of a supplier's package can start to use a capability, but it cannot receive one until your `ita.una` says so, and your lock records it.
+
+#### A module named like a dependency (U1010)
+
+A module of your package whose path starts with a local name, such as `src/tags.una`, could be taken for one of the dependency's:
+
+```text include="steps/20-local-clash/expected/rendered.txt#L1"
+[U1010] Error: module `tags` starts with `tags`, the local name of a dependency; give the need another local name with `as`
+```
+
+Rename the module, or give the need another local name with `as`.
+
+#### One program, checked as one
+
+- `una check .` checks your modules and every dependency's, each under its own edition, and reports a diagnostic in a dependency at its file.
+- `una fix .` never edits a dependency's file, `una fmt` formats your modules only, and `una test .` runs your examples only.
+- A dependency imports its own modules and the standard modules, never a module of the package that needs it.
+- A dependency's edition is yours or earlier: an edition `0.4` package may need an edition `0.4` package.
+- Reading a dependency runs none of its code: there are no install scripts and no build steps.
+
+#### What edition `0.4` loads today
+
+In this preview, a path dependency has no needs of its own, no labels, no trusted modules, no boundaries and no contracts, and its `may` lines name capabilities of the host, such as `Console` and `Clock`. A need of a registry package is refused (U7008), so no import ever reaches code that is not checked with your program.
+
+### Copying code in, or a path dependency
+
+:::decide
+**Which to use:**
+
+| The code… | Use |
+| --- | --- |
+| Is small, and yours to change | a module of your own package |
+| Is someone else's, and you will take their next versions | a path dependency, with `accept name` |
+| Must not use a capability unless you allow it | a path dependency, with `may` lines |
+| Is in a package of edition `0.1` to `0.3` | copied into `src/`, with a boundary in edition `0.3` ([chapter 13](/learn/authority/#s13-2)) |
+| Has a name that clashes with one of your modules | a path dependency with `as` |
+:::
+
+### Check yourself: a local name
+
+The store's code already has modules whose names start with `tags`, so it needs the supplier's package under another name. Its need says:
+
+```una include="steps/19-path-as/ita.una#L6" title="steps/19-path-as/ita.una"
+  tags as labels from path "deps/tags"
+```
+
+What does the import of `shelf_tag` become, and does the dependency's own `printer` module change?
+
+:::answer Show the answer
+```una include="steps/19-path-as/src/store.una#L3" title="steps/19-path-as/src/store.una"
+import labels.format (shelf_tag)
+```
+
+The local name is now `labels`, so the module `format` of the dependency is `labels.format` in the store's code. The dependency's own modules do not change: inside its package, `format` is still `format`, whatever local name a package that needs it chooses. The program prints the same tags:
+
+```text include="steps/19-path-as/expected/output.txt"
+[LAMP-01 | 19.90]
+[RUG-07 | 89.00]
+```
+:::
+
+## 11.5 Day-to-day: the store's invoice
 
 ### Five modules, one job each
 
@@ -859,7 +1174,7 @@ example "a refund keeps its sign"
   expect result == "-1.50"
 ```
 
-The examples sit in the module, next to the function they test, as [Testing it](#s11-5) explains.
+The examples sit in the module, next to the function they test, as [Testing it](#s11-6) explains.
 
 ### The catalog
 
@@ -984,7 +1299,7 @@ pub main() -> Unit
 
 The whole package checks, runs and passes its tests. `una run .` prints the invoice shown in [What you'll build](#what-youll-build): two lines for the products the catalog lists, with their members' prices, and one for the chair it does not.
 
-## 11.5 Testing it
+## 11.6 Testing it
 
 ### One command for every module
 
@@ -1034,7 +1349,7 @@ The first example passes a catalog of one product and expects it back; the third
 
 `store.app` has no examples of its own. Everything it does is a call to a function that another module tests. An example of `main` would need a stand-in for the console ([section 14.3](/learn/testing/#s14-3)), and would only show that something was printed. Keep an entry module this thin: building the values, passing them to functions, and printing what they return. The less it decides, the less goes untested.
 
-## 11.6 Common mistakes
+## 11.7 Common mistakes
 
 Each mistake below is a small change to the day-to-day package, followed by what `una check .` reports.
 
@@ -1224,7 +1539,7 @@ Put `store.money` before `store.catalog`:
 *Fix:* `una fmt .` sorts them, and so does `una fix .`. See [U7001](/docs/errors/U7001/).
 :::
 
-## 11.7 Exercises
+## 11.8 Exercises
 
 The exercises come with the chapter's download, `11-packages.tar.gz`. Each one starts from `exercises/N/start`: the day-to-day package with the exercise's examples added, and a stub of what to write when there is one. `una test .` fails there until the exercise is done. Run `una fmt .` before `una check .`, so the layout is canonical.
 
@@ -1437,7 +1752,7 @@ example store.pricing "a member's price, as a person reads it" ... ok
 :::
 ::::
 
-## 11.8 Recap and reference
+## 11.9 Recap and reference
 
 ### For agents
 
@@ -1455,7 +1770,7 @@ $ una fix --dry-run .
 skipped src/store/money.una:10:1 U1004 declare `digits` with `pub`: widens authority
 ```
 
-The compact rule: *one module per file, named by its path; take each declaration you use with a named import; make a declaration `pub` only on purpose, with its whole header written; keep the imports free of cycles and sorted.*
+The compact rule: *one module per file, named by its path; take each declaration you use with a named import; make a declaration `pub` only on purpose, with its whole header written; keep the imports free of cycles and sorted; in edition `0.4`, a path dependency is a boundary whose ceiling is its need's `may` lines.*
 :::
 
 ### Recap
@@ -1465,7 +1780,8 @@ The compact rule: *one module per file, named by its path; take each declaration
 - Declarations are private by default. Mark `pub` only what other modules need, with a doc comment and its whole header written.
 - Import each declaration you use by name. A sum kind brings its variants, and a record its constructor and fields.
 - Keep the imports a graph with no cycle, and let `una fmt` keep them sorted.
-- `una.toml` has a fixed set of tables and keys; an unknown one is U7002. A package imports only its own modules, `std.host` and `std.testing`.
+- `una.toml` has a fixed set of tables and keys; an unknown one is U7002. Before edition `0.4`, a package imports only its own modules, `std.host` and `std.testing`.
+- In edition `0.4`, a path dependency is a need `from path`, with `accept name` and its `may` ceiling. Run `una ita lock` after each change.
 - `verification.lock` pins the solver, so every machine gets the same result: copy it, do not edit it.
 - Keep each module's examples in the module; `una test .` runs those of every module, after one check of the whole package.
 :::
@@ -1473,7 +1789,7 @@ The compact rule: *one module per file, named by its path; take each declaration
 ### Reference
 
 :::reference
-- Construct and configuration pages: [modules and imports](/docs/language/modules/), [`kind`](/docs/language/types/kind/), [`where`](/docs/language/types/where/), [`example`](/docs/language/examples/example/), [canonical form](/docs/language/canonical-form/), [`una.toml`](/docs/configure/), [`[package] name`](/docs/configure/package/name/), [`[package] version`](/docs/configure/package/version/), [`[package] edition`](/docs/configure/package/edition/), [`[run] entry`](/docs/configure/run/entry/), [`[run] grants`](/docs/configure/run/grants/), [`[labels] categories`](/docs/configure/labels/categories/), [`[trusted] modules`](/docs/configure/trusted/modules/), [`[escape_budget] checked_per_module`](/docs/configure/escape-budget/checked-per-module/), [`verification.lock`](/docs/configure/verification-lock/)
-- Diagnostics: [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U1003](/docs/errors/U1003/), [U1004](/docs/errors/U1004/), [U1005](/docs/errors/U1005/), [U1008](/docs/errors/U1008/), [U1009](/docs/errors/U1009/), [U3012](/docs/errors/U3012/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U5003](/docs/errors/U5003/), [U7001](/docs/errors/U7001/), [U7002](/docs/errors/U7002/), [U7004](/docs/errors/U7004/)
-- Specification: [diagnostics, the command line and project files](/docs/spec/13-diagnostics-and-abi/), [grammar](/docs/spec/02-grammar/), [static semantics](/docs/spec/10-static-semantics/), [functions and contracts](/docs/spec/04-functions-and-contracts/), [canonical form](/docs/spec/15-canonical-form/), [verification](/docs/spec/12-verification/)
+- Construct and configuration pages: [modules and imports](/docs/language/modules/), [`kind`](/docs/language/types/kind/), [`where`](/docs/language/types/where/), [`example`](/docs/language/examples/example/), [canonical form](/docs/language/canonical-form/), [`una.toml`](/docs/configure/), [`[package] name`](/docs/configure/package/name/), [`[package] version`](/docs/configure/package/version/), [`[package] edition`](/docs/configure/package/edition/), [`[run] entry`](/docs/configure/run/entry/), [`[run] grants`](/docs/configure/run/grants/), [`[labels] categories`](/docs/configure/labels/categories/), [`[trusted] modules`](/docs/configure/trusted/modules/), [`[escape_budget] checked_per_module`](/docs/configure/escape-budget/checked-per-module/), [`verification.lock`](/docs/configure/verification-lock/), [path dependencies](/docs/configure/ita/path-dependencies/), [`ita.una`](/docs/configure/ita/manifest/), [`ita.lock`](/docs/configure/ita/lock/)
+- Diagnostics: [U1001](/docs/errors/U1001/), [U1002](/docs/errors/U1002/), [U1003](/docs/errors/U1003/), [U1004](/docs/errors/U1004/), [U1005](/docs/errors/U1005/), [U1008](/docs/errors/U1008/), [U1009](/docs/errors/U1009/), [U1010](/docs/errors/U1010/), [U3012](/docs/errors/U3012/), [U3021](/docs/errors/U3021/), [U5001](/docs/errors/U5001/), [U5002](/docs/errors/U5002/), [U5003](/docs/errors/U5003/), [U7001](/docs/errors/U7001/), [U7002](/docs/errors/U7002/), [U7004](/docs/errors/U7004/), [U7008](/docs/errors/U7008/), [U7009](/docs/errors/U7009/), [U7012](/docs/errors/U7012/)
+- Specification: [diagnostics, the command line and project files](/docs/spec/13-diagnostics-and-abi/), [grammar](/docs/spec/02-grammar/), [static semantics](/docs/spec/10-static-semantics/), [functions and contracts](/docs/spec/04-functions-and-contracts/), [canonical form](/docs/spec/15-canonical-form/), [verification](/docs/spec/12-verification/), [packages and dependencies](/docs/spec/30-packages/)
 :::

@@ -1,0 +1,9 @@
+module printer
+
+import format (shelf_tag)
+
+--- Prints the shelf tag of a product.
+pub print_tag(sku: Text, cents: Int) -> Unit
+  uses @console: Console[print]
+=
+  @console.print(shelf_tag(sku, cents: cents))

@@ -1,0 +1,10 @@
+module store
+
+import tags.printer (print_tag)
+
+--- Prints the shelf tags of two products, through the supplier's printer.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  print_tag("LAMP-01", cents: 1990) with @console = @console[print]
+  print_tag("RUG-07", cents: 8900) with @console = @console[print]

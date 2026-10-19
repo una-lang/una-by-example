@@ -1,0 +1,18 @@
+[U3021] Error: the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+   ╭─[ src/store.una:9:3 ]
+   │
+ 9 │   print_tag("LAMP-01", cents: 1990) with @console = @console[print]
+   │   ────────────────┬────────────────
+   │                   ╰────────────────── the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+   │
+   │ Note: run `una explain U3021` for an explanation
+───╯
+[U3021] Error: the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+    ╭─[ src/store.una:10:3 ]
+    │
+ 10 │   print_tag("RUG-07", cents: 8900) with @console = @console[print]
+    │   ────────────────┬───────────────
+    │                   ╰───────────────── the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+    │
+    │ Note: run `una explain U3021` for an explanation
+────╯

@@ -1,0 +1,10 @@
+module format
+
+--- A shelf tag: the SKU and the price, between brackets.
+pub shelf_tag(sku: Text, cents: Int) -> Text = "[{sku} | {amount(cents)}]"
+
+--- An amount in cents as a person reads it: 1990 is "19.90".
+amount(cents: Int) -> Text
+=
+  let rest = cents mod 100
+  if rest < 10 then "{cents / 100}.0{rest}" else "{cents / 100}.{rest}"

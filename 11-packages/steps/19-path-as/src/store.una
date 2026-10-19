@@ -1,0 +1,10 @@
+module store
+
+import labels.format (shelf_tag)
+
+--- Prints the shelf tags of two products, made by the supplier's package.
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print(shelf_tag("LAMP-01", cents: 1990))
+  @console.print(shelf_tag("RUG-07", cents: 8900))

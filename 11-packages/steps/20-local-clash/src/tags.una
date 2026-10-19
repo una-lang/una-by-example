@@ -1,0 +1,4 @@
+module tags
+
+--- The tags the store prints itself, for products of its own brand.
+pub house_tag(sku: Text) -> Text = "[{sku} | house brand]"

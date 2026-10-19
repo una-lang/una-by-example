@@ -1,0 +1,14 @@
+-- Written by `una ita`; do not edit.
+lock 1
+
+solver
+  encoding "una-smt-1"
+  name "z3"
+  version "5.1.0"
+  logic "QF_UFLIA"
+  steps 5000000
+  seed 0
+
+package tags 0.3.0
+  from path "deps/tags"
+  digest "sha256:c17858eb19bf48cc069f6ad577a3faa5fb4fe1ed8c492defc951737999444ee0"

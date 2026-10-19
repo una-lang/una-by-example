@@ -1,0 +1,36 @@
+[U7012] Error: `tags` is a local package with a name a registry may hold; write `accept name` under the need to use it
+   ╭─[ ita.una:6:3 ]
+   │
+ 6 │   tags from path "deps/tags"
+   │   ─────────────┬────────────
+   │                ╰────────────── `tags` is a local package with a name a registry may hold; write `accept name` under the need to use it
+   │
+   │ Note: run `una explain U7012` for an explanation
+───╯
+[U1001] Error: module `tags.format` is not a module of this package; the standard modules that can be imported are `std.host`, `std.testing`, `std.time`, `std.drive` and `std.collections`
+   ╭─[ src/store.una:3:8 ]
+   │
+ 3 │ import tags.format (shelf_tag)
+   │        ─────┬─────
+   │             ╰─────── module `tags.format` is not a module of this package; the standard modules that can be imported are `std.host`, `std.testing`, `std.time`, `std.drive` and `std.collections`
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+[U1001] Error: cannot find name `shelf_tag` in this module, its imports or the prelude
+   ╭─[ src/store.una:9:18 ]
+   │
+ 9 │   @console.print(shelf_tag("LAMP-01", cents: 1990))
+   │                  ────┬────
+   │                      ╰────── cannot find name `shelf_tag` in this module, its imports or the prelude
+   │
+   │ Note: run `una explain U1001` for an explanation
+───╯
+[U1001] Error: cannot find name `shelf_tag` in this module, its imports or the prelude
+    ╭─[ src/store.una:10:18 ]
+    │
+ 10 │   @console.print(shelf_tag("RUG-07", cents: 8900))
+    │                  ────┬────
+    │                      ╰────── cannot find name `shelf_tag` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯

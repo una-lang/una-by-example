@@ -1,0 +1,2 @@
+error U3021 at src/store.una:9:3: the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`
+error U3021 at src/store.una:10:3: the call of `print_tag` grants `Console[print]` to `tags`, whose ceiling in `una.toml` allows no operation of `Console`

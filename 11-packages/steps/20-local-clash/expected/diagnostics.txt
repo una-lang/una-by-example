@@ -1,0 +1,1 @@
+error U1010 at src/tags.una:1:8: module `tags` starts with `tags`, the local name of a dependency; give the need another local name with `as`

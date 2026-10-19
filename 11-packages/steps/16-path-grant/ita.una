@@ -1,0 +1,13 @@
+ita store
+  version 0.1.0
+  edition 0.4
+
+needs
+  tags from path "deps/tags"
+    may Console[print]
+    accept name
+
+run
+  entry store
+  grants
+    console

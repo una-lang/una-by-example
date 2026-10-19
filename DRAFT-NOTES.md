@@ -43,3 +43,33 @@ Outputs, derived from `spec/21 §2` rule 5 and the conformance case `runtime/map
 Diagnostics, with the message of `crates/una-check/src/types/collections.rs`:
 
 - `10-collections/steps/28-update-name/expected/diagnostics.txt`, `rendered.txt` (U1002)
+
+## Path dependencies (edition 0.4): `11-packages`, section 11.4
+
+New section 11.4 "Path dependencies", after the manifest; the sections after it are renumbered (11.4 to 11.8 became 11.5 to 11.9). The subsection of 11.3 on dependencies is now "No dependencies before edition `0.4`" and points to 11.4. The front matter gains edition `0.4`, the codes U1010, U3021 and U7012, and a `nav` label.
+
+What `scripts/check.py` must learn before these steps can be checked, besides the edition `0.4` layout of the `Map.update` notes:
+
+- a package that holds another package under `deps/` (the path dependency, with its own `ita.una` and `src/`), copied whole into the fresh directory each command runs in;
+- blocks that show `ita.una`, `ita.lock` and a dependency's `deps/<name>/src/*.una`, which `--fill` refuses today: their bodies in `11-packages/README.md` were written by hand from the files;
+- the command `una ita lock` in an `sh` block (the page shows it once), and perhaps `ita lock --check .` as an `expected/commands/` file.
+
+Each `ita.lock` follows `lock_command` in `crates/una-cli/src/ita.rs`. Its digest was computed by the listing of `spec/30 §9` rule 2 over the dependency's `ita.una` and `src/**/*.una`; confirm it with `una ita lock --check`. In `17-no-accept` and `18-beyond-ceiling` the lock is the one of the package before the change the step makes.
+
+Outputs:
+
+- `11-packages/steps/15-path-dependency/expected/output.txt`
+- `11-packages/steps/16-path-grant/expected/output.txt`
+- `11-packages/steps/19-path-as/expected/output.txt`
+
+Diagnostics, with the messages of `crates/una-cli/src/package.rs` (U7012), `crates/una-check/src/names/mod.rs` (U1001, U1010) and `crates/una-check/src/types/crossing.rs` (U3021), following the conformance cases `project/ita_path_dep_*`. Check the span of U7012 (taken here as the need's first line, from `tags` to the end of the path) and the order of the diagnostics:
+
+- `11-packages/steps/17-no-accept/expected/diagnostics.txt`, `rendered.txt` (U7012, then U1001 three times)
+- `11-packages/steps/18-beyond-ceiling/expected/diagnostics.txt`, `rendered.txt` (U3021 twice)
+- `11-packages/steps/20-local-clash/expected/diagnostics.txt`, `rendered.txt` (U1010)
+
+## Unclear points to settle before merge
+
+- The U3021 message for a path dependency says "whose ceiling in `una.toml` allows no operation of `Console`", since the boundary code builds one message for both kinds of ceiling. In edition `0.4` the ceiling is the `may` lines of `ita.una`, so the message may change; the page quotes it only through `rendered.txt`.
+- `spec/30 §4` rule 4 still says that `una ita lock` refuses a package with `needs`, while §3 rule 4, §12 and the code lock path dependencies.
+- The page states that the path of a need is relative to the package and may lie inside it, as `deps/tags` does here (as in the conformance cases); `spec/30 §12` rule 1 excludes only the package itself and its `src/`.
