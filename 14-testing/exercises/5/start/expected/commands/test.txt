@@ -6,7 +6,7 @@ example orders "an inventory that does not answer is Unavailable" ... ok
 example orders "a SKU the inventory does not know is UnknownSku" ... ok
 example orders "a quantity that is not a number is BadQuantity, before the inventory is asked" ... ok
 example orders "when the inventory does not answer, the backup does" ... FAILED
-  src/orders.una:152: expect result == Some(4)
+  src/orders.una:149: expect result == Some(4)
   the `do` line failed with `Timeout`, so `result` has no value
 example orders "the backup is not asked when the inventory answers" ... ok
 example orders "when neither answers, the failure is Timeout" ... ok

@@ -6,7 +6,7 @@ example orders "an inventory that does not answer is Unavailable" ... ok
 example orders "a SKU the inventory does not know is UnknownSku" ... ok
 example orders "a quantity that is not a number is BadQuantity, before the inventory is asked" ... ok
 example orders "a batch ships only its accepted units" ... FAILED
-  src/orders.una:143: expect result == 3
+  src/orders.una:140: expect result == 3
   it is false, with `result` = `0`
 
 7 examples: 6 passed, 1 failed

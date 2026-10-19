@@ -1,0 +1,4 @@
+LAMP-01: up to 4
+DESK-02: up to 1
+CHAIR-09: up to 0
+LAMP-01, inventory offline: up to 0

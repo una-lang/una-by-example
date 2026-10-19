@@ -1,0 +1,5 @@
+$ una test .
+example notices "a skipped shipment still writes a log line" ... ok
+example notices "a notice goes out through a mail service that prints" ... ok
+
+2 examples: 2 passed, 0 failed

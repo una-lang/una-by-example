@@ -1,0 +1,8 @@
+$ una test .
+example restock "two units left mails the buyer" ... ok
+example restock "forty units left mails nobody" ... ok
+example restock "three units left mails the buyer" ... FAILED
+  src/restock.una:60: expect performed @mailer.send
+  the trace has no `@mailer.send`
+
+3 examples: 2 passed, 1 failed

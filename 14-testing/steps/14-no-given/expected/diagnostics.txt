@@ -1,2 +1,2 @@
-error U3001 at src/restock.una:43:6: `warn_if_low` needs `@inventory: Inventory[left]`, which no `given` line binds
-error U3001 at src/restock.una:43:6: `warn_if_low` needs `@mail: Mail[send]`, which no `given` line binds
+error U3001 at src/restock.una:43:6: `warn_if_low` needs `@stock: Stock[left]`, which no `given` line binds
+error U3001 at src/restock.una:43:6: `warn_if_low` needs `@mailer: Mailer[send]`, which no `given` line binds
