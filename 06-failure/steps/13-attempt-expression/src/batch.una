@@ -10,6 +10,7 @@ explain(failure: ParseError) -> Text
     is Empty -> "nothing was typed"
     is NoDigits -> "a sign with no digits"
     is NotADigit(at) -> "not a digit at position {at}"
+    is TooLong -> "more than 4300 digits"
 
 --- One line of the report for a typed quantity.
 describe(raw: Text, outcome: Result[Int, ParseError]) -> Text
