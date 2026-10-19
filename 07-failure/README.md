@@ -1112,7 +1112,7 @@ The handling clauses of [section 7.3](#s7-3) decide on the spot, at the call. So
 
 ### Why a form needs failures as values
 
-The examples of this section read quantities with the prelude's own failing function, `parse_int`, which turns a text into an `Int` and fails with `ParseError`, a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, and `NotADigit(at)` with the position of the first wrong character, counted from 0. Unlike `to_int`, it says why a text is not a number. Both exist from edition `0.2` on.
+The examples of this section read quantities with the prelude's own failing function, `parse_int`, which turns a text into an `Int` and fails with `ParseError`, a sum kind of the prelude: `Empty` for an empty text, `NoDigits` for a sign alone, `NotADigit(at)` with the position of the first wrong character, counted from 0, and `TooLong` for more than 4300 digits. Unlike `to_int`, it says why a text is not a number. Both exist from edition `0.2` on.
 
 An order form has three boxes for quantities. With `if error pass`, the first box that fails ends the whole function, and the boxes after it are never read:
 
@@ -1203,6 +1203,7 @@ explain(failure: ParseError) -> Text
     is Empty -> "nothing was typed"
     is NoDigits -> "a sign with no digits"
     is NotADigit(at) -> "not a digit at position {at}"
+    is TooLong -> "more than 4300 digits"
 
 --- One line of the report for a typed quantity.
 describe(raw: Text, outcome: Result[Int, ParseError]) -> Text
@@ -1230,7 +1231,6 @@ pub main() -> Unit
   @console.print(report("3x"))
   let count = accepted("12") + accepted("") + accepted("-") + accepted("3x")
   let last = parse_typed("7")
-  @console.print("{count} of 4 accepted, then {last}")
 ```
 
 1. **`parse_typed(raw: Text) -> Result[Int, ParseError] = attempt raw.parse_int()`.** The whole body is `attempt`, so the function returns the outcome and cannot fail itself.
@@ -1260,7 +1260,7 @@ Every quantity gets its line, with its own reason. The last value is printed as 
 ```diff include="steps/15-attempt..steps/16-attempt-expression:src/batch.una" context="1" title="src/batch.una"
 --- a/src/batch.una
 +++ b/src/batch.una
-@@ -23,3 +23,3 @@
+@@ -24,3 +24,3 @@
  =
 -  let outcome = attempt raw.parse_int()
 +  let outcome = attempt raw.parse_int().is_ok()
@@ -1271,9 +1271,9 @@ Every quantity gets its line, with its own reason. The last value is printed as 
 
 ```text include="steps/16-attempt-expression/expected/rendered.txt#L1-L8"
 [U2001] Error: argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
-    ╭─[ src/batch.una:24:25 ]
+    ╭─[ src/batch.una:25:25 ]
     │
- 24 │   let outcome = attempt raw.parse_int().is_ok()
+ 25 │   let outcome = attempt raw.parse_int().is_ok()
     │                         ───────┬───────
     │                                ╰───────── argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
     │
@@ -1315,8 +1315,8 @@ The table compares the handling clauses, `attempt`, and `checked`, which [sectio
 `parse_int` does not trim spaces. Predict what this prints:
 
 ```una include="steps/15-attempt/src/batch.una#L41-L42" title="steps/15-attempt/src/batch.una"
+  @console.print("{count} of 4 accepted, then {last}")
   let padded = parse_typed(" 5")
-  @console.print("{padded}")
 ```
 
 :::answer Show the answer

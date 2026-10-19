@@ -36,7 +36,7 @@ You will learn to:
 
 ## Why it works this way
 
-In many languages, a file can see a great deal it never asked for: every public name of every file in the project, globals, and whatever an import brings in with it. Splitting a program into files does not, by itself, say which parts are the interface of a file and which are its details. A dependency added by one line in a manifest can bring in code that reads files or opens connections, and nothing in the caller's code shows it. In una 0.3.15 a package has no dependencies on other packages ([section 11.3](#s11-3)).
+In many languages, a file can see a great deal it never asked for: every public name of every file in the project, globals, and whatever an import brings in with it. Splitting a program into files does not, by itself, say which parts are the interface of a file and which are its details. A dependency added by one line in a manifest can bring in code that reads files or opens connections, and nothing in the caller's code shows it. In una 0.3.16 a package has no dependencies on other packages ([section 11.3](#s11-3)).
 
 Una keeps the structure small and visible:
 
@@ -731,7 +731,7 @@ The package still runs as before, with the same modules. Only `una.toml` changed
 
 ### No dependencies on other packages yet
 
-una 0.3.15 has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
+una 0.3.16 has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
 
 ```text include="steps/13-no-dependencies/expected/rendered.txt#L1"
 [U1001] Error: module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`

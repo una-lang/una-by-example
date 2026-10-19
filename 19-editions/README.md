@@ -62,7 +62,7 @@ A board game sold for many years often comes in editions. The second edition add
 
 Una works the same way, with two words that are easy to mix up:
 
-- A **release** is a version of the `una` program itself, such as una 0.3.15. You install a release, and a newer one replaces it.
+- A **release** is a version of the `una` program itself, such as una 0.3.16. You install a release, and a newer one replaces it.
 - An **edition** is a version of the Una language: its keywords, its constructs and its rules. Una has three, `0.1`, `0.2` and `0.3`.
 
 A **keyword** is a word the language keeps for itself, such as `if`, `for` or `uses`: it starts a piece of syntax, so it cannot name a value, a parameter or a field. A **construct** is one form of code with its own syntax and meaning, such as a `for` loop, a kind or a `uses` clause.
@@ -786,7 +786,7 @@ It does not. A unit is part of the type, and `<=` needs one type on both sides:
 `Int of 1000 * Gram` is how the checker writes a kilogram: a scale of 1000 on the unit `Gram`. una never converts implicitly: two values of different units never meet in `+`, `-` or a comparison, and each such place is U2028. To compare them, convert one explicitly, where a gram is expected: `let limit_grams: Int of Gram = limit.convert()` multiplies by 1000, the exact ratio, and `weight <= limit_grams` checks, as in [the derived unit](#a-derived-unit-and-changing-a-unit-convert-measured-magnitude) above.
 :::
 
-One more, without code. Two packages check clean with una 0.3.15: the restock list after its move, on edition `0.3`, and the stock list of [section 19.2](#s19-2), on edition `0.2`. A later `0.3.x` release comes out. Which of them can get a new error?
+One more, without code. Two packages check clean with una 0.3.16: the restock list after its move, on edition `0.3`, and the stock list of [section 19.2](#s19-2), on edition `0.2`. A later `0.3.x` release comes out. Which of them can get a new error?
 
 :::answer Show the answer
 Only the package on edition `0.3`. It is on the preview, which a later `0.3.x` release may make stricter: a new rule may add an obligation or an error to it. The package on edition `0.2`, a stable edition, keeps exactly what it accepts and rejects, except for a fix of a soundness or security error. That is why the preview's packages rerun `una check .` and `una test .` after each upgrade.
@@ -899,7 +899,7 @@ The package checks in `0.2`, and prints what it printed in `0.1`:
 
 ### How a move behaves
 
-- **One edition per package.** Every module moves at once. A program is one package, so it has one edition: in una 0.3.15 a package does not depend on other packages ([section 11.3](/learn/packages/#s11-3)).
+- **One edition per package.** Every module moves at once. A program is one package, so it has one edition: in una 0.3.16 a package does not depend on other packages ([section 11.3](/learn/packages/#s11-3)).
 - **Moving back fails where the code uses the later edition.** A construct of a later edition is usually a syntax error (U0101), a reserved word (U0103) or an unknown table (U7002) in an earlier one: [Moving a package back](#moving-a-package-back-u0101-u7002) shows it. A prelude function or a type rule of a later edition gives a type error, such as U1001, U2001 or U2002.
 - **Read a rename before you apply it.** In edition `0.1`, a reserved word gets a rename repair, which is right for a name and wrong for a construct of a later edition: [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows the second case.
 - **The output is the test of a move.** A move changes the language, not the program's behavior: the examples pass, and `una run .` prints what it printed before.
@@ -1310,7 +1310,7 @@ fixed src/shelf.una:11:7 U0103 rename it to `the_edit`
 
 *Why:* in edition `0.1`, `edit` is a reserved word, not a keyword, so the checker reads it as a name that must change. The message says the rest: `reserved for v0.2 (memory model)` names the edition where `let edit` exists. Applied here, the rename gives `let the_edit sum = 0`, which does not parse.
 
-*Fix:* change `edition` in `una.toml` to `"0.2"`. Do not apply the rename: offering it here is a known issue of una 0.3.15. See [U0103](/docs/errors/U0103/).
+*Fix:* change `edition` in `una.toml` to `"0.2"`. Do not apply the rename: offering it here is a known issue of una 0.3.16. See [U0103](/docs/errors/U0103/).
 :::
 
 ### Moving a package back (U0101, U7002)
