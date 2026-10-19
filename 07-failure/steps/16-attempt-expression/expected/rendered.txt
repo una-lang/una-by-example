@@ -1,25 +1,25 @@
 [U2001] Error: argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
-    ╭─[ src/batch.una:24:25 ]
+    ╭─[ src/batch.una:25:25 ]
     │
- 24 │   let outcome = attempt raw.parse_int().is_ok()
+ 25 │   let outcome = attempt raw.parse_int().is_ok()
     │                         ───────┬───────
     │                                ╰───────── argument `r` of `is_ok` must be `Result[_, _]`, found `Int`
     │
     │ Note: run `una explain U2001` for an explanation
 ────╯
 [U3013] Error: `parse_int` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
-    ╭─[ src/batch.una:24:25 ]
+    ╭─[ src/batch.una:25:25 ]
     │
- 24 │   let outcome = attempt raw.parse_int().is_ok()
+ 25 │   let outcome = attempt raw.parse_int().is_ok()
     │                         ───────┬───────
     │                                ╰───────── `parse_int` has effects or can fail, so it must be the whole expression of a statement or `let`; bind its result with `let` first
     │
     │ Note: run `una explain U3013` for an explanation
 ────╯
 [U2001] Error: argument `outcome` of `describe` must be `Result[Int, ParseError]`, found `Result[Bool, ?]`
-    ╭─[ src/batch.una:25:26 ]
+    ╭─[ src/batch.una:26:26 ]
     │
- 25 │   describe(raw, outcome: outcome)
+ 26 │   describe(raw, outcome: outcome)
     │                          ───┬───
     │                             ╰───── argument `outcome` of `describe` must be `Result[Int, ParseError]`, found `Result[Bool, ?]`
     │
