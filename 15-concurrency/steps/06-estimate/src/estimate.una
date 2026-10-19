@@ -1,0 +1,52 @@
+module estimate
+
+--- Why a warehouse gave no count.
+kind StockError = | Offline(site: Text)
+
+--- A warehouse's stock service: the units of a SKU on its shelves.
+capability Warehouse
+  op on_hand(sku: Text) -> Int
+    fails StockError
+
+--- A warehouse whose stock is held in a map: none of a SKU it does not stock.
+handler shelves(stock: Map[Text, Int]) for Warehouse
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- A warehouse that does not answer.
+handler offline(site: Text) for Warehouse
+  op on_hand(sku) = fail Offline(site)
+
+--- The units of `sku` in two warehouses: a warehouse that does not answer counts as none.
+estimate(sku: Text) -> Int
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error use 0
+    let in_south = @south.on_hand(sku)
+      if error use 0
+  in_north + in_south
+
+--- The units of `sku` in two warehouses: a warehouse that does not answer fails the count.
+total(sku: Text) -> Int
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  fails StockError
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error pass
+    let in_south = @south.on_hand(sku)
+      if error pass
+  in_north + in_south
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let north = empty_map().with(key: "LAMP-01", value: 4)
+  let rough = estimate("LAMP-01") with @north = shelves(north), @south = offline("south")
+  @console.print("estimate: {rough}")
+  let exact = total("LAMP-01") with @north = shelves(north), @south = offline("south")
+    if error use -1
+  @console.print("total: {exact}")

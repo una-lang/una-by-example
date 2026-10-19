@@ -1,0 +1,9 @@
+[U0101] Error: a block cannot end with `together`; its last line is its value
+    ╭─[ src/availability.una:41:3 ]
+    │
+ 41 │   together
+    │   ────┬───
+    │       ╰───── a block cannot end with `together`; its last line is its value
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

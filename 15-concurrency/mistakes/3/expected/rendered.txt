@@ -1,0 +1,9 @@
+[U0101] Error: `together` with branches is a statement; write `together for` to build a list
+    ╭─[ src/availability.una:41:16 ]
+    │
+ 41 │   let counts = together
+    │                ────┬───
+    │                    ╰───── `together` with branches is a statement; write `together for` to build a list
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯

@@ -1,0 +1,93 @@
+module forms
+
+--- Why a warehouse gave no count.
+kind StockError = | Offline(site: Text)
+
+--- A warehouse's stock service: the units of a SKU on its shelves.
+capability Warehouse
+  op on_hand(sku: Text) -> Int
+    fails StockError
+
+--- A warehouse whose stock is held in a map: none of a SKU it does not stock.
+handler shelves(stock: Map[Text, Int]) for Warehouse
+  op on_hand(sku) = stock.get(key: sku).or_else(default: 0)
+
+--- A warehouse that does not answer.
+handler offline(site: Text) for Warehouse
+  op on_hand(sku) = fail Offline(site)
+
+--- Two branches: the units of `sku` in two warehouses.
+total(sku: Text) -> Int
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  fails StockError
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error pass
+  in_north
+
+--- Three branches: the units of `sku` in three warehouses, as a text.
+three_sites(sku: Text) -> Text
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+  uses @east: Warehouse[on_hand]
+  fails StockError
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error pass
+    let in_south = @south.on_hand(sku)
+      if error pass
+    let in_east = @east.on_hand(sku)
+      if error pass
+  "{in_north} + {in_south} + {in_east} = {in_north + in_south + in_east}"
+
+--- The units of `sku` in the one warehouse a caller hands over.
+units_of(sku: Text) -> Int
+  uses @warehouse: Warehouse[on_hand]
+  fails StockError
+=
+  @warehouse.on_hand(sku)
+    if error pass
+
+--- A branch that installs its own handler: each store's stock comes from its own map.
+two_stores(sku: Text, harbor: Map[Text, Int], market: Map[Text, Int]) -> Int
+  fails StockError
+=
+  together
+    let at_harbor = units_of(sku) with @warehouse = shelves(harbor)
+      if error pass
+    let at_market = units_of(sku) with @warehouse = shelves(market)
+      if error pass
+  at_harbor + at_market
+
+--- Branches that handle their own failure: a warehouse that does not answer counts as none.
+estimate(sku: Text) -> Int
+  uses @north: Warehouse[on_hand]
+  uses @south: Warehouse[on_hand]
+=
+  together
+    let in_north = @north.on_hand(sku)
+      if error use 0
+    let in_south = @south.on_hand(sku)
+      if error use 0
+  in_north + in_south
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  let north = empty_map().with(key: "LAMP-01", value: 4)
+  let south = empty_map().with(key: "LAMP-01", value: 2)
+  let east = empty_map().with(key: "DESK-02", value: 3)
+  let units = total("LAMP-01") with @north = shelves(north), @south = shelves(south)
+    if error use 0
+  @console.print("two branches: {units}")
+  let line = three_sites("LAMP-01") with @north = shelves(north), @south = shelves(south), @east = shelves(east)
+    if error use "no count"
+  @console.print("three branches: {line}")
+  let stores = two_stores("LAMP-01", harbor: north, market: south)
+    if error use 0
+  @console.print("a handler per branch: {stores}")
+  let rough = estimate("LAMP-01") with @north = shelves(north), @south = shelves(south)
+  @console.print("a clause per branch: {rough}")

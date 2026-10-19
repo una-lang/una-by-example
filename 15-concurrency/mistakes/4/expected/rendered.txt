@@ -1,0 +1,9 @@
+[U3007] Error: `@east.on_hand` can fail with `StockError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    ╭─[ src/availability.una:46:16 ]
+    │
+ 46 │     let east = @east.on_hand(line.sku)
+    │                ───────────┬───────────
+    │                           ╰───────────── `@east.on_hand` can fail with `StockError`; handle the failure with an `if error` clause, or wrap the call in `attempt`
+    │
+    │ Note: run `una explain U3007` for an explanation
+────╯
