@@ -1,0 +1,10 @@
+module shelf
+
+--- Whether `units` more fit on a shelf that has `room` free.
+within(units: Int, room: Int) -> Bool = units <= room
+
+pub main() -> Unit
+  uses @console: Console[print]
+=
+  @console.print("6 on a shelf with room for 10: {within(6, room: 10)}")
+  @console.print("12 on a shelf with room for 10: {within(12, room: 10)}")

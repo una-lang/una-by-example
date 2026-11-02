@@ -616,10 +616,12 @@ class Units(unittest.TestCase):
 
     def test_commands(self):
         for line in ("test .", "--json check .", "run .", "fmt --check .", "fix --dry-run .", "build .",
-                     "explain U5001", "trace SOLD_OUT_1", "ita lock", "ita lock .", "ita lock --check", "--json ita lock --check ."):
+                     "explain U5001", "trace SOLD_OUT_1", "ita lock", "ita lock .", "ita lock --check", "--json ita lock --check .",
+                     "migrate", "migrate .", "migrate --dry-run .", "--json migrate --dry-run ."):
             self.assertTrue(check.COMMAND.match(line), line)
         for line in ("run . --grant env", "run . --grant files:/:read", "fmt /abs/path", "check ..", "test . extra", "run",
-                     "ita lock --accept-authority", "ita lock ..", "ita lock /abs/path", "ita publish"):
+                     "ita lock --accept-authority", "ita lock ..", "ita lock /abs/path", "ita publish",
+                     "migrate --name other .", "migrate ..", "migrate /abs/path"):
             self.assertFalse(check.COMMAND.match(line), line)
 
     def test_ita_manifest(self):
@@ -822,6 +824,7 @@ class Units(unittest.TestCase):
 
         self.assertEqual(found("cd 06-failure/day-to-day\nmkdir orders\nuna run .\nuna --json check .\npython3 -B scripts/check.py --fill\n"), [])
         self.assertEqual(found("una ita lock\nuna ita lock --check\nuna ita lock --check .\n"), [])
+        self.assertEqual(found("una migrate --dry-run .\nuna migrate\n"), [])
         for line in ("una run .   ok 99 x LAMP-01  Total: 4200 cents", "una run . --grant env", "$ una run .",
                      "una ita lock --accept-authority", "una ita lock ../other", "$ una ita lock",
                      "cd 06-failure; rm -rf x", "python3 -B scripts/check.py --una x", "ok 2 x LAMP-01"):

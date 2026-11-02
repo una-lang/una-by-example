@@ -1,0 +1,34 @@
+[U0103] Error: `within` is reserved for edition 0.4 (long-running programs)
+   ╭─[ src/shelf.una:4:1 ]
+   │
+ 4 │ within(units: Int, room: Int) -> Bool = units <= room
+   │ ───┬──
+   │    ╰──── `within` is reserved for edition 0.4 (long-running programs)
+   │
+   │ Help: repair 1: rename it to `the_within`; edit src/shelf.una:4:1..4:7 to "the_within"
+   │
+   │ Note: run `una explain U0103` for an explanation
+───╯
+[U0103] Error: `within` is reserved for edition 0.4 (long-running programs)
+   ╭─[ src/shelf.una:9:51 ]
+   │
+ 9 │   @console.print("6 on a shelf with room for 10: {within(6, room: 10)}")
+   │                                                   ───┬──
+   │                                                      ╰──── `within` is reserved for edition 0.4 (long-running programs)
+   │
+   │ Help: repair 1: rename it to `the_within`; edit src/shelf.una:9:51..9:57 to "the_within"
+   │
+   │ Note: run `una explain U0103` for an explanation
+───╯
+[U0103] Error: `within` is reserved for edition 0.4 (long-running programs)
+    ╭─[ src/shelf.una:10:52 ]
+    │
+ 10 │   @console.print("12 on a shelf with room for 10: {within(12, room: 10)}")
+    │                                                    ───┬──
+    │                                                       ╰──── `within` is reserved for edition 0.4 (long-running programs)
+    │
+    │ Help: repair 1: rename it to `the_within`; edit src/shelf.una:10:52..10:58 to "the_within"
+    │
+    │ Note: run `una explain U0103` for an explanation
+────╯
+3 of 3 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
