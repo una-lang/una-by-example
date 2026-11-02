@@ -1,0 +1,9 @@
+[U7002] Error: edition 0.4 is described by ita.una, not una.toml; run `una migrate`
+   ╭─[ una.toml:4:11 ]
+   │
+ 4 │ edition = "0.4"
+   │           ──┬──
+   │             ╰──── edition 0.4 is described by ita.una, not una.toml; run `una migrate`
+   │
+   │ Note: run `una explain U7002` for an explanation
+───╯

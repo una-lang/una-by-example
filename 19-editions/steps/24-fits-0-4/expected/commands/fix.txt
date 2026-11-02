@@ -1,0 +1,4 @@
+$ una fix --dry-run .
+fixed src/shelf.una:4:1 U0103 rename it to `the_within`
+fixed src/shelf.una:9:51 U0103 rename it to `the_within`
+fixed src/shelf.una:10:52 U0103 rename it to `the_within`

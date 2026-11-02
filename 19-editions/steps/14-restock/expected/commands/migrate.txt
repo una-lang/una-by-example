@@ -1,0 +1,24 @@
+$ una migrate --dry-run .
+-- ita.una
+ita restock
+  version 0.1.0
+  edition 0.4
+
+run
+  entry restock
+  grants
+    console
+
+-- ita.lock
+-- Written by `una ita`; do not edit.
+lock 1
+
+solver
+  encoding "una-smt-1"
+  name "z3"
+  version "5.1.0"
+  logic "QF_UFLIA"
+  steps 5000000
+  seed 0
+
+edition 0.2 -> 0.4: 2 diagnostics
