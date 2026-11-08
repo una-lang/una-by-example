@@ -1,7 +1,7 @@
 ---
 learn: "10"
 title: Collections
-editions: ["0.2", "0.4"]
+editions: ["0.2", "0.5"]
 codes: [U0007, U0101, U1002, U2001, U2007, U2010, U2020, U2025, U3001, U3003, U3007, U3009]
 time: 85
 builds: A daily sales report that reads order lines from JSON, groups them by category and sums them up
@@ -1422,7 +1422,7 @@ Each lookup, insertion and removal takes time in proportion to the logarithm of 
 | --- | --- |
 | Values in the order they arrived, repeats allowed | a list |
 | One value per key, found by its key | a map |
-| Totals or groups by a key you meet as you go | a map, with `get`, `or_else` and `set`, or with `update` in edition `0.4` ([section 10.5](#s10-5)) |
+| Totals or groups by a key you meet as you go | a map, with `get`, `or_else` and `set`, or with `update` in edition `0.5` ([section 10.5](#s10-5)) |
 | Output sorted by a key, every time | a map keyed by it |
 | Values sorted by something a record holds | a map keyed by that field, then `values()` |
 :::
@@ -1482,14 +1482,14 @@ Two lines also leave room for a **stale read**: a value read into a name, which 
 
 ### How to write `update`
 
-#### The edition: `0.4`
+#### The edition: `0.5`
 
-`update` belongs to edition `0.4`, a preview. A package of edition `0.4` describes itself in `ita.una`, which takes the place of `una.toml` ([section 11.4](/learn/packages/#s11-4) shows it in full), and is pinned by `ita.lock`, which una writes:
+`update` belongs to edition `0.5`, a preview. A package of edition `0.4` or later describes itself in `ita.una`, which takes the place of `una.toml` ([section 11.4](/learn/packages/#s11-4) shows it in full), and is pinned by `ita.lock`, which una writes:
 
 ```una include="steps/25-update-forms/ita.una" title="steps/25-update-forms/ita.una"
 ita tally
   version 0.1.0
-  edition 0.4
+  edition 0.5
 
 run
   entry tally
@@ -1671,7 +1671,7 @@ An `update` finds the key once, and stores the new value where it found it. Its 
 
 #### A function named `update` (U1002)
 
-`update` is a method of every map, so in edition `0.4` a function of your own named `update`, whose first parameter is a map, could never be called with a dot: `stock.update(...)` would always call the map's method. The checker refuses it at its name:
+`update` is a method of every map, so in edition `0.5` a function of your own named `update`, whose first parameter is a map, could never be called with a dot: `stock.update(...)` would always call the map's method. The checker refuses it at its name:
 
 ```diff include="steps/25-update-forms..steps/28-update-name:src/tally.una" title="src/tally.una" context="1"
 --- a/src/tally.una
@@ -1707,7 +1707,7 @@ Rename the function, for example `with_count`. A function named `update` whose f
 | --- | --- |
 | Store a value that does not depend on the old one | `edit m.set(key:, value:)` |
 | Get a new map, and keep the old one | `m.with(key:, value:)` |
-| Change a value from the one that is there, or start one | `edit m.update(key:, initial:, change:)`, in edition `0.4` |
+| Change a value from the one that is there, or start one | `edit m.update(key:, initial:, change:)`, in edition `0.5` |
 | Count, total or group by a key you meet as you go | `update`, with `initial` the empty total |
 | Refuse a change, and keep the map as it was | `update` with a `change` that fails |
 :::
@@ -2948,7 +2948,7 @@ The repair of U2007 has a description and no `edit`, because the right arm depen
 - A function type, `fn(Int) -> Int`, lets you pass a function by its name or as a lambda, `fn(x) -> …`, whose types come from where it is passed.
 - A function type without `uses` or `fails` is pure; a lambda may fail only for a parameter whose function declares `fails of` it.
 - Use `map`, `filter`, `fold` and `first_where` for one-expression steps, and `for` for longer ones.
-- Group with a map: `get` and `or_else`, then `edit m.set(...)`, or in edition `0.4` one `edit m.update(key:, initial:, change:)`. A map lists its keys in order.
+- Group with a map: `get` and `or_else`, then `edit m.set(...)`, or in edition `0.5` one `edit m.update(key:, initial:, change:)`. A map lists its keys in order.
 - Parse JSON with a clause or `attempt`, read it with `when` and `get`, and write it with `to_json`.
 :::
 
