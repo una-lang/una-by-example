@@ -27,7 +27,7 @@ Diagnostics (`expected/diagnostics.txt` and `expected/rendered.txt`). The messag
 
 Also to confirm with the built `una`: that every new step is in canonical form (`una fmt --check`), in particular `(-7.5).abs()`, `(-0.0).to_int_exact()` and the long header of `volumetric_kg`.
 
-## `Map.update` (edition 0.4): `10-collections`, section 10.5
+## `Map.update` (edition 0.5, moved from 0.4 by ADR 0139): `10-collections`, section 10.5
 
 New section 10.5 "Changing one value of a map: `update`", after the maps; the sections after it are renumbered (10.5 to 10.10 became 10.6 to 10.11), and the one link from another chapter to the old 10.5 (`19-editions`) follows. The front matter gains edition `0.4`, the code U1002 and a `nav` label.
 
