@@ -1,31 +1,31 @@
-[U0103] Error: `weak` is reserved for v0.3 (aliasing)
+[U0103] Error: `weak` is reserved for a later edition (aliasing)
    ╭─[ src/restock.una:4:26 ]
    │
  4 │ weekly_order(units: Int, weak: Bool) -> Int = if weak then units / 2 else units
    │                          ──┬─
-   │                            ╰─── `weak` is reserved for v0.3 (aliasing)
+   │                            ╰─── `weak` is reserved for a later edition (aliasing)
    │
    │ Help: repair 1: rename it to `the_weak`; edit src/restock.una:4:26..4:30 to "the_weak"
    │
    │ Note: run `una explain U0103` for an explanation
 ───╯
-[U0103] Error: `weak` is reserved for v0.3 (aliasing)
+[U0103] Error: `weak` is reserved for a later edition (aliasing)
    ╭─[ src/restock.una:4:50 ]
    │
  4 │ weekly_order(units: Int, weak: Bool) -> Int = if weak then units / 2 else units
    │                                                  ──┬─
-   │                                                    ╰─── `weak` is reserved for v0.3 (aliasing)
+   │                                                    ╰─── `weak` is reserved for a later edition (aliasing)
    │
    │ Help: repair 1: rename it to `the_weak`; edit src/restock.una:4:50..4:54 to "the_weak"
    │
    │ Note: run `una explain U0103` for an explanation
 ───╯
-[U0103] Error: `weak` is reserved for v0.3 (aliasing)
+[U0103] Error: `weak` is reserved for a later edition (aliasing)
    ╭─[ src/restock.una:9:43 ]
    │
  9 │   @console.print("order {weekly_order(10, weak: true)} units")
    │                                           ──┬─
-   │                                             ╰─── `weak` is reserved for v0.3 (aliasing)
+   │                                             ╰─── `weak` is reserved for a later edition (aliasing)
    │
    │ Help: repair 1: rename it to `the_weak`; edit src/restock.una:9:43..9:47 to "the_weak"
    │

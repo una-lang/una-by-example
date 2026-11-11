@@ -1,8 +1,8 @@
 $ una test .
-example labels "a line that does not parse is left out" ... ok
-example labels "a dry run counts the labels and prints none" ... ok
-example labels "a run prints a label for each line with stock" ... ok
-example labels "a restock run prints the lines below the limit" ... ok
-example labels "a restock dry run prints nothing" ... ok
+test labels "a line that does not parse is left out" ... ok
+test labels "a dry run counts the labels and prints none" ... ok
+test labels "a run prints a label for each line with stock" ... ok
+test labels "a restock run prints the lines below the limit" ... ok
+test labels "a restock dry run prints nothing" ... ok
 
-5 examples: 5 passed, 0 failed
+5 tests: 5 passed, 0 failed

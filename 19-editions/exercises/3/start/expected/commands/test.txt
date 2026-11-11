@@ -1,9 +1,9 @@
 $ una test .
-example labels "a line that does not parse is left out" ... ok
-example labels "a dry run counts the labels and prints none" ... ok
-example labels "a run prints a label for each line with stock" ... ok
-example labels "a dry run prints the summary, and no label" ... FAILED
+test labels "a line that does not parse is left out" ... ok
+test labels "a dry run counts the labels and prints none" ... ok
+test labels "a run prints a label for each line with stock" ... ok
+test labels "a dry run prints the summary, and no label" ... FAILED
   src/labels.una:95: expect performed @printer.print_summary
   the trace has no `@printer.print_summary`
 
-4 examples: 3 passed, 1 failed
+4 tests: 3 passed, 1 failed

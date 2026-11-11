@@ -1,9 +1,9 @@
-[U7002] Error: edition `0.4` is not supported; the editions are "0.1", "0.2" and "0.3"
+[U7002] Error: edition `0.9` is not supported; the editions are "0.1", "0.2", "0.3", "0.4" and "0.5"
    ╭─[ una.toml:4:11 ]
    │
- 4 │ edition = "0.4"
+ 4 │ edition = "0.9"
    │           ──┬──
-   │             ╰──── edition `0.4` is not supported; the editions are "0.1", "0.2" and "0.3"
+   │             ╰──── edition `0.9` is not supported; the editions are "0.1", "0.2", "0.3", "0.4" and "0.5"
    │
    │ Note: run `una explain U7002` for an explanation
 ───╯

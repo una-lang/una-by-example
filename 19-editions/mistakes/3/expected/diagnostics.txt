@@ -1,2 +1,3 @@
 error U0101 at src/labels.una:41:38: unexpected keyword `where`, expected `,` or `]`
+error U0101 at src/labels.una:72:6: unexpected text literal, expected `(` and the parameters
 error U7002 at una.toml:10:2: unknown table [contracts] in una.toml

@@ -7,6 +7,15 @@
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯
+[U0101] Error: unexpected text literal, expected `(` and the parameters
+    ╭─[ src/labels.una:72:6 ]
+    │
+ 72 │ test "a line that does not parse is left out"
+    │      ┬
+    │      ╰── unexpected text literal, expected `(` and the parameters
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯
 [U7002] Error: unknown table [contracts] in una.toml
     ╭─[ una.toml:10:2 ]
     │
