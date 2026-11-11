@@ -678,18 +678,18 @@ A `together for` that is neither named by a `let`, nor assigned, nor the last li
 ```
 
 ```text include="steps/09-for-statement/expected/rendered.txt"
-[U0101] Error: a `together for` must be the last line of its block or the value of a `let`
+[U0101] Error: a `together for` must be the last line of its block or the value of a `let` or of an assignment
     ╭─[ src/stock.una:34:3 ]
     │
  34 │   together for sku in skus
     │   ────┬───
-    │       ╰───── a `together for` must be the last line of its block or the value of a `let`
+    │       ╰───── a `together for` must be the last line of its block or the value of a `let` or of an assignment
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯
 ```
 
-The message says where a `together for` may stand: as the last line of its block, or as the value of a `let`; an assignment to a `let edit` name, as in `main` above, works too. Name the list, or make it the last line.
+The message says where a `together for` may stand: as the last line of its block, as the value of a `let`, or as the value of an assignment to a `let edit` name, as in `main` above. Name the list, or make it the last line.
 
 #### It builds a list, not a total
 
@@ -1492,7 +1492,7 @@ Count the lines checked in an outer `let edit` name:
 *Fix:* return what each task computes, and combine the results after the block. Here the count is `found.len`. See [U2023](/docs/errors/U2023/).
 :::
 
-### Building the result inside the block (U0101)
+### Building the result inside the block (U2024, U1001)
 
 :::mistake
 Indent the line that builds the record, so that it stands under `together`:
@@ -1507,21 +1507,25 @@ Indent the line that builds the record, so that it stands under `together`:
  
 ```
 
-```text include="mistakes/2/expected/rendered.txt"
-[U0101] Error: a block cannot end with `together`; its last line is its value
+```text include="mistakes/2/expected/rendered.txt#L1-L13"
+[U2024] Error: the body of `together` holds only `let` statements, one per branch; call a function from a branch's `let` for more steps
     ╭─[ src/availability.una:41:3 ]
     │
  41 │   together
     │   ────┬───
-    │       ╰───── a block cannot end with `together`; its last line is its value
+    │       ╰───── the body of `together` holds only `let` statements, one per branch; call a function from a branch's `let` for more steps
     │
-    │ Note: run `una explain U0101` for an explanation
+ 48 │     Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+    │     ─────────────────────────────────────────────┬────────────────────────────────────────────
+    │                                                  ╰────────────────────────────────────────────── not a `let`
+    │
+    │ Note: run `una explain U2024` for an explanation
 ────╯
 ```
 
-*Why:* every line under `together` belongs to the block, so the body of `availability` now ends with the block. A body's last line is its value, and a `together` block has none: it only binds names. The marks point at `together`, the last line of the body.
+*Why:* every line under `together` belongs to the block, and the block holds only `let` lines, one per task. The marks point at `together` and at the line that is not a `let`. Three more diagnostics follow, U1001 at `north`, `south` and `east`: the names that the block's tasks bind exist only after the block, so a line inside it cannot read them.
 
-*Fix:* write the line that uses the branches' names after the block, at the indentation of `together`. See [U0101](/docs/errors/U0101/).
+*Fix:* write the line that uses the branches' names after the block, at the indentation of `together`. See [U2024](/docs/errors/U2024/).
 :::
 
 ### Naming a `together` block with `let` (U0101)
@@ -1603,18 +1607,18 @@ Print the lines of the report with `together for`, to print them all at once:
 ```
 
 ```text include="mistakes/5/expected/rendered.txt"
-[U0101] Error: a `together for` must be the last line of its block or the value of a `let`
+[U0101] Error: a `together for` must be the last line of its block or the value of a `let` or of an assignment
     ╭─[ src/availability.una:99:7 ]
     │
  99 │       together for line in found
     │       ────┬───
-    │           ╰───── a `together for` must be the last line of its block or the value of a `let`
+    │           ╰───── a `together for` must be the last line of its block or the value of a `let` or of an assignment
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯
 ```
 
-*Why:* `together for` builds a list, so it must stand where its value is used: named by a `let`, or as the last line of its block. Here it is neither, since the summary line follows it. Even where it is allowed, printing from tasks would print the lines in an order that timing decides.
+*Why:* `together for` builds a list, so it must stand where its value is used: named by a `let`, assigned to a `let edit` name, or as the last line of its block. Here it is neither, since the summary line follows it. Even where it is allowed, printing from tasks would print the lines in an order that timing decides.
 
 *Fix:* keep the plain `for` loop. Printing after the check, in order, is what a report wants. See [U0101](/docs/errors/U0101/).
 :::
@@ -1824,7 +1828,7 @@ The first order wants 5 lamps, and the warehouses hold 6: it ships. The second w
 ### For agents
 
 :::agents
-`una --json check .` prints each diagnostic of this chapter with its `code`, `message` and `primary` span; none carries a repair edit, so the document reports `"fixable":0`, and `una fix` changes nothing. U2023 marks the outer name a task assigns; U2024 marks `together`; U0101 marks `together` or `together for` where it stands; U0103 marks `async` or `await`. In `una --json test .`, an example's `trace` lists the events of a block's tasks in task order, each event with its task's path in `task`. The compact rule: *a `together` block or a `together for` gives the result of running its tasks one after another, in order, stopping at the first failure; a task reads outer names and never assigns them.*
+`una --json check .` prints each diagnostic of this chapter with its `code`, `message` and `primary` span; none carries a repair edit, so the document reports `"fixable":0`, and `una fix` changes nothing. U2023 marks the outer name a task assigns; U2024 marks `together`, with each line of the block that is not a `let`; U0101 marks `together` or `together for` where it stands; U0103 marks `async` or `await`. In `una --json test .`, an example's `trace` lists the events of a block's tasks in task order, each event with its task's path in `task`. The compact rule: *a `together` block or a `together for` gives the result of running its tasks one after another, in order, stopping at the first failure; a task reads outer names and never assigns them.*
 :::
 
 ### Recap

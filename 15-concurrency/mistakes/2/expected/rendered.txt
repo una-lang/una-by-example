@@ -1,9 +1,40 @@
-[U0101] Error: a block cannot end with `together`; its last line is its value
+[U2024] Error: the body of `together` holds only `let` statements, one per branch; call a function from a branch's `let` for more steps
     ╭─[ src/availability.una:41:3 ]
     │
  41 │   together
     │   ────┬───
-    │       ╰───── a block cannot end with `together`; its last line is its value
+    │       ╰───── the body of `together` holds only `let` statements, one per branch; call a function from a branch's `let` for more steps
     │
-    │ Note: run `una explain U0101` for an explanation
+ 48 │     Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+    │     ─────────────────────────────────────────────┬────────────────────────────────────────────
+    │                                                  ╰────────────────────────────────────────────── not a `let`
+    │
+    │ Note: run `una explain U2024` for an explanation
+────╯
+[U1001] Error: cannot find name `north` in this module, its imports or the prelude
+    ╭─[ src/availability.una:48:63 ]
+    │
+ 48 │     Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+    │                                                               ──┬──
+    │                                                                 ╰──── cannot find name `north` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `south` in this module, its imports or the prelude
+    ╭─[ src/availability.una:48:77 ]
+    │
+ 48 │     Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+    │                                                                             ──┬──
+    │                                                                               ╰──── cannot find name `south` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
+────╯
+[U1001] Error: cannot find name `east` in this module, its imports or the prelude
+    ╭─[ src/availability.una:48:90 ]
+    │
+ 48 │     Availability(sku: line.sku, wanted: line.quantity, north: north, south: south, east: east)
+    │                                                                                          ──┬─
+    │                                                                                            ╰─── cannot find name `east` in this module, its imports or the prelude
+    │
+    │ Note: run `una explain U1001` for an explanation
 ────╯

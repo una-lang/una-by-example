@@ -1,1 +1,1 @@
-error U2019 at src/counts.una:14:5: `week` is not editable; declare it `let edit week`, or the parameter `edit week`
+error U2019 at src/counts.una:14:5: `week` is the variable of a `for` loop, which is read-only; bind a copy in the body with `let edit`, as `let edit next_week = week`

@@ -1,9 +1,9 @@
-[U0101] Error: an `if` with blocks must be the last line of its block or the value of a `let`
+[U0101] Error: an `if` with blocks must be the last line of its block or the value of a `let` or of an assignment
     ╭─[ src/choices.una:15:3 ]
     │
  15 │   if units > 10
     │   ─┬
-    │    ╰── an `if` with blocks must be the last line of its block or the value of a `let`
+    │    ╰── an `if` with blocks must be the last line of its block or the value of a `let` or of an assignment
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯

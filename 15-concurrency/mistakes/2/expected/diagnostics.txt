@@ -1,1 +1,4 @@
-error U0101 at src/availability.una:41:3: a block cannot end with `together`; its last line is its value
+error U2024 at src/availability.una:41:3: the body of `together` holds only `let` statements, one per branch; call a function from a branch's `let` for more steps
+error U1001 at src/availability.una:48:63: cannot find name `north` in this module, its imports or the prelude
+error U1001 at src/availability.una:48:77: cannot find name `south` in this module, its imports or the prelude
+error U1001 at src/availability.una:48:90: cannot find name `east` in this module, its imports or the prelude

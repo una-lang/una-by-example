@@ -1,1 +1,1 @@
-error U0101 at src/stock.una:34:3: a `together for` must be the last line of its block or the value of a `let`
+error U0101 at src/stock.una:34:3: a `together for` must be the last line of its block or the value of a `let` or of an assignment

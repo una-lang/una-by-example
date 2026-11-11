@@ -5,7 +5,13 @@ $ una explain U6003
 
 They also abort when a call finds the run holding more memory than its budget: 4096 MiB by default, or the value of `--max-memory` in MiB (ADR 0061). The message then reads `this call exceeds the memory limit of N MiB`. A program that holds every intermediate value, such as a recursion that keeps each step's text, can hold less, or run with a higher `--max-memory`.
 
-Running out of depth or memory is outside the noninterference model (`spec/07 §1`).
+They also abort when a run writes an `Int` of more than 4300 digits as text, the bound of parsing (`spec/11 §7`, #923): by interpolation, `to_text` or `to_json`, or in the Una form of a trace, an output or a failure. The message reads `an integer of more than 4300 digits is written as text here, past the limit of a run`, at the interpolation, the call or the operation; the final value of `main` has no position. Converting d digits takes quadratic time, and a few multiplications build an integer of millions of digits, so no run converts one. Keep such an integer unwritten, or write a part of it, such as its remainder by a power of ten.
+
+A native executable whose program has a task construct or a `for ever` also stops with U6003 before `main`, with no position and the message `the threads and stacks of this run's tasks could not be made`, when the system refuses its threads or the 64 task stacks it reserves before `main` (`spec/27 §1`). Each stack holds 16 MiB plus `--max-depth` times the program's frame bound, the largest frame its compiled code takes per call, and never more than the about 328 MiB that `--max-depth` alone gives at the default 10,000 (`spec/27 §4`). With a frame bound of 128 bytes the run reserves about 1.1 GiB of address space, of which it uses only what its tasks touch. A Linux system with strict overcommit (`vm.overcommit_memory=2`) can refuse that reservation; a lower `--max-depth` shrinks it.
+
+A run granted `Http` also starts, before `main`, the threads of its requests: `--io-threads` helpers, as many connect threads, and `max(2, --io-threads / 4)` lookup threads (`spec/24 §4`), besides `--workers` and `--file-threads`. A large `--io-threads` can pass the system's limit on a process's threads: at 4096, about 9,200 threads with the defaults, beyond macOS's usual limit (`kern.num_taskthreads`, often 8192) and many containers' limit on processes and threads. The run then stops with U6003 before `main`, with no position and the message `the lookup and connect threads of this run's requests could not be made`, or `the threads and stacks of this run's tasks could not be made` when the helpers are refused. A smaller `--io-threads` runs.
+
+Running out of depth or memory, or into the bound of written integers, is outside the noninterference model (`spec/07 §1`).
 
 ## Failing example
 
