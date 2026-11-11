@@ -1525,7 +1525,7 @@ checked_per_module = 1
 
 The table `[escape_budget]` is the **escape budget**: `checked_per_module = 1` allows one use in each module. It is a line of the manifest, so raising it is a change a reviewer sees. `una report .` lists the use, next to the budget:
 
-```text include="steps/17-checked/expected/commands/report.txt#L2,L10-L11"
+```text include="steps/17-checked/expected/commands/report.txt#L2,L12-L13"
 package sku 0.1.0
 escapes:
   sku: 1 checked, budget 1

@@ -774,7 +774,7 @@ This is what an editor, a reviewer or an agent sees of the function without read
 
 What a function may do outside the program is its **authority**. The build report, `una report .`, lists the authority of every function of the package, declared or inferred, in its `authority:` part:
 
-```text include="steps/20-inferred/expected/commands/report.txt#L6-L8"
+```text include="steps/20-inferred/expected/commands/report.txt#L8-L10"
 authority:
   restock.main (pub): @console: Console[print]
   restock.show (private, inferred): @console: Console[print]
@@ -892,7 +892,7 @@ pub main() -> Unit
 Which functions does the `authority:` part of `una report .` list now, and how is each marked?
 
 :::answer Show the answer
-```text include="steps/24-heading/expected/commands/report.txt#L6-L9"
+```text include="steps/24-heading/expected/commands/report.txt#L8-L11"
 authority:
   restock.heading (private, inferred): @console: Console[print]
   restock.main (pub): @console: Console[print]

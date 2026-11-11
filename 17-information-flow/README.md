@@ -1644,7 +1644,7 @@ pub main() -> Unit
 
 `una report .` prints the build report ([chapter 18](/learn/tools/#s18-4)): what the package was proven to do, and what it trusts. Two of its sections are about releases:
 
-```text include="steps/31-policy/expected/commands/report.txt#L2,L9-L12,L15-L16,L25"
+```text include="steps/31-policy/expected/commands/report.txt#L2,L11-L14,L24-L25,L39"
 package reorder 0.1.0
 information:
   release.line_count at src/release.una:14:6, purpose "report the size of the reorder list", owner purchasing
@@ -1652,7 +1652,7 @@ information:
   release.line_count at src/reorder.una:13:20, purpose "report the size of the reorder list", owner purchasing
 tcb:
   trusted modules: release (19 lines)
-out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks
+out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks, the time of a host stop, interference of the host's load with the timing of an expression, uncatchable termination, waits at limits and at `start`, which branch of `first of` wins, beyond its label
 ```
 
 - **`information:`** lists every call of a policy, with its place, its purpose and its owner. Two calls are in the policy's examples, in `release.una`, and one in `main`.

@@ -960,7 +960,7 @@ An example installs one too, with a `given` line, as [section 12.6](#s12-6) show
 
 The `authority:` part of `una report .` ([section 6.3](/learn/functions/#s6-3)) lists your own capabilities as it lists the host's. Two more parts are for capabilities you declare. Under `handler authority`, the report lists what each handler may use. Under `assumptions`, it lists each capability the package declares, with its operations, since the program assumes that each service does what its declaration says:
 
-```text include="steps/09-handlers/expected/commands/report.txt#L6-L10,L13-L14"
+```text include="steps/09-handlers/expected/commands/report.txt#L8-L12,L15-L16"
 authority:
   receipts.main (pub): @console: Console[print]
   receipts.send_receipt (private): @mailer: Mailer[send]
