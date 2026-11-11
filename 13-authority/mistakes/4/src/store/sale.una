@@ -47,36 +47,36 @@ pub run_sale(items: List[Item], percent: Percent, dry_run: Bool) -> Int
       print_tag(item.name, cents: sale) with @console = @console
   saved
 
---- A price list that keeps nothing, for the examples.
+--- A price list that keeps nothing, for the tests.
 handler ignored() for PriceList
   op set_price(sku, cents) = unit
 
-example "20 percent off a desk lamp"
+test "20 percent off a desk lamp"
   do sale_price(1990, percent: 20)
   expect result == 1592
 
-example "0 percent off keeps the price"
+test "0 percent off keeps the price"
   do sale_price(4500, percent: 0)
   expect result == 4500
 
-example "100 percent off gives the item away"
+test "100 percent off gives the item away"
   do sale_price(4500, percent: 100)
   expect result == 0
 
-example "a discount that is not whole cents is rounded down"
+test "a discount that is not whole cents is rounded down"
   do sale_price(999, percent: 15)
   expect result == 850
 
-example "a dry run gives the sale price"
+test "a dry run gives the sale price"
   given @prices = ignored()
   do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: true)
   expect result == 1592
 
-example "a real run gives the same sale price"
+test "a real run gives the same sale price"
   given @prices = ignored()
   do apply_sale(Item(sku: "LAMP-01", name: "Desk lamp", cents: 1990), percent: 20, dry_run: false)
   expect result == 1592
 
-example "the line of a dry run names the old and the new price"
+test "the line of a dry run names the old and the new price"
   do planned_line(Item(sku: "RUG-07", name: "Wool rug", cents: 4500), sale: 3600)
   expect result == "  RUG-07 would go from 4500 to 3600"

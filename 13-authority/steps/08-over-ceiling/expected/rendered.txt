@@ -5,5 +5,7 @@
    │   ───────────────────┬──────────────────
    │                      ╰──────────────────── the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
    │
+   │ Help: repair 1: no grant keeps both: the callee declares `Clock[now]`, and the ceiling of `vendor.labels` allows no operation of `Clock`, so the consumer decides between this module and its ceiling
+   │
    │ Note: run `una explain U3021` for an explanation
 ───╯
