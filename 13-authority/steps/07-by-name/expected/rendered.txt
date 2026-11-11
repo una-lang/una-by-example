@@ -11,5 +11,8 @@
    │   ──────────────┬──────────────
    │                 ╰──────────────── the boundary's requirement
    │
+   │ Help: repair 1: grant `with @console = @console[print]`, narrowed to the operations the callee declares, which lie within the ceiling of `vendor.labels`; edit src/store/app.una:8:41..8:41 to " with @console = @console[print]"
+   │
    │ Note: run `una explain U3020` for an explanation
 ───╯
+1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)

@@ -5,5 +5,7 @@
     │   ──────────┬─────────
     │             ╰─────────── the call of `print_price_tag` grants `PriceList[price, set_price]` to `vendor.labels`, whose ceiling in `una.toml` allows `PriceList[price]`
     │
+    │ Help: repair 1: narrow the grant to what the callee declares, `PriceList[price]`, which lies within the ceiling: `with @prices = @y[price]`, or a handler whose own `uses` lie within `PriceList[price]`
+    │
     │ Note: run `una explain U3021` for an explanation
 ────╯
