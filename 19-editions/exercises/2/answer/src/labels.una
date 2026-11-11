@@ -53,7 +53,7 @@ handler on_console() for Printer
   uses @console: Console[print]
   op print_label(sku, units) = @console.print("[{sku} | {units} on hand]")
 
---- A printer that prints nothing, for the examples.
+--- A printer that prints nothing, for the tests.
 handler silent() for Printer
   op print_label(sku, units) = unit
 
@@ -69,17 +69,17 @@ pub main() -> Unit
   let printed = print_labels(lines, dry_run: false) with @printer = on_console()
   @console.print("printed {printed} labels")
 
-example "a line that does not parse is left out"
+test "a line that does not parse is left out"
   do read_lines(export()).len
   expect result == 3
 
-example "a dry run counts the labels and prints none"
+test "a dry run counts the labels and prints none"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: true)
   expect result == 2
   expect not performed @printer.print_label
 
-example "a run prints a label for each line with stock"
+test "a run prints a label for each line with stock"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: false)
   expect result == 2
@@ -98,13 +98,13 @@ pub print_low(lines: List[Line], limit: Int, dry_run: Bool) -> Int
       printed = printed + 1
   printed
 
-example "a restock run prints the lines below the limit"
+test "a restock run prints the lines below the limit"
   given @printer = silent()
   do print_low(read_lines(export()), limit: 5, dry_run: false)
   expect result == 2
   expect performed @printer.print_label
 
-example "a restock dry run prints nothing"
+test "a restock dry run prints nothing"
   given @printer = silent()
   do print_low(read_lines(export()), limit: 5, dry_run: true)
   expect result == 2

@@ -148,6 +148,8 @@ Each of the three editions is written the same way:
 - `edition = "0.2"` is the edition of most of this tutorial. It adds loops ([chapter 9](/learn/loops/)), the `edit` and `take` parameter modes ([chapter 16](/learn/memory/#s16-2) teaches `edit`, and [section 16.3](/learn/memory/#s16-3) `take`), `together` ([chapter 15](/learn/concurrency/#s15-1)), maps and more ([section 19.2](#s19-2)).
 - `edition = "0.3"` is a preview, with stricter rules and a few constructs that narrow what a program may do ([section 19.3](#s19-3)).
 
+This release also serves editions `0.4` and `0.5`, two later previews, which this book does not use yet. From edition `0.4` on, a package describes itself in a file named `ita.una` instead of `una.toml`, so `edition = "0.4"` in `una.toml` is U7002, whose message says to run `una migrate`.
+
 #### An edition una does not know
 
 An edition this release does not serve is U7002, the code for a problem in `una.toml`:
@@ -160,25 +162,25 @@ An edition this release does not serve is U7002, the code for a problem in `una.
  name = "restock"
  version = "0.1.0"
 -edition = "0.1"
-+edition = "0.4"
++edition = "0.9"
  
  [run]
  entry = "restock"
 ```
 
 ```text include="steps/03-edition-unknown/expected/rendered.txt"
-[U7002] Error: edition `0.4` is not supported; the editions are "0.1", "0.2" and "0.3"
+[U7002] Error: edition `0.9` is not supported; the editions are "0.1", "0.2", "0.3", "0.4" and "0.5"
    ╭─[ una.toml:4:11 ]
    │
- 4 │ edition = "0.4"
+ 4 │ edition = "0.9"
    │           ──┬──
-   │             ╰──── edition `0.4` is not supported; the editions are "0.1", "0.2" and "0.3"
+   │             ╰──── edition `0.9` is not supported; the editions are "0.1", "0.2", "0.3", "0.4" and "0.5"
    │
    │ Note: run `una explain U7002` for an explanation
 ───╯
 ```
 
-The mark is on the value, and the message lists the editions this release serves.
+The mark is on the value, and the message lists the editions this release serves, `0.4` and `0.5` included.
 
 #### A manifest without an edition
 
@@ -245,7 +247,7 @@ pub main() -> Unit
 
 #### One binary serves every edition
 
-`una --version` prints three lines: the version of `una`, the editions it serves, and the version of Z3 that its default lock pins. At this release it lists the editions `0.1`, `0.2` and `0.3`. Every one of them is checked by the same binary, so one machine can check, test and build packages of different editions side by side.
+`una --version` prints the version of `una`, the editions it serves, which of them are previews, and the version of Z3 that its default lock pins. At this release it lists the editions `0.1` to `0.5`, of which `0.3`, `0.4` and `0.5` are previews. Every one of them is checked by the same binary, so one machine can check, test and build packages of different editions side by side.
 
 #### Stable editions and previews
 
@@ -256,12 +258,13 @@ An edition is either **stable** or a **preview**:
 | `0.1` | Stable | A later release does not change what it accepts or rejects, except to fix a soundness or security error |
 | `0.2` | Stable | The same promise |
 | `0.3` | Preview | It may still get stricter in a later `0.3.x` release, never looser for the programs `0.2` can express |
+| `0.4`, `0.5` | Preview | Later previews, described in `ita.una`; this book does not use them yet |
 
 A package on a stable edition can stay there for as long as it likes.
 
 #### Words reserved for later editions
 
-Some words were set aside before the editions that use them existed. In edition `0.1`, `edit`, `take` and `together` are **reserved**: not keywords yet, and not names either. Using one gives U0103, whose message names the edition that has it, written with a `v`, such as `` `edit` is reserved for v0.2 (memory model) ``. Reserving a word early keeps it free: no `0.1` package can use `edit` as a name, so no `0.1` package breaks when `0.2` makes it a keyword. `old` was not reserved in `0.1`, which is why the package of [Why a language needs editions](#why-a-language-needs-editions) could use it. Nor was `weak`, a name in `0.1` that edition `0.2` reserves for a later edition ([The keywords `0.2` adds](#the-keywords-02-adds)).
+Some words were set aside before the editions that use them existed. In edition `0.1`, `edit`, `take` and `together` are **reserved**: not keywords yet, and not names either. Using one gives U0103, whose message names the edition that has it, written with a `v`, such as `` `edit` is reserved for v0.2 (memory model) ``, or says `a later edition` for a word that no edition has yet. Reserving a word early keeps it free: no `0.1` package can use `edit` as a name, so no `0.1` package breaks when `0.2` makes it a keyword. `old` was not reserved in `0.1`, which is why the package of [Why a language needs editions](#why-a-language-needs-editions) could use it. Nor was `weak`, a name in `0.1` that edition `0.2` reserves for a later edition ([The keywords `0.2` adds](#the-keywords-02-adds)).
 
 #### What an edition fixes, and what improves with every release
 
@@ -399,19 +402,19 @@ Edition `0.2` makes four words keywords: `edit`, `take`, `old` and `together`. E
 Edition `0.2` also reserves a word for a later edition: `weak`. In `0.1` it is an ordinary name, so a `0.1` package may use it, and must rename it to move. This package names a parameter `weak`, for a week when sales are slow. It checks and runs in `0.1`; in `0.2`, each of its three uses is U0103, the first:
 
 ```text include="steps/20-weak-0-2/expected/rendered.txt#L1-L10"
-[U0103] Error: `weak` is reserved for v0.3 (aliasing)
+[U0103] Error: `weak` is reserved for a later edition (aliasing)
    ╭─[ src/restock.una:4:26 ]
    │
  4 │ weekly_order(units: Int, weak: Bool) -> Int = if weak then units / 2 else units
    │                          ──┬─
-   │                            ╰─── `weak` is reserved for v0.3 (aliasing)
+   │                            ╰─── `weak` is reserved for a later edition (aliasing)
    │
    │ Help: repair 1: rename it to `the_weak`; edit src/restock.una:4:26..4:30 to "the_weak"
    │
    │ Note: run `una explain U0103` for an explanation
 ```
 
-The message names the edition the word is kept for, `v0.3`. Here the word is meant as a name, so the rename is right, and `una fix --dry-run .` lists it at every use:
+The message says that the word is kept for a later edition, and for what: aliasing. Here the word is meant as a name, so the rename is right, and `una fix --dry-run .` lists it at every use:
 
 ```text include="steps/20-weak-0-2/expected/commands/fix.txt"
 $ una fix --dry-run .
@@ -502,8 +505,9 @@ Edition `0.3` adds constructs that narrow what a program may do, rules that reje
 - **No dead failure handling.** An `if error` clause under a call that cannot fail is U3025, and `attempt` of a call that cannot fail is U3026.
 - **Units of measure.** `measure Gram` declares a unit, and `Int of Gram` is a number of grams, which cannot be mixed with a plain `Int` or with another unit except through an explicit conversion.
 - **Refined type arguments.** A refined kind may be the type of a list's elements, as in `List[Units]` with `Units = Int in 0..100`.
+- **`test`.** The declaration that runs under `una test`, written `example` in editions `0.1` and `0.2`, is written `test`, with the same `given`, `do` and `expect` lines. An `example` in an edition `0.3` package is U0103, and `una fix .` rewrites the word. `una test .` then prints `test` on each line and counts tests.
 
-The day-to-day program uses the first two. The rest of this section shows the last three.
+The day-to-day program uses the first two, and writes its tests with `test` ([section 19.6](#s19-6)). The rest of this section shows units, refined type arguments and the rules on failure handling.
 
 ### Units of measure
 
@@ -902,7 +906,7 @@ The package checks in `0.2`, and prints what it printed in `0.1`:
 - **One edition per package.** Every module moves at once. A program is one package, so it has one edition: in una 0.3.16 a package does not depend on other packages ([section 11.3](/learn/packages/#s11-3)).
 - **Moving back fails where the code uses the later edition.** A construct of a later edition is usually a syntax error (U0101), a reserved word (U0103) or an unknown table (U7002) in an earlier one: [Moving a package back](#moving-a-package-back-u0101-u7002) shows it. A prelude function or a type rule of a later edition gives a type error, such as U1001, U2001 or U2002.
 - **Read a rename before you apply it.** In edition `0.1`, a reserved word gets a rename repair, which is right for a name and wrong for a construct of a later edition: [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows the second case.
-- **The output is the test of a move.** A move changes the language, not the program's behavior: the examples pass, and `una run .` prints what it printed before.
+- **The output is the test of a move.** A move changes the language, not the program's behavior: the tests pass, and `una run .` prints what it printed before.
 
 ### Which edition to name
 
@@ -1071,7 +1075,7 @@ The function counts a label whether or not it prints it, so a dry run gives the 
 
 ### Running it
 
-`on_console` prints a label as a line of text, which stands in for the label printer here. It is a handler with a `uses` clause of its own, so it may print to the console and nothing else, and `una report .` lists it under `handler authority`. `silent` prints nothing, for the examples. `main` makes a dry run, then a real one, each installing `on_console` for one call with `with`:
+`on_console` prints a label as a line of text, which stands in for the label printer here. It is a handler with a `uses` clause of its own, so it may print to the console and nothing else, and `una report .` lists it under `handler authority`. `silent` prints nothing, for the tests. `main` makes a dry run, then a real one, each installing `on_console` for one call with `with`:
 
 ```una include="day-to-day/src/labels.una#on_console..main" title="day-to-day/src/labels.una"
 --- A printer that writes each label to the console.
@@ -1079,7 +1083,7 @@ handler on_console() for Printer
   uses @console: Console[print]
   op print_label(sku, units) = @console.print("[{sku} | {units} on hand]")
 
---- A printer that prints nothing, for the examples.
+--- A printer that prints nothing, for the tests.
 handler silent() for Printer
   op print_label(sku, units) = unit
 
@@ -1098,7 +1102,7 @@ pub main() -> Unit
 
 `una run .` prints the output shown in [What you'll build](#what-youll-build). It uses the kinds and the `when` of `0.1`, the loops, `let edit` and the text functions of `0.2`, and the condition and the lock of `0.3`. The dry run counts two labels and prints none. The real run prints the lamp and the shelf. The desk has no stock, and the chair's line, `CHAIR-09, two`, does not parse, so neither gets a label. `una report .` lists the printer handler under `handler authority`, with what it may do:
 
-```text include="day-to-day/expected/commands/report.txt#L9-L10"
+```text include="day-to-day/expected/commands/report.txt#L11-L12"
 handler authority:
   labels.on_console for labels.Printer (private): @console: Console[print]
 ```
@@ -1163,7 +1167,7 @@ handler on_console() for Printer
   uses @console: Console[print]
   op print_label(sku, units) = @console.print("[{sku} | {units} on hand]")
 
---- A printer that prints nothing, for the examples.
+--- A printer that prints nothing, for the tests.
 handler silent() for Printer
   op print_label(sku, units) = unit
 
@@ -1179,17 +1183,17 @@ pub main() -> Unit
   let printed = print_labels(lines, dry_run: false) with @printer = on_console()
   @console.print("printed {printed} labels")
 
-example "a line that does not parse is left out"
+test "a line that does not parse is left out"
   do read_lines(export()).len
   expect result == 3
 
-example "a dry run counts the labels and prints none"
+test "a dry run counts the labels and prints none"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: true)
   expect result == 2
   expect not performed @printer.print_label
 
-example "a run prints a label for each line with stock"
+test "a run prints a label for each line with stock"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: false)
   expect result == 2
@@ -1198,22 +1202,22 @@ example "a run prints a label for each line with stock"
 
 ## 19.6 Testing it
 
-### Three examples on the export of `main`
+### Three tests on the export of `main`
 
-The examples check the parser and both kinds of run, on the same export that `main` uses, so a reader can compare their numbers with the program's output. The two runs use `silent`, so they print nothing, and they check what was performed:
+The package is of edition `0.3`, so each one is a `test`. The tests check the parser and both kinds of run, on the same export that `main` uses, so a reader can compare their numbers with the program's output. The two runs use `silent`, so they print nothing, and they check what was performed:
 
 ```una include="day-to-day/src/labels.una#L72-L86" title="day-to-day/src/labels.una" caption="the examples"
-example "a line that does not parse is left out"
+test "a line that does not parse is left out"
   do read_lines(export()).len
   expect result == 3
 
-example "a dry run counts the labels and prints none"
+test "a dry run counts the labels and prints none"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: true)
   expect result == 2
   expect not performed @printer.print_label
 
-example "a run prints a label for each line with stock"
+test "a run prints a label for each line with stock"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: false)
   expect result == 2
@@ -1222,22 +1226,22 @@ example "a run prints a label for each line with stock"
 
 ### A plain `dry_run` and the calls `silent` records
 
-The examples pass `dry_run` as a plain `true` or `false`. Here the examples have nothing to prove about it: each installs its own printer with `given`, and the condition is proven once, inside `print_labels`, for every value of `dry_run`, so the examples only check behavior. `silent` answers every `print_label` with `unit`, and the trace of each example records the calls, which `expect performed` and `expect not performed` read.
+The tests pass `dry_run` as a plain `true` or `false`. Here the tests have nothing to prove about it: each installs its own printer with `given`, and the condition is proven once, inside `print_labels`, for every value of `dry_run`, so the tests only check behavior. `silent` answers every `print_label` with `unit`, and the trace of each test records the calls, which `expect performed` and `expect not performed` read.
 
-### The proof and the examples
+### The proof and the tests
 
-The proof and the examples cover different ground. The verifier proves, for every list and every call, that a label is printed only when `dry_run` is false, and the lock in `una.toml` keeps that rule from being dropped. The example "a dry run counts the labels and prints none" checks the same rule on one list, with `expect not performed`, and also checks the count, which no condition states. After an upgrade of `una` to a later `0.3.x` release, rerun both: a stricter rule can only add obligations or errors, and the examples catch a change in behavior.
+The proof and the tests cover different ground. The verifier proves, for every list and every call, that a label is printed only when `dry_run` is false, and the lock in `una.toml` keeps that rule from being dropped. The test "a dry run counts the labels and prints none" checks the same rule on one list, with `expect not performed`, and also checks the count, which no condition states. After an upgrade of `una` to a later `0.3.x` release, rerun both: a stricter rule can only add obligations or errors, and the tests catch a change in behavior.
 
-### Running the examples
+### Running the tests
 
 `una test .` prints:
 
 ```text include="day-to-day/expected/commands/test.txt#L2-L6"
-example labels "a line that does not parse is left out" ... ok
-example labels "a dry run counts the labels and prints none" ... ok
-example labels "a run prints a label for each line with stock" ... ok
+test labels "a line that does not parse is left out" ... ok
+test labels "a dry run counts the labels and prints none" ... ok
+test labels "a run prints a label for each line with stock" ... ok
 
-3 examples: 3 passed, 0 failed
+3 tests: 3 passed, 0 failed
 ```
 
 ## 19.7 Common mistakes
@@ -1338,6 +1342,15 @@ Set the day-to-day program's edition to `0.2`:
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯
+[U0101] Error: unexpected text literal, expected `(` and the parameters
+    ╭─[ src/labels.una:72:6 ]
+    │
+ 72 │ test "a line that does not parse is left out"
+    │      ┬
+    │      ╰── unexpected text literal, expected `(` and the parameters
+    │
+    │ Note: run `una explain U0101` for an explanation
+────╯
 [U7002] Error: unknown table [contracts] in una.toml
     ╭─[ una.toml:10:2 ]
     │
@@ -1349,7 +1362,7 @@ Set the day-to-day program's edition to `0.2`:
 ────╯
 ```
 
-*Why:* both constructs exist only in edition `0.3`. In `0.2`, the condition is a syntax error, so the message speaks of `where` as an unexpected keyword, and `[contracts]` is an unknown table of `una.toml`. Two diagnostics in two files point at one cause: the edition line.
+*Why:* the condition, the `test` declarations and `[contracts]` exist only in edition `0.3`. In `0.2`, the condition is a syntax error, so the message speaks of `where` as an unexpected keyword. `test` is a name in `0.2`, so `test "a line that does not parse is left out"` reads as the start of a function named `test`, and the text where its parameters should be is a syntax error too; the parser reports the first such line only. `[contracts]` is an unknown table of `una.toml`. Three diagnostics in two files point at one cause: the edition line.
 
 *Fix:* keep the edition the package's constructs need. See [U0101](/docs/errors/U0101/) and [U7002](/docs/errors/U7002/).
 :::
@@ -1426,7 +1439,7 @@ Remove the condition from the header:
 
 ## 19.8 Exercises
 
-Each exercise starts from `exercises/N/start` and has an example that fails there until the exercise is done. Work in the start package's directory: check the edition in `una.toml` first, then run `una fmt .`, `una check .` and `una test .`.
+Each exercise starts from `exercises/N/start` and has a test that fails there until the exercise is done: an `example` in the package of exercise 1, of edition `0.1`, and a `test` in the others, of edition `0.3`. Work in the start package's directory: check the edition in `una.toml` first, then run `una fmt .`, `una check .` and `una test .`.
 
 ### Exercise 1: move a package to `0.2`
 
@@ -1503,7 +1516,7 @@ With the edition line alone, `una check .` reports U0101 at `old`: "`old` is a r
 ### Exercise 2: a restock run
 
 ::::exercise
-The night shift wants labels for the lines that are low on stock, so they can restock them first. Write the body of `print_low`: like `print_labels`, but for the lines with fewer than `limit` units, with the same dry run. The start package has the header with its condition, a stub body, and two examples:
+The night shift wants labels for the lines that are low on stock, so they can restock them first. Write the body of `print_low`: like `print_labels`, but for the lines with fewer than `limit` units, with the same dry run. The start package has the header with its condition, a stub body, and two tests:
 
 ```una include="exercises/2/start/src/labels.una#print_low" title="exercises/2/start/src/labels.una"
 --- Prints a label for every line with fewer than `limit` units, and gives how many, for a
@@ -1515,13 +1528,13 @@ pub print_low(lines: List[Line], limit: Int, dry_run: Bool) -> Int
 ```
 
 ```una include="exercises/2/start/src/labels.una#L95-L105" title="exercises/2/start/src/labels.una"
-example "a restock run prints the lines below the limit"
+test "a restock run prints the lines below the limit"
   given @printer = silent()
   do print_low(read_lines(export()), limit: 5, dry_run: false)
   expect result == 2
   expect performed @printer.print_label
 
-example "a restock dry run prints nothing"
+test "a restock dry run prints nothing"
   given @printer = silent()
   do print_low(read_lines(export()), limit: 5, dry_run: true)
   expect result == 2
@@ -1581,16 +1594,16 @@ handler on_console() for Printer
   op print_label(sku, units) = @console.print("[{sku} | {units} on hand]")
   op print_summary(labels) = @console.print("{labels} labels")
 
---- A printer that prints nothing, for the examples.
+--- A printer that prints nothing, for the tests.
 handler silent() for Printer
   op print_label(sku, units) = unit
   op print_summary(labels) = unit
 ```
 
-And it adds this example:
+And it adds this test:
 
 ```una include="exercises/3/start/src/labels.una#L92-L96" title="exercises/3/start/src/labels.una"
-example "a dry run prints the summary, and no label"
+test "a dry run prints the summary, and no label"
   given @printer = silent()
   do print_labels(read_lines(export()), dry_run: true)
   expect performed @printer.print_summary
@@ -1651,7 +1664,7 @@ and the lock, which a reviewer sees:
 ### For agents
 
 :::agents
-A construct of a later edition usually gives U0101 or U0103 at the construct, a table of a later edition U7002 at `una.toml`, and a later prelude function or type rule a type error, such as U1001, U2001 or U2002. To move a package, change only `edition`, run `una --json check .`, apply `una fix .`, and repair the rest by hand. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and, with few exceptions, tightens rules.*
+A construct of a later edition usually gives U0101 or U0103 at the construct, a table of a later edition U7002 at `una.toml`, and a later prelude function or type rule a type error, such as U1001, U2001 or U2002. To move a package, change only `edition`, run `una --json check .`, apply `una fix .`, and repair the rest by hand. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. In edition `0.3`, the test declaration is `test`; an `example` there is U0103, which `una fix .` rewrites. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and, with few exceptions, tightens rules.*
 :::
 
 ### Recap
@@ -1661,7 +1674,7 @@ A construct of a later edition usually gives U0101 or U0103 at the construct, a 
 - Upgrading `una` keeps what each stable edition accepts and rejects, except to fix a soundness or security error.
 - Editions are cumulative: a later edition adds constructs, keywords and rules, and never removes a construct.
 - `0.2` adds loops, `let edit`, `edit` and `take`, `together`, maps, JSON and more, makes `old` a keyword, and reserves `weak`.
-- `0.3` is a preview: conditions on operations, locked contracts, boundaries, narrowed rebindings, units, refined type arguments, and no dead failure handling. It may get stricter in a later `0.3.x`.
+- `0.3` is a preview: conditions on operations, locked contracts, boundaries, narrowed rebindings, units, refined type arguments, no dead failure handling, and tests written `test`. It may get stricter in a later `0.3.x`.
 - To move a package: change the edition, `una check .`, `una fix .`, repair the rest, `una test .`, and compare the output.
 - Never let `una fix` rename a keyword of a later edition; change the edition instead.
 :::
