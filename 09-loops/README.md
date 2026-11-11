@@ -856,10 +856,10 @@ The loop variable is a plain name: each turn gives it the next value, and the bo
 ```
 
 ```text include="steps/17-loop-variable/expected/rendered.txt#L1"
-[U2019] Error: `week` is not editable; declare it `let edit week`, or the parameter `edit week`
+[U2019] Error: `week` is the variable of a `for` loop, which is read-only; bind a copy in the body with `let edit`, as `let edit next_week = week`
 ```
 
-The message offers `let edit week`, but a loop variable cannot be declared that way: the loop owns it. To skip turns, put the steps under an `if`; to walk every second week, compute it from the loop variable, such as `let other = week * 2`.
+The message says why: the loop owns its variable, which is read-only, so it cannot be declared `let edit`. What it offers is a copy, `let edit next_week = week`, a new name in the body that starts at the loop variable's value and may change within the turn; it does not change the turns the loop takes. To skip turns, put the steps under an `if`; to walk every second week, compute it from the loop variable, such as `let other = week * 2`.
 
 #### The range is fixed before the first turn
 
@@ -1985,7 +1985,7 @@ Keep the lowest value in a `Units` accumulator, and lower it when the stock afte
 ### For agents
 
 :::agents
-`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; U5001 also carries a `counterexample`. U2019 has no repair: its message names the declaration, `let edit x`, which does not apply to a loop variable. U5001 and U5002 rank repairs without edits, from a guard (`escape_cost` 0) to `checked` (1). The compact rule: *`for` walks `a..b` (end included), `a..<b` (end left out), `t.chars()` or `t.split(on: s)`, fixed before the first turn; a name a loop changes is `let edit`, declared before it, with a refined type when the code after the loop needs its fact.*
+`una --json check .` prints each diagnostic with its `code`, `message`, `primary` span and `repairs`; U5001 also carries a `counterexample`. U2019 has no repair: its message names the declaration, `let edit x`, or, for a loop variable, which is read-only, a copy bound in the body, `let edit next_x = x`. U5001 and U5002 rank repairs without edits, from a guard (`escape_cost` 0) to `checked` (1). The compact rule: *`for` walks `a..b` (end included), `a..<b` (end left out), `t.chars()` or `t.split(on: s)`, fixed before the first turn; a name a loop changes is `let edit`, declared before it, with a refined type when the code after the loop needs its fact.*
 :::
 
 ### Recap

@@ -1073,7 +1073,7 @@ A `then` at the end of the `if` line, against rule 1, is U0101:
 [U0101] Error: unexpected end of line, expected an expression
 ```
 
-Remove the `then`, so that the condition ends the line.
+Remove the `then`, so that the condition ends the line. The diagnostic's repair makes the same edit, and `una fix .` applies it.
 
 Leave out the last `else`, against rule 4, and the check reports U0101 where the `if` ends, at the next declaration:
 

@@ -152,9 +152,9 @@ An `if` without `else` is a statement, so it can stand only where a statement ca
 
 The form has no `else` of any kind, so it has no `else if` either. A chain of `else if` always ends with `else`, and is a choice of section 3.4 that gives a value. When several conditions should each decide on their own, write several `if`s, one after the other, as `packing_notes` does.
 
-#### An `if` with `else` is the last line, or the value of a `let`
+#### An `if` with `else` is the last line, or a value that is kept
 
-The forms with `else` give a value, so Una wants that value used. Over several lines, such an `if` stands only as the last line of its block, whose value it then gives, or after `let`. Add an `else` to the first `if` of `packing_notes`, which has a line after it:
+The forms with `else` give a value, so Una wants that value used. Over several lines, such an `if` stands only as the last line of its block, whose value it then gives, after `let`, or as the value of an assignment to a `let edit` name ([section 9.2](/learn/loops/#s9-2)), as in `note = if …`. Add an `else` to the first `if` of `packing_notes`, which has a line after it:
 
 ```diff include="steps/01-if-forms..steps/03-else-mid-block:src/choices.una" title="src/choices.una"
 --- a/src/choices.una
@@ -171,12 +171,12 @@ The forms with `else` give a value, so Una wants that value used. Over several l
 ```
 
 ```text include="steps/03-else-mid-block/expected/rendered.txt#L1-L6"
-[U0101] Error: an `if` with blocks must be the last line of its block or the value of a `let`
+[U0101] Error: an `if` with blocks must be the last line of its block or the value of a `let` or of an assignment
     ╭─[ src/choices.una:15:3 ]
     │
  15 │   if units > 10
     │   ─┬
-    │    ╰── an `if` with blocks must be the last line of its block or the value of a `let`
+    │    ╰── an `if` with blocks must be the last line of its block or the value of a `let` or of an assignment
 ```
 
 The marks point at the `if`. Here both branches print, so the `if` gives no useful value, but its form is the one that does. To print one note or the other and then go on, write two `if`s without `else`, one with the condition and one with its opposite, `if units <= 10`.
@@ -2042,7 +2042,7 @@ U2007, U2008 and U5001 carry no `edit`, since only the author knows what a missi
 
 :::recap
 - An `if` without `else` runs its lines only when its condition holds; it gives no value.
-- An `if` with `else`, over several lines, is the last line of its block or the value of a `let`.
+- An `if` with `else`, over several lines, is the last line of its block, the value of a `let` or the value of an assignment.
 - `when` takes literal arms (`is 2`, `is "RUG-07"`, `is true`) and range arms (`in 1..<10`, `in 10..49`); end them with `else` unless they cover every value.
 - The arms are tried in order; prefer ranges that do not overlap, and put `else` last.
 - A pattern holds no condition: put an `if` inside the arm.

@@ -5,7 +5,7 @@
     │                         ┬
     │                         ╰── unexpected end of line, expected an expression
     │
-    │ Help: repair 1: write the `if` with blocks: `if` and its condition, the indented branch, `else`, then the indented branch; edit src/choices.una:15:1..18:1 to "  if grams <= 1_000\n    \"small box\"\n  else\n    if grams <= 5_000\n"
+    │ Help: repair 1: write the `if` with blocks: `if` and its condition, the indented branch, `else`, then the indented branch; edit src/choices.una:15:1..22:1 to "  if grams <= 1_000\n    \"small box\"\n  else if grams <= 5_000\n    let kilos = (grams + 999) / 1_000\n    \"medium box for {kilos} kg\"\n  else\n    \"large box\"\n"
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯

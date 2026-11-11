@@ -1,9 +1,9 @@
-[U0101] Error: a `together for` must be the last line of its block or the value of a `let`
+[U0101] Error: a `together for` must be the last line of its block or the value of a `let` or of an assignment
     ╭─[ src/availability.una:99:7 ]
     │
  99 │       together for line in found
     │       ────┬───
-    │           ╰───── a `together for` must be the last line of its block or the value of a `let`
+    │           ╰───── a `together for` must be the last line of its block or the value of a `let` or of an assignment
     │
     │ Note: run `una explain U0101` for an explanation
 ────╯
