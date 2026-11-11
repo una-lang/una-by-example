@@ -1657,7 +1657,7 @@ Read it from the top: the requirement, its status, its text, source and owner; t
 
 `una report .`, the build report of [section 18.4](/learn/tools/#s18-4), lists every requirement of the package with the functions derived from it, under `requirements`:
 
-```text include="steps/22-requirements/expected/commands/report.txt#L18-L22"
+```text include="steps/22-requirements/expected/commands/report.txt#L29-L33"
 requirements:
   REFUND_1 (active): refunds.refund
   REFUND_2 (active): refunds.needs_review

@@ -969,7 +969,7 @@ Each of the three takes `--json`. The contract of `parse_percent`, as data:
 
 ```text include="steps/08-proven/expected/commands/contract-json.txt"
 $ una --json contract discount.parse_percent
-{"schema":"una.contract/1","function":"discount.parse_percent","public":false,"docs":["A percent typed by a person, such as \"30\"."],"header":"parse_percent(raw: Text) -> Percent","constraints":[],"result_labels":[],"of_raises":[],"requires":[],"ensures":[],"uses":[],"fails":{"kind":"PercentError","inferred":true},"derived_from":[]}
+{"schema":"una.contract/1","function":"discount.parse_percent","public":false,"docs":["A percent typed by a person, such as \"30\"."],"header":"parse_percent(raw: Text) -> Percent","constraints":[],"result_labels":[],"of_raises":[],"requires":[],"ensures":[],"uses":[],"fails":{"kind":"PercentError","inferred":true},"diverges":false,"derived_from":[]}
 ```
 
 Each clause is a key, and each inferred part says so: `"inferred":true` on `fails`. `una --json obligations .` gives each obligation its `hypotheses` too, the facts the solver could assume at that place, such as `price >= 0` from the type of `price`. When a goal cannot be proven, the hypotheses show what the verifier knew, and so what is missing.
@@ -1082,6 +1082,8 @@ The report of the fixed sale price:
 ```text include="steps/08-proven/expected/commands/report.txt"
 $ una report .
 package discount 0.1.0
+profile: app
+edition: 0.2
 lock: z3 5.1.0, sha256 3ae01f54b3b40760c00b7537ac3ba510a2288a5a4dd42a583dab76ea66719c3c
 proven: 12 semantic obligations; security and authority by typing
 obligations: 12 proven, 0 refuted, 0 unknown; 0 cached
@@ -1091,10 +1093,19 @@ handler authority:
 information:
 escapes:
 assumptions:
+assumed of the host:
+  H1: used for nothing
+  H2: used for nothing
+  H3: used for nothing
+  H4: used for nothing
+  Env: used for nothing
+  H5: used for nothing
 tcb:
   trusted modules: 
   host capabilities: Console
   solver: z3 5.1.0
+  solver build: source e621ef190d1486759306b83619ffd66ce3ee19cfdb799d17399953e7b0849b75, library 621d0c736d80f344fe5e59ea73b78d12fe731bda0810a512d9aa33365e087f32
+  solver confinement: own
   proof cache: .una/cache/
   proof cache key: ~/.una/proof-cache.key
 requirements:
@@ -1102,12 +1113,17 @@ requirements:
 coverage: 2 pub functions, 1 with ensures, 1 with derived from, 0 trivial ensures
 native: aarch64-apple-darwin
   arbitrary precision: discount.sale_price.price, discount.sale_price.cost, discount.sale_price.result
-out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks
+  kernels: baseline
+  fma allowlist: una_core::dense::variants::x86_64_v3, una_core::dense::variants::x86_64_v4
+  linker: una 0.3.16
+out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks, the time of a host stop, interference of the host's load with the timing of an expression, uncatchable termination, waits at limits and at `start`, which branch of `first of` wins, beyond its label
 ```
 
 ### The sections of the report
 
 #### What was proven: `lock`, `proven`, `obligations`
+
+Two lines come first, after the package's name and version: `profile`, the kind of package, here `app`, and `edition`, the edition its `una.toml` names, with `(preview)` after an edition that is a preview ([chapter 19](/learn/editions/)).
 
 `lock` names the solver and a **digest** of `verification.lock`: a long number computed from the file's bytes, here with SHA-256, which changes if a single byte of the file changes. Two reports with the same digest were proven under the same lock. `proven` counts the proven obligations, and adds `security and authority by typing`: information flow and capabilities need no solver, since the checker proves them by their types. `obligations` counts them by status, and how many came from the proof cache.
 
@@ -1117,11 +1133,11 @@ Every function and handler with a `uses` clause, and what it may do. Here only `
 
 #### What the code relies on: `information`, `escapes`, `assumptions`
 
-`information` lists the calls of **policies**, the declarations that may lower the label on data, so that data labeled secret can reach a place that shows it; every such release goes through a policy ([chapter 17](/learn/information-flow/#s17-5)). `escapes` lists the uses of `checked`, by module, against the budget of `una.toml`. `assumptions` lists the operations of the package's own capabilities whose behavior the verifier assumes from their declarations: what an operation's header promises is all a proof knows of it.
+`information` lists the calls of **policies**, the declarations that may lower the label on data, so that data labeled secret can reach a place that shows it; every such release goes through a policy ([chapter 17](/learn/information-flow/#s17-5)). `escapes` lists the uses of `checked`, by module, against the budget of `una.toml`. `assumptions` lists the operations of the package's own capabilities whose behavior the verifier assumes from their declarations: what an operation's header promises is all a proof knows of it. `assumed of the host` lists the premises on the machine that runs the program, such as `H1`, that whether a read of a file fails depends on the path and on which files exist, not on their content. No check proves them: the place the program is deployed must make them true. Each line says which operations of the package rely on the premise, here `used for nothing`, since the package uses no files, network or environment.
 
 #### What the proofs trust: `tcb`
 
-The **trusted computing base** is everything the guarantees rest on without being proven by una: the trusted modules, which `una.toml` lists as the only modules allowed to hold policies ([chapter 17](/learn/information-flow/#s17-5)), the host capabilities, the solver, and the proof cache with the key that authenticates its entries. The smaller it is, the less there is to trust.
+The **trusted computing base** is everything the guarantees rest on without being proven by una: the trusted modules, which `una.toml` lists as the only modules allowed to hold policies ([chapter 17](/learn/information-flow/#s17-5)), the host capabilities, the solver, and the proof cache with the key that authenticates its entries. `solver build` gives the digests of the solver's source and of the library built into `una`, and `solver confinement` says what kept the solver's processes from the network and the files: `own` when they confined themselves. The smaller the base is, the less there is to trust.
 
 #### Requirements and coverage
 
@@ -1129,7 +1145,7 @@ The **trusted computing base** is everything the guarantees rest on without bein
 
 #### The executable: `native`
 
-`native` names the machine that `una build` builds for, the one una runs on, such as `aarch64-apple-darwin`. Under it, `arbitrary precision` lists the values the executable keeps as numbers of any size, because no refinement bounds them to a **machine word**, the fixed-size number a processor works with fastest. `Percent` is bounded by `0..90`, so `off` is not listed; `Cents` has no upper bound, so `price`, `cost` and the result are.
+`native` names the machine that `una build` builds for, the one una runs on, such as `aarch64-apple-darwin`. Under it, `arbitrary precision` lists the values the executable keeps as numbers of any size, because no refinement bounds them to a **machine word**, the fixed-size number a processor works with fastest. `Percent` is bounded by `0..90`, so `off` is not listed; `Cents` has no upper bound, so `price`, `cost` and the result are. `kernels` and `fma allowlist` describe the numeric routines that an executable holds, and `linker` names what links it, here `una` itself.
 
 #### What the guarantees do not cover: `out of model`
 
@@ -1139,9 +1155,11 @@ The proofs say nothing about these: how long a run takes, whether it ends, how m
 
 On the package with the wrong word, `una report .` prints the diagnostic on stderr, and the report on stdout, whose counts show the refuted obligation:
 
-```text include="steps/09-refuted/expected/commands/report.txt#L1-L5"
+```text include="steps/09-refuted/expected/commands/report.txt#L1-L7"
 $ una report .
 package discount 0.1.0
+profile: app
+edition: 0.2
 lock: z3 5.1.0, sha256 3ae01f54b3b40760c00b7537ac3ba510a2288a5a4dd42a583dab76ea66719c3c
 proven: 11 semantic obligations; security and authority by typing
 obligations: 11 proven, 1 refuted, 0 unknown; 0 cached
@@ -1202,7 +1220,7 @@ The package still checks and prints the same output. Which section of the report
 :::answer Show the answer
 `escapes`, which had no line:
 
-```text include="steps/16-checked/expected/commands/report.txt#L10-L11"
+```text include="steps/16-checked/expected/commands/report.txt#L12-L13"
 escapes:
   discount: 1 checked, budget 1
 ```
@@ -1584,7 +1602,7 @@ pricetags.sale_price
 
 The first obligation is the result of `sale_price`, a `Cents`; the second is the promise. `una report .` shows what the package may do. Its `authority` section has two lines, `main` may print and `tag` may ask the catalog, and `assumptions` lists the operation of `Catalog` that the proofs take on trust:
 
-```text include="day-to-day/expected/commands/report.txt#L6-L8,L12-L13"
+```text include="day-to-day/expected/commands/report.txt#L8-L10,L14-L15"
 authority:
   pricetags.main (pub): @console: Console[print]
   pricetags.tag (pub): @catalog: Catalog[product]

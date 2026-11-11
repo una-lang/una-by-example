@@ -1,5 +1,7 @@
 $ una report .
 package refunds 0.1.0
+profile: app
+edition: 0.2
 lock: z3 5.1.0, sha256 3ae01f54b3b40760c00b7537ac3ba510a2288a5a4dd42a583dab76ea66719c3c
 proven: 7 semantic obligations; security and authority by typing
 obligations: 7 proven, 0 refuted, 0 unknown; 0 cached
@@ -9,10 +11,19 @@ handler authority:
 information:
 escapes:
 assumptions:
+assumed of the host:
+  H1: used for nothing
+  H2: used for nothing
+  H3: used for nothing
+  H4: used for nothing
+  Env: used for nothing
+  H5: used for nothing
 tcb:
   trusted modules: 
   host capabilities: Console
   solver: z3 5.1.0
+  solver build: source e621ef190d1486759306b83619ffd66ce3ee19cfdb799d17399953e7b0849b75, library 621d0c736d80f344fe5e59ea73b78d12fe731bda0810a512d9aa33365e087f32
+  solver confinement: own
   proof cache: .una/cache/
   proof cache key: ~/.una/proof-cache.key
 requirements:
@@ -23,4 +34,7 @@ requirements:
 coverage: 1 pub functions, 0 with ensures, 0 with derived from, 0 trivial ensures
 native: aarch64-apple-darwin
   arbitrary precision: refunds.refund.paid, refunds.refund.asked, refunds.refund.result, refunds.needs_review.asked
-out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks
+  kernels: baseline
+  fma allowlist: una_core::dense::variants::x86_64_v3, una_core::dense::variants::x86_64_v4
+  linker: una 0.3.16
+out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks, the time of a host stop, interference of the host's load with the timing of an expression, uncatchable termination, waits at limits and at `start`, which branch of `first of` wins, beyond its label
