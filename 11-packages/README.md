@@ -36,7 +36,7 @@ You will learn to:
 
 ## Why it works this way
 
-In many languages, a file can see a great deal it never asked for: every public name of every file in the project, globals, and whatever an import brings in with it. Splitting a program into files does not, by itself, say which parts are the interface of a file and which are its details. A dependency added by one line in a manifest can bring in code that reads files or opens connections, and nothing in the caller's code shows it. In una 0.3.16 a package has no dependencies on other packages ([section 11.3](#s11-3)).
+In many languages, a file can see a great deal it never asked for: every public name of every file in the project, globals, and whatever an import brings in with it. Splitting a program into files does not, by itself, say which parts are the interface of a file and which are its details. A dependency added by one line in a manifest can bring in code that reads files or opens connections, and nothing in the caller's code shows it. A package that `una.toml` describes has no dependencies on other packages ([section 11.3](#s11-3)).
 
 Una keeps the structure small and visible:
 
@@ -729,15 +729,15 @@ checked_per_module = 0
 
 The package still runs as before, with the same modules. Only `una.toml` changed.
 
-### No dependencies on other packages yet
+### No dependencies on other packages in `una.toml`
 
-una 0.3.16 has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
+A package that `una.toml` describes, of edition `0.1`, `0.2` or `0.3`, has no way to depend on another package: `una.toml` has no dependency table, and a package imports only its own modules and two standard modules, `std.host` and `std.testing`. Importing anything else says so:
 
 ```text include="steps/13-no-dependencies/expected/rendered.txt#L1"
 [U1001] Error: module `vendor.tax` is not a module of this package; the standard modules that can be imported are `std.host` and `std.testing`
 ```
 
-So everything a package runs is in its own `src/`, the prelude, or the host capabilities that `una run` grants, in `[run] grants` or by a `--grant` flag. Until a release adds dependencies, code from elsewhere, such as a supplier's library, is copied into `src/` as modules of the package, where the checker sees all of it. Code copied in this way is called **vendored** code. Edition `0.3` can then put a limit on what such a module may do, as [chapter 13](/learn/authority/) shows.
+So everything a package runs is in its own `src/`, the prelude, or the host capabilities that `una run` grants, in `[run] grants` or by a `--grant` flag. In these editions, code from elsewhere, such as a supplier's library, is copied into `src/` as modules of the package, where the checker sees all of it. Code copied in this way is called **vendored** code. Edition `0.3` can then put a limit on what such a module may do, as [chapter 13](/learn/authority/) shows. From edition `0.4`, a package describes itself in `ita.una` instead, and may depend on other packages in directories of its own, its path dependencies ([spec/30](/docs/spec/30-packages/)); the packages of this chapter use `una.toml`.
 
 ### `verification.lock`
 

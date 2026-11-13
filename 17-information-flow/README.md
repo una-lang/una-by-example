@@ -1644,7 +1644,7 @@ pub main() -> Unit
 
 `una report .` prints the build report ([chapter 18](/learn/tools/#s18-4)): what the package was proven to do, and what it trusts. Two of its sections are about releases:
 
-```text include="steps/31-policy/expected/commands/report.txt#L2,L11-L14,L24-L25,L39"
+```text include="steps/31-policy/expected/commands/report.txt#L2,L11-L14,L24-L25,L40"
 package reorder 0.1.0
 information:
   release.line_count at src/release.una:14:6, purpose "report the size of the reorder list", owner purchasing
