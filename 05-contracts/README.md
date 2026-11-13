@@ -274,8 +274,8 @@ pub main() -> Unit
 
 1. **`requires count >= 1`.** The clause, under the header and before `=`.
 2. **`total / count`.** The division's obligation, `count != 0`, now follows from the precondition.
-3. **`installment(12000, count: 3)`.** The verifier proves `3 >= 1` at the call. With a literal, the proof is immediate.
-4. **`if months < 1 then total else installment(total, count: months)`.** `months` comes from a checkout form and can be 0. In the `else` branch, the verifier knows that `months < 1` is false, so it proves `months >= 1` for the call.
+3. **`if months < 1 then total else installment(total, count: months)`.** `months` comes from a checkout form and can be 0. In the `else` branch, the verifier knows that `months < 1` is false, so it proves `months >= 1` for the call.
+4. **`installment(12000, count: 3)`.** The verifier proves `3 >= 1` at the call. With a literal, the proof is immediate.
 :::
 
 `una run .` prints:
@@ -653,7 +653,7 @@ example "a coupon worth more than the price gives 0"
 1. **`ensures result >= 0` and `ensures result <= price`.** The two rules. They hold on both branches of the `if`, and the verifier proves each one.
 2. **`ensures off <= price implies result == price - off`.** A third clause says what the result is when the coupon fits. It says nothing when `off > price`.
 3. **`left_on_card`.** A caller. It knows `after_coupon` only by its header. With the first two clauses alone, it knows only that `due` is between 0 and `price`, which is not enough to prove `result >= 0`. The third clause gives it what it needs.
-4. **The example.** It pins down the case where the coupon is worth more than the price. [From a counterexample to an example](#from-a-counterexample-to-an-example) shows where it comes from.
+4. **`example "a coupon worth more than the price gives 0"`.** The example. It pins down the case where the coupon is worth more than the price. [From a counterexample to an example](#from-a-counterexample-to-an-example) shows where it comes from.
 :::
 
 `una run .` prints:

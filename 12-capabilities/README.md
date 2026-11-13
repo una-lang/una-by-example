@@ -507,7 +507,7 @@ pub main() -> Unit
 1. **Three `uses` lines on `main`.** Each names one host capability and the operations it needs. `main` may write files, but not read them.
 2. **`@clock.now()`.** `Clock.now` gives the milliseconds since the Unix epoch, as an `Int`. Each call is an effect, so it goes on its own line.
 3. **`attempt @files.write("stock-export.csv", content: content)`.** `Files.write` can fail with `FileError` (`NotFound`, `Denied` or `Io`). `attempt` keeps the outcome, as in [section 7.4](/learn/failure/#s7-4), and the `when` reports either case.
-4. **`"files:src:write"`.** The path `stock-export.csv` resolves inside `src/`, the directory of the grant.
+4. **`"stock-export.csv"`.** The path resolves inside `src/`, the directory of the grant `"files:src:write"` in `una.toml`.
 :::
 
 `una run .` prints:

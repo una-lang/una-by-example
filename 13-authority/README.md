@@ -700,8 +700,8 @@ pub main() -> Unit
 ```
 
 1. **`show_price("LAMP-01") with @prices = @prices[price]`.** One operation in the brackets: `show_price` receives a binding that may only read.
-2. **`raise_price(…) with @prices = @prices[price, set_price]`.** Several operations, separated by commas, as in the brackets of `uses`. `raise_price` never receives `remove`.
-3. **`if not dry_run`.** `review` may set a price only where `not dry_run` holds, and the narrowed binding keeps that condition. `raise_price` has no condition, so its call needs the guard.
+2. **`if not dry_run`.** `review` may set a price only where `not dry_run` holds, and a binding narrowed from it keeps that condition. `raise_price` has no condition, so its call on the next line needs the guard.
+3. **`raise_price(…) with @prices = @prices[price, set_price]`.** Several operations, separated by commas, as in the brackets of `uses`. `raise_price` never receives `remove`.
 4. **`mark_down(…) with @prices = @prices[price, set_price]`.** No guard here: the condition of `mark_down`, `not dry_run`, implies the one the binding carries.
 :::
 

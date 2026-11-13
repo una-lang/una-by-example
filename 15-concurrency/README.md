@@ -629,11 +629,11 @@ pub main() -> Unit
     @console.print(line)
 ```
 
-1. **`together for sku in skus`.** One task per SKU, as the last line of the body, so the list it builds is the function's result.
-2. **`let units = total(sku)`, then `if error pass`.** A line of the body that can fail takes a clause, as in any block. A failure of `total` makes its task fail, and the task's failure makes `stock_lines` fail.
-3. **`"{sku}: {units} units"`.** The last line, the task's value.
-4. **Tasks inside tasks.** Each task calls `total`, whose `together` starts two tasks of its own. Three SKUs, two warehouses each: six questions, which may all be in progress at once.
-5. **The bindings in tasks.** Each task uses `@north` and `@south`, the bindings of the `uses` lines of `stock_lines`. `main` installs both handlers for the one call, with `with`, and every task of that call sees them.
+1. **`total`, with a `together` of its own.** Tasks inside tasks: `total` asks the two warehouses at the same time, and each task of `stock_lines` calls it. Three SKUs, two warehouses each: six questions, which may all be in progress at once.
+2. **`together for sku in skus`.** One task per SKU, as the last line of the body, so the list it builds is the function's result.
+3. **`let units = total(sku)`, then `if error pass`.** A line of the body that can fail takes a clause, as in any block. A failure of `total` makes its task fail, and the task's failure makes `stock_lines` fail.
+4. **`"{sku}: {units} units"`.** The last line, the task's value.
+5. **`with @north = shelves(north), @south = shelves(south)`.** The bindings in tasks. Each task uses `@north` and `@south`, the bindings of the `uses` lines of `stock_lines`. `main` installs both handlers for the one call, and every task of that call sees them.
 :::
 
 `una run .` prints:

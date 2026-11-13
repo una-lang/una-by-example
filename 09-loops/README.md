@@ -123,7 +123,7 @@ pub print_weeks(weeks: Int) -> Unit
 1. **`for`.** The keyword that starts a loop.
 2. **`week`.** The loop variable. You choose the name; a good name says what one value is.
 3. **`in 1..weeks`.** What the loop walks: here the range of whole numbers from 1 to `weeks`, both included.
-4. **The indented line.** The body, indented two spaces under the `for` line. It runs once for each number of the range, with `week` holding that number.
+4. **`@console.print("week {week}: count the lamp shelf")`.** The body, indented two spaces under the `for` line. It runs once for each number of the range, with `week` holding that number.
 :::
 
 `main` calls `print_weeks(4)`, and `una run .` prints the same four lines as the plan written by hand:

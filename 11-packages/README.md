@@ -384,7 +384,7 @@ import store.money (format)
 1. **`import`.** The keyword that starts the line.
 2. **`store.catalog`.** The module path of a module of the same package, or of a standard module.
 3. **`(Product, find)`.** In parentheses, each declaration the line takes, by its name, separated by commas. At least one name, and each name once.
-4. **One line per module.** A module that takes names from two modules has two import lines. They come right after the `module` line, before any declaration, sorted by module path, with the names inside each sorted too, names with a capital letter first: `una fmt .` keeps them in that order.
+4. **`import store.money (format)`.** One line per module: a module that takes names from two modules has two import lines. They come right after the `module` line, before any declaration, sorted by module path, with the names inside each sorted too, names with a capital letter first: `una fmt .` keeps them in that order.
 :::
 
 There is no form that imports every name of a module, and no form that imports a module without naming what it takes. A reader of the import lines knows exactly which names come from where.

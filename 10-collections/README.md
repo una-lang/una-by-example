@@ -103,9 +103,6 @@ Start with the quantities of a cart, then the SKUs on its receipt. A SKU, a stoc
 ```una include="steps/02-lists/src/cart.una" title="steps/02-lists/src/cart.una" verified="check, run"
 module cart
 
---- The SKUs of a cart in the order a receipt lists them.
-receipt(skus: List[Text]) -> Text = skus.sort().join(separator: ", ")
-
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -116,6 +113,9 @@ pub main() -> Unit
   @console.print("a line of 3 units: {more.contains(item: 3)}")
   let skus = ["RUG-07", "LAMP-01", "DESK-02"]
   @console.print(receipt(skus))
+
+--- The SKUs of a cart in the order a receipt lists them.
+receipt(skus: List[Text]) -> Text = skus.sort().join(separator: ", ")
 ```
 
 1. **`[2, 1, 3]`.** A list literal. Every element has the same type, here `Int`, so the list is a `List[Int]`. You do not write the type: Una takes it from the elements.
@@ -981,12 +981,6 @@ kind CartLine
 --- What one line costs, in cents.
 line_cents(line: CartLine) -> Int = line.quantity * line.cents
 
---- Whether a cart ships for free: 10000 cents or more, not counting gift cards.
-ships_free(lines: List[CartLine]) -> Bool
-=
-  let goods = lines.filter(keep: fn(line) -> not line.sku.starts_with(prefix: "GIFT-"))
-  goods.map(each: line_cents).sum() >= 10000
-
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -1000,6 +994,12 @@ pub main() -> Unit
   let units = cart.fold(initial: 0, step: fn(sum, line) -> sum + line.quantity)
   @console.print("{units} units")
   @console.print("free shipping: {ships_free(cart)}")
+
+--- Whether a cart ships for free: 10000 cents or more, not counting gift cards.
+ships_free(lines: List[CartLine]) -> Bool
+=
+  let goods = lines.filter(keep: fn(line) -> not line.sku.starts_with(prefix: "GIFT-"))
+  goods.map(each: line_cents).sum() >= 10000
 ```
 
 1. **`cart.map(each: line_cents)`.** A function declared with a name is passed by that name.
@@ -1284,15 +1284,6 @@ kind Sale
   category: Text
   quantity: Int
 
---- How many units each category sold.
-units_by_category(sales: List[Sale]) -> Map[Text, Int]
-=
-  let edit totals: Map[Text, Int] = empty_map()
-  for sale in sales
-    let before = totals.get(key: sale.category).or_else(default: 0)
-    edit totals.set(key: sale.category, value: before + sale.quantity)
-  totals
-
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -1310,6 +1301,15 @@ pub main() -> Unit
   let shade = Sale(sku: "SHADE-05", category: "lighting", quantity: 3)
   for entry in units_by_category([lamp, rug, shade]).entries()
     @console.print("{entry.key}: {entry.value}")
+
+--- How many units each category sold.
+units_by_category(sales: List[Sale]) -> Map[Text, Int]
+=
+  let edit totals: Map[Text, Int] = empty_map()
+  for sale in sales
+    let before = totals.get(key: sale.category).or_else(default: 0)
+    edit totals.set(key: sale.category, value: before + sale.quantity)
+  totals
 ```
 
 1. **`let edit stock: Map[Text, Int] = empty_map()`.** An empty map, with its key and value types written.
@@ -1376,7 +1376,7 @@ A key type must have an order, the constraint `Ord`: `Text`, `Int`, the fixed-wi
 ```diff include="steps/19-maps..steps/20-record-key:src/stock.una" context="1" title="src/stock.una"
 --- a/src/stock.una
 +++ b/src/stock.una
-@@ -21,2 +21,3 @@
+@@ -12,2 +12,3 @@
    let edit stock: Map[Text, Int] = empty_map()
 +  let edit by_sale: Map[Sale, Int] = empty_map()
    edit stock.set(key: "LAMP-01", value: 4)
@@ -1384,9 +1384,9 @@ A key type must have an order, the constraint `Ord`: `Text`, `Int`, the fixed-wi
 
 ```text include="steps/20-record-key/expected/rendered.txt#L1-L8"
 [U2025] Error: a map's key type must satisfy `Ord`, and `Sale` does not
-    ╭─[ src/stock.una:22:21 ]
+    ╭─[ src/stock.una:13:21 ]
     │
- 22 │   let edit by_sale: Map[Sale, Int] = empty_map()
+ 13 │   let edit by_sale: Map[Sale, Int] = empty_map()
     │                     ───────┬──────
     │                            ╰──────── a map's key type must satisfy `Ord`, and `Sale` does not
     │
@@ -1671,9 +1671,9 @@ pub main() -> Unit
   @console.print(Object(fields).to_json())
 ```
 
-1. **`\{`, `\}` and `\"`.** JSON in a text literal: a literal brace is written `\{` and `\}`, and a quote is `\"`.
-2. **`text.parse_json()` and `if error use Null`.** Parsing can fail, and the line under the call says what to do then: here, carry on with `Null`.
-3. **`when record` with `is Object(fields)`.** Reading JSON is reading a sum kind: one arm for the variant you expect, and `else` for the rest. Then `fields.get(key: "cents")` is an ordinary map lookup, and `or_else(default: Null)` treats a missing field like a `null` one.
+1. **`when record` with `is Object(fields)`.** Reading JSON is reading a sum kind: one arm for the variant you expect, and `else` for the rest. Then `fields.get(key: "cents")` is an ordinary map lookup, and `or_else(default: Null)` treats a missing field like a `null` one.
+2. **`\{`, `\}` and `\"`.** JSON in a text literal: a literal brace is written `\{` and `\}`, and a quote is `\"`.
+3. **`text.parse_json()` and `if error use Null`.** Parsing can fail, and the line under the call says what to do then: here, carry on with `Null`.
 4. **`Object(fields).to_json()`.** Writing. `to_json` writes one canonical text: no spaces, and the keys of each object in order.
 :::
 

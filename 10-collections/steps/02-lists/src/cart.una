@@ -1,8 +1,5 @@
 module cart
 
---- The SKUs of a cart in the order a receipt lists them.
-receipt(skus: List[Text]) -> Text = skus.sort().join(separator: ", ")
-
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -13,3 +10,6 @@ pub main() -> Unit
   @console.print("a line of 3 units: {more.contains(item: 3)}")
   let skus = ["RUG-07", "LAMP-01", "DESK-02"]
   @console.print(receipt(skus))
+
+--- The SKUs of a cart in the order a receipt lists them.
+receipt(skus: List[Text]) -> Text = skus.sort().join(separator: ", ")

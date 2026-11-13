@@ -188,9 +188,9 @@ pub main() -> Unit
 ```
 
 1. **`kind Address` and `kind Parcel`.** Two record kinds. `Parcel` has a field of kind `Address`, so a parcel holds its address whole.
-2. **`Address(name: "Corner Bakery", street: …, city: …)`.** Building a value. Every field is given, each with its label. `una` accepts them in any order, but `una check .` reports an order other than the declared one as not in canonical form (U7001), and `una fmt .` puts them back in that order. There are no default values: a field left out is an error.
-3. **`parcel.address.city`.** Reading a field, and a field of a field.
-4. **`redirect`.** A record never changes after it is built. To "change" a field, you build a new record from the old one, with the new value in that field. `parcel` itself still goes to the first address, as the first line of the output shows.
+2. **`parcel.address.city`.** Reading a field, and a field of a field.
+3. **`redirect`.** A record never changes after it is built. To "change" a field, you build a new record from the old one, with the new value in that field. `parcel` itself still goes to the first address, as the first line of the output shows.
+4. **`Address(name: "Corner Bakery", street: …, city: …)`.** Building a value. Every field is given, each with its label. `una` accepts them in any order, but `una check .` reports an order other than the declared one as not in canonical form (U7001), and `una fmt .` puts them back in that order. There are no default values: a field left out is an error.
 5. **`"{home}"`.** Interpolation writes a record in the form you would type it in Una: its kind's name and every field.
 :::
 
@@ -444,8 +444,8 @@ pub main() -> Unit
 1. **`kind Zone = Local | National | Abroad`.** Three variants with no fields. Each is a value of its own: `Local` is a `Zone`.
 2. **`kind Delivery = AtDoor | AtLocker(locker: Text) | AtStore(store: Text, opens: Int)`.** Variants with fields. Only a locker delivery has a locker, and only a store delivery has an opening hour. A value such as "at the door, locker 14" cannot be built.
 3. **`kind QuoteError = | NoCarrier`.** A sum with one variant starts with a bar.
-4. **`AtLocker(locker: "Station 14")`.** A variant with fields is built like a record.
-5. **`delivery is AtLocker`.** `is` tests which variant a value is, and gives a `Bool`. It does not need the fields.
+4. **`delivery is AtLocker`.** `is` tests which variant a value is, and gives a `Bool`. It does not need the fields.
+5. **`AtLocker(locker: "Station 14")`.** A variant with fields is built like a record.
 6. **`Local < Abroad` and `National == National`.** Variants without fields are ordered as they are declared, so list them in an order that means something: here, nearest first. `==` compares any two values of the same kind.
 :::
 

@@ -9,12 +9,6 @@ kind CartLine
 --- What one line costs, in cents.
 line_cents(line: CartLine) -> Int = line.quantity * line.cents
 
---- Whether a cart ships for free: 10000 cents or more, not counting gift cards.
-ships_free(lines: List[CartLine]) -> Bool
-=
-  let goods = lines.filter(keep: fn(line) -> not line.sku.starts_with(prefix: "GIFT-"))
-  goods.map(each: line_cents).sum() >= 10000
-
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -28,3 +22,9 @@ pub main() -> Unit
   let units = cart.fold(initial: 0, step: fn(sum, line) -> sum + line.quantity)
   @console.print("{units} units")
   @console.print("free shipping: {ships_free(cart)}")
+
+--- Whether a cart ships for free: 10000 cents or more, not counting gift cards.
+ships_free(lines: List[CartLine]) -> Bool
+=
+  let goods = lines.filter(keep: fn(line) -> not line.sku.starts_with(prefix: "GIFT-"))
+  goods.map(each: line_cents).sum() >= 10000

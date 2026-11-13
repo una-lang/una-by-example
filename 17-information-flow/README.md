@@ -596,9 +596,9 @@ pub main() -> Unit
 Walkthrough:
 
 1. **`accepts internal`.** The supplier's service is one of the store's own systems, so its operation may receive `internal` data. Without the clause it would accept only `public` data, and the call in `send_list` would be U4003.
-2. **`@files.write(…)` then `@files.read(…)`.** A nightly job would write the list and a morning job read it. Here one program does both, with the grant `files:src:read,write`.
-3. **`let list = @files.read("reorder.csv")`.** `list` is `internal Text`, whatever the file holds.
-4. **`send_list(list: internal Text)`.** The parameter declares the label it receives. `@supplier.submit(list)` checks, because `internal` is at or below `internal`.
+2. **`send_list(list: internal Text)`.** The parameter declares the label it receives. `@supplier.submit(list)` checks, because `internal` is at or below `internal`.
+3. **`@files.write(…)` then `@files.read(…)`.** A nightly job would write the list and a morning job read it. Here one program does both, with the grant `files:src:read,write`.
+4. **`let list = @files.read("reorder.csv")`.** `list` is `internal Text`, whatever the file holds, so it is what `send_list` receives.
 5. **`@console.print("reorder list sent to the supplier")`.** The message is a literal, so it is public. Printing `list` here would be U4003.
 :::
 
@@ -1043,8 +1043,8 @@ pub main() -> Unit
 
 Walkthrough:
 
-1. **`shipping_fee(spent: confidential Int) -> confidential Int`.** The branch is on `spent`, so the fee is `confidential`. Declaring `-> Int` is U4001, at the condition ([a branch that decides a public result](#a-branch-that-decides-a-public-result-u4001) shows it).
-2. **`accepts confidential` on `charge`.** The payment provider must receive the fee, so its operation accepts `confidential` data.
+1. **`accepts confidential` on `charge`.** The payment provider must receive the shipping fee, which is confidential, so its operation accepts `confidential` data.
+2. **`shipping_fee(spent: confidential Int) -> confidential Int`.** The branch is on `spent`, so the fee is `confidential`. Declaring `-> Int` is U4001, at the condition ([a branch that decides a public result](#a-branch-that-decides-a-public-result-u4001) shows it).
 3. **`@console.print("shipping charged for 2 orders")`.** `main` prints a constant. It knows how many orders it charged, which depends on nothing confidential.
 :::
 
