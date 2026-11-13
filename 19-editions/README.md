@@ -45,14 +45,14 @@ Una separates the two things a release changes:
 
 :::steps
 1. **The compiler improves for every edition.** A new release fixes bugs, adds explanations and makes the tools better, for every package.
-2. **The language changes only in a new edition.** New keywords, new constructs and stricter rules come with an edition, and a package gets them only when its `una.toml` names that edition.
+2. **The language changes only in a new edition.** New keywords, new constructs and stricter rules come with an edition, and a package gets them only when its manifest names that edition.
 3. **Editions are cumulative.** Edition `0.3` has every construct and rule of `0.2`, and `0.2` has every construct of `0.1`. Moving a package forward never removes a construct. It can reject code that a stricter rule no longer allows or a name that became a keyword, and a few prelude functions and reports change too ([section 19.2](#s19-2)). Edition `0.3` also accepts some code that `0.2` rejects ([section 19.3](#s19-3)).
 :::
 
 So upgrading `una` never changes what a stable edition accepts or rejects, except to fix a soundness or security error: a bug that let the checker accept a program it should have rejected. Moving a package to a new edition is a separate step, a change to one line of `una.toml`, which you make when you are ready and review like any other change.
 
 > [!KEY]
-> A package's edition is a line of `una.toml`. Upgrading `una` keeps the meaning of every stable edition, and a later edition adds constructs and, with few exceptions, tightens rules.
+> A package's edition is a line of its manifest: `una.toml`, or `ita.una` from edition `0.4`. Upgrading `una` keeps the meaning of every stable edition, and a later edition adds constructs and, with few exceptions, tightens rules.
 
 ## 19.1 An edition is part of the package
 
@@ -511,7 +511,7 @@ Edition `0.3` adds constructs that narrow what a program may do, rules that reje
 - **Refined type arguments.** A refined kind may be the type of a list's elements, as in `List[Units]` with `Units = Int in 0..100`.
 - **`test`.** The declaration that runs under `una test`, written `example` in editions `0.1` and `0.2`, is written `test`, with the same `given`, `do` and `expect` lines. An `example` in an edition `0.3` package is U0103, and `una fix .` rewrites the word. `una test .` then prints `test` on each line and counts tests.
 
-The day-to-day program uses the first two, and writes its tests with `test` ([section 19.6](#s19-6)). The rest of this section shows units, refined type arguments and the rules on failure handling.
+The day-to-day program uses the first two, and writes its tests with `test` ([section 19.7](#s19-7)). The rest of this section shows units, refined type arguments and the rules on failure handling.
 
 ### Units of measure
 
@@ -981,10 +981,9 @@ From edition `0.2` on, `take` is a keyword that starts a parameter's mode, as in
 
 ## 19.5 Edition `0.4`, a preview
 
-
 ### What edition `0.4` is
 
-Edition `0.4` is the newest edition, and a preview, as `0.3` is ([section 19.3](#s19-3)). It has every construct and rule of `0.3`, and it changes one thing that every earlier edition shares: where a package describes itself.
+Edition `0.4` is the edition of release 0.4.0, and a preview, as `0.3` is ([section 19.3](#s19-3)). It has every construct and rule of `0.3`, and it changes one thing that every earlier edition shares: where a package describes itself.
 
 Up to edition `0.3`, a package's settings live in `una.toml` and its solver pin in `verification.lock`. From edition `0.4`, they live in two files written in Una's own syntax: `ita.una`, the **manifest**, the file that names the package and its settings, and `ita.lock`, the **lock**, the file that pins what the package was checked with. Think of a library card and the stamp on a returned book: the card says who you are and what you may borrow, and the stamp records exactly what you took, so that no one has to remember it.
 
@@ -992,7 +991,7 @@ Edition `0.4` also adds the constructs of long-running programs and of tasks and
 
 ### Why the manifest moves to `ita.una`
 
-A manifest decides what a program may do: which files it reads, which capabilities `main` is granted ([chapter 12](/learn/capabilities/)), and, from edition `0.4`, which other packages it runs. So the file must mean exactly what it says. `ita.una` is read by the same rules as a module: two-space indentation, `--` comments, and nothing that runs. It has no expressions, no conditions and no environment variables, and every line has one of a fixed set of forms, so a typo is an error, never a setting that is quietly ignored. `ita.lock` is written only by `una`, so it is never edited by hand and never disagrees with what `una` checked.
+A manifest decides what a program may do: which files it reads, which capabilities `main` is granted ([chapter 12](/learn/capabilities/)), and, from edition `0.4`, which other packages it runs. So the file must mean exactly what it says. `ita.una` is read by the same rules as a module: two-space indentation, `--` comments, and nothing that runs. It has no expressions, no conditions and no environment variables, and every line has one of a fixed set of forms, so a typo is an error, never a setting that is quietly ignored. `ita.lock` is written only by `una`, and is not edited by hand.
 
 ### The restock list in edition `0.4`
 
@@ -1126,9 +1125,9 @@ The package is still checked in edition `0.4`, so the rest of its diagnostics sh
 
 ### How edition `0.4` behaves
 
-- **A preview.** Like `0.3`, edition `0.4` may get stricter in a later release, never looser for the programs that `0.3` can express.
+- **A preview.** A later release may add, change or remove a construct of edition `0.4`, but a program it accepted then gives the same result or a diagnostic, never a silent change. That is less than `0.3` promises, which only gets stricter.
 - **One manifest.** A package has `ita.una` or `una.toml`, never both: a directory with both is an error, so the two can never disagree.
-- **Only `una` writes the lock.** `una migrate` and the `una ita` commands write `ita.lock`; `una fix` and `una fmt` never edit `ita.una` or `ita.lock`.
+- **Only `una` writes the lock.** `una migrate` and the `una ita` commands write `ita.lock`; `una fix` and `una fmt` never edit `ita.lock`, and `una fmt ita.una` rewrites the manifest in its canonical form.
 - **Words it reserves.** Edition `0.4` reserves words for its new constructs, such as `within`. A name that became one is U0103, with a rename that `una fix` applies.
 - **Earlier editions stay.** A package of `una.toml` keeps its edition, and the same `una` checks both kinds of package side by side.
 
@@ -1875,7 +1874,7 @@ and the lock, which a reviewer sees:
 ### For agents
 
 :::agents
-A construct of a later edition usually gives U0101 or U0103 at the construct, a table of a later edition U7002 at `una.toml`, `edition = "0.4"` in `una.toml` U7002 with `una migrate` as its repair, and a later prelude function or type rule a type error, such as U1001, U2001 or U2002. To move a package, change only `edition`, run `una --json check .`, apply `una fix .`, and repair the rest by hand; to move it to `0.4`, run `una migrate .` instead of editing the line, then the same loop. Never edit `ita.lock` by hand. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. In edition `0.3`, the test declaration is `test`; an `example` there is U0103, which `una fix .` rewrites. The compact rule: *an edition is a line of `una.toml`; a later edition adds constructs and, with few exceptions, tightens rules.*
+A construct of a later edition usually gives U0101 or U0103 at the construct, a table of a later edition U7002 at `una.toml`, `edition = "0.4"` in `una.toml` U7002 with `una migrate` as its repair, and a later prelude function or type rule a type error, such as U1001, U2001 or U2002. To move a package, change only `edition`, run `una --json check .`, apply `una fix .`, and repair the rest by hand; to move it to `0.4`, run `una migrate .` instead of editing the line, then the same loop. Never edit `ita.lock` by hand. Never apply a U0103 rename to `edit`, `take` or `together` used as a keyword: change the edition instead. A U0101 at a word the new edition made a keyword needs a rename by hand. In edition `0.3`, the test declaration is `test`; an `example` there is U0103, which `una fix .` rewrites. The compact rule: *an edition is a line of the manifest, `una.toml` or, from `0.4`, `ita.una`; a later edition adds constructs and, with few exceptions, tightens rules.*
 :::
 
 ### Recap
@@ -1883,11 +1882,11 @@ A construct of a later edition usually gives U0101 or U0103 at the construct, a 
 :::recap
 - `[package] edition` names a package's edition, and is required. A single file has edition `0.1`.
 - Upgrading `una` keeps what each stable edition accepts and rejects, except to fix a soundness or security error.
-- Editions are cumulative: a later edition adds constructs, keywords and rules, and never removes a construct.
+- Editions `0.1` to `0.4` are cumulative: each adds constructs, keywords and rules, and removes no construct of the one before.
 - `0.2` adds loops, `let edit`, `edit` and `take`, `together`, maps, JSON and more, makes `old` a keyword, and reserves `weak`.
 - `0.3` is a preview: conditions on operations, locked contracts, boundaries, narrowed rebindings, units, refined type arguments, no dead failure handling, and tests written `test`. It may get stricter in a later release.
 - To move a package: change the edition, `una check .`, `una fix .`, repair the rest, `una test .`, and compare the output.
-- `0.4` is a preview whose package is described by `ita.una` and pinned by `ita.lock`: `una migrate` writes both, rewrites the modules in its canonical form, and prints what the new edition reads differently.
+- `0.4` is a preview whose package is described by `ita.una` and pinned by `ita.lock`: `una migrate` writes both, rewrites the modules in its canonical form, and prints what the new edition reads differently. A later release may change it, never in silence.
 - Never let `una fix` rename a keyword of a later edition; change the edition instead.
 :::
 
