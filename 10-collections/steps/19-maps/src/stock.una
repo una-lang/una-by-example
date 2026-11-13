@@ -6,15 +6,6 @@ kind Sale
   category: Text
   quantity: Int
 
---- How many units each category sold.
-units_by_category(sales: List[Sale]) -> Map[Text, Int]
-=
-  let edit totals: Map[Text, Int] = empty_map()
-  for sale in sales
-    let before = totals.get(key: sale.category).or_else(default: 0)
-    edit totals.set(key: sale.category, value: before + sale.quantity)
-  totals
-
 pub main() -> Unit
   uses @console: Console[print]
 =
@@ -32,3 +23,12 @@ pub main() -> Unit
   let shade = Sale(sku: "SHADE-05", category: "lighting", quantity: 3)
   for entry in units_by_category([lamp, rug, shade]).entries()
     @console.print("{entry.key}: {entry.value}")
+
+--- How many units each category sold.
+units_by_category(sales: List[Sale]) -> Map[Text, Int]
+=
+  let edit totals: Map[Text, Int] = empty_map()
+  for sale in sales
+    let before = totals.get(key: sale.category).or_else(default: 0)
+    edit totals.set(key: sale.category, value: before + sale.quantity)
+  totals

@@ -1,2 +1,2 @@
-error U2025 at src/stock.una:22:21: a map's key type must satisfy `Ord`, and `Sale` does not
-error U2025 at src/stock.una:22:38: `empty_map` needs its type parameter `K` to satisfy `Ord`, and `Sale` does not
+error U2025 at src/stock.una:13:21: a map's key type must satisfy `Ord`, and `Sale` does not
+error U2025 at src/stock.una:13:38: `empty_map` needs its type parameter `K` to satisfy `Ord`, and `Sale` does not
