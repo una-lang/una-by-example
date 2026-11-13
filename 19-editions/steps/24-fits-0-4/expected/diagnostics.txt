@@ -1,0 +1,3 @@
+error U0103 at src/shelf.una:4:1: `within` is reserved for edition 0.4 (long-running programs)
+error U0103 at src/shelf.una:9:51: `within` is reserved for edition 0.4 (long-running programs)
+error U0103 at src/shelf.una:10:52: `within` is reserved for edition 0.4 (long-running programs)

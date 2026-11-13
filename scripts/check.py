@@ -269,11 +269,13 @@ GRANT = re.compile(r"^(console|clock|files:src(/[A-Za-z0-9_-]+)*:(read|write|rea
 # The commands an `expected/commands/*.txt` may run, all in the package and nowhere else. `ita
 # lock`, with or without `--check`, writes or checks the ita.lock of an edition 0.4 package
 # (spec/30 §4 rule 4), `.` by default; it never widens a ceiling, which takes
-# `--accept-authority`.
+# `--accept-authority`. `migrate`, with or without `--dry-run`, moves a package of una.toml to
+# ita.una and ita.lock of edition 0.4 (spec/30 §8), in the fresh copy the command runs in.
 COMMAND = re.compile(
     r"^(--json )?(check|test|run|build|report|obligations) \.$|^fmt --check \.$|^fix --dry-run \.$"
     r"|^(--json )?explain U\d{4}$|^(--json )?(trace|contract) [A-Za-z0-9_.]+$"
     r"|^(--json )?ita lock( --check)?( \.)?$"
+    r"|^(--json )?migrate( --dry-run)?( \.)?$"
 )
 
 # What a package's ita.una may hold (spec/30 §2), as its una.toml may hold MANIFEST_TABLES: a

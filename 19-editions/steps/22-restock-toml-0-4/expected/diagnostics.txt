@@ -1,0 +1,1 @@
+error U7002 at una.toml:4:11: edition 0.4 is described by ita.una, not una.toml; run `una migrate`

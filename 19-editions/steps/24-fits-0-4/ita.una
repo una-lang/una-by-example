@@ -1,0 +1,8 @@
+ita shelf
+  version 0.1.0
+  edition 0.4
+
+run
+  entry shelf
+  grants
+    console
