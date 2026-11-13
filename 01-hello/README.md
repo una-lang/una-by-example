@@ -73,7 +73,7 @@ A few more words come up on every page:
 
 ### What you need: a terminal and `una`
 
-Una runs on macOS, on Macs with Apple silicon, and on Linux, on 64-bit ARM computers with a recent system, such as Ubuntu 24.04: those are the systems this release of `una` is built for. It does not run on Linux on x86-64 computers, nor on Windows; the [install steps](/docs/get-started/#1-install) give the details.
+Una runs on macOS, on Macs with Apple silicon, and on Linux, on 64-bit ARM computers whose system has glibc 2.39 or later, such as Ubuntu 24.04 (not systems built on musl, such as Alpine): those are the systems this release of `una` is built for. It does not run on Linux on x86-64 computers, nor on Windows; the [install steps](/docs/get-started/#1-install) give the details.
 
 You work with `una` in a **terminal**: the program that shows the console on your screen. To open one:
 

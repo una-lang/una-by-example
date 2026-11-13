@@ -540,18 +540,11 @@ def read(path):
         return handle.read()
 
 
-# `una report` names the host target on its `native:` line (spec/13 §6, spec/16 §1). For the two
-# targets una builds for, that line is compared without its value, so the report of a package
-# checks on either host; any other value on the line is compared as it is, and fails.
-NATIVE = re.compile(r"^native: (aarch64-apple-darwin|x86_64-unknown-linux-gnu)$", re.MULTILINE)
-
-
-def host_neutral(args, text):
-    """`text`, the output of `una <args>`, with the target of a `report` command's `native:` line
-    replaced by a fixed token when it is one of the supported targets."""
-    if args.split(" ") != ["report", "."]:
-        return text
-    return NATIVE.sub("native: <supported target>", text)
+# `una report` names the host in several lines (spec/13 §6, spec/16 §1): `native:` gives the
+# target, and `solver build:`, `runtime sha256:` and `linker:` differ between the targets of una
+# 0.4.0, `aarch64-apple-darwin` and `aarch64-unknown-linux-gnu`. A report is compared as printed,
+# like every command, and the book's reports are those of `aarch64-apple-darwin`: on another host
+# their check fails.
 
 
 def has_commands(expected):
@@ -624,7 +617,7 @@ def commands(una, package, expected, where, failures, fresh=None):
             continue
         args = first[len("$ una "):]
         ran = run(una, args.split(" "), cwd)
-        if host_neutral(args, ran.stdout.decode(errors="replace")) != host_neutral(args, printed):
+        if ran.stdout.decode(errors="replace") != printed:
             failures.add(f"{where}/commands/{name}", f"`{first[2:]}` prints:\n{ran.stdout.decode(errors='replace')}")
         count += 1
     return count
@@ -1360,8 +1353,7 @@ def self_test():
             if target:
                 write(os.path.join(p, "src", "main.una"), f"module main\n-- target {target}\nprint hi\n")
         case("a report on the same host", True, lambda r, p: reported(r, p, None))
-        case("a report on the other supported host", True, lambda r, p: reported(r, p, "x86_64-unknown-linux-gnu"))
-        case("a report on an unsupported host", False, lambda r, p: reported(r, p, "riscv64gc-unknown-linux-gnu"), "prints")
+        case("a report of another host", False, lambda r, p: reported(r, p, "aarch64-unknown-linux-gnu"), "prints")
 
         def unrun(r, p, command):
             os.remove(os.path.join(p, "expected", "output.txt"))

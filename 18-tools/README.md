@@ -1146,7 +1146,7 @@ The **trusted computing base** is everything the guarantees rest on without bein
 
 #### The executable: `native`
 
-`native` names the machine that `una build` builds for, the one una runs on, such as `aarch64-apple-darwin`. Under it, `arbitrary precision` lists the values the executable keeps as numbers of any size, because no refinement bounds them to a **machine word**, the fixed-size number a processor works with fastest. `Percent` is bounded by `0..90`, so `off` is not listed; `Cents` has no upper bound, so `price`, `cost` and the result are. `kernels` and `fma allowlist` describe the numeric routines that an executable holds, `runtime sha256` is the SHA-256 of the runtime library built into `una`, which every executable it builds links, and `linker` names what links it, here `una` itself.
+`native` names the machine that `una build` builds for, the one una runs on, such as `aarch64-apple-darwin`. Under it, `arbitrary precision` lists the values the executable keeps as numbers of any size, because no refinement bounds them to a **machine word**, the fixed-size number a processor works with fastest. `Percent` is bounded by `0..90`, so `off` is not listed; `Cents` has no upper bound, so `price`, `cost` and the result are. `kernels` and `fma allowlist` describe the numeric routines that an executable holds, `runtime sha256` is the SHA-256 of the runtime library built into `una`, which every executable it builds links, and `linker` names what links it, here `una` itself (on Linux, `cc`).
 
 #### What the guarantees do not cover: `out of model`
 
@@ -1306,7 +1306,7 @@ So a program that runs, or an executable that exists, is always one that checked
 
 - **The status of a run.** `ok` for a run that returned, `failed` when `main` failed with its error kind, `aborted` when the run was stopped, by a limit ([chapter 16](/learn/memory/#s16-4) shows one) or another runtime error, and `rejected` when the checks failed and nothing ran.
 - **The examples run alone.** Each example gets only the handlers its `given` lines install, so an example never reaches the console or a real service by accident.
-- **The executable.** `una build .` writes it under the package, at `target/una/<name>`, with `<name>` from `[package] name`. It runs `main` with the grants of `una.toml` built in, takes further `--grant` flags, and prints what `una run .` prints. **Linking** is the last step of a build: it joins the compiled code with the **runtime library**, the code that every Una executable shares. On a Mac, `una` links with a **linker** built into it and needs no other program. On Linux, it links through the system's C compiler, `cc`, which must be on the path, the list of directories where the terminal looks for programs. It builds for the machine it runs on.
+- **The executable.** `una build .` writes it under the package, at `target/una/<name>`, with `<name>` from `[package] name`. It runs `main` with the grants of `una.toml` built in, takes further `--grant` flags, and prints what `una run .` prints. **Linking** is the last step of a build: it joins the compiled code with the **runtime library**, the code that every Una executable shares. On a Mac, `una` links with a **linker** built into it and needs no other program. On Linux, it links through the system's C compiler, `cc` (gcc or clang, with the C library's development files), which must be on the path, the list of directories where the terminal looks for programs. It builds for the machine it runs on.
 
 ### Exit codes
 
