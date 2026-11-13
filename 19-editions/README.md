@@ -63,7 +63,7 @@ A board game sold for many years often comes in editions. The second edition add
 Una works the same way, with two words that are easy to mix up:
 
 - A **release** is a version of the `una` program itself, such as una 0.3.16. You install a release, and a newer one replaces it.
-- An **edition** is a version of the Una language: its keywords, its constructs and its rules. Una has three, `0.1`, `0.2` and `0.3`.
+- An **edition** is a version of the Una language: its keywords, its constructs and its rules. Una 0.4.0 serves five, `0.1` to `0.5`, and this chapter uses the first three.
 
 A **keyword** is a word the language keeps for itself, such as `if`, `for` or `uses`: it starts a piece of syntax, so it cannot name a value, a parameter or a field. A **construct** is one form of code with its own syntax and meaning, such as a `for` loop, a kind or a `uses` clause.
 
