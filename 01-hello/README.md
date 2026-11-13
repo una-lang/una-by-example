@@ -71,9 +71,9 @@ A few more words come up on every page:
 - The **console** is the window of text where you type commands and where a program writes its lines. [Section 1.5](#s1-5) covers it.
 - `una` is the tool that reads Una code. It **checks** the code, which means it looks for mistakes without running it, and it **runs** the code when the check passes.
 
-### What you need: a terminal, `una` and Z3
+### What you need: a terminal and `una`
 
-Una runs on macOS, on Macs with Apple silicon, and on Linux, on x86-64 and ARM computers: those are the systems each release of `una` is built for.
+Una runs on macOS, on Macs with Apple silicon, and on Linux, on 64-bit ARM computers with a recent system, such as Ubuntu 24.04: those are the systems this release of `una` is built for. It does not run on Linux on x86-64 computers, nor on Windows; the [install steps](/docs/get-started/#1-install) give the details.
 
 You work with `una` in a **terminal**: the program that shows the console on your screen. To open one:
 
@@ -82,11 +82,11 @@ You work with `una` in a **terminal**: the program that shows the console on you
 
 In the terminal you type a **command**, a line that names a program and what it should do, and press [[Enter]]; the program runs and prints its answer under the command.
 
-Next, install `una` and Z3, a program that `una` asks to prove facts about your code: to show, before the program runs, that a rule of the code holds in every case. The programs of this chapter need no proof, but from [chapter 2](/learn/numbers/) on, `una check` cannot prove anything without Z3. The [install steps](/docs/get-started/#1-install) install both, at the versions that go together, and say how to set up your terminal so that typing `una` runs it from any directory.
+Next, install `una`. Built into it is Z3, a program that `una` asks to prove facts about your code: to show, before the program runs, that a rule of the code holds in every case. The programs of this chapter need no proof, but from [chapter 2](/learn/numbers/) on, `una check` proves facts with Z3. There is no separate Z3 to install. The [install steps](/docs/get-started/#1-install) install `una` and say how to set up your terminal so that typing `una` runs it from any directory.
 
 ### Checking the install: `una --version`
 
-To see that the install worked, type `una --version` and press [[Enter]]. It prints the version of `una`, the **editions** it supports, which are the versions of the Una language it can read ([Making the package](#making-the-package) says more), and the version of Z3 it expects. Then type `z3 --version`, which must report that same version of Z3.
+To see that the install worked, type `una --version` and press [[Enter]]. It prints the version of `una`, the **editions** it supports, which are the versions of the Una language it can read ([Making the package](#making-the-package) says more), and the version of Z3 built into it.
 
 If `una --version` answers with this line instead, followed by a short note on how to use `una`, the `una` that ran is a release older than 0.3, which did not know `--version` yet:
 

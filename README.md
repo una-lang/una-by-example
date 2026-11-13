@@ -27,7 +27,7 @@ python3 -B scripts/check.py --una "$(command -v una)"
 
 On every page and translation, English or translated, template 1 or 2, the check also refuses what the website would render as code that no package backs: a `$$` line, indented code, a fence inside a quote or a list, and invisible or control characters.
 
-This needs Python 3 and the `una` of `una.lock`, with Z3 at the version its `verification.lock` pins on the path. `python3 -B scripts/check.py --self-test` checks the script itself and needs neither; `python3 -B scripts/test_template2.py` runs only the tests of the template 2 rules. `python3 -B scripts/check.py --fill` writes the included text into the blocks of the template 2 pages, and needs no `una`.
+This needs Python 3 and the `una` of `una.lock`, which has Z3 built in. `python3 -B scripts/check.py --self-test` checks the script itself and needs neither; `python3 -B scripts/test_template2.py` runs only the tests of the template 2 rules. `python3 -B scripts/check.py --fill` writes the included text into the blocks of the template 2 pages, and needs no `una`.
 
 ## Translations
 

@@ -1104,7 +1104,7 @@ tcb:
   trusted modules: 
   host capabilities: Console
   solver: z3 5.1.0
-  solver build: source e621ef190d1486759306b83619ffd66ce3ee19cfdb799d17399953e7b0849b75, library 621d0c736d80f344fe5e59ea73b78d12fe731bda0810a512d9aa33365e087f32
+  solver build: source e621ef190d1486759306b83619ffd66ce3ee19cfdb799d17399953e7b0849b75, library 4fcda925f158098beb0edb0650cd98caa0b66215c387f6d165ccf39bd33f0baa
   solver confinement: own
   proof cache: .una/cache/
   proof cache key: ~/.una/proof-cache.key
@@ -1115,7 +1115,8 @@ native: aarch64-apple-darwin
   arbitrary precision: discount.sale_price.price, discount.sale_price.cost, discount.sale_price.result
   kernels: baseline
   fma allowlist: una_core::dense::variants::x86_64_v3, una_core::dense::variants::x86_64_v4
-  linker: una 0.3.16
+  runtime sha256: 036e2df83c73f8514cfe9b850f8c84b5cce86ccbf00c512d69250cbb876eff56
+  linker: una 0.4.0
 out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks, the time of a host stop, interference of the host's load with the timing of an expression, uncatchable termination, waits at limits and at `start`, which branch of `first of` wins, beyond its label
 ```
 
@@ -1145,7 +1146,7 @@ The **trusted computing base** is everything the guarantees rest on without bein
 
 #### The executable: `native`
 
-`native` names the machine that `una build` builds for, the one una runs on, such as `aarch64-apple-darwin`. Under it, `arbitrary precision` lists the values the executable keeps as numbers of any size, because no refinement bounds them to a **machine word**, the fixed-size number a processor works with fastest. `Percent` is bounded by `0..90`, so `off` is not listed; `Cents` has no upper bound, so `price`, `cost` and the result are. `kernels` and `fma allowlist` describe the numeric routines that an executable holds, and `linker` names what links it, here `una` itself.
+`native` names the machine that `una build` builds for, the one una runs on, such as `aarch64-apple-darwin`. Under it, `arbitrary precision` lists the values the executable keeps as numbers of any size, because no refinement bounds them to a **machine word**, the fixed-size number a processor works with fastest. `Percent` is bounded by `0..90`, so `off` is not listed; `Cents` has no upper bound, so `price`, `cost` and the result are. `kernels` and `fma allowlist` describe the numeric routines that an executable holds, `runtime sha256` is the SHA-256 of the runtime library built into `una`, which every executable it builds links, and `linker` names what links it, here `una` itself.
 
 #### What the guarantees do not cover: `out of model`
 
@@ -1305,7 +1306,7 @@ So a program that runs, or an executable that exists, is always one that checked
 
 - **The status of a run.** `ok` for a run that returned, `failed` when `main` failed with its error kind, `aborted` when the run was stopped, by a limit ([chapter 16](/learn/memory/#s16-4) shows one) or another runtime error, and `rejected` when the checks failed and nothing ran.
 - **The examples run alone.** Each example gets only the handlers its `given` lines install, so an example never reaches the console or a real service by accident.
-- **The executable.** `una build .` writes it under the package, at `target/una/<name>`, with `<name>` from `[package] name`. It runs `main` with the grants of `una.toml` built in, takes further `--grant` flags, and prints what `una run .` prints. Building needs the system's **linker**, `cc`, on the path, the list of directories where the terminal looks for programs. **Linking** is the last step of a build: it joins the compiled code with the **runtime library**, the code that every Una executable shares. It builds for the machine it runs on.
+- **The executable.** `una build .` writes it under the package, at `target/una/<name>`, with `<name>` from `[package] name`. It runs `main` with the grants of `una.toml` built in, takes further `--grant` flags, and prints what `una run .` prints. **Linking** is the last step of a build: it joins the compiled code with the **runtime library**, the code that every Una executable shares. On a Mac, `una` links with a **linker** built into it and needs no other program. On Linux, it links through the system's C compiler, `cc`, which must be on the path, the list of directories where the terminal looks for programs. It builds for the machine it runs on.
 
 ### Exit codes
 
@@ -1584,7 +1585,7 @@ Each command answers one question, and each would stop the release for its own r
 | `una test .` | [18.5](#s18-5) | An example fails: a number is not the one a person expects |
 | `una trace PRICING_1` | [18.3](#s18-3) | An obligation derived from the requirement is not proven |
 | `una report .` | [18.4](#s18-4) | An obligation is not proven; and a reviewer reads what changed |
-| `una build .` | [18.5](#s18-5) | The executable cannot be built, for example without `cc` |
+| `una build .` | [18.5](#s18-5) | The executable cannot be built, for example on Linux without `cc` |
 
 `una fmt --check .` and `una check .` print nothing: the package is canonical and proven. `una trace PRICING_1` shows that the requirement reaches `sale_price` and that both of its obligations are proven:
 

@@ -247,7 +247,7 @@ pub main() -> Unit
 
 #### One binary serves every edition
 
-`una --version` prints the version of `una`, the editions it serves, which of them are previews, and the version of Z3 that its default lock pins. At this release it lists the editions `0.1` to `0.5`, of which `0.3`, `0.4` and `0.5` are previews. Every one of them is checked by the same binary, so one machine can check, test and build packages of different editions side by side.
+`una --version` prints the version of `una`, the editions it serves, which of them are previews, and the version of Z3 built into it. At this release it lists the editions `0.1` to `0.5`, of which `0.3`, `0.4` and `0.5` are previews. Every one of them is checked by the same binary, so one machine can check, test and build packages of different editions side by side.
 
 #### Stable editions and previews
 
@@ -261,6 +261,8 @@ An edition is either **stable** or a **preview**:
 | `0.4`, `0.5` | Preview | Later previews, described in `ita.una`; this book does not use them yet |
 
 A package on a stable edition can stay there for as long as it likes.
+
+Release 0.4.0 serves edition `0.4` as a preview: a later release makes it stable. Edition `0.5`, also a preview, holds what comes after it.
 
 #### Words reserved for later editions
 
