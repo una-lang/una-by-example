@@ -33,6 +33,6 @@ native: aarch64-apple-darwin
   arbitrary precision: discount.sale_price.price, discount.sale_price.cost, discount.sale_price.result
   kernels: baseline
   fma allowlist: una_core::dense::variants::x86_64_v3, una_core::dense::variants::x86_64_v4
-  runtime sha256: 036e2df83c73f8514cfe9b850f8c84b5cce86ccbf00c512d69250cbb876eff56
+  runtime sha256: 021854882bfbddf55f66cb755d36d1f6822abbf7a673447f28608215da64511f
   linker: una 0.4.0
 out of model: timing, termination and divergence, resource consumption and allocation, stack exhaustion, external systems beyond declared signatures, races between the check and the use of a file path, hard links, order of effects across concurrent tasks, the time of a host stop, interference of the host's load with the timing of an expression, uncatchable termination, waits at limits and at `start`, which branch of `first of` wins, beyond its label
