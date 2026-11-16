@@ -12,7 +12,7 @@ nav: ["Your first program", "Modules", "The main function", "Writing a function"
 
 # 1 Hello, Una
 
-A program is a set of instructions that a computer follows, written in a language that both you and the computer can read. This chapter is where you write your first one. It assumes no experience: every word it uses is explained the first time it appears. You start from an empty directory and write a program that prints "Hello, world". Then you learn the parts every Una program is made of: modules, the `main` function, functions of your own, and printing. You end with a small program that a store prints every morning, checked, run and tested.
+This chapter is your first Una program. It assumes you have written code in another language and have never seen Una: every Una term is explained the first time it appears. If you work with an AI agent, each section ends with what the agent needs to know. You start from an empty directory and write a program that prints "Hello, world". Then you learn the parts every Una program is made of: modules, the `main` function, functions of your own, and printing. You end with a small program that a store prints every morning, checked, run and tested.
 
 ## What you'll build
 
