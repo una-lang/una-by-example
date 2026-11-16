@@ -134,7 +134,7 @@ The site shows each numbered section (`## N.k`) as a page of its own, and lists 
 
 ## Teaching a concept
 
-Write every concept section for a reader who may never have programmed, and who has never seen Una. Such a reader learns from the page what a construct is, why the language has it, and how to use it; nothing may depend on knowledge the book has not given. When an example needs a construct of a later chapter, it gives that construct a one-clause gloss and a link to where it is taught, as the Style guide asks, and relies on nothing more. A concept section teaches its construct in this order, each part one or more `### ` subsections titled by what it holds:
+Write every concept section for a developer who knows another language, often works with an AI agent, and has never seen Una. Such a reader learns from the page what a construct is, why the language has it, and how to use it. Do not explain what programming is, or what a variable, a function or a file is in general; say what is particular to Una, and compare with what the reader knows where that is shorter. Nothing may depend on knowledge of Una the book has not given. When an example needs a construct of a later chapter, it gives that construct a one-clause gloss and a link to where it is taught, as the Style guide asks, and relies on nothing more. A concept section teaches its construct in this order, each part one or more `### ` subsections titled by what it holds:
 
 | Part | What it does | Usual title |
 | --- | --- | --- |
@@ -300,6 +300,6 @@ Warnings, which do not fail the check but are listed in its report: a concept se
 - [ ] Links point to site routes at the release, not to GitHub.
 - [ ] Neutral text: no names, roles, internal ids, issue or decision-record numbers.
 - [ ] Every fact is in prose (translatable), headings are from the fixed set, and the length is within target.
-- [ ] Each concept section follows [Teaching a concept](#teaching-a-concept): a reader who has never programmed can follow it, every form of the construct has its own checked example, and the section ends with a check-yourself question.
+- [ ] Each concept section follows [Teaching a concept](#teaching-a-concept): a developer new to Una can follow it without a lesson on programming, every form of the construct has its own checked example, and the section ends with a check-yourself question.
 - [ ] Every section has its subsections: 3 to 12 specific `### ` titles in each concept section, one per mistake and per exercise, and the closing `Recap and reference`; no "above" or "below" across sections.
 - [ ] The page is within the site's page budget (40 KiB gzip). Otherwise, split it.
