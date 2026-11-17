@@ -1374,7 +1374,7 @@ A `U8` holds the whole numbers 0 to 255 ([section 2.3](/learn/numbers/#s2-3)). `
 
 #### Two more kinds in edition `0.3`
 
-Edition `0.3`, a preview of the next version of the language, adds two kinds, which come from the limits on authority of [chapter 13](/learn/authority/): `effect_condition` and `contract_lock`. Packages on edition `0.2`, as every step of this chapter is, never see them.
+Edition `0.3`, a preview, adds two kinds, which come from the limits on authority of [chapter 13](/learn/authority/): `effect_condition` and `contract_lock`. Packages on edition `0.2`, as every step of this chapter is, never see them.
 
 #### Running the step
 

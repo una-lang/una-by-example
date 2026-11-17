@@ -1,7 +1,7 @@
 $ una explain U7004
 # U7004: Missing or invalid `verification.lock`
 
-Every package commits a `verification.lock` next to its `una.toml` (`spec/12 §9`): it pins the SMT encoding, the solver and its exact version, the logic, the step budget and the seed, so that verification gives the same answer on every machine. U7004 reports a missing lock, at the start of `una.toml` (ADR 0022), and a lock with a syntax error, a missing or unknown key, or a value v0.1 does not support. Whether the installed solver matches the lock is U5003.
+Every package commits a `verification.lock` next to its `una.toml` (`spec/12 §9`), up to edition `0.3`; from edition `0.4`, `ita.lock` next to `ita.una` pins the solver instead (U7009): it pins the SMT encoding, the solver and its exact version, the logic, the step budget and the seed, so that verification gives the same answer on every machine. U7004 reports a missing lock, at the start of `una.toml` (ADR 0022), and a lock with a syntax error, a missing or unknown key, or a value v0.1 does not support. Whether the installed solver matches the lock is U5003.
 
 ## Failing example
 

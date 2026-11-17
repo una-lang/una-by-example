@@ -38,7 +38,7 @@ The sale took 6278 cents off
 You will learn to:
 
 - write a condition on an operation, `set_price where not dry_run`, and read the proof the verifier makes of it;
-- choose edition `0.3`, the preview of the next version of Una, in `una.toml`;
+- choose edition `0.3`, a preview, in `una.toml`;
 - give a module from outside the store a ceiling, so that every call into it shows what it receives, and grant it less than you hold, `with @x = @y[ops]`;
 - lock the `uses` of a public function in `una.toml`, so that an edit of the code alone cannot widen it;
 - test a dry run's price with a stand-in price list.
