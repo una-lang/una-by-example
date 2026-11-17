@@ -523,7 +523,7 @@ pub weeks_of_stock(stock: Int, per_week: Int) -> Int
 
 With 10 units and 3 sold a week, the function answers 1 + the weeks of 7 units, which is 1 + the weeks of 4 units, which is 1 + the weeks of 1 unit, which is 0: 3 weeks. Each call has less stock, so the calls end, and `requires per_week >= 1` keeps a caller from passing 0, which would never lower the stock ([section 5.1](/learn/contracts/#s5-1)). When you know an upper limit, such as "at most 52 weeks", a range up to that limit with an `if` in the body is the other choice.
 
-Loops that end on a condition, rather than after a number of turns fixed before they start, are planned for a later version of Una.
+Edition `0.2` has no loop that ends on a condition, rather than after a number of turns fixed before it starts. Edition `0.4`, a preview, adds `stop when` and `for ever`.
 
 ### Choosing a range, the characters or recursion
 

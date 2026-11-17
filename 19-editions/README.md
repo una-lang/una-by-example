@@ -987,7 +987,7 @@ Edition `0.4` is the edition of release 0.4.0, and a preview, as `0.3` is ([sect
 
 Up to edition `0.3`, a package's settings live in `una.toml` and its solver pin in `verification.lock`. From edition `0.4`, they live in two files written in Una's own syntax: `ita.una`, the **manifest**, the file that names the package and its settings, and `ita.lock`, the **lock**, the file that pins what the package was checked with. Think of a library card and the stamp on a returned book: the card says who you are and what you may borrow, and the stamp records exactly what you took, so that no one has to remember it.
 
-Edition `0.4` also adds the constructs of long-running programs and of tasks and time, and lets a package use other packages, its **dependencies**. This section shows the move itself; the new constructs have their own pages.
+Edition `0.4` also adds the constructs of long-running programs and of tasks and time, and lets a package use other packages, its **dependencies**: in this release, packages in directories of its own, since no public registry is served yet. This section shows the move itself; the new constructs have their own pages.
 
 ### Why the manifest moves to `ita.una`
 

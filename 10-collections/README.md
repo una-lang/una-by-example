@@ -1427,7 +1427,7 @@ Each lookup, insertion and removal takes time in proportion to the logarithm of 
 | Values sorted by something a record holds | a map keyed by that field, then `values()` |
 :::
 
-More collections, such as queues, stacks and sets, are coming to Una; until then, the list and the map cover the programs of this book.
+Edition `0.2` has the list and the map, which cover the programs of this book. Edition `0.5`, a preview, adds queues, stacks and sets in the module `std.collections`.
 
 ### Check yourself: maps
 
@@ -1705,7 +1705,7 @@ The first line is the interpolation of a `Json`, which shows the Una value, not 
 #### Numbers with a fraction
 
 > [!WARNING]
-> A JSON number with a fraction, such as `19.90`, is a `Decimal`, not a `Number`, so `is Number(value)` does not match it. Keep money in whole cents, in JSON as in Una. Una has no type for numbers with a fraction yet; one is coming.
+> A JSON number with a fraction, such as `19.90`, is a `Decimal`, not a `Number`, so `is Number(value)` does not match it. Keep money in whole cents, in JSON as in Una. Edition `0.2` has no type for numbers with a fraction; the preview editions add them ([chapter 2](/learn/numbers/)).
 
 #### Read once, then use typed values
 

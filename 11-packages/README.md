@@ -634,7 +634,7 @@ The app never imported `digits`, so the name is in none of its three sources: it
 
 ### What a manifest is
 
-A **manifest** is a file that describes a package to the tools: its name, its version, which edition of the language it is written in, and how to run it. In Una it is `una.toml`, at the root of the package. Every command reads it before it reads any module.
+A **manifest** is a file that describes a package to the tools: its name, its version, which edition of the language it is written in, and how to run it. In editions `0.1` to `0.3` it is `una.toml`, at the root of the package (from edition `0.4` it is `ita.una`, [chapter 19](/learn/editions/)). Every command reads it before it reads any module.
 
 `una.toml` is written in **TOML**, a common format for settings files. You need four of its rules:
 

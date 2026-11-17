@@ -137,7 +137,7 @@ The checker reports one problem, a **syntax error**: text that breaks the gramma
 
 ### How to write the check loop
 
-Commands that work on a package take its path, `.`, last; `una trace`, `una contract` and `una explain` take a name instead. Flags go between the command's name and the path. Two flags, `--json` and `--color`, are global: they work with every command and may go anywhere on the line, and this book writes them right after `una`.
+Commands that work on a package take its path, `.`, last; `una trace`, `una contract` and `una explain` take a name instead. Flags go between the command's name and the path. Two flags, `--json` and `--color`, are global: they work with every command but `una lsp`, which speaks an editor's protocol instead, and may go anywhere on the line, and this book writes them right after `una`.
 
 #### `una check .`
 
@@ -2048,7 +2048,7 @@ pricetags.member_price
 ### For agents
 
 :::agents
-Every command prints one JSON document with `--json`, its `schema` key first. The run of the day-to-day program, with its trace:
+Every command but `una lsp` prints one JSON document with `--json`, its `schema` key first. The run of the day-to-day program, with its trace:
 
 ```json include="day-to-day/expected/commands/run.txt#L2"
 {"schema":"una.run/1","tier":1,"status":"ok","output":["LAMP-01  19.90 now 13.93","DESK-02  129.00 now 110.00","CHAIR-09  not in the catalog"],"failure":null,"diagnostics":[],"trace":[{"seq":1,"instance":"with:listed#1","capability":"Catalog","op":"product","args":{"sku":"\"LAMP-01\""},"outcome":{"kind":"ok","value":"Some(Product(sku: \"LAMP-01\", price: 1990, cost: 1200))"}},{"seq":2,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"LAMP-01  19.90 now 13.93\""},"outcome":{"kind":"ok","value":"unit"}},{"seq":3,"instance":"with:listed#2","capability":"Catalog","op":"product","args":{"sku":"\"DESK-02\""},"outcome":{"kind":"ok","value":"Some(Product(sku: \"DESK-02\", price: 12900, cost: 11000))"}},{"seq":4,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"DESK-02  129.00 now 110.00\""},"outcome":{"kind":"ok","value":"unit"}},{"seq":5,"instance":"with:listed#3","capability":"Catalog","op":"product","args":{"sku":"\"CHAIR-09\""},"outcome":{"kind":"ok","value":"None"}},{"seq":6,"instance":"host:Console","capability":"Console","op":"print","args":{"line":"\"CHAIR-09  not in the catalog\""},"outcome":{"kind":"ok","value":"unit"}}]}
@@ -2063,7 +2063,7 @@ Each event names the handler instance that answered, such as `with:listed#1`, so
 - `una check .` is the loop. `--tier 0` skips the proofs for a quick answer; run the full check before a change is done.
 - `una fix --dry-run .` shows the exact repairs, and `una fix .` applies them and formats. It never widens authority, applies an escape, or edits `una.toml`.
 - A diagnostic has a code, places, ranked repairs, and for a proof, an obligation and a counterexample. `una explain` explains any code.
-- `--json` turns every command's output into one document with a `schema` key, and exit codes say the same as the text.
+- `--json` turns the output of every command but `una lsp` into one document with a `schema` key, and exit codes say the same as the text.
 - `una obligations`, `una contract` and `una trace` show what was proven, what a function promises, and which code carries a rule.
 - `una report` shows what the package may do and trusts; compare it between releases.
 - `una run`, `una test` and `una build` check first, and run nothing that does not check.

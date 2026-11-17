@@ -390,9 +390,9 @@ The message says that `19.90` is a **fractional literal**, a number with a fract
 
 For money, whole cents work well. Many languages store a fraction such as 0.10 as a binary approximation, so that adding prices gives totals such as 0.30000000000000004, and every program rounds them in its own way, often without saying so. With whole cents, every sum and product is exact, and the one place a fraction appears, a division, says how it rounds. Money is an `Int` of cents in this chapter and in every chapter of this book.
 
-### Numbers with a fraction: still to come
+### Numbers with a fraction: not in this edition
 
-Two kinds of number with a fraction are planned for Una. A **decimal** type will hold amounts such as 19.90 exactly, in base ten, as people write them. **Floating-point** types will hold approximate values over a very wide range, for measurements and science, where a tiny rounding error does not matter. When they arrive, this chapter gains a section for each. Until then, keep money in cents and measures in whole small units, such as grams or millimeters, all as `Int`.
+Edition `0.2`, which this book uses, has no type for numbers with a fraction. The preview editions add two kinds. A **decimal** type holds amounts such as 19.90 exactly, in base ten, as people write them (edition `0.5`). **Floating-point** types hold approximate values over a very wide range, for measurements and science, where a tiny rounding error does not matter (`F64` in edition `0.3`, `F32` in edition `0.5`). A preview edition may still change ([chapter 19](/learn/editions/)), and this book does not use these types. In edition `0.2`, keep money in cents and measures in whole small units, such as grams or millimeters, all as `Int`.
 
 ### How to write integers and arithmetic
 
