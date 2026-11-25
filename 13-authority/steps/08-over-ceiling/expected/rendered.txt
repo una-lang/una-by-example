@@ -5,7 +5,7 @@
    │   ───────────────────┬──────────────────
    │                      ╰──────────────────── the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
    │
-   │ Help: repair 1: no grant keeps both: the callee declares `Clock[now]`, and the ceiling of `vendor.labels` allows no operation of `Clock`, so the consumer decides between this module and its ceiling
+   │ Help: repair 1: no grant of a binding keeps both: the callee declares `Clock[now]`, and the ceiling of `vendor.labels` allows no operation of `Clock`; install a handler for `Clock` whose own `uses` lie within the ceiling: `with @clock = <handler>(...)`, where `handler <handler>(...) for Clock` is written outside the boundary, or the consumer decides between this module and its ceiling
    │
    │ Note: run `una explain U3021` for an explanation
 ───╯

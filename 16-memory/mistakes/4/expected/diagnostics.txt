@@ -1,1 +1,1 @@
-error U3013 at src/stockcount.una:63:27: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+error U3013 at src/stockcount.una:63:27: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; `attempt` cannot wrap it, so make the call itself the whole expression of a statement or `let`, and handle a failure with `if error`

@@ -527,13 +527,13 @@ pub main() -> Unit
    │   ───────────────────┬──────────────────
    │                      ╰──────────────────── the call of `print_label` grants `Clock[now]` to `vendor.labels`, whose ceiling in `una.toml` allows no operation of `Clock`
    │
-   │ Help: repair 1: no grant keeps both: the callee declares `Clock[now]`, and the ceiling of `vendor.labels` allows no operation of `Clock`, so the consumer decides between this module and its ceiling
+   │ Help: repair 1: no grant of a binding keeps both: the callee declares `Clock[now]`, and the ceiling of `vendor.labels` allows no operation of `Clock`; install a handler for `Clock` whose own `uses` lie within the ceiling: `with @clock = <handler>(...)`, where `handler <handler>(...) for Clock` is written outside the boundary, or the consumer decides between this module and its ceiling
    │
    │ Note: run `una explain U3021` for an explanation
 ───╯
 ```
 
-The call grants `Clock[now]`, and the ceiling allows no operation of `Clock`. The help under the message offers no edit: the callee declares `Clock[now]`, the store's clock permits it, and the ceiling withholds it, so the choice between the new version and the ceiling belongs to the store. To accept the new version, someone must widen the ceiling in `una.toml`, which a reviewer sees, or the store keeps the old version. `una fix .` never makes that choice, since it never edits `una.toml`. A handler for `Clock` with no `uses` of its own, written outside the boundary, would lie within the ceiling too, as [What counts against the ceiling](#what-counts-against-the-ceiling) explains, but it hands the module a stand-in clock, not the store's.
+The call grants `Clock[now]`, and the ceiling allows no operation of `Clock`. The help under the message says that no grant of the store's clock fits: the callee declares `Clock[now]`, the store's clock permits it, and the ceiling withholds it, so the choice between the new version and the ceiling belongs to the store. To accept the new version, someone must widen the ceiling in `una.toml`, which a reviewer sees, or the store keeps the old version. `una fix .` never makes that choice, since it never edits `una.toml`. The help also names a handler: one for `Clock` with no `uses` of its own, written outside the boundary, would lie within the ceiling too, as [What counts against the ceiling](#what-counts-against-the-ceiling) explains, but it hands the module a stand-in clock, not the store's.
 
 #### What counts against the ceiling
 
