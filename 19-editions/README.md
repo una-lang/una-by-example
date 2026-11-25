@@ -264,7 +264,19 @@ An edition is either **stable** or a **preview**:
 
 A package on a stable edition can stay there for as long as it likes.
 
-Release 0.4.0 serves edition `0.4` as a preview: a later release makes it stable. Edition `0.5`, also a preview, holds what comes after it.
+#### One number for a release and its edition
+
+A version of `una` has three numbers, such as 0.5.1. The first two name the release it belongs to, written R0.5. A release is published in **increments**, and each increment is a version of `una` that you install: una 0.5.0 is increment R0.5.0, and una 0.5.1 is increment R0.5.1. An edition takes its number from its release, so edition `0.5` is the edition of release R0.5.
+
+| Version of `una` | Its release | Edition of that release | Editions it serves |
+| --- | --- | --- | --- |
+| 0.4.0 | R0.4 | `0.4` | `0.1` and `0.2`, stable; `0.3`, `0.4` and `0.5`, previews |
+| 0.5.0 | R0.5, increment R0.5.0 | `0.5` | The same |
+| 0.5.1 | R0.5, increment R0.5.1 | `0.5` | The same |
+
+The editions before `0.4` follow the same rule: each carries the number of the release that introduced it. A release that changes no syntax has no edition of its own.
+
+The shared number says where an edition comes from, not whether it is stable. una 0.4.0 shipped edition `0.4` as a preview, and una 0.5.0 and 0.5.1 still serve it as one. All three also serve edition `0.5`, as an early preview whose rules are still landing. An edition stays a preview until a release declares it stable, so ask the `una` you have: `una --version` lists its editions and names the previews.
 
 #### Words reserved for later editions
 
