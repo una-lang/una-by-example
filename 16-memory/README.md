@@ -1472,12 +1472,12 @@ Keep the outcome of `apply` as a `Result`:
 ```
 
 ```text include="mistakes/4/expected/rendered.txt"
-[U3013] Error: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+[U3013] Error: `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; `attempt` cannot wrap it, so make the call itself the whole expression of a statement or `let`, and handle a failure with `if error`
     ╭─[ src/stockcount.una:63:27 ]
     │
  63 │     let outcome = attempt apply(edit ledger, movement: movement)
     │                           ───────────────────┬──────────────────
-    │                                              ╰──────────────────── `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; bind its result with `let` first
+    │                                              ╰──────────────────── `apply` is called with `edit` or `take`, so the call must be the whole expression of a statement or `let`; `attempt` cannot wrap it, so make the call itself the whole expression of a statement or `let`, and handle a failure with `if error`
     │
     │ Note: run `una explain U3013` for an explanation
 ────╯
