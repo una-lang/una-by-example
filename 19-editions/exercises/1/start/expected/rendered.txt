@@ -5,8 +5,5 @@
     │       ──┬─
     │         ╰─── `edit` is reserved for v0.2 (memory model)
     │
-    │ Help: repair 1: rename it to `the_edit`; edit src/shelf.una:17:7..17:11 to "the_edit"
-    │
     │ Note: run `una explain U0103` for an explanation
 ────╯
-1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
