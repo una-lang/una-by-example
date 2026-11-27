@@ -329,7 +329,7 @@ fixed src/shelf.una:4:46 U0103 rename it to `the_take`
 fixed src/shelf.una:9:29 U0103 rename it to `the_take`
 ```
 
-Here the rename is right, since `take` is meant as a name: `the_take` works, and a better name, such as `taken`, works too. When a reserved word is meant as the construct of a later edition, the rename is wrong; [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows that case.
+Here the rename is right, since `take` is meant as a name: `the_take` works, and a better name, such as `taken`, works too. When a reserved word stands as the construct of a later edition, no rename is offered; [Using a construct of a later edition](#using-a-construct-of-a-later-edition-u0103) shows that case.
 :::
 
 ## 19.2 What edition `0.2` adds
@@ -921,7 +921,7 @@ The package checks in `0.2`, and prints what it printed in `0.1`:
 
 - **One edition per package.** Every module moves at once. A program is one package, so it has one edition: up to edition `0.3`, a package does not depend on other packages ([section 11.3](/learn/packages/#s11-3)).
 - **Moving back fails where the code uses the later edition.** A construct of a later edition is usually a syntax error (U0101), a reserved word (U0103) or an unknown table (U7002) in an earlier one: [Moving a package back](#moving-a-package-back-u0101-u7002) shows it. A prelude function or a type rule of a later edition gives a type error, such as U1001, U2001 or U2002.
-- **Read a rename before you apply it.** In edition `0.1`, a reserved word gets a rename repair, which is right for a name and wrong for a construct of a later edition: [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) shows the second case.
+- **A rename is for a name.** In edition `0.1`, a reserved word used as a name gets a rename repair. A reserved word that stands as a construct of a later edition gets none, since the edition is what must change: [Using a construct of a later edition](#using-a-construct-of-a-later-edition-u0103) shows that case.
 - **The output is the test of a move.** A move changes the language, not the program's behavior: the tests pass, and `una run .` prints what it printed before.
 
 ### Which edition to name
@@ -1492,7 +1492,7 @@ Print the list as it is:
 *Fix:* interpolate the fields you want, or move the package to `0.2`, which interpolates any value that `==` compares, except a `Hashed`. See [U2001](/docs/errors/U2001/).
 :::
 
-### Letting `una fix` rename a keyword (U0103)
+### Using a construct of a later edition (U0103)
 
 :::mistake
 Write the total with `let edit` and `for` in edition `0.1`:
@@ -1520,23 +1520,19 @@ Write the total with `let edit` and `for` in edition `0.1`:
     │       ──┬─
     │         ╰─── `edit` is reserved for v0.2 (memory model)
     │
-    │ Help: repair 1: rename it to `the_edit`; edit src/shelf.una:11:7..11:11 to "the_edit"
-    │
     │ Note: run `una explain U0103` for an explanation
 ────╯
-1 of 1 diagnostics have an edit that `una fix` applies (`una fix --dry-run` lists them)
 ```
 
-The repair is meant for a program that uses `edit` as a name, and `una fix --dry-run .` lists it:
+The diagnostic has no repair, and `una fix --dry-run .` has nothing to apply:
 
 ```text include="mistakes/2/expected/commands/fix.txt"
 $ una fix --dry-run .
-fixed src/shelf.una:11:7 U0103 rename it to `the_edit`
 ```
 
-*Why:* in edition `0.1`, `edit` is a reserved word, not a keyword, so the checker reads it as a name that must change. The message says the rest: `reserved for v0.2 (memory model)` names the edition where `let edit` exists. Applied here, the rename gives `let the_edit sum = 0`, which does not parse.
+*Why:* in edition `0.1`, `edit` is a reserved word, not a keyword, so the checker refuses it. The message says the rest: `reserved for v0.2 (memory model)` names the edition where `let edit` exists. A rename is offered only where the renamed program parses, and `let the_edit sum = 0` does not, so no name would repair this line.
 
-*Fix:* change `edition` in `una.toml` to `"0.2"`. Do not apply the rename: offering it here is a known issue of una 0.4.0. See [U0103](/docs/errors/U0103/).
+*Fix:* change `edition` in `una.toml` to `"0.2"`. See [U0103](/docs/errors/U0103/).
 :::
 
 ### Moving a package back (U0101, U7002)
@@ -1697,7 +1693,7 @@ error U0103 at src/shelf.una:17:7: `edit` is reserved for v0.2 (memory model)
 ```
 
 :::hint
-*Hint:* the loop is right; the message says which edition has `edit`. Read [Letting `una fix` rename a keyword](#letting-una-fix-rename-a-keyword-u0103) before you run `una fix`, then follow [the steps of a move](#the-steps-of-a-move): after the edition line, run `una check .` again, since the new edition reads some names differently.
+*Hint:* the loop is right; the message says which edition has `edit`. Read [Using a construct of a later edition](#using-a-construct-of-a-later-edition-u0103), then follow [the steps of a move](#the-steps-of-a-move): after the edition line, run `una check .` again, since the new edition reads some names differently.
 :::
 
 Check your answer with `una check .`, then `una test .`.
@@ -1899,7 +1895,7 @@ A construct of a later edition usually gives U0101 or U0103 at the construct, a 
 - `0.3` is a preview: conditions on operations, locked contracts, boundaries, narrowed rebindings, units, refined type arguments, no dead failure handling, and tests written `test`. It may get stricter in a later release.
 - To move a package: change the edition, `una check .`, `una fix .`, repair the rest, `una test .`, and compare the output.
 - `0.4` is a preview whose package is described by `ita.una` and pinned by `ita.lock`: `una migrate` writes both, rewrites the modules in its canonical form, and prints what the new edition reads differently. A later release may change it, never in silence.
-- Never let `una fix` rename a keyword of a later edition; change the edition instead.
+- A word that stands as a construct of a later edition gets no rename; change the edition instead.
 :::
 
 ### Reference
